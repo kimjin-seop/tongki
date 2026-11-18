@@ -16,6 +16,7 @@ import { ImpactFx, impactOn, setImpactOn } from '../game/impact.js';
 import { ShoutFx, shoutOn, setShoutOn } from '../game/shout.js';
 import { FmName } from '../game/formation.js';
 import { teamName } from '../names.js';
+import { toast } from '../ui.js';
 
 const STAGE_FILE_RE = /^rom\/bg\/stage_\d{2}$/, STAGE_JSON_RE = /^rom\/bg\/stage_\d{2}\.json$/, STAGE_KEY_RE = /^bg\.stage\.\d{2}$/;
 
@@ -354,7 +355,7 @@ export function mount(root, app, { start }) {
       h('div.result-title' + (m.winner === you ? '.win' : ''), title),
       h('div.result-rule', END_RULE[m.reason] ?? END_REASON[m.reason] ?? m.reason),
       h('div.muted.tabular', `남은 인원 ${m.rem[0]} : ${m.rem[1]}`),
-      btn));
+      rankLine, btn));
     overlay.hidden = false;
     setTimeout(() => btn.focus(), 30);
     armBack(BACK_MS);
@@ -392,6 +393,19 @@ export function mount(root, app, { start }) {
     else if (app.room) app.go('room');
   }
 
+  // 랭크 경기(PROTOCOL §11.3): ranking_result 가 game_end 바로 뒤에 온다 -> 결과 카드 버튼 위에 `레이팅 전 → 후 (±delta)`.
+  // 내가 기권해 곧 로비로 넘어가면(카드가 남지 않는다) 같은 줄을 토스트로
+  const rankLine = h('div.result-rank.tabular', { hidden: true });
+  let leaving = false;
+  function onRankingResult(r) {
+    if (![r?.before, r?.after, r?.delta].every(Number.isFinite)) return;
+    const d = r.delta > 0 ? `+${r.delta}` : r.delta < 0 ? `−${-r.delta}` : '±0';
+    const text = `레이팅 ${r.before} → ${r.after} (${d})`;
+    rankLine.textContent = text; rankLine.hidden = false;
+    rankLine.classList.toggle('up', r.delta > 0); rankLine.classList.toggle('down', r.delta < 0);
+    if (leaving) toast(text, r.delta < 0 ? 'warn' : 'ok', 5000);
+  }
+
   let quitArmed = 0;
   function onQuit() {
     if (ended) return back();
@@ -401,6 +415,7 @@ export function mount(root, app, { start }) {
       quitArmed = setTimeout(() => { quitArmed = 0; quit.textContent = '기권'; quit.classList.remove('danger'); }, 3000);
       return;
     }
+    leaving = true;
     net.send('leave_room');
   }
 
@@ -418,6 +433,7 @@ export function mount(root, app, { start }) {
     },
     on_game_end: onGameEnd,
     on_training_end: onTrainingEnd,
+    on_ranking_result: onRankingResult,
     holdLobby: () => trainDone || (!!league && !!ended), // 완료·결과 카드가 떠 있으면 room_left 가 화면을 넘기지 않는다(main.js)
     renderer, campaign, training, league,
     onRoom(room) {

@@ -12,6 +12,7 @@ import { rulesText } from './rules.js';
 import { emblem, roster, glyphs, abbrOf, shortName, GRID_MAIN, arrowNav } from '../pix.js';
 
 const PAGE_SPECIAL = [15, 16, 17, 18, 19, 20, 21, 22, 23, 24]; // 스토리 전용 팀(목록 유지)
+const RANK_MAX_TEAM = 21; // 랭크 방은 SPECIAL(15~21)까지, 22~24 는 서버가 TEAM_INVALID(PROTOCOL §11.2)
 
 export function mount(root, app) {
   let selecting = false, cur = null, page = 0, pdCur = null;
@@ -20,6 +21,26 @@ export function mount(root, app) {
   const teamOk = (id) => app.teams.some((t) => t.id === id);
   const teamText = (id) => { const t = app.teams.find((x) => x.id === id); return t ? t.label ?? t.name : id != null ? `팀 ${id + 1}` : ''; };
   const myIdx = () => app.room?.slots?.findIndex((s) => s && s.nick === app.nick) ?? -1;
+
+  // 랭크 방(PROTOCOL §11.2): 좌석마다 레이팅. 서버가 좌석에 rating(정수)·placement 를 주면 그 값이 우선,
+  // 없으면(구 서버) 순위표(ranking_list) 값으로 보완 — 내 줄(me)은 언제나, 상대는 상위 50명 안에 있을 때만. 상대가 바뀔 때만 다시 묻는다(분당 상한 공유)
+  let askedFor = null;
+  function askRatings() {
+    const r = app.room; if (!r?.ranked) return;
+    const s = r.slots?.[1 - myIdx()];
+    if (Number.isInteger(s?.rating)) return;
+    const opp = s?.nick ?? '';
+    if (opp === askedFor) return;
+    askedFor = opp; net.send('ranking_list', {});
+  }
+  function ratingOf(s) {
+    if (Number.isInteger(s?.rating)) return s.placement === true ? '배치 중' : String(s.rating);
+    const nick = s?.nick;
+    const b = app.rankBoard; if (!b || !nick) return null;
+    if (b.me && b.me.nick === nick) return b.me.placement ? '배치 중' : String(b.me.rating);
+    const row = b.top?.find((x) => x.nick === nick);
+    return row ? String(row.rating) : null;
+  }
 
   // 준비 완료였는데 서버가 풀었을 때(규칙 변경·내 팀 변경) 한 번 알린다. 내가 누른 준비 취소·경기 종료는 알리지 않는다
   let prev = null;
@@ -36,6 +57,7 @@ export function mount(root, app) {
   function update() {
     const r = app.room; if (!r) return;
     noteReady();
+    askRatings();
     if (selecting && myIdx() >= 0 && r.status === 'waiting') { if (root.querySelector('.tsel')) marks(); else paintSelect(); } else { selecting = false; paintRoom(); }
   }
 
@@ -55,8 +77,10 @@ export function mount(root, app) {
       const tag = cpu ? h('span.tag.cpu', `난이도 ${cpuLevel(r, s)}`)
         : s.host ? h('span.tag.host', '방장') : h('span.tag.rdy' + (rdy ? '.on' : ''), rdy ? '준비 완료' : '준비 중');
       const team = s?.team;
+      const rate = r.ranked && s ? ratingOf(s) : null;
       return h('section.seat.s' + i + (i === me ? '.me' : '') + (rdy ? '.is-ready' : ''), { 'aria-label': `${i ? '오른쪽' : '왼쪽'} 좌석` },
-        h('div.seat-top', lab, h('span.seat-nick', cpu ? '컴퓨터' : s.nick), s && !s.connected && !cpu ? h('span.tag.off', '연결 끊김') : null, tag),
+        h('div.seat-top', lab, h('span.seat-nick', cpu ? '컴퓨터' : s.nick), s && !s.connected && !cpu ? h('span.tag.off', '연결 끊김') : null,
+          rate ? h('span.tag.rate.tabular', { title: '레이팅' }, rate) : null, tag),
         team != null ? [
           h('div.seat-team', emblem(team), h('span.tn', teamText(team)),
             i === me ? h('button.chg', { type: 'button', 'data-cmd': 'chg', onclick: openSelect }, '변경 ▶') : null),
@@ -66,7 +90,9 @@ export function mount(root, app) {
     const cmds = [];
     if (mine) cmds.push(h('button.btn', { type: 'button', 'data-cmd': 'team', onclick: openSelect }, '팀 변경'));
     if (mine?.host) {
-      cmds.push(h('button.btn', { type: 'button', 'data-cmd': 'rules', onclick: openRules }, '규칙'));
+      // 랭크 방은 녹아웃·5분 고정: 흐리게 두고 누르면 사유 토스트(서버 RANKED_RULES_FIXED 와 같은 문구)
+      cmds.push(r.ranked ? h('button.btn.dim', { type: 'button', 'data-cmd': 'rules', 'aria-disabled': 'true', onclick: () => toast(ERR.RANKED_RULES_FIXED, 'warn') }, '규칙')
+        : h('button.btn', { type: 'button', 'data-cmd': 'rules', onclick: openRules }, '규칙'));
       // 조건 미달이어도 누를 수 있게 둔다(disabled 가 아니라 aria-disabled): 누르면 사유 토스트
       cmds.push(h('button.btn.primary' + (r.start.ok ? '' : '.dim'), { type: 'button', 'data-cmd': 'start', 'aria-disabled': r.start.ok ? null : 'true',
         onclick: () => { const st = app.room?.start; if (st && !st.ok) { toast(st.msg, 'warn'); return; } startFlow(); } }, '시작'));
@@ -76,7 +102,7 @@ export function mount(root, app) {
     }
     cmds.push(h('button.btn', { type: 'button', 'data-cmd': 'leave', onclick: () => net.send('leave_room') }, '나가기'));
     root.append(h('div.screen.room',
-      h('header.room-head', h('h1.pix-title', r.vsCpu || !r.host ? '대기실' : `${r.host}의 방`),
+      h('header.room-head', h('h1.pix-title', r.vsCpu || !r.host ? '대기실' : `${r.host}의 방`), r.ranked ? h('span.tag.rank', '랭크') : null,
         r.rules ? h('span.rules-line', '규칙 ', h('b', rulesText(r.rules))) : null,
         h('span.spacer'), h('span.room-code', { title: '방 코드' }, r.code), h('span.nick-me', app.nick || '')),
       h('div.seats', seat(0), h('div.vs', { 'aria-hidden': 'true' }, 'VS'), seat(1)),
@@ -124,7 +150,7 @@ export function mount(root, app) {
     if (s && s.team !== team) net.send('set_team', { team });
     closeSelect();
   }
-  const pageTeams = (p) => (p ? PAGE_SPECIAL : GRID_MAIN).filter(teamOk);
+  const pageTeams = (p) => (p ? PAGE_SPECIAL : GRID_MAIN).filter((id) => teamOk(id) && !(app.room?.ranked && id > RANK_MAX_TEAM));
 
   function paintSelect(focusCur = false) {
     const list = pageTeams(page);
@@ -229,7 +255,7 @@ export function mount(root, app) {
   }
 
   update();
-  return { update, unmount: () => setNav(null) };
+  return { update, onRankingList: () => { if (!selecting && app.room?.ranked) paintRoom(); }, unmount: () => setNav(null) };
 }
 
 /** 컴퓨터 대전 좌석 판정 (PROTOCOL 4: room.vsCpu / slot.cpu) */

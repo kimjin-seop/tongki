@@ -47,6 +47,19 @@ export const ERR = {
   LEAGUE_INVALID: '리그 설정이 올바르지 않습니다',
   LEAGUE_CARD_INVALID: '고를 수 없는 대전입니다',
   LEAGUE_TEAM_LOCKED: '아직 고를 수 없는 팀입니다',
+  // 계정(PROTOCOL §2.1)
+  ACCOUNT_REQUIRED: '계정으로 로그인해야 합니다',
+  ACCOUNT_EXISTS: '이미 가입된 닉네임입니다',
+  NICK_REGISTERED: '가입된 닉네임입니다. 비밀번호로 로그인하세요',
+  PASSWORD_INVALID: '비밀번호는 6~64자로 정하세요',
+  LOGIN_FAILED: '닉네임 또는 비밀번호가 맞지 않습니다',
+  LOGIN_LOCKED: '로그인 실패가 많아 잠시 막혔습니다. 잠시 후 다시 시도하세요',
+  AUTH_RATE_LIMITED: '가입·로그인 시도가 너무 잦습니다. 잠시 후 다시 시도하세요',
+  AUTH_BUSY: '처리 중입니다. 잠시 기다리세요',
+  ACCOUNT_CREATED_RELOGIN: '가입은 되었습니다. 비밀번호로 다시 로그인하세요',
+  // 랭킹(PROTOCOL §11)
+  RANKED_LOCKED: '기권이 잦아 잠시 랭크 경기를 할 수 없습니다',
+  RANKED_RULES_FIXED: '랭크 방은 규칙을 바꿀 수 없습니다',
 };
 
 /** 특훈 종류(PROTOCOL §9). TRAINING_READY 에 든 것만 시작할 수 있다(빠진 종류는 TRAINING_UNAVAILABLE). 지금은 둘 다 열려 있다 */

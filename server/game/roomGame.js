@@ -137,6 +137,11 @@ export class RoomGame {
       reason, rem, ticks: this.match.f,
     };
     if (this.training) { this.o.onEnd(res); return; } // 특훈은 저장·보상이 없다(analysis/29 §1-7): 결과 레코드를 쓰지 않는다
+    // 랭크 방(PROTOCOL §11): 레코드를 쓰기 전에 레이팅을 반영해 ranked·ratingDelta 를 함께 남긴다. wentGo = GO 이후 종료인지(이전이면 무효)
+    let rankRec = null;
+    if (this.o.onRanked) {
+      try { rankRec = this.o.onRanked({ matchId: this.matchId, winner, reason, wentGo: this.match.phase !== 'ready' }); } catch (e) { console.error('[ranking]', e); }
+    }
     try {
       this.o.store.append({
         matchId: this.matchId, roomCode: this.o.roomCode, startedAt: new Date(this.startedAt).toISOString(), endedAt: new Date(endedAt).toISOString(),
@@ -144,6 +149,7 @@ export class RoomGame {
         ...(this.cpuSeat >= 0 ? { vsCpu: true, cpuLevel: seats[this.cpuSeat].level } : {}),
         ...(this.campaign ? { campaign: { k: this.campaign.k, stage: this.match.stageInfo.id } } : {}),
         ...(this.league ? { league: { ...this.league, stage: this.match.stageInfo.id } } : {}),
+        ...(this.o.onRanked ? { ranked: true, ratingCounted: !!rankRec?.counted, ratingDelta: rankRec?.delta ?? [0, 0] } : {}),
         rules: { mode: this.match.ruleMode, limitFrames: this.match.limitFrames },
         winner: res.winnerNick, loser: winner >= 0 ? seats[1 - winner].nick : null,
         endReason: reason, ticks: this.match.f, remaining: rem, seed: this.seed,

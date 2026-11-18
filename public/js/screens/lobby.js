@@ -4,19 +4,29 @@
 import { h, clear } from '../util.js';
 import { toast } from '../ui.js';
 import { net } from '../net.js';
-import { ROOM_OFF } from '../i18n.js';
+import { ROOM_OFF, ERR } from '../i18n.js';
 import { rulesText } from './rules.js';
 import { isNew as tutorialNew } from './tutorial.js';
 import { titleLogo, start as startIntro } from '../intro.js';
 import { arrowNav } from '../pix.js';
 import { soundButton } from '../audio.js';
 
+// 방 목록 탭(전체/랭크)·방 만들기 '랭크' 선택은 로비를 다시 열어도 유지(이 탭 동안)
+let filter = 'all', rankedOpt = false;
+
 export function mount(root, app) {
+  const acct = !!app.account;
+  if (!acct) rankedOpt = false;
   const list = h('div.room-list', { role: 'group', 'aria-label': '방 목록' });
   // 컴퓨터 대전: create_room{vsCpu, cpuLevel(1~3)}. 난이도는 다음 방문에도 유지
   let lvl = ['1', '2', '3'].includes(localStorage.getItem('dd.cpuLevel')) ? +localStorage.getItem('dd.cpuLevel') : 2;
   const lvBtns = [1, 2, 3].map((n) => h('button.btn.lv', { type: 'button', 'aria-label': `난이도 ${n}`, 'aria-pressed': String(n === lvl),
     onclick: () => { lvl = n; localStorage.setItem('dd.cpuLevel', String(n)); for (const [i, b] of lvBtns.entries()) b.setAttribute('aria-pressed', String(i + 1 === lvl)); } }, String(n)));
+  // 방 만들기 '랭크' 선택(PROTOCOL §11.2 create_room.ranked): 계정만. 손님은 흐리게 두고 누르면 사유 토스트
+  const rankBtn = h('button.btn.rank-opt' + (acct ? '' : '.dim'), { type: 'button', 'aria-pressed': String(rankedOpt), 'aria-disabled': acct ? null : 'true', 'aria-label': '랭크 방으로 만들기',
+    onclick: () => { if (!acct) { toast(ERR.ACCOUNT_REQUIRED, 'warn'); return; } rankedOpt = !rankedOpt; rankBtn.setAttribute('aria-pressed', String(rankedOpt)); } }, '랭크');
+  const tabs = h('div.rl-tab', { role: 'group', 'aria-label': '방 목록 보기' }, [['all', '전체'], ['ranked', '랭크']].map(([k, label]) =>
+    h('button.btn.small', { type: 'button', 'data-f': k, 'aria-pressed': String(filter === k), onclick: () => { filter = k; for (const b of tabs.children) b.setAttribute('aria-pressed', String(b.dataset.f === filter)); update(); } }, label)));
   const story = h('button.btn.primary.story-entry', { type: 'button', onclick: () => app.go('story', { mode: 'list' }) },
     h('span.story-entry-t', '스토리 모드'), h('span.story-entry-n', '15경기'));
   root.append(h('div.screen.lobby',
@@ -31,12 +41,17 @@ export function mount(root, app) {
           h('button.btn.tut-entry', { type: 'button', onclick: () => app.go('tutorial') },
             h('span.tut-entry-t', '튜토리얼'), tutorialNew() ? h('span.tag.new', '신규') : null),
           h('button.btn.tut-entry.league-entry', { type: 'button', onclick: () => app.go('league') }, h('span.tut-entry-t', '리그'))),
-        h('button.btn.small.replay-intro', { type: 'button', onclick: () => { if (!app.intro?.active) app.intro = startIntro({ app, onEnd: () => { app.intro = null; } }); } }, '오프닝 다시보기'))),
+        // 아래 구석: 오프닝 다시보기 · (손님이면) 가입 = 지금 닉네임을 계정으로(진행 승계) · 로그아웃
+        h('div.lobby-foot',
+          h('button.btn.small.replay-intro', { type: 'button', onclick: () => { if (!app.intro?.active) app.intro = startIntro({ app, onEnd: () => { app.intro = null; } }); } }, '오프닝 다시보기'),
+          acct ? null : h('button.btn.small.acct-btn', { type: 'button', 'data-k': 'signup', onclick: () => app.go('nick', { upgrade: true }) }, '가입'),
+          h('button.btn.small.acct-btn', { type: 'button', 'data-k': 'logout', onclick: () => net.send('logout') }, '로그아웃')))),
     h('div.lobby-r.title-follow',
       h('div.nick-line', h('span.nick-t', app.nick || ''), soundButton(h)),
       h('section.pwin.room-panel',
         h('div.rl-top', h('h1', '방 목록'),
-          h('button.btn.primary.mk', { type: 'button', onclick: () => net.send('create_room', {}) }, '방 만들기')),
+          h('span.rl-mk', rankBtn, h('button.btn.primary.mk', { type: 'button', onclick: () => net.send('create_room', rankedOpt ? { ranked: true } : {}) }, '방 만들기'))),
+        h('div.rl-tabs', tabs, h('button.btn.small.rank-entry', { type: 'button', onclick: () => app.go('ranking') }, '순위표')),
         list))));
   net.send('list_rooms');
   const offNav = arrowNav(root);
@@ -46,18 +61,19 @@ export function mount(root, app) {
   function update() {
     const had = list.contains(document.activeElement) ? document.activeElement.dataset.code : null;
     clear(list);
-    if (!app.rooms.length) { list.append(h('div.empty', '방이 없습니다')); return; }
-    for (const r of app.rooms) {
+    const rooms = filter === 'ranked' ? app.rooms.filter((r) => r.ranked) : app.rooms;
+    if (!rooms.length) { list.append(h('div.empty', '방이 없습니다')); return; }
+    for (const r of rooms) {
       // 들어갈 수 없는 방: 흐리게 두되 포커스·클릭은 받는다(누르면 사유 토스트). 최종 판정은 서버(ROOM_IN_GAME / ROOM_FULL)
       const off = r.status === 'playing' ? 'playing' : r.vsCpu ? 'cpu' : r.players >= r.max ? 'full' : null;
       const st = off ? ROOM_OFF[off].st : '대기';
       const name = `${r.host}의 방`, rules = r.rules ? rulesText(r.rules) : '';
       const row = h('button.room-row' + (off ? '.off' : ''), {
         type: 'button', 'data-code': r.code, 'aria-disabled': off ? 'true' : null,
-        'aria-label': `${name}, ${rules ? rules + ', ' : ''}${r.players}/${r.max}, ${st}`,
+        'aria-label': `${r.ranked ? '랭크, ' : ''}${name}, ${rules ? rules + ', ' : ''}${r.players}/${r.max}, ${st}`,
         onclick: () => { if (off) toast(ROOM_OFF[off].msg, 'warn'); else net.send('join_room', { code: r.code }); },
       },
-        h('span.rr-main', h('b.rr-name', name), rules ? h('span.rr-rules', rules) : null),
+        h('span.rr-main', h('b.rr-name', r.ranked ? h('span.tag.rank', '랭크') : null, name), rules ? h('span.rr-rules', rules) : null),
         h('span.rr-n.tabular', `${r.players}/${r.max}`),
         h('span.rr-st' + (off ? '' : '.st-wait'), st));
       list.append(row);

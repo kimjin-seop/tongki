@@ -8,6 +8,19 @@ export const ERR = {
   ROOM_CODE_INVALID: '방 코드는 4~6자의 영문 대문자·숫자입니다',
   READY_RESET_RULES: '규칙이 바뀌어 준비가 풀렸습니다',
   READY_RESET_TEAM: '팀을 바꿔 준비가 풀렸습니다',
+  ACCOUNT_REQUIRED: '계정으로 로그인해야 합니다',
+  RANKED_RULES_FIXED: '랭크 방은 규칙을 바꿀 수 없습니다',
+};
+/** 계정(PROTOCOL §2.1) 화면 문구. 서버 거절(6자 규칙·잠금 등)은 서버 msg 토스트 */
+export const AUTH = {
+  PW_EMPTY: '비밀번호를 입력하세요',
+  PW_MISMATCH: '비밀번호가 서로 다릅니다',
+  SIGNED_UP: '가입했습니다',
+};
+/** 랭크 경기 레이팅이 반영되지 않은 사유(ranking_result.why, §11.1) */
+export const RANK_WHY = {
+  VOID: '무효 경기라 레이팅이 바뀌지 않았습니다',
+  PAIR_LIMIT: '같은 상대와 하루 3경기를 넘어 레이팅이 바뀌지 않았습니다',
 };
 /** 방 목록에서 들어갈 수 없는 방: 상태 칸 문구(st)와 눌렀을 때 토스트(msg, 서버 ERR 문구와 같게) */
 export const ROOM_OFF = {

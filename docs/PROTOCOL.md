@@ -38,20 +38,28 @@
 | CAMPAIGN_RATE_LIMITED | 요청이 너무 잦습니다. 잠시 후 다시 시도하세요 (`campaign_*` 세션당 분당 상한) |
 | NOT_IN_CAMPAIGN_ROOM | 캠페인 방에서는 할 수 없습니다 (캠페인·특훈 방의 `set_team`, 특훈 방의 `start`) |
 | RULES_INVALID | 규칙 값이 올바르지 않습니다 (`set_rules`, `create_room`·`campaign_start` 의 `rules`) |
-| LOGIN_TIMEOUT | 로그인 시간이 지나 연결이 종료됩니다 (연결 후 30초 내 `hello` 없음. 전송 후 close 1008) |
+| LOGIN_TIMEOUT | 로그인 시간이 지나 연결이 종료됩니다 (연결 후 30초 내 `hello` 없음, 또는 `logout` 뒤 5분 내 다시 로그인 없음. 전송 후 close 1008) |
 | TRAINING_UNAVAILABLE | 아직 준비되지 않은 튜토리얼입니다 (서버가 닫아 둔 `training_start.kind`, §9.1. 지금은 닫힌 종류가 없다) |
 | NOT_IN_TRAINING | 튜토리얼 중이 아닙니다 (`training_quit`) |
 | GAME_ABORTED | 경기가 서버 오류로 중단되었습니다 (아래 toast로만 전달) |
+| ACCOUNT_REQUIRED | 계정으로 로그인해야 합니다 (`REQUIRE_ACCOUNT=1` 서버의 닉네임 `hello`, 손님의 랭크 방 만들기·입장, §2.1·§11) |
+| ACCOUNT_EXISTS / NICK_REGISTERED | 이미 가입된 닉네임입니다 (`register`) / 가입된 닉네임입니다. 비밀번호로 로그인하세요 (닉네임만 보낸 `hello`) |
+| PASSWORD_INVALID | 비밀번호는 6~64자로 정하세요 (`register`) |
+| LOGIN_FAILED / LOGIN_LOCKED | 닉네임 또는 비밀번호가 맞지 않습니다 / 로그인 실패가 많아 잠시 막혔습니다 (`login`) |
+| AUTH_RATE_LIMITED / AUTH_BUSY | 가입·로그인 시도가 너무 잦습니다 (IP당 분당 10회) / 처리 중입니다 (같은 연결에서 앞 요청 처리 중) |
+| ACCOUNT_CREATED_RELOGIN | 가입은 되었습니다. 비밀번호로 다시 로그인하세요 (`register` 처리 중에 그 연결이 로그아웃·교체·다른 닉네임 접속으로 바뀐 경우. 계정은 만들어졌고 토큰은 발급하지 않았다) |
+| RANKED_LOCKED | 기권이 잦아 잠시 랭크 경기를 할 수 없습니다 (`params.until` = 풀리는 시각 epoch ms, §11) |
+| RANKED_RULES_FIXED | 랭크 방은 규칙을 바꿀 수 없습니다 (랭크 방 `set_rules`, 고정값과 다른 `create_room.rules`) |
 
 정의 위치는 `server/net/protocol.js`의 `ERR`이며 이 표와 일치한다. `NOT_IN_GAME`은 정의만 있고 현재 서버가 보내지 않는다.
 서버 주도 알림은 `{t:'toast', code, msg, params?}` (예: 한 방에서 엔진 오류로 경기가 중단됨 `GAME_ABORTED`, 이때 `game_end.reason='error'`).
 
-**접속·세션 상한**(환경변수, 기본값): `MAX_CONN_PER_IP`=20 동시 연결/IP, `MAX_HELLO_PER_MIN`=60 hello/IP/분, `MAX_SESSIONS`=2000, `MAX_ROOMS`=1000, `LOGIN_TIMEOUT_MS`=30000, `MAX_PAUSE_MS`=90000, `MAX_DISCONNECTS`=5. 리버스 프록시 뒤에서는 `TRUST_PROXY=1`(`X-Forwarded-For` 마지막 값을 IP로 사용).
+**접속·세션 상한**(환경변수, 기본값): `MAX_CONN_PER_IP`=20 동시 연결/IP, `MAX_HELLO_PER_MIN`=60 hello/IP/분, `MAX_SESSIONS`=2000, `MAX_ROOMS`=1000, `LOGIN_TIMEOUT_MS`=30000, `LOGOUT_LOGIN_TIMEOUT_MS`=300000(로그아웃 시점부터, 연결 시점 타이머는 취소), `MAX_PAUSE_MS`=90000, `MAX_DISCONNECTS`=5. 리버스 프록시 뒤에서는 `TRUST_PROXY=1`(`X-Forwarded-For` 마지막 값을 IP로 사용).
 
 ## 2. 세션·로그인·재접속
 
 ### 클라이언트 -> 서버
-- `{t:'hello', nickname}` 최초 접속. 규칙: 2~10자 한글·영문·숫자, 서버 전체 동시 유일(대소문자 무시).
+- `{t:'hello', nickname}` 최초 접속. 규칙: 2~10자 한글·영문·숫자, 서버 전체 동시 유일(대소문자 무시). 서버는 검사 전에 유니코드 NFC 정규화 + 앞뒤 공백 제거를 한다(`hello`·`register`·`login` 공통, 조합형 NFD 한글도 완성형과 같은 닉네임).
 - `{t:'hello', token}` 재접속. `nickname`은 무시.
 - `{t:'ping', clientTime}` -> `{t:'pong', clientTime, serverTime}`.
 
@@ -74,7 +82,28 @@
 5. 만료된 토큰으로 `hello`하면 `TOKEN_INVALID`.
 6. 같은 토큰의 다른 연결이 접속하면 이전 연결은 `SESSION_REPLACED` 후 닫힌다.
 - 닉네임 재사용: 끊겨 있고 방에도 없는 세션의 닉네임은 새 `hello`로 즉시 가져갈 수 있다. 방·게임 중이던 세션의 닉네임은 유예가 끝날 때까지 `NICK_TAKEN`.
-- 서버 재시작 시 모든 세션/방이 사라진다. 연결이 끊긴 뒤 재접속이 `TOKEN_INVALID`이면 로비(닉네임 입력)로 복귀.
+- 서버 재시작 시 모든 세션/방이 사라진다. 연결이 끊긴 뒤 재접속이 `TOKEN_INVALID`이면 로비(닉네임 입력)로 복귀. (계정 로그인 토큰은 재시작 뒤에도 유효, §2.1)
+
+### 2.1 계정(가입·로그인) — 서버 2026-11-18 박백엔, 클라이언트 2026-11-18 윤프론(접속 화면 탭 손님/로그인/가입, docs/HANDOFF §4-18)
+저장: SQLite(`data/tongki.db`, 환경변수 `DB_PATH`). 계정 = 닉네임(위 규칙 그대로, 대소문자 무시 유일) + 비밀번호.
+
+| 요청(로그인 전 연결) | 응답 |
+|---|---|
+| `{t:'register', nickname, password}` | 가입 + 바로 로그인 -> `welcome{account:true, token}`. 비밀번호 6~64자(`PASSWORD_INVALID`), 이미 있으면 `ACCOUNT_EXISTS`, 다른 사람이 그 닉네임으로 접속·방에 있으면 `NICK_TAKEN` |
+| `{t:'register', nickname, password}` (같은 닉네임의 **손님 세션으로 접속 중**) | 그 세션을 계정으로 올린다 -> `{t:'account_ok', token, nickname}`(클라이언트는 저장 토큰을 이 값으로 바꾼다). 위치(로비·방·경기)는 그대로. 다른 닉네임이면 `ALREADY_LOGGED_IN` |
+| `{t:'login', nickname, password}` | `welcome{account:true, token}`. 틀림·없는 닉네임 모두 `LOGIN_FAILED`(구분하지 않음). 같은 계정 세션이 이미 있으면 넘겨받는다(`resumed:true`, 이전 연결은 `SESSION_REPLACED`, 방·경기 위치 유지) |
+| `{t:'hello', token}` | 기존 재접속과 같다. 메모리 세션이 없으면(유예 만료·서버 재시작) 로그인 토큰으로 보고 맞으면 비밀번호 없이 로그인(`welcome{account:true, resumed:false}`), 만료·폐기면 `TOKEN_INVALID` |
+| `{t:'logout'}` (로그인 후) | 로그인 토큰 폐기 + 세션 종료(방·경기 중이면 퇴장 = 기권) -> `{t:'logged_out'}`. 연결은 유지(다시 `hello`/`login` 가능). 로그인 타이머를 로그아웃 시점부터 새로 건다: 5분(`LOGOUT_LOGIN_TIMEOUT_MS`) 안에 다시 로그인하지 않으면 `LOGIN_TIMEOUT` 후 close |
+
+- `welcome` 추가 필드: `account:boolean`(계정 세션인가), `requireAccount:boolean`(서버가 계정 필수인가 = 클라이언트가 닉네임만 입력 칸을 숨길지).
+- **토큰**: 계정 세션의 `welcome.token` = 로그인 토큰(랜덤 32바이트 base64url, 30일). 세션 재접속 토큰을 겸하므로 클라이언트는 지금처럼 하나만 저장한다. 서버 DB 에는 sha256 해시만 저장한다. 손님(닉네임만) 세션의 토큰은 종전처럼 메모리 전용(유예 30초).
+- **닉네임 보호**: 가입된 닉네임은 `REQUIRE_ACCOUNT` 값과 무관하게 닉네임만 보낸 `hello` 로 쓸 수 없다(`NICK_REGISTERED`). 가입하지 않은 닉네임은 종전 그대로(손님).
+- **단계 정책**: 서버 환경변수 `REQUIRE_ACCOUNT=1` 이면 닉네임만 보낸 `hello` 를 `ACCOUNT_REQUIRED` 로 거절(계정 필수). **기본 0 = 종전 방식 유지**(기존 클라이언트가 그대로 동작). 기본값 전환은 사용자 승인 뒤.
+- **진행 승계**(2026-11-18 보안 리뷰 반영): 서버가 손님 진행·리그를 이어 주는 경로는 **그 닉네임의 손님 세션으로 접속한 연결에서 `register` 한 경우(`account_ok` 승격)** 하나다. 이것은 "원래 손님 본인만 승계한다"는 보장이 아니다(아래 한계 ①). 로그인 전 연결에서 가입하면(그 닉네임의 손님이 끊겨 있었거나 예전 손님 데이터가 DB·JSON 에 남아 있어도) **빈 진행으로 시작**한다. 남아 있던 손님 데이터는 지우거나 덮지 않고 계정이 읽지 않는 키 `guest-aside:<소문자 닉네임>:<시각 ms>` 로 옮겨 보존한다(서버 로그에 건수·키 기록. `NICK_RE` 에 `:` 가 없어 어떤 세션도 이 키를 쓸 수 없다). JSON 가져오기도 가입된 계정 키는 건너뛴다(§11.5).
+- **가입 경합**: 로그인 전 연결의 가입이 비밀번호 해시를 계산하는 사이 같은 닉네임 손님이 `hello` 로 들어오면, 계정은 만들어지고 그 손님 세션은 끝난다(`logout` 과 같은 정리: 방·경기 중이면 퇴장 = 기권, 손님 연결에 `logged_out`. 그 퇴장으로 끝나는 경기의 진행·리그는 계정 키에 기록하지 않는다). 가입 연결은 토큰 없이 `ACCOUNT_CREATED_RELOGIN` 을 받고 비밀번호로 `login` 한다.
+- **한계**(수용, 2026-11-18 팀장 결정): ① 손님은 소유 증명(영속 토큰)이 없다. 끊겨 있고 방에도 없는 손님 닉네임은 누구나 `hello` 로 즉시 가져갈 수 있고(§2 닉네임 재사용), 그 연결에서 `register` 하면 위 승계 경로로 **그 손님의 진행·리그가 승계된다**(hello → register 2단계 우회). 원래 손님은 그 뒤 그 닉네임으로 `NICK_REGISTERED`. 손님 진행(캠페인 클리어 단계·리그)은 민감 데이터가 아니라 영속 손님 토큰은 두지 않는다. 랭킹은 계정 전용(§11)이고 가입된 닉네임은 `hello` 로 잡을 수 없으므로, 랭킹·계정이 있는 닉네임은 이 우회의 영향을 받지 않는다. ② 로그인 전 연결 가입의 경우에도 원래 손님은 그 닉네임을 다시 쓸 수 없다(`NICK_REGISTERED`, 비밀번호를 모름). 진행은 `guest-aside:` 행에 남아 있으므로 되돌려 주려면 운영자가 수동으로 옮겨야 한다(자동 복구 경로 없음).
+- **보안**: 비밀번호 = `crypto.scrypt`(N 16384, r 8, 64바이트) + 계정별 랜덤 솔트 16바이트, 비교는 `timingSafeEqual`, 없는 닉네임도 같은 비용으로 계산. 평문·해시·토큰은 로그에 남기지 않는다. 로그인 실패 제한(메모리 기록이라 재시작하면 풀림, 15분 창): **(닉네임, IP) 쌍** 5회(`LOGIN_FAIL_NICK`) 또는 **IP** 20회(`LOGIN_FAIL_IP`) 실패면 그 쌍/IP 를 15분(`LOGIN_LOCK_MS`) `LOGIN_LOCKED`(맞는 비밀번호도 거절). **닉네임 단독**(모든 IP 합계)은 잠그지 않고 5회째 실패부터 다음 시도마다 응답을 1초씩 더 늦춘다(최대 10초, `LOGIN_SLOW_STEP_MS`·`LOGIN_SLOW_MAX_MS`). 그래서 남이 내 닉네임으로 실패를 쌓아도 다른 IP(새 기기)에서는 로그인된다(늦어질 뿐). 로그인에 성공하면 그 닉네임 단독 기록과 그 쌍 기록을 지운다. 레이트 리밋: IP당 분당 `register`+`login` 10회(`MAX_AUTH_PER_MIN`), 그리고 `hello` 상한(`MAX_HELLO_PER_MIN`)에도 함께 센다. 평문 비밀번호가 오가므로 공개 배포는 TLS(`wss://`) 필수.
+- **배포 필수 주의**: ① 리버스 프록시 뒤에서는 반드시 `TRUST_PROXY=1` — 빠뜨리면 모든 사용자가 프록시 IP 하나로 보여 IP별 로그인 잠금·가입/로그인 레이트 리밋·동시 연결 상한을 전원이 나눠 쓴다(한 사람의 실패로 전원 `LOGIN_LOCKED`). 반대로 프록시 없이 켜면 IP 위조로 우회된다. ② Node 22.5 이상(`node:sqlite`). 22.5~22.12 는 `--experimental-sqlite` 가 필요하다(pm2: `pm2 start server/index.js --name dodge-danpei --node-args="--experimental-sqlite"`), 22.13 이상은 옵션 없이 된다. ③ 공개 시 `wss://`(TLS) 필수. ④ DB 파일은 POSIX 에서 시작 때 권한 0600 으로 좁힌다(본 파일과 그때 있는 `-wal`·`-shm`, Windows 는 건너뜀).
 
 ## 3. 로비
 - `{t:'list_rooms'}` -> `room_list`. 로비에 있는 사용자에게는 방 생성/삭제/인원/상태 변화 시 서버가 `room_list`를 푸시한다(최대 250ms 단위로 합쳐서 전체 목록).
@@ -345,6 +374,8 @@ cpuLevel(1~3)은 `server/data/rules.json` `cpu.levels` 의 난이도(holdDelayAd
 ### 8.3 저장·보안 범위 (개인용 단계)
 - 진행 저장소: `data/progress/progress.json`(환경변수 `PROGRESS_PATH`), 닉네임(소문자) 키 `{nick, clearedMax, last, updatedAt}`. 임시 파일에 쓴 뒤 rename 으로 원자적 교체. 파일 기록은 clearedMax 가 오른 승리 때만(100ms 디바운스, 종료 시 flush), 패배/기권의 `last` 는 메모리에만 유지(재시작 시 소실). 영속 항목 상한 5000(초과 시 clearedMax 최저·최오래 항목 정리, 더 높은 것만 남으면 신규 거부). 로드 시 JSON 파싱 실패면 원본을 `progress.json.corrupt-<타임스탬프>` 로 보존하고 빈 상태로 시작, clearedMax 가 0~14 정수가 아닌 항목은 무시. 구현 `server/store/progress.js`.
 - 진행은 **세션 토큰으로 인증된 연결**에서만 읽고 쓰며, 값은 서버가 경기 결과로만 올린다(클라이언트가 보낸 진행 값은 없음).
+- 2026-11-18: 저장이 SQLite(`data/tongki.db` 의 `progress` 표)로 바뀌었다. 클리어 없는 사용자의 `last` 도 이제 DB 에 남고 항목 상한은 없다. 위 JSON 설명은 `JsonProgressStore`(테스트·폴백용으로 남김) 기준이다. 기존 `progress.json` 은 서버 첫 시작 때 한 번 가져온다(§11.5).
+- 2026-11-18: 계정(§2.1)이 생겨 **가입한 닉네임은 탈취되지 않는다**. 아래 한계는 가입하지 않은 손님 닉네임에만 남는다.
 - **알려진 한계(공개 전 재검토)**: 계정/비밀번호가 없어 닉네임이 곧 신원이다. 세션 만료(유예 30초 후) 뒤 다른 사람이 같은 닉네임으로 접속하면 그 진행을 이어받는다(닉네임 탈취). 개인용 단계에서는 수용하며, 공개 전에 계정 또는 영구 토큰 도입을 재검토한다. 결과 레코드(§6)에는 `campaign:{k, stage}` 가 추가된다.
 
 ## 9. 특훈 (혼자 하기 전용) — 캐치 특훈·필살 슛 특훈 (화면 표기 = `튜토리얼`: 공 받기·필살기, §9.4)
@@ -497,5 +528,40 @@ table = [{idx, team, com, w, l, rate, left, rank}]  // 순위 목록 순서(rank
 
 ### 10.4 저장
 - `data/progress/league.json`(환경변수 `LEAGUE_PATH`), `{version:1, users:{<소문자 닉네임>:{nick, league, updatedAt}}}`. 만들 때·설정 변경·매 경기 뒤 저장(100ms 디바운스, 임시 파일 -> rename, 종료 시 flush). 마지막 경기 뒤에도 저장하고 `done:true`(원작은 마지막 경기 전 상태로 남는다. 원작대로 하려면 `rules.js SAVE_AFTER_FINAL=false`). JSON 손상 시 원본을 `league.json.corrupt-<시각>` 으로 보존하고 빈 상태로 시작, 형식이 틀린 항목(팀·턴·결과 대칭·합 > 턴)은 버린다. 항목 상한 5000(오래된 갱신부터 정리).
-- 저장 계층은 `get(key)` / `set(key, nick, league|null)` / `flush()` 세 함수뿐이다(SQLite 계정 저장으로 옮길 때 이 클래스만 바꾼다). 인증 범위는 §8.3 과 같다(닉네임이 곧 신원).
+- 저장 계층은 `get(key)` / `set(key, nick, league|null)` / `flush()` 세 함수뿐이다. **2026-11-18 운영 기본이 SQLite(`SqliteLeagueStore`, `data/tongki.db` 의 `leagues` 표)로 바뀌었다**(위 JSON 설명은 `JsonLeagueStore` = 테스트·폴백용). 기존 `league.json` 은 첫 시작 때 한 번 가져온다(§11.5). 인증 범위는 §8.3 과 같다(가입한 닉네임은 보호, §2.1).
 - 원작과 다른 점: 사람 팀 최대 1(사람끼리 카드는 2P 패드가 필요해 없음), 사람 경기 기권 = 패배, 즉시 판정 K 고정(원작은 경기마다 쓰레기 값이 들어올 수 있다), 컴-컴 관전(`しあいをみる`)·개막식은 후속.
+
+## 11. 온라인 랭킹(래더) — 서버 2026-11-18 박백엔, [자작]. 기준 analysis/33 §B, 클라이언트(랭크 탭·결과 변동·순위표) 2026-11-18 윤프론(docs/HANDOFF §4-18)
+구현 `server/ranking/elo.js`(규칙 상수·Elo), `server/store/ranking.js`(SQLite `ratings`·`rank_games`), `server/lobby/lobby.js`(랭크 방·판정).
+
+### 11.1 규칙
+- Elo: 초기 1000, K 32, 자기 첫 10경기(배치)는 K 48, 하한 100. 각자 자기 K 를 쓴다(1000 대 1000 승리 = +16/−16, 둘 다 배치 중 = +24/−24). 시즌 없음(`season` 1 고정 열만).
+- 반영: GO 이후의 정상 종료(`annihilation`/`timeup`/`sudden_death`)와 기권(`forfeit_leave`/`forfeit_disconnect`, 기권한 쪽 패배). `draw_cap`·`error`·GO 이전 종료(입장 연출 중 퇴장 등)는 무효(`why:'VOID'`, 변동 없음).
+- 같은 상대와 24시간 안에 반영된 경기가 3번이면 4번째부터 `counted:false, why:'PAIR_LIMIT'`(변동 없음, 기권 기록은 남는다).
+- 최근 랭크 경기 10판(반영 여부 무관) 중 자기 기권이 3번이 되면 30분 랭크 입장 잠금(`RANKED_LOCKED{params.until}`): `create_room{ranked}`·랭크 방 `join_room`·랭크 방 `start`(두 사람 모두 검사)를 거절.
+- 같은 IP 두 세션 미반영은 넣지 않았다(`TRUST_PROXY` 설정에 달려 있어 배포 환경 확인 뒤).
+- 컴퓨터 대전·캠페인·특훈(튜토리얼)·리그는 랭킹에 영향 없음.
+
+### 11.2 랭크 방
+- `create_room{ranked:true}`: **계정 세션만**(`REQUIRE_ACCOUNT` 와 무관, 손님은 `ACCOUNT_REQUIRED`). `vsCpu:true` 와 함께 보내면 `BAD_MESSAGE`. 규칙은 녹아웃·5분 고정(`rules` 를 보내면 같은 값만 허용, 다르면 `RANKED_RULES_FIXED`).
+- `room_list` 항목과 `room_state.room` 에 `ranked:true`(추가 필드). 랭크 방 `join_room` 도 계정만(`ACCOUNT_REQUIRED`·`RANKED_LOCKED`).
+- 랭크 방의 `room_joined.room.slots[i]`·`room_state.room.slots[i]`(사람 좌석)에 **`rating`(정수, 현재 레이팅, 배치 중이어도 값) · `placement`(boolean, 경기 수 < 5 = 순위표 `ranking_list.me.placement` 와 같은 기준)** 추가(2026-11-18). 비랭크 방 좌석에는 두 필드가 없다(하위 호환). 보낼 때마다 저장소에서 읽으므로 상대 입장·퇴장·경기 종료 뒤 `room_state`(반영 후 값)에도 최신이다. 경기 전 레이팅을 얻으려 `ranking_list` 로 보완할 필요 없음.
+- 랭크 방 `set_rules` = `RANKED_RULES_FIXED`. `set_team` 은 0~21 만(SPECIAL 허용, 22~24 = `TEAM_INVALID`). 준비·시작·방장 위임·재경기는 일반 방과 같다.
+
+### 11.3 요청·응답
+```js
+{ t:'ranking_list', top?:1~50 }   // 생략 50. 세션당 분당 30회(캠페인 창과 공유)
+-> { t:'ranking_list',
+     top:[{ rank, nick, rating, w, l }],       // 5경기 이상만, rating 내림차순(같으면 같은 rank, 그다음 승 많은 순)
+     me: { rank|null, nick, rating, w, l, games, placement:boolean } | null }   // 계정이면 내 줄(5경기 미만 = placement:true·rank:null = '배치 중'), 손님이면 null
+{ t:'ranking_result', matchId, counted:boolean, why?:'VOID'|'PAIR_LIMIT', before, after, delta, oppBefore }   // 랭크 경기 game_end 바로 뒤, 좌석별(내 값)
+```
+- 결과 레코드(§6)에 `ranked:true, ratingCounted, ratingDelta:[좌석0, 좌석1]` 추가.
+
+### 11.4 저장(SQLite `data/tongki.db`)
+- `ratings(key, nick, rating, w, l, games, season, lock_until, updated_at)`, `rank_games(match_id, a_key, b_key, winner_key, forfeit_key, counted, at)`. 한 경기 판정은 트랜잭션 하나.
+
+### 11.5 저장 계층·이전(계정·진행·리그·랭킹 공통)
+- `server/store/db.js` 한 파일만 `node:sqlite`(Node 22.5 이상 내장)를 쓴다(better-sqlite3 로 바꿀 때 이 파일만). WAL, `schema_version` 표 + `MIGRATIONS` 배열(끝에 추가만). SQL 은 언제나 바인드 파라미터.
+- 표: `accounts`, `auth_tokens`(토큰 해시), `progress`, `leagues`, `ratings`, `rank_games`, `meta`.
+- JSON 가져오기(`server/store/migrate.js`): 서버 시작 때 `PROGRESS_PATH`·`LEAGUE_PATH`(기본 `data/progress/*.json`)를 가져온다. 파일별 `meta` 표식(크기·수정 시각)이 같으면 건너뛰고, 파일이 바뀌었으면 다시 합친다. 합치기 규칙(코드와 같다): (a) 키마다 **처음 가져올 때만 새 행을 넣고** `meta` 에 `json_imported:<progress|league>:<키>` 로 기록한다. (b) 가져온 적 있는 키는 DB 에 행이 남아 있을 때만 고치고, 행이 없으면 다시 넣지 않는다(리그 포기·손님 데이터 분리 보존 뒤 부활 없음). (c) 고치는 조건: 진행은 JSON `clearedMax` 가 더 클 때만, 리그는 JSON `updatedAt` 이 DB `updated_at` 보다 새로울 때만(그때는 리그 전체를 JSON 값으로 바꾼다). (d) 가입된 계정 키는 처음이든 아니든 건너뛴다(계정 데이터는 DB 에서만 바뀐다). 처음 가져올 때 원본 사본을 `<DB 폴더>/backup/json_before_sqlite/`(환경변수 `JSON_BACKUP_DIR`)에 두고, 원본 JSON 은 지우거나 바꾸지 않는다. 수동 실행: `node server/store/migrate.js --db <파일> --progress <json> --league <json> [--backup <폴더>]`. 한계: 키별 표식이 생기기 전 버전으로 이미 가져온 DB 에는 `json_imported:*` 표식이 없어, 그 DB 에서 지워진 행(리그 포기·분리 보존)은 JSON 이 바뀐 뒤 첫 재가져오기에서 한 번 다시 들어올 수 있다(그 뒤로는 표식이 남는다. (d) 계정 키 건너뛰기는 그대로).

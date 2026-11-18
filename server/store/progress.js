@@ -56,6 +56,16 @@ class Base {
     this.transient.delete(key); this.transient.set(key, u);
     if (this.transient.size > MAX_TRANSIENT) this.transient.delete(this.transient.keys().next().value);
   }
+  /** key 의 항목을 toKey 로 옮긴다(지우지 않음, 가입 시 손님 데이터 분리 보존). 옮긴 건수 */
+  setAside(key, toKey) {
+    let n = 0;
+    for (const m of [this.users, this.transient]) {
+      const u = m.get(key);
+      if (u) { m.delete(key); m.set(toKey, u); n++; }
+    }
+    if (n) this.persist();
+    return n;
+  }
   persist() {}
   flush() {}
 }
@@ -121,4 +131,29 @@ export class JsonProgressStore extends Base {
       renameSync(tmp, this.file);
     } catch (e) { console.error('[progress] 저장 실패', e.message); }
   }
+}
+
+/**
+ * SQLite 구현(운영 기본, 2026-11-18). 인터페이스는 위와 같다(get / recordResult / flush).
+ * 차이: 클리어 없는 사용자의 last 도 DB 에 남는다(재시작해도 유지). 항목 상한은 두지 않는다(행 단위 저장이라 파일 전체 재작성이 없다).
+ * clearedMax 는 오르기만 한다. 계정이 없는 닉네임도 같은 키로 저장된다. 승계는 손님 세션 연결의 가입(account_ok)만, 그 밖의 가입은 setAside 로 분리 보존(lobby.register, PROTOCOL §2.1).
+ */
+export class SqliteProgressStore {
+  /** @param {ReturnType<import('./db.js').openDb>} db */
+  constructor(db) { this.db = db; }
+  get(key) {
+    const r = this.db.get('SELECT cleared_max, last FROM progress WHERE key = ?', key);
+    return r ? { clearedMax: r.cleared_max, last: r.last } : { clearedMax: -1, last: null };
+  }
+  recordResult(key, nick, k, win) {
+    const before = this.get(key);
+    const clearedMax = win && k > before.clearedMax ? k : before.clearedMax;
+    this.db.run(`INSERT INTO progress (key, nick, cleared_max, last, updated_at) VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(key) DO UPDATE SET nick = excluded.nick, cleared_max = MAX(cleared_max, excluded.cleared_max), last = excluded.last, updated_at = excluded.updated_at`,
+    key, nick, clearedMax, k, Date.now());
+    return clearedMax !== before.clearedMax || k !== before.last;
+  }
+  /** key 의 행을 toKey 로 옮긴다(지우지 않음). 옮긴 건수 */
+  setAside(key, toKey) { return Number(this.db.run('UPDATE progress SET key = ? WHERE key = ?', toKey, key).changes); }
+  flush() {}
 }

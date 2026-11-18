@@ -9,8 +9,10 @@ import { loadData } from './engine/index.js';
 import { mono, loadLimits } from './net/limits.js';
 import { Lobby } from './lobby/lobby.js';
 import { JsonlResultStore } from './store/results.js';
-import { JsonProgressStore } from './store/progress.js';
-import { JsonLeagueStore } from './store/league.js';
+import { SqliteProgressStore } from './store/progress.js';
+import { SqliteLeagueStore } from './store/league.js';
+import { openDb, sqliteAvailable, SQLITE_MISSING } from './store/db.js';
+import { importJson } from './store/migrate.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MIME = {
@@ -24,10 +26,22 @@ export function createServer(opts = {}) {
   const pkg = JSON.parse(readFileSync(path.join(root, 'package.json'), 'utf8'));
   const data = opts.data ?? loadData();
   const store = opts.store ?? new JsonlResultStore(process.env.RESULTS_PATH ?? path.join(root, 'data/results/results.jsonl'));
-  const progress = opts.progress ?? new JsonProgressStore(process.env.PROGRESS_PATH ?? path.join(root, 'data/progress/progress.json'));
-  const leagues = opts.leagues ?? new JsonLeagueStore(process.env.LEAGUE_PATH ?? path.join(root, 'data/progress/league.json'));
+  // SQLite(계정·진행·리그·랭킹). 경로 DB_PATH, 기본 data/tongki.db. node --test 안에서는 실데이터 보호를 위해 기본이 메모리 DB
+  const dbFile = opts.dbPath ?? process.env.DB_PATH ?? (process.env.NODE_TEST_CONTEXT ? ':memory:' : path.join(root, 'data/tongki.db'));
+  const db = opts.db ?? openDb(dbFile);
+  // 기존 JSON 저장을 한 번 가져온다(멱등, 원본 보존 + data/backup/json_before_sqlite/ 에 사본). 메모리 DB 는 opts.importJson 으로만
+  if (opts.importJson ?? dbFile !== ':memory:') {
+    importJson(db, {
+      progressFile: process.env.PROGRESS_PATH ?? path.join(root, 'data/progress/progress.json'),
+      leagueFile: process.env.LEAGUE_PATH ?? path.join(root, 'data/progress/league.json'),
+      backupDir: process.env.JSON_BACKUP_DIR ?? path.join(dbFile === ':memory:' ? path.join(root, 'data') : path.dirname(dbFile), 'backup', 'json_before_sqlite'),
+    });
+  }
+  const progress = opts.progress ?? new SqliteProgressStore(db);
+  const leagues = opts.leagues ?? new SqliteLeagueStore(db);
   const limits = loadLimits(process.env, opts.limits);
-  const lobby = new Lobby({ data, store, progress, leagues, leagueRand: opts.leagueRand, build: pkg.version, graceMs: opts.graceMs, limits, seed: opts.seed, log: opts.log });
+  const requireAccount = opts.requireAccount ?? process.env.REQUIRE_ACCOUNT === '1';
+  const lobby = new Lobby({ data, store, progress, leagues, db, requireAccount, leagueRand: opts.leagueRand, build: pkg.version, graceMs: opts.graceMs, limits, seed: opts.seed, log: opts.log });
   const publicDir = path.join(root, 'public');
 
   const server = http.createServer(async (req, res) => {
@@ -72,11 +86,16 @@ export function createServer(opts = {}) {
     ipConns.set(ip, n);
     let loginTimer = null;
     const reject = (code) => { lobby.err(conn, code); ws.close(1008, code); };
-    if (n > limits.maxConnPerIp) { reject('TOO_MANY_CONNECTIONS'); conn.rejected = true; }
-    else {
-      loginTimer = setTimeout(() => { if (!conn.session) reject('LOGIN_TIMEOUT'); }, limits.loginTimeoutMs);
+    // 로그인 타이머: 연결 시점(loginTimeoutMs)과 로그아웃 시점(lobby.logout -> logoutLoginTimeoutMs)마다 새로 건다. 이전 타이머는 취소(중복·조기 종료 없음)
+    conn.armLoginTimer = (ms) => {
+      clearTimeout(loginTimer);
+      loginTimer = null;
+      if (conn.closed || conn.rejected) return;
+      loginTimer = setTimeout(() => { loginTimer = null; if (!conn.session) reject('LOGIN_TIMEOUT'); }, ms);
       loginTimer.unref?.();
-    }
+    };
+    if (n > limits.maxConnPerIp) { reject('TOO_MANY_CONNECTIONS'); conn.rejected = true; }
+    else conn.armLoginTimer(limits.loginTimeoutMs);
     ws.on('message', (raw) => {
       if (conn.rejected) return;
       try {
@@ -89,6 +108,7 @@ export function createServer(opts = {}) {
       } catch (e) { console.error('[ws message]', e); }
     });
     ws.on('close', () => {
+      conn.closed = true; // 진행 중인 가입·로그인(비동기)이 닫힌 연결에 세션을 붙이지 않게
       clearTimeout(loginTimer);
       const c = (ipConns.get(ip) ?? 1) - 1;
       if (c <= 0) ipConns.delete(ip); else ipConns.set(ip, c);
@@ -107,12 +127,12 @@ export function createServer(opts = {}) {
   loop.unref?.(); ping.unref?.();
 
   return {
-    server, wss, lobby,
+    server, wss, lobby, db,
     listen: (port = Number(process.env.PORT ?? 3100)) => new Promise((r) => server.listen(port, () => r(server.address().port))),
     close: () => new Promise((r) => {
       clearInterval(loop); clearInterval(ping);
       for (const c of wss.clients) c.terminate();
-      wss.close(() => server.close(() => r()));
+      wss.close(() => server.close(() => { if (!opts.db) db.close(); r(); }));
     }),
   };
 }
@@ -122,8 +142,9 @@ export function createServer(opts = {}) {
 const selfPath = fileURLToPath(import.meta.url);
 const isEntry = [process.argv[1], process.env.pm_exec_path].some((p) => p && path.resolve(p) === selfPath);
 if (isEntry) {
+  if (!sqliteAvailable()) { console.error(`[dodge-danpei] ${SQLITE_MISSING}`); process.exit(1); }
   const app = createServer();
   app.listen().then((p) => console.log(`[dodge-danpei] listening :${p}`));
   process.on('uncaughtException', (e) => console.error('[uncaught]', e));
-  for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => { app.lobby.progress.flush?.(); app.lobby.leagues.flush?.(); process.exit(0); });
+  for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => { app.lobby.progress.flush?.(); app.lobby.leagues.flush?.(); app.db.close(); process.exit(0); });
 }

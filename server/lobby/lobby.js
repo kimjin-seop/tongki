@@ -5,6 +5,10 @@ import { MemoryProgressStore } from '../store/progress.js';
 import { MemoryLeagueStore } from '../store/league.js';
 import { makeLeagueHandlers, leagueEnd } from '../league/handlers.js';
 import { mono, loadLimits } from '../net/limits.js';
+import { openDb } from '../store/db.js';
+import { AccountStore, LoginGuard, passwordOk } from '../store/accounts.js';
+import { RankingStore } from '../store/ranking.js';
+import { RANK, RANK_NORMAL, RANK_FORFEIT } from '../ranking/elo.js';
 import { ERR, PROTOCOL, GRACE_MS, NICK_RE, CODE_RE, CODE_CHARS, isInt, normRules, TRAINING_KINDS, TRAINING_READY } from '../net/protocol.js';
 import { RULE_TIMES } from '../engine/consts.js';
 
@@ -15,6 +19,9 @@ class LobbyError extends Error {
   constructor(code, params) { super(code); this.code = code; this.params = params; }
 }
 const fail = (code, params) => { throw new LobbyError(code, params); };
+/** 닉네임 입력 정리(hello·register·login 공통): NFC 정규화 후 앞뒤 공백 제거. 조합형(NFD) 한글도 완성형과 같은 닉네임이 된다 */
+const cleanNick = (v) => (typeof v === 'string' ? v.normalize('NFC').trim() : '');
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export class Lobby {
   /** @param {{data:any, store:any, build:string, graceMs?:number, limits?:object, seed?:number, log?:Function}} o */
@@ -22,9 +29,15 @@ export class Lobby {
     this.o = o;
     this.progress = o.progress ?? new MemoryProgressStore();
     this.leagues = o.leagues ?? new MemoryLeagueStore(); // 리그 저장소(get/set/flush, PROTOCOL §10)
+    const db = (!o.accounts || !o.ranking) ? (o.db ?? openDb(':memory:')) : null; // 계정·랭킹 저장(PROTOCOL §2.1·§11). 없으면 메모리 DB
+    this.accounts = o.accounts ?? new AccountStore(db);
+    this.ranking = o.ranking ?? new RankingStore(db);
+    this.requireAccount = !!o.requireAccount; // REQUIRE_ACCOUNT=1: 닉네임만으로 hello 불가(계정 필수)
     this.graceMs = o.graceMs ?? GRACE_MS;
     this.limits = o.limits ?? loadLimits();
     this.helloWin = new Map(); // ip -> {start,count}
+    this.authWin = new Map(); // ip -> {start,count} (register/login)
+    this.loginGuard = o.loginGuard ?? new LoginGuard({ failNick: this.limits.loginFailNick, failIp: this.limits.loginFailIp, lockMs: this.limits.loginLockMs, slowStepMs: this.limits.loginSlowStepMs, slowMaxMs: this.limits.loginSlowMaxMs });
     this.log = o.log ?? ((...a) => console.error(...a));
     this.sessions = new Map(); // token -> session
     this.byNick = new Map(); // lower nick -> session
@@ -73,6 +86,7 @@ export class Lobby {
       if (!msg || typeof msg !== 'object' || typeof msg.t !== 'string') fail('BAD_MESSAGE');
       if (msg.t === 'ping') { conn.send({ t: 'pong', clientTime: msg.clientTime, serverTime: Date.now() }); return; }
       if (msg.t === 'hello') { this.hello(conn, msg); return; }
+      if (msg.t === 'register' || msg.t === 'login') { this.authAsync(conn, msg); return; }
       const s = conn.session;
       if (!s) fail('NOT_LOGGED_IN');
       const h = Object.hasOwn(this.handlers, msg.t) ? this.handlers[msg.t] : null;
@@ -91,7 +105,13 @@ export class Lobby {
     let resumed = false;
     if (typeof msg.token === 'string' && msg.token) {
       s = this.sessions.get(msg.token);
-      if (!s) fail('TOKEN_INVALID');
+      if (!s) {
+        // 메모리 세션이 없으면(유예 만료·서버 재시작) 계정 로그인 토큰인지 본다(§2.1). 맞으면 비밀번호 없이 로그인
+        const acct = this.accounts.tokenAccount(msg.token);
+        if (!acct) fail('TOKEN_INVALID');
+        this.attachAccount(conn, acct, msg.token);
+        return;
+      }
       if (s.conn && s.conn !== conn) {
         const old = s.conn;
         old.session = null;
@@ -101,9 +121,11 @@ export class Lobby {
       clearTimeout(s.graceTimer);
       resumed = true;
     } else {
-      const nick = typeof msg.nickname === 'string' ? msg.nickname.trim() : '';
+      const nick = cleanNick(msg.nickname);
       if (!NICK_RE.test(nick)) fail('NICK_INVALID');
+      if (this.requireAccount) fail('ACCOUNT_REQUIRED');
       const key = nick.toLowerCase();
+      if (this.accounts.has(key)) fail('NICK_REGISTERED'); // 가입된 닉네임은 비밀번호(login) 또는 로그인 토큰으로만
       const ex = this.byNick.get(key);
       if (ex) {
         if (ex.conn || this.roomOf(ex)) fail('NICK_TAKEN');
@@ -111,14 +133,19 @@ export class Lobby {
         this.sessions.delete(ex.token);
       }
       if (this.sessions.size >= this.limits.maxSessions) fail('SERVER_FULL');
-      s = { token: randomBytes(18).toString('base64url'), nick, key, conn: null, roomCode: null, graceTimer: null };
+      s = { token: randomBytes(18).toString('base64url'), nick, key, account: false, conn: null, roomCode: null, graceTimer: null };
       this.sessions.set(s.token, s);
       this.byNick.set(key, s);
     }
+    this.welcome(conn, s, resumed);
+  }
+
+  /** 세션에 연결을 붙이고 welcome + 현재 위치 상태 전송(hello·login·register 공통) */
+  welcome(conn, s, resumed) {
     s.conn = conn; conn.session = s;
     const room = this.roomOf(s);
     this.sendTo(s, {
-      t: 'welcome', protocol: PROTOCOL, token: s.token, nickname: s.nick, resumed,
+      t: 'welcome', protocol: PROTOCOL, token: s.token, nickname: s.nick, resumed, account: !!s.account, requireAccount: this.requireAccount,
       location: room ? (room.game ? 'game' : 'room') : 'lobby', serverTime: Date.now(),
       build: this.o.build, rulesVersion: this.o.data.rules.version, tickRate: this.o.data.rules.tickRate, graceMs: this.graceMs,
       teams: this.o.data.teams.map((t) => ({ id: t.id, name: t.name })),
@@ -133,6 +160,183 @@ export class Lobby {
       this.broadcastRoom(room);
     }
     this.markListDirty();
+  }
+
+  /**
+   * 계정 세션 붙이기(로그인 성공·토큰 로그인·가입). token = 로그인 토큰 원문(세션 토큰으로도 쓴다).
+   * 같은 계정의 세션이 이미 있으면(다른 기기·유예 중) 그 세션을 넘겨받는다: 이전 연결은 SESSION_REPLACED, 방·경기 위치 유지.
+   * 같은 닉네임의 손님 세션(가입 전부터 있던 것)이 접속 중이거나 방에 있으면 NICK_TAKEN, 아니면 정리한다.
+   * token 이 함수면 거절 검사(NICK_TAKEN·SERVER_FULL)를 다 통과한 뒤에 불러 발급한다(거절될 때 고아 토큰 행을 남기지 않게)
+   */
+  attachAccount(conn, acct, token) {
+    const key = acct.key;
+    let s = null, resumed = false;
+    const ex = this.byNick.get(key);
+    const guest = ex && !ex.account ? ex : null;
+    if (guest && (guest.conn || this.roomOf(guest))) fail('NICK_TAKEN');
+    if (!(ex && ex.account) && this.sessions.size - (guest ? 1 : 0) >= this.limits.maxSessions) fail('SERVER_FULL');
+    if (typeof token === 'function') token = token();
+    if (guest) {
+      clearTimeout(ex.graceTimer);
+      this.sessions.delete(ex.token);
+      this.byNick.delete(key);
+    } else if (ex) {
+      s = ex;
+      if (s.conn && s.conn !== conn) {
+        const old = s.conn;
+        old.session = null;
+        try { old.send({ t: 'error', code: 'SESSION_REPLACED', msg: ERR.SESSION_REPLACED }); old.close(); } catch { /* ignore */ }
+        s.conn = null;
+      }
+      clearTimeout(s.graceTimer);
+      this.sessions.delete(s.token);
+      s.token = token;
+      this.sessions.set(token, s);
+      resumed = true;
+    }
+    if (!s) {
+      s = { token, nick: acct.nick, key, account: true, conn: null, roomCode: null, graceTimer: null };
+      this.sessions.set(token, s);
+      this.byNick.set(key, s);
+    }
+    this.welcome(conn, s, resumed);
+  }
+
+  /** register / login(비동기: scrypt 는 스레드 풀에서 돈다). 예외는 여기서 error 로 돌려준다 */
+  authAsync(conn, msg) {
+    const ref = msg.ref;
+    const run = msg.t === 'register' ? this.register(conn, msg) : this.login(conn, msg);
+    return run.catch((e) => {
+      if (e instanceof LobbyError) this.err(conn, e.code, ref, e.params);
+      else { this.log('[auth]', e?.message ?? e); this.err(conn, 'INTERNAL', ref); }
+    }).finally(() => { if (conn.authBusy === msg) conn.authBusy = false; });
+  }
+
+  authInput(conn, msg) {
+    const nick = cleanNick(msg.nickname);
+    if (!NICK_RE.test(nick)) fail('NICK_INVALID');
+    if (conn.authBusy) fail('AUTH_BUSY');
+    this.checkHelloRate(conn.ip);
+    this.checkAuthRate(conn.ip);
+    return { nick, key: nick.toLowerCase() };
+  }
+
+  /**
+   * 가입 {nickname, password}. 로그인 전 연결이면 가입 후 바로 로그인(welcome{account:true}).
+   * 같은 닉네임의 손님 세션으로 이미 접속해 있으면 그 세션을 계정으로 올린다(account_ok{token}). 진행·리그 승계는 이 경로에서만(닉네임 키 그대로).
+   * 그 밖의 가입(로그인 전 연결)은 빈 진행으로 시작한다: 그 닉네임에 남아 있던 손님 진행·리그는 지우지 않고 계정이 못 읽는 키로 옮겨 둔다(PROTOCOL §2.1)
+   * 한계(수용): 손님은 소유 증명이 없어, 끊긴 손님 닉네임을 hello 로 잡은 뒤 그 연결에서 가입하면 진행이 승계된다(2단계 우회, §2.1)
+   * 해시 계산 중 같은 닉네임 손님이 hello 하면(경합) 계정은 만들어지고, 그 손님 세션은 끝내며 이 연결은 ACCOUNT_CREATED_RELOGIN(토큰 미발급)
+   */
+  async register(conn, msg) {
+    const { nick, key } = this.authInput(conn, msg);
+    const cur = conn.session;
+    if (cur && (cur.account || cur.key !== key)) fail('ALREADY_LOGGED_IN');
+    if (!passwordOk(msg.password)) fail('PASSWORD_INVALID');
+    if (this.accounts.has(key)) fail('ACCOUNT_EXISTS');
+    if (!cur) {
+      const ex = this.byNick.get(key);
+      if (ex && (ex.conn || this.roomOf(ex))) fail('NICK_TAKEN');
+    }
+    conn.authBusy = msg; // 이 요청이 끝날 때만 푼다(AUTH_BUSY 로 거절된 다른 요청이 풀지 않게)
+    const acct = await this.accounts.create(cur ? cur.nick : nick, msg.password);
+    if (!acct) fail('ACCOUNT_EXISTS');
+    let raced = false;
+    if (!cur) {
+      this.setAsideGuestData(key); // 손님 데이터 선점 방지: 승계하지 않고 따로 보존
+      // 해시 계산(await) 중 같은 닉네임 손님이 hello 로 들어와 있으면: 그 손님 세션을 끝내고(계정 키에 기록을 쓰지 않게) 이 가입은 재로그인 안내
+      const ex = this.byNick.get(key);
+      if (ex && !ex.account && (ex.conn || this.roomOf(ex))) { raced = true; this.endGuestSession(ex); }
+    }
+    if (conn.closed) return;
+    if (cur && conn.session !== cur) fail('ACCOUNT_CREATED_RELOGIN'); // 그 사이 이 연결의 세션이 바뀜(로그아웃·교체). 계정은 만들어졌다
+    if (!cur && (conn.session || raced)) fail('ACCOUNT_CREATED_RELOGIN'); // 그 사이 이 연결이 다른 닉네임으로 접속함 / 같은 닉네임 손님과 경합(토큰 미발급)
+    if (cur) {
+      const token = this.accounts.issueToken(key);
+      this.sessions.delete(cur.token);
+      cur.token = token; cur.account = true;
+      this.sessions.set(token, cur);
+      this.sendTo(cur, { t: 'account_ok', token, nickname: cur.nick });
+      return;
+    }
+    this.attachAccount(conn, acct, () => this.accounts.issueToken(key));
+  }
+
+  /**
+   * 가입 경합으로 계정이 생긴 닉네임에 남은 손님 세션을 끝낸다(logout 과 같은 정리: 방·경기 중이면 퇴장 = 기권, logged_out 전송).
+   * 그 퇴장으로 끝나는 경기의 진행·리그 기록은 guestOfAccount 검사로 계정 키에 쓰지 않는다
+   */
+  endGuestSession(s) {
+    this.log(`[account] 가입 경합: 같은 닉네임 손님 세션 종료 ${s.key}`);
+    this.logout(s);
+  }
+
+  /** 계정이 있는 닉네임의 손님 세션인가(가입 경합으로 남은 세션). 이런 세션의 진행·리그 기록은 계정 키에 쓰지 않는다 */
+  guestOfAccount(s) { return !s.account && this.accounts.has(s.key); }
+
+  /**
+   * 로그인 {nickname, password}. 없는 닉네임과 틀린 비밀번호는 같은 LOGIN_FAILED.
+   * 실패 제한(LoginGuard): (닉네임, IP) 쌍·IP 별 잠금(LOGIN_LOCKED), 닉네임 단독 누적은 잠그지 않고 응답을 늦춘다(다른 IP 본인 로그인 보장)
+   */
+  async login(conn, msg) {
+    if (conn.session) fail('ALREADY_LOGGED_IN');
+    const { key } = this.authInput(conn, msg);
+    if (this.loginGuard.locked(key, conn.ip)) fail('LOGIN_LOCKED');
+    const pw = typeof msg.password === 'string' && msg.password.length <= 256 ? msg.password : '';
+    conn.authBusy = msg; // 이 요청이 끝날 때만 푼다(AUTH_BUSY 로 거절된 다른 요청이 풀지 않게)
+    const wait = this.loginGuard.delayMs(key);
+    if (wait > 0) await sleep(wait);
+    const acct = pw ? await this.accounts.verify(key, pw) : null;
+    if (!acct) { this.loginGuard.fail(key, conn.ip); fail('LOGIN_FAILED'); }
+    this.loginGuard.success(key, conn.ip);
+    if (conn.closed) return; // 확인을 토큰 발급 앞에 둔다(거절·끊김 때 고아 토큰 행이 남지 않게)
+    if (conn.session) fail('ALREADY_LOGGED_IN');
+    this.attachAccount(conn, acct, () => this.accounts.issueToken(key));
+  }
+
+  /** 로그아웃: 로그인 토큰 폐기 + 세션 종료(방·경기 중이면 퇴장 = 기권). 연결은 남겨 두고 logged_out 을 보낸다 */
+  logout(s) {
+    if (s.account) this.accounts.revokeToken(s.token);
+    const conn = s.conn;
+    if (this.roomOf(s)) this.removeFromRoom(s, 'leave');
+    clearTimeout(s.graceTimer);
+    this.sessions.delete(s.token);
+    if (this.byNick.get(s.key) === s) this.byNick.delete(s.key);
+    s.conn = null;
+    if (conn) {
+      conn.session = null;
+      conn.armLoginTimer?.(this.limits.logoutLoginTimeoutMs); // 로그아웃 시점부터 재로그인 제한 시간(연결 시점 타이머는 취소)
+      try { conn.send({ t: 'logged_out' }); } catch { /* ignore */ }
+    }
+    this.markListDirty();
+  }
+
+  /**
+   * 가입 경로가 승계가 아닐 때: 그 닉네임 키의 손님 진행·리그를 계정이 읽지 않는 키(`guest-aside:<키>:<시각>`)로 옮긴다.
+   * 지우거나 덮지 않는다(운영자가 원래 손님에게 되돌려 줄 수 있게). NICK_RE 에 ':' 가 없어 어떤 세션도 이 키를 쓸 수 없다
+   */
+  setAsideGuestData(key) {
+    const aside = `guest-aside:${key}:${Date.now()}`;
+    let moved = 0;
+    const db = this.progress.db;
+    if (db && db === this.leagues.db && typeof db.tx === 'function') {
+      // 같은 SQLite DB: 진행·리그를 한 트랜잭션으로 옮긴다(한쪽만 옮겨지는 상태를 남기지 않음)
+      try { moved = db.tx(() => (this.progress.setAside(key, aside) ?? 0) + (this.leagues.setAside(key, aside) ?? 0)); }
+      catch (e) { this.log('[aside]', e?.message ?? e); }
+    } else {
+      try { moved += this.progress.setAside?.(key, aside) ?? 0; } catch (e) { this.log('[aside progress]', e?.message ?? e); }
+      try { moved += this.leagues.setAside?.(key, aside) ?? 0; } catch (e) { this.log('[aside league]', e?.message ?? e); }
+    }
+    if (moved) this.log(`[account] 가입 닉네임의 손님 데이터 ${moved}건을 승계하지 않고 보존: ${aside}`);
+  }
+
+  checkAuthRate(ip) {
+    if (!ip) return;
+    const now = mono();
+    if (this.authWin.size > 5000) for (const [k, v] of this.authWin) if (now - v.start >= 60000) this.authWin.delete(k);
+    let w = this.authWin.get(ip);
+    if (!w || now - w.start >= 60000) { w = { start: now, count: 0 }; this.authWin.set(ip, w); }
+    if (++w.count > this.limits.maxAuthPerMin) fail('AUTH_RATE_LIMITED');
   }
 
   checkHelloRate(ip) {
@@ -184,10 +388,17 @@ export class Lobby {
       ...(room.campaign ? { campaign: { k: room.campaign.k } } : {}),
       ...(room.training ? { training: { kind: room.training.kind } } : {}),
       ...(room.league ? { league: { i: room.league.i, j: room.league.j } } : {}),
+      ...(room.ranked ? { ranked: true } : {}),
       rules: { ...room.rules },
       start: st.ok ? { ok: true } : { ok: false, code: st.code, msg: ERR[st.code] },
-      slots: room.seats.map((m, i) => (!m && i === 1 && room.vsCpu ? { seat: 1, nick: CPU_NICK, ready: true, team: room.cpuTeam, host: false, connected: true, cpu: true } : m ? { seat: i, nick: m.s.nick, ready: m.ready, team: m.team, host: i === 0, connected: !!m.s.conn } : null)),
+      slots: room.seats.map((m, i) => (!m && i === 1 && room.vsCpu ? { seat: 1, nick: CPU_NICK, ready: true, team: room.cpuTeam, host: false, connected: true, cpu: true } : m ? { seat: i, nick: m.s.nick, ready: m.ready, team: m.team, host: i === 0, connected: !!m.s.conn, ...(room.ranked ? this.seatRating(m.s) : {}) } : null)),
     };
+  }
+
+  /** 랭크 방 좌석의 현재 레이팅(PROTOCOL §11.2). placement = 순위표 기준 경기 수 미만(ranking_list.me.placement 와 같은 기준) */
+  seatRating(s) {
+    const r = this.ranking.get(s.key, s.nick);
+    return { rating: r.rating, placement: r.games < RANK.boardMinGames };
   }
 
   startCheck(room) {
@@ -242,7 +453,7 @@ export class Lobby {
 
   roomListMsg() {
     const rooms = [...this.rooms.values()].filter((r) => !r.campaign && !r.training && !r.league).sort((a, b) => b.createdAt - a.createdAt).map((r) => ({
-      code: r.code, host: r.seats[0]?.s.nick ?? '', players: r.vsCpu ? 2 : r.seats.filter(Boolean).length, max: 2, ...(r.vsCpu ? { vsCpu: true } : {}), status: r.game ? 'playing' : 'waiting',
+      code: r.code, host: r.seats[0]?.s.nick ?? '', players: r.vsCpu ? 2 : r.seats.filter(Boolean).length, max: 2, ...(r.vsCpu ? { vsCpu: true } : {}), ...(r.ranked ? { ranked: true } : {}), status: r.game ? 'playing' : 'waiting',
       rules: { ...r.rules }, // 방 목록 행의 규칙 요약용(추가 필드, 하위 호환)
     }));
     return { t: 'room_list', rooms };
@@ -278,15 +489,25 @@ export class Lobby {
         const vsCpu = m.vsCpu === true;
         if (m.cpuLevel !== undefined && !isInt(m.cpuLevel, 1, 3)) fail('BAD_MESSAGE');
         const cpuLevel = m.cpuLevel ?? this.o.data.rules.cpu.defaultLevel;
+        if (m.ranked !== undefined && typeof m.ranked !== 'boolean') fail('BAD_MESSAGE');
+        const ranked = m.ranked === true;
+        if (ranked && vsCpu) fail('BAD_MESSAGE'); // 랭크는 사람끼리만
+        if (ranked) this.rankedGate(s);
         let code;
         if (m.code !== undefined && m.code !== null && m.code !== '') {
           code = typeof m.code === 'string' ? m.code.toUpperCase() : '';
           if (!CODE_RE.test(code)) fail('ROOM_CODE_INVALID');
           if (this.rooms.has(code)) fail('ROOM_CODE_TAKEN');
         } else code = this.newCode();
-        const rules = m.rules === undefined ? this.defaultRules() : this.parseRules(m.rules, this.defaultRules());
+        let rules = m.rules === undefined ? this.defaultRules() : this.parseRules(m.rules, this.defaultRules());
+        if (ranked) {
+          if (m.rules !== undefined && (rules.mode !== RANK.rules.mode || rules.time !== RANK.rules.time)) fail('RANKED_RULES_FIXED');
+          rules = { ...RANK.rules };
+        }
         this.rememberCode(code);
-        this.join(s, this.makeRoom(code, vsCpu, cpuLevel, null, rules));
+        const room = this.makeRoom(code, vsCpu, cpuLevel, null, rules);
+        if (ranked) room.ranked = true;
+        this.join(s, room);
       },
       join_room(s, m) {
         if (s.roomCode) fail('ALREADY_IN_ROOM');
@@ -296,6 +517,7 @@ export class Lobby {
         if (!room) fail('ROOM_NOT_FOUND');
         if (room.game) fail('ROOM_IN_GAME');
         if (room.vsCpu || (room.seats[0] && room.seats[1])) fail('ROOM_FULL');
+        if (room.ranked) this.rankedGate(s);
         this.join(s, room);
       },
       leave_room(s) {
@@ -316,6 +538,7 @@ export class Lobby {
         if (room.game) fail('IN_GAME');
         if (room.campaign || room.training || room.league) fail('NOT_IN_CAMPAIGN_ROOM');
         if (!isInt(m.team, 0, this.o.data.teams.length - 1)) fail('TEAM_INVALID');
+        if (room.ranked && m.team > RANK.maxTeam) fail('TEAM_INVALID'); // 랭크: SPECIAL(15~21)까지, 22~24 금지
         const mem = room.seats[room.seatOf(s)];
         if (mem.team !== m.team) { mem.team = m.team; mem.ready = false; }
         if (room.vsCpu && !room.campaign && room.cpuTeam === mem.team) room.cpuTeam = this.pickCpuTeam(mem.team);
@@ -327,6 +550,7 @@ export class Lobby {
         if (room.game) fail('IN_GAME');
         if (room.seatOf(s) !== 0) fail('NOT_HOST');
         if (room.league) fail('NOT_IN_CAMPAIGN_ROOM'); // 리그 규칙은 league_config 로만
+        if (room.ranked) fail('RANKED_RULES_FIXED');
         const r = this.parseRules(m.rules, room.rules, !!room.campaign);
         if (r.mode !== room.rules.mode || r.time !== room.rules.time) {
           room.rules = r;
@@ -351,8 +575,17 @@ export class Lobby {
         if (room.seatOf(s) !== 0) fail('NOT_HOST');
         const c = this.startCheck(room);
         if (!c.ok) fail(c.code);
+        if (room.ranked) for (const mm of room.seats) if (mm) this.rankedGate(mm.s); // 방에 든 뒤 잠긴 사람(이 방의 앞 경기 기권 등)
         this.startGame(room);
       },
+      // 순위표(PROTOCOL §11). top = 1~50(생략 50). me = 계정이면 내 줄, 손님이면 null
+      ranking_list(s, m) {
+        this.campaignRate(s);
+        if (m.top !== undefined && !isInt(m.top, 1, RANK.boardTop)) fail('BAD_MESSAGE');
+        const b = this.ranking.board(m.top ?? RANK.boardTop, s.account ? s.key : null, s.nick);
+        this.sendTo(s, { t: 'ranking_list', top: b.top, me: b.me });
+      },
+      logout(s) { this.logout(s); },
       campaign_list(s) {
         this.campaignRate(s);
         this.sendTo(s, this.campaignListMsg(s));
@@ -406,6 +639,29 @@ export class Lobby {
     };
   }
 
+  /** 랭크 입장 조건: 계정(REQUIRE_ACCOUNT 와 무관) + 기권 잠금 아님 */
+  rankedGate(s) {
+    if (!s.account) fail('ACCOUNT_REQUIRED');
+    const until = this.ranking.lockedUntil(s.key);
+    if (until) fail('RANKED_LOCKED', { until });
+  }
+
+  /**
+   * 랭크 경기 판정(RoomGame.finish 가 결과 레코드 쓰기 전에 1회 부른다). 반영 = GO 이후의 정상 종료·기권(기권 쪽 패배).
+   * draw_cap·error·GO 이전 종료는 무효(VOID, 변동 없음). 같은 상대 24시간 3경기 초과는 PAIR_LIMIT(변동 없음)
+   */
+  rankedResult(room, { matchId, winner, reason, wentGo }) {
+    const players = room.rankPlayers;
+    const valid = wentGo && (winner === 0 || winner === 1) && (RANK_NORMAL.includes(reason) || RANK_FORFEIT.includes(reason));
+    let out;
+    if (!valid) {
+      const before = players.map((p) => this.ranking.get(p.key).rating);
+      out = { counted: false, why: 'VOID', before, after: before, delta: [0, 0] };
+    } else out = this.ranking.record({ matchId, players, winner, forfeit: RANK_FORFEIT.includes(reason) ? 1 - winner : null });
+    room.rankOut = out;
+    return out;
+  }
+
   campaignRate(s) {
     const now = mono();
     if (!s.campWin || now - s.campWin.start >= 60000) s.campWin = { start: now, count: 0 };
@@ -434,11 +690,14 @@ export class Lobby {
     if (room.vsCpu && !ch && seats[0] && room.cpuTeam === seats[0].team) room.cpuTeam = this.pickCpuTeam(seats[0].team);
     if (room.vsCpu) seats[1] = { nick: CPU_NICK, team: room.cpuTeam, cpu: true, level: room.cpuLevel, ...(ch ? { special256: ch.specialChance256 } : {}) };
     for (const m of room.seats) if (m) m.ready = false;
+    if (room.ranked) room.rankPlayers = room.seats.map((m) => ({ key: m.s.key, nick: m.s.nick })); // 시작 시점 두 사람(종료 때 좌석이 비어도)
+    room.rankOut = null;
     room.game = new RoomGame({
       roomCode: room.code, seats, data: this.o.data, stage: ch?.stage ?? room.league?.stage ?? 0, league: room.league ? { i: room.league.i, j: room.league.j } : null,
       rules: { mode: room.rules.mode, timeMin: room.rules.time, limitFrames: room.rules.time * 60 * this.o.data.rules.tickRate }, campaign: room.campaign, training: room.training ?? null, store: this.o.store, build: this.o.build, seed: this.o.seed, limits: this.limits,
       send: (seat, obj) => this.sendTo(room.seats[seat]?.s, obj),
       onEnd: (res) => this.onGameEnd(room, res),
+      ...(room.ranked ? { onRanked: (r) => this.rankedResult(room, r) } : {}),
     });
     room.game.begin();
     this.broadcastRoom(room);
@@ -448,6 +707,12 @@ export class Lobby {
   onGameEnd(room, res) {
     room.game = null;
     for (const [i, m] of room.seats.entries()) if (m) this.sendTo(m.s, { ...res, you: i });
+    if (room.rankOut) { // 랭크 방: game_end 바로 뒤 좌석별 레이팅 변동
+      const o = room.rankOut; room.rankOut = null;
+      for (const [i, m] of room.seats.entries()) {
+        if (m) this.sendTo(m.s, { t: 'ranking_result', matchId: res.matchId, counted: o.counted, ...(o.why ? { why: o.why } : {}), before: o.before[i], after: o.after[i], delta: o.delta[i], oppBefore: o.before[1 - i] });
+      }
+    }
     if (room.campaign && room.seats[0]) this.campaignEnd(room, res);
     if (room.training) { this.trainingEnd(room, res); return; }
     if (room.league) { leagueEnd(this, room, res); return; } // 기록 1회 + 방 삭제 -> room_left
@@ -471,7 +736,7 @@ export class Lobby {
     const s = room.seats[0].s, k = room.campaign.k;
     const win = res.winner === 0 && ['annihilation', 'timeup', 'sudden_death'].includes(res.reason);
     const prev = this.progress.get(s.key).clearedMax;
-    this.progress.recordResult(s.key, s.nick, k, win);
+    if (!this.guestOfAccount(s)) this.progress.recordResult(s.key, s.nick, k, win); // 가입 경합으로 남은 손님 세션은 계정 키에 쓰지 않는다
     const progress = this.progress.get(s.key);
     const unlocked = win && k > prev && k + 1 < this.o.data.campaign.length ? k + 1 : null;
     this.sendTo(s, { t: 'campaign_result', matchId: res.matchId, k, win, reason: res.reason, progress, unlocked, final: win && k === this.o.data.campaign.length - 1 });

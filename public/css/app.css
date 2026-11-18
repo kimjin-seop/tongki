@@ -71,11 +71,11 @@ h1 { font: 1.25rem var(--title); letter-spacing: .02em; }
 .btn[aria-pressed=true] { --bc: var(--c-yel); color: var(--c-yel); }
 .btn.cap { background: #000; }
 /* 입력: 실제 input(한글 IME 그대로), 모양만 검정 칸 + 회색 이중선 */
-input[type=text] { min-height: max(44px, 2.1rem); padding: 0 .5em; border-radius: 0; border: var(--bw) solid var(--c-grey); background: var(--c-in); color: var(--c-white);
+input[type=text], input[type=password] { min-height: max(44px, 2.1rem); padding: 0 .5em; border-radius: 0; border: var(--bw) solid var(--c-grey); background: var(--c-in); color: var(--c-white);
   box-shadow: 0 0 0 2px #000, inset 0 0 0 2px #000; font: 1rem var(--ui); caret-color: var(--c-yel); }
-input[type=text]::placeholder { color: var(--c-dim); }
-input[type=text]:focus { border-color: var(--c-yel); outline: none; }
-input[type=text]:focus-visible { outline: 3px solid var(--c-white); outline-offset: 3px; }
+input[type=text]::placeholder, input[type=password]::placeholder { color: var(--c-dim); }
+input[type=text]:focus, input[type=password]:focus { border-color: var(--c-yel); outline: none; }
+input[type=text]:focus-visible, input[type=password]:focus-visible { outline: 3px solid var(--c-white); outline-offset: 3px; }
 .field-label { font: 1rem var(--ui); color: var(--c-yel); }
 
 /* ---- 토스트: 검정 창 + 색 테두리 ---- */
@@ -523,9 +523,9 @@ body[data-title-enter] .title-follow { animation: title-follow .32s ease-out .14
 .lg-count { font: 1.1rem var(--title); color: var(--c-yel); }
 /* 팀 선택: 학교 3줄 + SPECIAL 줄, 오른쪽 = 고른 순서 */
 .lg-tsel .tsel-head .back { margin-left: auto; }
-.lg-grids { flex: 1; display: grid; gap: .9rem; grid-template-rows: 3fr auto; }
-.lg-grids .tgrid { min-height: 0; }
-.lg-special { padding-top: .6rem; border-top: 3px solid #2c6a48; }
+.lg-tsel .tgrid { grid-template-rows: repeat(3, minmax(0, 1fr)); } /* 학교 3줄·SPECIAL 2줄 모두 같은 칸 크기(SPECIAL 은 셋째 줄이 빈다) */
+/* 리그 화면 안의 작은 버튼(돌아가기·하나 취소·쪽 전환)도 터치 44px */
+.lg-tsel .btn.small, .rules-win[class*="lg-"] .btn.small { min-height: 44px; }
 .tcell.lg-picked { --bc: var(--c-cyan); background: #00301a; }
 .tcell.lg-picked .cl.c0 { font-size: 1.2rem; }
 .lg-side { padding: .6rem .8rem; display: flex; flex-direction: column; gap: .5rem; min-height: 0; overflow: auto; }
@@ -593,6 +593,47 @@ body[data-title-enter] .title-follow { animation: title-follow .32s ease-out .14
 }
 @media (max-height: 560px) {
   .lg-big { min-height: 44px; }
-  .lg-grids { gap: .35rem; }
-  .lg-special { padding-top: .3rem; }
+}
+
+/* ---- 계정·랭킹(PROTOCOL §2.1·§11) ---- */
+.auth-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: var(--gap); margin-bottom: .2rem; }
+.auth-tabs .btn { min-height: 44px; text-align: center; font-size: .9rem; }
+.nick-card [hidden] { display: none; }
+.nick-card input[readonly] { color: var(--c-grey); }
+.lobby-foot { display: flex; flex-wrap: wrap; gap: var(--gap); align-items: center; margin-top: .5rem; }
+.lobby-foot .replay-intro { margin-top: 0; }
+.lobby-menu .lobby-foot .btn { width: auto; flex: 1 1 auto; text-align: center; }
+.lobby-foot .acct-btn { min-height: 44px; flex: 0 1 auto; }
+.rl-mk { display: flex; gap: var(--gap); align-items: stretch; }
+.rank-opt { min-height: max(44px, 2.4rem); text-align: center; }
+.rl-tabs { display: flex; align-items: center; gap: var(--gap); padding: 0 2px .35rem; }
+.rl-tab { display: flex; gap: var(--gap); }
+.rl-tabs .btn.small { min-height: 44px; min-width: 3.6em; text-align: center; }
+.rl-tabs .rank-entry { margin-left: auto; }
+.tag.rank { --bc: var(--c-cyan); color: var(--c-cyan); }
+.rr-name .tag.rank { margin-right: .45em; min-height: 1.4em; font-size: .7rem; vertical-align: middle; }
+.tag.rate { --bc: var(--c-line); }
+.result-rank { font: 1.05rem var(--ui); color: var(--c-white); }
+.result-rank.up { color: var(--c-cyan); }
+.result-rank.down { color: #ff9a9a; }
+.rk-win { width: min(100%, 34rem); }
+.rk-table td.rk-nick { text-align: left; max-width: 10em; overflow: hidden; text-overflow: ellipsis; }
+.rk-table tr.rk-me td { color: var(--c-yel); }
+/* 표 영역만 스크롤: 머리줄은 위, 내 줄(tfoot)은 아래 고정. 겹친 테두리는 고정 칸을 따라오지 않아 그림자로 줄을 긋는다 */
+.rk-table thead th, .rk-table tfoot td { position: sticky; z-index: 1; background: var(--c-win); }
+.rk-table thead th { top: 0; box-shadow: inset 0 -2px 0 #2c6a48; }
+.rk-table tfoot td { bottom: 0; box-shadow: inset 0 4px 0 #2c6a48, inset 0 -2px 0 #2c6a48; padding-top: calc(.3rem + 4px); }
+.rk-table .empty { padding: 1rem; }
+/* 터치 영역 44px: 리그 팀 선택 쪽 전환, 로비 아래 줄(오프닝 다시보기·가입·로그아웃 같은 높이), 방 목록 탭 */
+.tpage .btn { min-width: max(44px, 3em); }
+.lobby-foot .btn { min-height: 44px; }
+.rl-tabs .btn.small { min-width: max(44px, 3.6em); }
+@media (max-width: 760px), (max-height: 560px) {
+  .nick-line .snd { min-height: 44px; min-width: 44px; } /* 세로 모바일 + 가로 모바일(844x390) */
+}
+@media (max-width: 760px) {
+  /* 리그 팀 선택(좁은 칸): 팀 이름은 줄을 바꿔 다 보이게, 고른 순번은 엠블럼 위쪽 여백 안에 작게 */
+  .lg-tsel .tcell { gap: .15rem; padding: 1.05rem 1px .3rem; }
+  .lg-tsel .tcell .nm { white-space: normal; word-break: keep-all; overflow-wrap: anywhere; line-height: 1.1; min-height: 2.2em; display: flex; align-items: center; justify-content: center; } /* 두 줄 자리를 늘 잡아 학교/SPECIAL 칸 크기 같게 */
+  .lg-tsel .tcell.lg-picked .cl.c0 { top: 2px; left: 3px; font-size: .8rem; }
 }

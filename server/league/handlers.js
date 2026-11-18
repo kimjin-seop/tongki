@@ -19,7 +19,7 @@ export function leagueStateMsg(lobby, s, lg = lobby.leagues.get(s.key)) {
 
 /** 경기 결과 저장 + league_state(+ 끝났으면 league_end) 전송 */
 function saveAndReport(lobby, s, lg) {
-  if (!(lg.done && !SAVE_AFTER_FINAL)) lobby.leagues.set(s.key, s.nick, lg);
+  if (!(lg.done && !SAVE_AFTER_FINAL) && !lobby.guestOfAccount(s)) lobby.leagues.set(s.key, s.nick, lg); // 가입 경합으로 남은 손님 세션은 계정 키에 쓰지 않는다
   lobby.sendTo(s, leagueStateMsg(lobby, s, lg));
   if (lg.done) lobby.sendTo(s, { t: 'league_end', champions: derive(lg).champions });
 }

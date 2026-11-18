@@ -23,6 +23,13 @@ class Base {
     }
     this.persist();
   }
+  /** key 의 리그를 toKey 로 옮긴다(지우지 않음, 가입 시 손님 데이터 분리 보존). 옮긴 건수 */
+  setAside(key, toKey) {
+    const u = this.users.get(key);
+    if (!u) return 0;
+    this.users.delete(key); this.users.set(toKey, u); this.persist();
+    return 1;
+  }
   persist() {}
   flush() {}
 }
@@ -81,4 +88,23 @@ export class JsonLeagueStore extends Base {
       renameSync(tmp, this.file);
     } catch (e) { console.error('[league] 저장 실패', e.message); }
   }
+}
+
+/** SQLite 구현(운영 기본, 2026-11-18). 인터페이스 get / set / flush 동일. 읽을 때마다 sanitize 로 형식을 다시 확인한다(틀린 행 = 없음) */
+export class SqliteLeagueStore {
+  /** @param {ReturnType<import('./db.js').openDb>} db */
+  constructor(db) { this.db = db; }
+  get(key) {
+    const r = this.db.get('SELECT data FROM leagues WHERE key = ?', key);
+    if (!r) return null;
+    try { return sanitize(JSON.parse(r.data)); } catch { return null; }
+  }
+  set(key, nick, league) {
+    if (!league) { this.db.run('DELETE FROM leagues WHERE key = ?', key); return; }
+    this.db.run(`INSERT INTO leagues (key, nick, data, updated_at) VALUES (?, ?, ?, ?)
+      ON CONFLICT(key) DO UPDATE SET nick = excluded.nick, data = excluded.data, updated_at = excluded.updated_at`, key, nick, JSON.stringify(league), Date.now());
+  }
+  /** key 의 행을 toKey 로 옮긴다(지우지 않음). 옮긴 건수 */
+  setAside(key, toKey) { return Number(this.db.run('UPDATE leagues SET key = ? WHERE key = ?', toKey, key).changes); }
+  flush() {}
 }

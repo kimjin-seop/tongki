@@ -3,7 +3,7 @@ import { net } from './net.js';
 import { loadManifest, loadFonts } from './game/assets.js';
 import { toast } from './ui.js';
 import { loadNames, teamName, teamLabel } from './names.js';
-import { ERR, ROOM_LEFT, TRAIN_END, LEAGUE } from './i18n.js';
+import { ERR, ROOM_LEFT, TRAIN_END, LEAGUE, RANK_WHY } from './i18n.js';
 import { $, isTyping } from './util.js';
 import { loadPix } from './pix.js';
 import * as Nick from './screens/nick.js';
@@ -16,6 +16,7 @@ import * as Rules from './screens/rules.js';
 import * as Lineup from './screens/lineup.js';
 import * as Tutorial from './screens/tutorial.js';
 import * as League from './screens/league.js';
+import * as Ranking from './screens/ranking.js';
 import * as Intro from './intro.js';
 import { audio } from './audio.js';
 import { screenBgm, bindUiSfx } from './game/sfxmap.js';
@@ -23,6 +24,8 @@ import { screenBgm, bindUiSfx } from './game/sfxmap.js';
 export const app = {
   nick: null, you: null, rooms: [], room: null, welcome: null, teams: [],
   campaign: null, // 최근 campaign_list {progress, chapters}
+  account: false, // 계정 세션인가(welcome.account / account_ok, PROTOCOL §2.1)
+  rankBoard: null, // 최근 ranking_list {top, me}(§11.3)
   league: null, leagueChamp: null, // 최근 league_state(PROTOCOL §10) / 아직 보여 주지 않은 league_end 우승 팀 idx
   view: null, screen: null,
   intro: null, // 부팅 인트로 제어(재생 중일 때만)
@@ -30,7 +33,7 @@ export const app = {
   bgm: (key) => audio.bgm(key),
   bgmStop: () => audio.bgmStop(), // 원작 0xE1(즉시 정지)
   go(name, data) {
-    const mods = { nick: Nick, lobby: Lobby, room: Room, game: Game, story: Story, prematch: Prematch, rules: Rules, lineup: Lineup, tutorial: Tutorial, league: League };
+    const mods = { nick: Nick, lobby: Lobby, room: Room, game: Game, story: Story, prematch: Prematch, rules: Rules, lineup: Lineup, tutorial: Tutorial, league: League, ranking: Ranking };
     if (name === 'game' && this.intro?.active) this.intro.abort(); // 진행 중 경기로 복귀하면 인트로를 바로 끝낸다
     this.screen?.unmount?.();
     const root = $('#app'); root.innerHTML = '';
@@ -67,14 +70,19 @@ addEventListener('keydown', (e) => {
 });
 
 function wire() {
+  // 접속 화면에 머물다 서버가 LOGIN_TIMEOUT 으로 끊는 경우(로그아웃 뒤 5분 등): 자동 재연결되고 화면은 그대로라 토스트·끊김 알림을 띄우지 않는다
+  let quietClose = false;
   net.on('error', (m) => {
+    if (m.code === 'LOGIN_TIMEOUT' && app.view === 'nick') { quietClose = true; return; }
     toast(m.msg || ERR.UNKNOWN, 'error');
     app.screen?.onError?.(m);
-    if (m.code === 'TOKEN_INVALID' || m.code === 'SESSION_REPLACED') { app.room = null; if (app.view !== 'nick') app.go('nick'); }
+    // 토큰 거절(저장 토큰은 net 이 지웠다)·다른 곳에서 접속: 로그인 화면으로(가입 화면이 떠 있었으면 일반 접속 화면으로)
+    if (m.code === 'TOKEN_INVALID' || m.code === 'SESSION_REPLACED') { app.room = null; app.account = false; if (app.view !== 'nick' || app.screen?.upgrade) app.go('nick'); }
   });
   net.on('toast', (m) => toast(m.msg || m.code, 'warn'));
   net.on('close', ({ was }) => {
-    if (was && !net.closing) toast(ERR.DISCONNECTED, 'error');
+    if (was && !net.closing && !quietClose) toast(ERR.DISCONNECTED, 'error');
+    quietClose = false;
     app.screen?.onNetClose?.();
   });
   net.on('open', () => {
@@ -83,9 +91,23 @@ function wire() {
   });
   net.on('welcome', (m) => {
     if (m.resumed && app.view && app.view !== 'nick') toast(ERR.RECONNECTED, 'ok', 1500);
-    app.welcome = m; app.nick = m.nickname; app.teams = (m.teams || []).map((t) => ({ ...t, name: teamName(t.id, t.name), label: teamLabel(t.id, t.name) }));
-    if (m.location === 'lobby' && !['story', 'tutorial', 'league'].includes(app.view)) app.go('lobby');
+    app.welcome = m; app.nick = m.nickname; app.account = !!m.account; Nick.remember(m); app.teams = (m.teams || []).map((t) => ({ ...t, name: teamName(t.id, t.name), label: teamLabel(t.id, t.name) }));
+    if (m.location === 'lobby' && !['story', 'tutorial', 'league', 'ranking'].includes(app.view)) app.go('lobby');
     else if (m.location === 'lobby') app.screen?.onWelcome?.();
+  });
+  // 손님 → 계정 승격(토큰 교체는 net). 위치는 그대로
+  net.on('account_ok', (m) => {
+    app.account = true; if (app.welcome) app.welcome.account = true;
+    if (app.view === 'nick') app.screen.onAccountOk?.(m); else if (app.view === 'lobby') app.go('lobby');
+  });
+  // 로그아웃: 연결은 남고 세션만 끝난다(저장 토큰은 net 이 지웠다) -> 로그인 화면
+  net.on('logged_out', () => { app.room = null; app.account = false; app.welcome = null; app.go('nick', { mode: 'login', nick: app.nick }); });
+  // 순위표(§11.3): 순위표 화면과 랭크 대기실(상대 레이팅)이 쓴다
+  net.on('ranking_list', (m) => { app.rankBoard = m; app.screen?.onRankingList?.(m); });
+  // 랭크 경기 레이팅 변동(game_end 바로 뒤): 결과 카드에 한 줄, 반영 안 된 사유는 토스트
+  net.on('ranking_result', (m) => {
+    if (!m.counted && RANK_WHY[m.why]) toast(RANK_WHY[m.why], 'warn');
+    if (app.view === 'game') app.screen.on_ranking_result?.(m);
   });
   net.on('room_list', (m) => { app.rooms = m.rooms || []; if (app.view === 'lobby') app.screen.update?.(); });
   net.on('room_joined', (m) => {

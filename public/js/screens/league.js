@@ -97,9 +97,12 @@ export function mount(root, app, data = {}) {
   }
 
   // ---------------- ③ 팀 선택 (대기실 팀 격자와 같은 칸) ----------------
+  // 해금 계정의 SPECIAL 줄은 대기실 팀 선택처럼 쪽(학교/SPECIAL)으로 나눠 한 격자에 한 쪽만 그린다(두 쪽 모두 3줄 칸 크기 같게, css .lg-tsel .tgrid)
+  let tpage = 0;
   function teams() {
-    const rows = [GRID_MAIN.filter(teamOk)];
-    if (st()?.special) rows.push(SPECIAL_ROW.filter(teamOk));
+    const sp = !!st()?.special;
+    if (!sp) tpage = 0;
+    const list = (tpage ? SPECIAL_ROW : GRID_MAIN).filter(teamOk);
     const picked = draft.teams;
     const cell = (id) => {
       const at = picked.indexOf(id);
@@ -116,9 +119,12 @@ export function mount(root, app, data = {}) {
     undo.disabled = !picked.length;
     root.append(h('div.screen.tsel.lg-tsel',
       h('header.tsel-head', h('h1.pix-title', '팀 선택'), h('span.lg-count.tabular', `${picked.length}/${draft.n}`),
+        sp ? h('div.tpage', { role: 'group', 'aria-label': '팀 목록' },
+          h('button.btn.small', { type: 'button', 'data-k': 'pg-0', 'aria-pressed': String(tpage === 0), onclick: () => { tpage = 0; paint(); } }, '학교'),
+          h('button.btn.small', { type: 'button', 'data-k': 'pg-1', 'aria-pressed': String(tpage === 1), 'aria-label': '스페셜 팀', onclick: () => { tpage = 1; paint(); } }, glyphs('SPECIAL', tpage === 1))) : null,
         h('button.btn.small.back', { type: 'button', 'data-k': 'back', onclick: () => go('setup') }, '돌아가기')),
       h('div.tsel-body',
-        h('section.pwin.tgrid-win', h('div.lg-grids', rows.map((r, k) => h('div.tgrid' + (k ? '.lg-special' : ''), { role: 'group', 'aria-label': k ? '스페셜 팀' : '팀' }, r.map(cell))))),
+        h('section.pwin.tgrid-win', h('div.tgrid', { role: 'group', 'aria-label': tpage ? '스페셜 팀' : '팀' }, list.map(cell))),
         h('section.pwin.lg-side', h('div.lg-slots', slots), undo))));
     const first = root.querySelector('.tcell:not(.lg-picked)');
     if (first) first.dataset.first = '1';
