@@ -1,0 +1,86 @@
+{
+  "_note": "[확인]=ROM 확인값, [추정]=추정/자작 단순화. 수치 조정은 이 파일만 고친다. 위치·속도 단위는 px(16.16 고정소수로 변환되어 쓰임), 시간은 프레임(60Hz).",
+  "version": "r0.1",
+  "tickRate": 60,
+  "snapEvery": 2,
+  "stage": { "id": 0, "friction": 8192, "bounceShift": 2, "_note": "[확인] 스테이지0 마찰 0x2000, 바운스 시프트 2 (ROM 0x54BA/0x54E8)" },
+  "gravity": 12288,
+  "court": { "xMin": 16, "xMax": 496, "yMin": 16, "yMax": 248, "centerX": 256, "_note": "[확인] 0x7F8E" },
+  "zones": {
+    "_note": "[추정] 팀별 허용영역(0x6E00 표 미해독). side0=왼쪽 팀 기준, side1은 x 반전",
+    "infield": { "xMin": 80, "xMax": 252, "yMin": 40, "yMax": 232 },
+    "outTop": { "xMin": 268, "xMax": 440, "y": 24 },
+    "outBottom": { "xMin": 268, "xMax": 440, "y": 238 },
+    "outBack": { "yMin": 40, "yMax": 216, "x": 464 }
+  },
+  "start": {
+    "_note": "경기 시작 연출 [확인]=analysis/08_start_sequence.md(원작 실측), [추정]=웹 단순화. 단위 px, 프레임(60Hz). 순서: 입장 행진 -> HUD 대기 -> 심판 등장 -> 심판 대기 -> GO(입력·시계 시작) -> 무작위 대기 -> 토스+FIGHT! -> 심판 복귀 -> 관전. 점프볼은 GO 이후 토스~공 착지/쳐내기까지.",
+    "enter": { "originA": [48, 128], "originB": [464, 128], "baseSpeed": 3.0, "speedDiv": 16, "_note": "[확인 §2] 좌팀 7명 (48,128), 우팀 (464,128)에서 동시 출발, 슬롯 위치까지 직선 등속, 속도 = 3.0 + s2/16 px/f (s2 = 선수 spd). 카메라는 96 고정이라 출발점은 화면 밖" },
+    "hud": { "delay": 2, "frames": 36, "refDelay": 1, "_note": "[확인 §7] 입장 완료 +2 후 얼굴 HUD 36f 등장(클라이언트 연출), 완료 +1 후 심판 등장. 서버는 대기만 한다(합계 39f)" },
+    "ref": {
+      "startX": 256, "startY": 16, "standY": 116, "speed": 1.0, "arriveTol": 1, "waitFrames": 90,
+      "backY": 12, "backSpeed": 3.0, "homeY": 16, "tossFrames": 20, "outCallFrames": 50,
+      "lookLeftX": 224, "lookRightX": 288,
+      "ballDy": 2, "walkHandDx": [0, -2, 0, 2], "walkTicksPerFrame": 7, "handDz": { "stand": 16, "walk": 16, "hold": 14, "toss": 14 },
+      "anim": { "stand": 0, "walk": 2, "hold_ball_go": 4, "toss": 6, "out_call": 8, "game_set": 12, "look_left": 14, "look_right": 16 },
+      "_note": "[확인 §3] 심판 (256,16)->(256,116) 1px/f 99f 걷기, 90f 정지, GO 에서 공을 낮춰 쥠, 토스 자세 20f, (256,12)까지 3px/f 복귀 후 (256,16) 고정, 이후 공 x 로 좌/우/정면 관전. anim 번호는 원작 애니 ID(spr.referee 애니 표). 공은 심판 손(world = 심판 + (dx, ballDy, dz))에서 토스 전까지 따라다닌다. arriveTol 은 99f 도착 맞춤용 [추정]"
+    },
+    "go": { "waitMin": 30, "waitMask": 31, "_note": "[확인] GO 후 30 + (rng&0x1F) = 30~61f 무작위 대기(엔진 rng) 뒤 토스" },
+    "toss": { "vzBase": 4.5, "vzRandMask": 31, "vzUnit": 0.0625, "vy": 0.125, "_note": "[확인 §4] 공 vz = 4.5 + (rng&0x1F)/16 = 4.5~6.44 px/f, vy +0.125, vx 0, 중력은 일반 공 규칙(0.1875)" },
+    "tip": {
+      "slotIdx": 0, "swingFrames": 20, "driftVx": 0.25, "hitVz": -3.0, "hitVx": 3.5, "hitboxIdx": 15, "padX": 4, "zRange": 28,
+      "cpuJumpChance256": 80, "cpuTriggerVz": 0.5,
+      "_note": "[확인 §4] 각 팀 슬롯0 한 명만 참가. C 점프(상대 쪽 vx 0.25px/f) + 점프 중 B 로 쳐내기, 공이 내려오는 중(vz<0)에 접촉하면 성공: 공 vz -3.0, vx 3.5 px/f 자기 진영 쪽, 1회. CPU 는 공 vz<0.5 가 되면 매 프레임 80/256(31%) 점프, 최고점(상승속도<0.5)에서 쳐내기. 토스 전 C 는 헛점프로 그 경기 점프볼 포기. [추정] swingFrames(원작은 애니 길이)·접촉 판정 padX/zRange(히트박스 idx 15 + 여유, z 는 점프 높이 기준 ±zRange)·점프볼 중 사람 선수는 B/C 외 입력 무시(이동 불가)"
+    },
+    "banners": {
+      "go": { "life": 60, "blink": 0 }, "fight": { "life": 32, "blink": 0 }, "game_set": { "life": 180, "blink": 0 },
+      "time_up": { "life": 180, "blink": 0 }, "play_off": { "life": 180, "blink": 8 },
+      "_note": "[확인 §5] 한 번에 한 개(새 배너가 이전 것을 대체). life=수명 프레임(0=무한), blink=깜빡임 간격. 화면 위치·글자는 원작 표(08 §5): GO/FIGHT! (160,72), 결과류 (160,112)"
+    },
+    "end": { "gameSetDelay": 60, "bannerFrames": 180, "_note": "[확인 §6] 마지막 인원 감소(annihilation/sudden_death) 후 60f 정지 뒤 GAME SET 배너 180f, 그 뒤 결과. 시간 종료는 지연 없이 TIME UP 180f [코드]. 총 대기 = 지연 + 180" }
+  },
+  "time": { "limitFrames": 18000, "hardCapFrames": 54000, "_note": "[추정] 제한시간 5분(원작 스토리는 무제한, E680=1 모드만 제한). 시간 종료 시 생존 인원 많은 쪽 승, 동수면 서든데스(다음 아웃이 승패). 하드캡 15분은 무승부" },
+  "move": {
+    "baseShift": 12, "accelShiftWalk": 10, "accelShiftDash": 9, "dashMax": 196608, "diagMul": 46341,
+    "doubleTapFrames": 16,
+    "_note": "[확인] 기저속도 s2<<12, 대시 상한 3.0px/f, 더블탭 16f. [추정] 가속 시프트(원작 s2<<7)는 체감용으로 키움"
+  },
+  "jump": { "base": 65536, "s3Shift": 12, "dashBonus": 65536, "_note": "[확인] vz=0x10000+(s3<<12), 대시중 +0x10000" },
+  "catch": { "windowAdj": 2, "_note": "[확인 구조] 캐치 자세 s5 프레임. 성공 조건 남은타이머<=15-windowAdj(0x8CF0). 정면(공이 선수 쪽으로 진행)일 때만 성공" },
+  "crouchFrames": 30,
+  "pickupFrames": 15,
+  "autoPickup": { "stillFrames": 15, "reach": 12, "_note": "[추정] 정지한 공 근처(12px) 선수가 자동 습득" },
+  "holdMaxFrames": 1200,
+  "throw": {
+    "maxCharge": 15, "recoverFrames": 12, "passRecoverFrames": 10,
+    "airBonusDiv": 4, "dashBonusDiv": 4,
+    "speedShift": 12, "airSpeedBonus": 65536, "dashSpeedBonus": 65536, "chargeSpeedShift": 12,
+    "targetZ": 12, "handZ": 16, "handDx": 8,
+    "steerUp": 4096, "steerFwd": 4096, "steerBack": 8192,
+    "_note": "[확인] 위력=s4(+s4/4 점프)(+s4/4 대시)+차지(≤15), 공중 차지 16f 자동발사. [추정] 속도 환산 s6<<12(16.16), 목표 z, 지상 투구도 차지 허용, 비행 중 궤적 보정 0x1000"
+  },
+  "pass": { "speedShift": 12, "z": 16, "catchDist": 8, "power": 3 },
+  "ballBox": { "hw": 4, "hh": 4, "hz": 4, "_note": "[추정] 공 히트박스 8x8, z 반높이 4" },
+  "bodyZ": { "stand": 24, "crouch": 8, "_note": "[확인] 표 0x6A60: 서있기 24, 웅크림 8" },
+  "hitboxIdx": { "stand": 1, "crouch": 3, "catch": 11 },
+  "hit": { "knockVz": 262144, "knockVxDiv": 4, "downFrames": 60, "ballBounceVz": 196608, "_note": "[확인] 피격 vz 4.0, 쓰러짐 60f, 공 vz 3.0" },
+  "ballPhys": { "floorBounceVz": 131072, "settleVz": 76000, "romMinShift": 3, "romSettleVz": 12289, "rollFrictionDiv": 1, "wallDamp": 1, "_note": "[확인] 비행중 바닥 튕김 vz=2.0 후 구르는 공. 벽 반사 속도 1/2 [추정]" },
+  "out": { "swapFrames": 70, "_note": "[확인] 아웃자↔외야 슬롯 교환 약 70f" },
+  "special": {
+    "enabled": true, "minCharge": 13, "maxCharge": 15, "maxSlot": 3, "ceilZ": 384, "minAirZ": 16,
+    "catchSlideBase": 8, "catchSlideCap": 60, "wallVxDiv": 4, "wallVyDiv": 2, "landVz": 131072,
+    "loopRadius": 30, "loopLift": 31, "loopFrames": 17,
+    "_note": "[확인] 06_special_shots.md. 발동=공중 투구(점프 중) 차지 13~15f 해제, 내야 슬롯(<4). 위력=specials.json power(255=덮어쓰지 않음). 중력 없음·방향키 보정 무시. 벽/바닥/천장 닿으면 바운스 공으로 종료. [추정] 루프는 반경 30px 근사, 속도 배율 정수 내림."
+  },
+  "cpu": {
+    "_note": "[추정] 컴퓨터 대전 난이도(cpuLevel 1~3, 기본 2). holdDelayAdd=투구 전 지연 가산 프레임, trigShift=방어 반응 시점 가산(음수=늦게 반응), aimFwd256=정면 조준 확률(/256), blunder256=방어 행동을 놓치고 가만히 서 있을 확률(/256)",
+    "defaultLevel": 2,
+    "specialChance256": 0,
+    "levels": {
+      "1": { "holdDelayAdd": 45, "trigShift": -6, "aimFwd256": 130, "blunder256": 130 },
+      "2": { "holdDelayAdd": 30, "trigShift": -4, "aimFwd256": 150, "blunder256": 90 },
+      "3": { "holdDelayAdd": 20, "trigShift": -2, "aimFwd256": 180, "blunder256": 60 }
+    }
+  },
+  "ai": { "holdDelayBase": 20, "holdDelayPerB13": 4, "chargeMin": 3, "chargeMax": 14, "_note": "[추정] AI 행동 선택은 ai_params 구조만 참고한 단순화" }
+}

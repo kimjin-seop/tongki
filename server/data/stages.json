@@ -1,0 +1,19 @@
+{
+ "_note": "[확인] analysis/09_team_names.md B 표(ROM 0x54BA 마찰/0x54E8 바운스). id=stage_NN 번호(ROM stage 번호 romStage 와 다름). 마찰 단위=rules.stage.friction 과 동일(16.16 고정소수). id 0 은 기존 rules.stage 와 동일 값.",
+ "stages": [
+  { "id": 0, "key": "bg.stage.00", "file": "rom/bg/stage_00", "json": "rom/bg/stage_00.json", "romStage": 1, "friction": 8192, "bounceShift": 2 },
+  { "id": 1, "key": "bg.stage.01", "file": "rom/bg/stage_01", "json": "rom/bg/stage_01.json", "romStage": 2, "friction": 8192, "bounceShift": 2 },
+  { "id": 2, "key": "bg.stage.02", "file": "rom/bg/stage_02", "json": "rom/bg/stage_02.json", "romStage": 3, "friction": 8192, "bounceShift": 2 },
+  { "id": 3, "key": "bg.stage.03", "file": "rom/bg/stage_03", "json": "rom/bg/stage_03.json", "romStage": 7, "friction": 8192, "bounceShift": 2 },
+  { "id": 4, "key": "bg.stage.04", "file": "rom/bg/stage_04", "json": "rom/bg/stage_04.json", "romStage": 9, "friction": 12288, "bounceShift": 2 },
+  { "id": 5, "key": "bg.stage.05", "file": "rom/bg/stage_05", "json": "rom/bg/stage_05.json", "romStage": 8, "friction": 8192, "bounceShift": 3 },
+  { "id": 6, "key": "bg.stage.06", "file": "rom/bg/stage_06", "json": "rom/bg/stage_06.json", "romStage": 4, "friction": 12288, "bounceShift": 3 },
+  { "id": 7, "key": "bg.stage.07", "file": "rom/bg/stage_07", "json": "rom/bg/stage_07.json", "romStage": 10, "friction": 4096, "bounceShift": 2 },
+  { "id": 8, "key": "bg.stage.08", "file": "rom/bg/stage_08", "json": "rom/bg/stage_08.json", "romStage": 5, "friction": 16384, "bounceShift": 1 },
+  { "id": 9, "key": "bg.stage.09", "file": "rom/bg/stage_09", "json": "rom/bg/stage_09.json", "romStage": 11, "friction": 8192, "bounceShift": 2 },
+  { "id": 10, "key": "bg.stage.10", "file": "rom/bg/stage_10", "json": "rom/bg/stage_10.json", "romStage": 12, "friction": 8192, "bounceShift": 2 },
+  { "id": 11, "key": "bg.stage.11", "file": "rom/bg/stage_11", "json": "rom/bg/stage_11.json", "romStage": 0, "friction": 8192, "bounceShift": 2 },
+  { "id": 12, "key": "bg.stage.12", "file": "rom/bg/stage_12", "json": "rom/bg/stage_12.json", "romStage": 6, "friction": 12288, "bounceShift": 3 },
+  { "id": 13, "key": "bg.stage.13", "file": "rom/bg/stage_13", "json": "rom/bg/stage_13.json", "romStage": 13, "friction": 12288, "bounceShift": 2 }
+ ]
+}

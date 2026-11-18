@@ -1,0 +1,137 @@
+{
+  "_note": "[확인]=ROM 확인값, [추정]=추정/자작 단순화. 수치 조정은 이 파일만 고친다. 위치·속도 단위는 px(16.16 고정소수로 변환되어 쓰임), 시간은 프레임(60Hz).",
+  "version": "r0.1",
+  "tickRate": 60,
+  "snapEvery": 1,
+  "stage": { "id": 0, "friction": 8192, "bounceShift": 2, "_note": "[확인] 스테이지0 마찰 0x2000, 바운스 시프트 2 (ROM 0x54BA/0x54E8)" },
+  "gravity": 12288,
+  "court": { "xMin": 16, "xMax": 496, "yMin": 16, "yMax": 248, "centerX": 256, "_note": "[확인] 0x7F8E" },
+  "zones": {
+    "rom": {
+      "_note": "[확인] 원작 이동 허용영역: 슬롯별 [x0,x1,y0,y1] ROM 0x6AA4(좌석0)/0x6B0C(좌석1), trap = x0·x1 에 더하는 (y>>2) 배수(0x6E56/0x6E8A -> 0x6F26~0x6F50). 실측: 좌석0 내야 y=40 에서 좌한계 90, y=216 에서 46, 우 248, 상 40, 하 216 (analysis/scripts/feel_bounds.py)",
+      "area": [
+        [[100,248,40,216],[100,248,40,216],[100,248,40,216],[100,248,40,216],[264,440,16,32],[264,440,16,32],[264,440,16,32],[264,440,224,255],[264,440,224,255],[264,440,224,255],[424,444,40,216],[424,444,40,216],[424,444,40,216]],
+        [[264,412,40,216],[264,412,40,216],[264,412,40,216],[264,412,40,216],[72,248,16,32],[72,248,16,32],[72,248,16,32],[72,248,224,255],[72,248,224,255],[72,248,224,255],[68,88,40,216],[68,88,40,216],[68,88,40,216]]
+      ],
+      "foul": [
+        [[88,256,32,224],[88,256,32,224],[88,256,32,224],[88,256,32,224],[256,444,16,32],[256,444,16,32],[256,444,16,32],[256,444,224,255],[256,444,224,255],[256,444,224,255],[424,444,32,224],[424,444,32,224],[424,444,32,224]],
+        [[256,424,32,224],[256,424,32,224],[256,424,32,224],[256,424,32,224],[68,256,16,32],[68,256,16,32],[68,256,16,32],[68,256,224,255],[68,256,224,255],[68,256,224,255],[68,88,32,224],[68,88,32,224],[68,88,32,224]]
+      ],
+      "_noteFoul": "[확인] 선 이탈·공 구역 판정 영역: 슬롯별 [x0,x1,y0,y1] ROM 0x6B74(좌석0)/0x6BDC(좌석1), 사다리꼴 보정은 trap 과 같은 표(0x6E00 -> 0x6E56/0x6E8A). 선수: 0x88EA->0x6D90 (정수 px, 경계 포함) 밖이면 선 이탈(타입 0x48). 공: 0x6F5C->0x6DB8 (공 히트박스 idx2 와 겹침) 로 구역 $5D 결정",
+      "trap": [
+        [[-1,0],[-1,0],[-1,0],[-1,0],[0,1],[0,0],[0,1],[0,1],[0,0],[0,1],[1,1],[1,1],[1,1]],
+        [[0,1],[0,1],[0,1],[0,1],[-1,0],[0,0],[-1,0],[-1,0],[0,0],[-1,0],[-1,-1],[-1,-1],[-1,-1]]
+      ]
+    },
+    "_note": "[추정] 팀별 허용영역(0x6E00 표 미해독). side0=왼쪽 팀 기준, side1은 x 반전",
+    "infield": { "xMin": 72, "xMax": 252, "yMin": 40, "yMax": 232 },
+    "outTop": { "xMin": 268, "xMax": 440, "y": 24 },
+    "outBottom": { "xMin": 268, "xMax": 440, "y": 238 },
+    "outBack": { "yMin": 40, "yMax": 216, "x": 464 }
+  },
+  "start": {
+    "_note": "경기 시작 연출 [확인]=analysis/08_start_sequence.md(원작 실측), [추정]=웹 단순화. 단위 px, 프레임(60Hz). 순서: 입장 행진 -> HUD 대기 -> 심판 등장 -> 심판 대기 -> GO(입력·시계 시작) -> 무작위 대기 -> 토스+FIGHT! -> 심판 복귀 -> 관전. 점프볼은 GO 이후 토스~공 착지/쳐내기까지.",
+    "enter": { "originA": [48, 128], "originB": [464, 128], "baseSpeed": 3.0, "speedDiv": 16, "_note": "[확인 §2] 좌팀 7명 (48,128), 우팀 (464,128)에서 동시 출발, 슬롯 위치까지 직선 등속, 속도 = 3.0 + s2/16 px/f (s2 = 선수 spd). 카메라는 96 고정이라 출발점은 화면 밖" },
+    "hud": { "delay": 2, "frames": 36, "refDelay": 1, "_note": "[확인 §7] 입장 완료 +2 후 얼굴 HUD 36f 등장(클라이언트 연출), 완료 +1 후 심판 등장. 서버는 대기만 한다(합계 39f)" },
+    "ref": {
+      "startX": 256, "startY": 16, "standY": 116, "speed": 1.0, "arriveTol": 1, "waitFrames": 90,
+      "backY": 12, "backSpeed": 3.0, "homeY": 16, "tossFrames": 20, "outCallFrames": 50,
+      "lookLeftX": 224, "lookRightX": 288,
+      "ballDy": 2, "walkHandDx": [0, -2, 0, 2], "walkTicksPerFrame": 7, "handDz": { "stand": 16, "walk": 16, "hold": 14, "toss": 14 },
+      "anim": { "stand": 0, "walk": 2, "hold_ball_go": 4, "toss": 6, "out_call": 8, "game_set": 12, "look_left": 14, "look_right": 16 },
+      "_note": "[확인 §3] 심판 (256,16)->(256,116) 1px/f 99f 걷기, 90f 정지, GO 에서 공을 낮춰 쥠, 토스 자세 20f, (256,12)까지 3px/f 복귀 후 (256,16) 고정, 이후 공 x 로 좌/우/정면 관전. anim 번호는 원작 애니 ID(spr.referee 애니 표). 공은 심판 손(world = 심판 + (dx, ballDy, dz))에서 토스 전까지 따라다닌다. arriveTol 은 99f 도착 맞춤용 [추정]"
+    },
+    "go": { "waitMin": 30, "waitMask": 31, "_note": "[확인] GO 후 30 + (rng&0x1F) = 30~61f 무작위 대기(엔진 rng) 뒤 토스" },
+    "toss": { "vzBase": 4.5, "vzRandMask": 31, "vzUnit": 0.0625, "vy": 0.125, "_note": "[확인 §4] 공 vz = 4.5 + (rng&0x1F)/16 = 4.5~6.44 px/f, vy +0.125, vx 0, 중력은 일반 공 규칙(0.1875)" },
+    "tip": {
+      "slotIdx": 0, "swingFrames": 20, "driftVx": 0.25, "hitVz": -3.0, "hitVx": 3.5, "hitboxIdx": 15, "padX": 4, "zRange": 28,
+      "cpuJumpChance256": 80, "cpuTriggerVz": 0.5,
+      "_note": "[확인 §4] 각 팀 슬롯0 한 명만 참가. C 점프(상대 쪽 vx 0.25px/f) + 점프 중 B 로 쳐내기, 공이 내려오는 중(vz<0)에 접촉하면 성공: 공 vz -3.0, vx 3.5 px/f 자기 진영 쪽, 1회. CPU 는 공 vz<0.5 가 되면 매 프레임 80/256(31%) 점프, 최고점(상승속도<0.5)에서 쳐내기. 토스 전 C 는 헛점프로 그 경기 점프볼 포기. [추정] swingFrames(원작은 애니 길이)·접촉 판정 padX/zRange(히트박스 idx 15 + 여유, z 는 점프 높이 기준 ±zRange)·점프볼 중 사람 선수는 B/C 외 입력 무시(이동 불가)"
+    },
+    "banners": {
+      "go": { "life": 60, "blink": 0 }, "fight": { "life": 32, "blink": 0 }, "game_set": { "life": 180, "blink": 0 },
+      "time_up": { "life": 180, "blink": 0 }, "play_off": { "life": 180, "blink": 8 },
+      "_note": "[확인 §5] 한 번에 한 개(새 배너가 이전 것을 대체). life=수명 프레임(0=무한), blink=깜빡임 간격. 화면 위치·글자는 원작 표(08 §5): GO/FIGHT! (160,72), 결과류 (160,112)"
+    },
+    "end": { "gameSetDelay": 60, "bannerFrames": 180, "_note": "[확인 §6] 마지막 인원 감소(annihilation/sudden_death) 후 60f 정지 뒤 GAME SET 배너 180f, 그 뒤 결과. 시간 종료는 지연 없이 TIME UP 180f [코드]. 총 대기 = 지연 + 180" }
+  },
+  "time": { "limitFrames": 18000, "hardCapFrames": 54000, "unlimitedCapFrames": 108000, "_noteOption": "limitFrames 는 기본값이다. 방·캠페인 경기는 규칙 창에서 고른 값(무제한 0/3/5/8분)을 Match 옵션 limitFrames 로 따로 받는다(analysis/28 §10). [자작 안전망] unlimitedCapFrames: 무제한 경기의 무승부 상한 30분(원작은 상한 없음, 온라인 방이 끝나지 않는 것을 막는 용도)", "_note": "[추정] 제한시간 5분(원작 스토리는 무제한, E680=1 모드만 제한). 시간 종료 시 생존 인원 많은 쪽 승, 동수면 서든데스(다음 아웃이 승패). 하드캡 15분은 무승부" },
+  "move": {
+    "rom": {
+      "tapFrames": 15,
+      "dashAccBase": [6144, 6144, 6144, 6144, 6144, 2048, 6144, 6144, 6144, 4096, 4096, 6144, 6144, 6144, 6144, 6144],
+      "_note": "[확인] 사람 조작 선수 이동 직역(match.moveHuman). tapFrames: 0x780E 더블탭 카운터 16 -> 두 번째 누름이 첫 누름 뒤 15프레임 이내(실측: 간격 14 성공·15 실패). dashAccBase: $E224 = ROM 0x5466 워드 표[스테이지 $E682], 대시 가속 = 이 값 + (s2<<7) (0x7FEA). 걷기 = 1.0+(s2<<12)-2*마찰(0x8272). 이 블록을 지우면 종전 가속식으로 돌아간다"
+    },
+    "baseShift": 12, "accelShiftWalk": 10, "accelShiftDash": 9, "dashMax": 196608, "diagMul": 46341,
+    "doubleTapFrames": 16,
+    "_note": "[확인] 기저속도 s2<<12, 대시 상한 3.0px/f, 더블탭 16f. [추정] 가속 시프트(원작 s2<<7)는 체감용으로 키움"
+  },
+  "jump": { "base": 65536, "s3Shift": 12, "dashBonus": 65536, "_note": "[확인] vz=0x10000+(s3<<12), 대시중 +0x10000" },
+  "catch": { "rom": { "slideCap": 60, "slideBase": 8, "counterFrames": 60, "_note": "[확인] 캐치 후 밀림 속력 (min(위력,60)+8)<<4 (8.8, ROM 0x7428~0x7438)·감속 마찰>>8/f(0x7518), 받아치기 창 60f(0x8CDC)" }, "windowAdj": 2, "_note": "[확인] 캐치 자세 s5 프레임. 성공 조건 = 자세 중 히트박스 겹침 + 공 진행 축의 방향 비트가 선수와 다를 것(ROM 0x7350~0x73A0, 0x8416, analysis/24). [정정] windowAdj(남은 타이머<=15-windowAdj)는 0x8CF0 오독이었다(0x8CF0 은 필살기 차지 판정). 이 값은 방향 정보가 없는 공(포메이션 엔드 어택 등 비직역 투구)에만 종전대로 쓰인다" },
+  "foul": { "waitFrames": 30, "dropFrames": 20, "speedAdd": 320, "_note": "[확인 ROM 0x974C] 선 이탈(타입 0x48): 30프레임 정지(0x977E) -> 내야 선수가 공을 들고 있으면 공을 놓고(공 vx = 보는 방향 ±1.0, 0x97B4) 20프레임 더 정지 -> 자기 슬롯 기본 위치(표 0x4AC8/0x4AFC)를 향해 속력 (s2*16 + 0x140 - 마찰>>7)/256 px/f 로 걸어 이동 허용영역(0x6D96) 안에 들어오면 복귀(0x9806~0x9840). 진입: 대시 0x7128, 제동 0x763C, 착지 0x8406, 캐치 후 밀림 끝 0x7566, 쓰러짐 끝 0x953A(이동 허용영역 기준)" },
+  "runSfx": { "period": 6, "altRomStages": [5, 9], "_note": "[확인 ROM 0x8BBA, 표 0x8BDE] 대시 중 공을 들고 움직이는 프레임마다 카운터($18, 진입 시 6) -1, 0 이 되면 발소리(0xA9, ROM 스테이지 5·9 는 0xC5)를 내고 6 으로. 엔진 이벤트 run{p, alt}. 공이 없으면 소리 없음, 걷기에는 발소리 없음(analysis/data/footsteps.json)" },
+  "crouchFrames": 30,
+  "pickupFrames": 15,
+  "autoPickup": { "off": true, "_noteOff": "[확인] off=true: 정지 공 자동 습득(자작)을 끈다. 원작은 사람·컴퓨터 모두 줍기 동작(서브 0x1C, 15f)이나 캐치 자세(0x14)로만 공을 얻는다(tools/diff pickup_far: 원작은 근처 동료가 저절로 줍지 않음)", "stillFrames": 15, "reach": 12, "human": false, "_note": "[추정] 정지한 공 근처(12px) 선수가 자동 습득. human=false: 사람이 조작 중인 선수는 자동 습득하지 않고 A 키(줍기)로만 줍는다 [확인 analysis/11_ctrl_switch_pickup.md]" },
+  "stall": { "rom": { "idleFrames": 300, "switchFrames": 30 }, "_noteRom": "[판독 ROM 0xA60E~0xA666, 0x86A6, 0x8622, 0x9590, 하네스 시나리오 없음] rom 블록이 있으면 자작 안전망(nudgeFrames/giveFrames, 정지 위치 보정 settleBall)을 쓰지 않고 원작 규칙만 쓴다: 정지 공 방치 카운터($E25E)가 idleFrames(300)를 넘으면(정지 후 312프레임째) 사이드마다 공 구역의 가장 가까운 선수를 강제 회수(타입 0x44)로 만든다. 양쪽 모두 구역 밖인 공(구역 13)은 30프레임 전환 때 후방 외야가 강제 회수. [자작 예외] 원작 규칙으로 회수할 선수가 없을 때만(그 구역 외야가 아웃된 선수뿐인 경우: 아웃 선수의 외야 활동 미이식) 강제 회수 시점 이후 nudgeFrames/giveFrames 안전망이 그대로 동작한다(공을 옮기면 새로 멈춘 공으로 취급). 되돌리려면 _backup/engine_before_fidelity3 복원", "nudgeFrames": 360, "giveFrames": 720, "t44MaxFrames": 300, "_noteT44": "[자작 안전망 2026-11-18, 원작 근거 없음] 강제 회수(타입 0x44) 선수가 있는 채로 공이 t44MaxFrames 넘게 멈춰 있으면 회수를 풀고 새로 멈춘 공으로 다시 센다(이벤트 stall_t44). 같은 공에서 두 번째면 가장 가까운 선수에게 직접 준다(stall_give). 정상 회수는 최장 20프레임 안에 끝나 발동하지 않는다. 0 이면 끔", "_note": "[추정/자작 안전망 2026-11-17] 주워지지 않은 공이 정지 상태로 nudgeFrames(6초) 지속되면 가장 가까운 선수(쓰러짐·아웃 제외, 동거리는 pid 낮은 쪽)의 이동 범위 안 가장 가까운 지점으로 공을 옮겨 줍게 하고, giveFrames(12초)까지도 안 주워지면 그 선수에게 직접 공을 준다. 난수 없음·시계 무관(서든데스 포함). 구조적 사각지대는 zones.infield.xMin 72(원래 80)로 제거: CPU 내야 이동 한계가 사이드라인 쪽으로 8px 넓어져 줍기 반경(12)이 외야 후방 선수 줍기 범위(x>=448)와 맞닿는다" },
+  "ctrlSwitch": {
+    "rom": true,
+    "_noteRom": "[확인 ROM 0xA60E/0x85CC/0x8660/0x85EE/0x8752] rom=true: 정지 공 조작 전환 직역. 공이 정지(서브4)한 뒤 30프레임마다(첫 전환 = 정지 후 30프레임째) 양 사이드 각각: (사람 사이드 && 조작 선수 내야 && 공 구역 내야 && 방향키 누름)이면 건너뛰고, 아니면 공 구역($5D: 0 내야·-1 없음 -> 슬롯 0~3, 4/7/10 -> 그 구역 3슬롯)의 $1E=0 선수 중 원작 근사 거리(0x2254+0x22A8) 최소 선수로 전환. 구역 판정은 zones.rom.foul 표 + 공 히트박스 idx2. 선행 예측 전환(predictRest)·12프레임 주기는 원작에 없어 rom=true 에서는 쓰지 않는다. tickFrames 이하 값은 rom=false 일 때만 사용",
+    "_note": "[확인 표 0x6B74/0x6BDC, 0x69D8 idx1; 사다리꼴 보정(0x6F26~)은 생략=추정] 공이 정지(30f 주기, 0x85CC)했을 때 공이 놓인 구역의 선수로 사람 조작권 전환. 좌석0 기준 x/y(좌석1은 x를 512-x 로 반전). 내야→내야 최근접, 외야 구역→그 구역 외야 최근접(방향키 눌러도 전환). [변경 2026-11-17 analysis/15 체감 반응 우선] (a) tickFrames 원작 30 -> 12: 정지 후 전환 주기·지연 0.5초 -> 0.2초(원작 값 30 보존). (b) 굴러가는 공의 예상 정지 지점(마찰·바운스 시뮬, match.predictRest)이 내 외야 구역이면 정지 전에 선행 전환하고, 그 구역 외야 선수가 이미 조작 중이면 내야 최근접 재전환(깜빡임)을 하지 않는다 [추정, 원작 이탈]",
+    "tickFrames": 12,
+    "ballBox": { "hx": 8, "hy": 4 },
+    "infield": { "xMin": 88, "xMax": 256, "yMin": 32, "yMax": 224 },
+    "outTop": { "xMin": 256, "xMax": 444, "yMin": 16, "yMax": 32 },
+    "outBottom": { "xMin": 256, "xMax": 444, "yMin": 224, "yMax": 255 },
+    "outBack": { "xMin": 424, "xMax": 444, "yMin": 32, "yMax": 224 }
+  },
+  "holdMaxFrames": 1200,
+  "throw": {
+    "rom": { "aim": true, "_noteAim": "[확인 대상=상대 활성 선수(cpu_def_* 발사 방향 일치) / 판독 ROM 0x81EA·0x8152 표 0x81A4/0x8184 조준 구역] aim=true: 투구 대상 직역. 조준 구역 0 또는 외야 보유자 -> 상대 활성 선수, 구역 4/7/10(방향키를 누르고 있는 동안 매 프레임 갱신) -> 그 구역 외야 중 최근접",
+      "windFrames": 10, "handDy": 2, "groundTargetZ": 16, "ceilZ": 384,
+      "hand": { "a": [[-8, 20], [-7, 25], [-7, 30]], "b": [[10, 22], [6, 23], [10, 31]] },
+      "_note": "[확인] 투구 직역(match.beginWind/romThrow/stepRomFly). windFrames: 투구·패스 애니 4프레임x속도2 -> 10번째 프레임에 발사(0x1A3A, 실측 B 누른 뒤 10프레임). hand: 투구 애니(0x06 앞=a, 0x08 뒤=b)의 손 위치 [dx,dz] 몸통 클래스 0~2 (ROM 0x39F6C), handDy(0x3A13A). groundTargetZ: 지상 투구는 대상 z+16 조준(0x7DE8). ceilZ: 비행 z>=0x180 이면 바운스 공으로(0xA744). 이 블록을 지우면 종전(즉시 발사·지상 차지·포물선) 투구로 돌아간다"
+    },
+    "maxCharge": 15, "recoverFrames": 12, "passRecoverFrames": 10,
+    "airBonusDiv": 4, "dashBonusDiv": 4,
+    "speedShift": 12, "airSpeedBonus": 65536, "dashSpeedBonus": 65536, "chargeSpeedShift": 12,
+    "targetZ": 12, "handZ": 16, "handDx": 8,
+    "steerUp": 4096, "steerFwd": 4096, "steerBack": 8192,
+    "_note": "[확인] 위력=s4(+s4/4 점프)(+s4/4 대시)+차지(≤15), 공중 차지 16f 자동발사. [추정] 속도 환산 s6<<12(16.16), 목표 z, 지상 투구도 차지 허용, 비행 중 궤적 보정 0x1000"
+  },
+  "pass": { "speedShift": 12, "z": 16, "catchDist": 8, "power": 3, "rom": true, "_noteRom": "[판독 ROM 0x72A0~0x7300/0x7E02/0xA516/0x935C, 하네스 시나리오 없음] rom=true: 패스 직역. 공은 대상 지점으로 포물선(수평 속력 s7*16/256 px/f, vz = floor(거리/2*16/(속력>>4)) * (중력>>12) << 12)으로 날아가며 대상을 따라가지 않는다. 위력 3(상대에게 닿으면 피격 0x847C: 데미지 max(0,3-방어)·넉백), 상대 캐치 자세에 닿으면 방향 검사(0x8416) 뒤 가로채기 또는 피격. 대상은 수신 대기(타입 0x30): 제자리에서 공이 히트박스 12 에 들어오면 캐치 자세(공중 패스는 점프), 히트박스가 겹치면 획득. 기본 패스 대상($E214)은 획득 때 슬롯별 패스 구역의 최근접 선수(4차 직역, analysis/25 §9-4), 컴퓨터는 공격 plan 이 다시 고른다. [미이식] 사람이 방향키로 고르는 패스 대상(0x8058)은 종전 자작 선택, 포메이션 패스는 종전 유도 패스" },
+  "ballBox": { "hw": 4, "hh": 4, "hz": 4, "_note": "[추정] 공 히트박스 8x8, z 반높이 4" },
+  "bodyZ": { "stand": 24, "crouch": 8, "_note": "[확인] 표 0x6A60: 서있기 24, 웅크림 8" },
+  "hitboxIdx": { "stand": 1, "crouch": 3, "catch": 11, "ball": 2, "jump": 8, "byClass": { "stand": [1, 4, 6], "jump": [8, 9, 10], "crouch": [3, 5, 7] }, "_noteByClass": "[확인] 몸통 클래스별 히트박스 번호(원작 트레이스 집계). byClass 를 지우면 종전(전원 클래스 0)" },
+  "hitboxZ": { "0": [0, 0], "1": [0, 24], "2": [0, 16], "3": [0, 8], "4": [0, 32], "5": [0, 8], "6": [0, 40], "7": [0, 8], "8": [8, 24], "9": [8, 24], "10": [8, 36], "11": [0, 32], "12": [0, 32], "13": [0, 32], "14": [0, 32], "15": [0, 32], "16": [-24, 24], "_note": "[확인] ROM 0x6A60 [zoff, zlen] 표 전체(17개). 0x6C44 겹침 검사가 x,y(0x69D8 = court.json hitboxes)와 함께 쓴다. 상태별 번호($4): 서기·걷기·대시·캐치 자세 1, 웅크림 3, 점프 8, 줍기·느슨한 공 캐치 11, 공 2 [실측 tools/diff 트레이스 hb 필드]" },
+  "hit": { "rom": true, "knockVz": 262144, "knockVxDiv": 4, "downFrames": 60, "ballBounceVz": 196608, "_note": "[확인] 피격 vz 4.0, 쓰러짐 60f, 공 vz 3.0" },
+  "ballPhys": { "rom": true, "floorBounceVz": 131072, "settleVz": 76000, "romMinShift": 3, "romSettleVz": 12289, "rollFrictionDiv": 1, "wallDamp": 1, "_note": "[확인] 비행중 바닥 튕김 vz=2.0 후 구르는 공. 벽 반사 속도 1/2 [추정]" },
+  "out": { "rom": true, "_noteRom": "[판독 ROM 0x9568/0x8930/0x8912/0x895A/0x986E + 에뮬 관측(아웃자가 타입 0x4C 로 걸어간 뒤 외야 타입으로 남는다), 하네스 시나리오 없음] rom=true: 아웃된 선수는 교체된 외야 슬롯(교체할 외야가 없으면 첫 슬롯에 선수가 있는 띠의 다음다음 슬롯)으로 빠른 이동(타입 0x4C, 도착 ±4)한 뒤 보통 외야 선수로 계속 뛴다(공을 줍고 던지고 맞는다. 외야 슬롯은 맞아도 데미지·아웃 없음). dead 플래그는 원작 $1F(내야 교체 후보에서 제외)의 뜻으로만 남는다. swapFrames 는 rom=true 에서 쓰지 않는다", "swapFrames": 70, "_note": "[확인] 아웃자↔외야 슬롯 교환 약 70f" },
+  "special": {
+    "enabled": true, "minCharge": 13, "maxCharge": 15, "maxSlot": 3, "ceilZ": 384, "minAirZ": 16,
+    "catchSlideBase": 8, "catchSlideCap": 60, "wallVxDiv": 4, "wallVyDiv": 2, "landVz": 131072,
+    "loopRadius": 30, "loopLift": 31, "loopFrames": 17,
+    "_note": "[확인] 06_special_shots.md. 발동=공중 투구(점프 중) 차지 13~15f 해제, 내야 슬롯(<4). 위력=specials.json power(255=덮어쓰지 않음). 중력 없음·방향키 보정 무시. 벽/바닥/천장 닿으면 바운스 공으로 종료. [추정] 루프는 반경 30px 근사, 속도 배율 정수 내림."
+  },
+  "cpu": {
+    "_note": "[추정] 컴퓨터 대전 난이도(cpuLevel 1~3, 기본 2). holdDelayAdd=투구 전 지연 가산 프레임, trigShift=방어 반응 시점 가산(음수=늦게 반응), aimFwd256=정면 조준 확률(/256), blunder256=방어 행동을 놓치고 가만히 서 있을 확률(/256). [추가 2026-11-17 analysis/15 CPU 반응 개선, 전부 [추정]] dash=1 이면 그 레벨 AI 가 공 추격 시 대시(원작 CPU 는 sub 8 대시로 달림, 관측 최대 3.5px/f): dashDist=대시 진입 거리(px), dashMaxPx=대시 속도 상한(px/f, 아래 dashCapPx=3.5 로 다시 제한), 제동거리 안에서는 입력을 떼어 멈춘다. outChase=1 이면 외야 AI 가 공의 예상 정지 지점이 자기 구역일 때 현재 위치 대신 그 지점으로 선행 이동(대시 포함), catch256=캐치 행동 선택 확률 보정(/256, 표로 뽑은 행동이 캐치가 아니면 이 확률로 캐치로 바꿈; 원작 CPU 는 에뮬 실측 약 28%가 캐치), catchShift=캐치 버튼 시점 가산(프레임; 음수=늦게, 캐치만 trigShift 대신 사용: trigShift -4 에서는 캐치를 눌러도 접촉 후라 성공 26%, 0 이면 76%, +2 면 98% 였다), outReach=외야 AI 줍기 반경(px, 기본 autoPickup.reach 12)이자 접근 판단 반경(공이 자기 띠에서 직각 방향 outReach 이내 코트 안쪽에 멈출 때도 띠를 벗어나지 않고 그 축으로 접근해 줍는다). 레벨1(캠페인 초반)은 전부 꺼서 기존 동작 유지. 플레이어 봇(tools/campaign_sim.mjs BOT)·사람편 AI 는 이 필드가 없어 영향 없음",
+    "rom": true,
+    "_noteRom": "[확인 = 하네스 전 프레임 일치: 수동 내야 0x8D02 서브 0/8/0x10 과 대기점 0x8EDE/0x8F52/0x8FBE, 활성 내야 0xBBE8 plan 0/0x28/0x2C, 피격·획득 전환(ctrl_stop_in, rng_stop_45, cpu_def_throw, rng_roll_180 f72 까지)] [판독 = 하네스 시나리오 없음: plan 0x30/0x34~0x44/0x48, 방어 결정 0xD5F0, 캐치 자세 0xC86C, 수동 내야 서브 0x14/0x18, 외야 0x9128/0x92A8 자리 이동, 강제 회수 0x9590] rom=true: 컴퓨터형 선수 직역(ai.js infieldRom/outfieldRom/retrieveRom). 컴퓨터 캐치는 사람과 같은 방향 규칙(0x7392 -> 0x8416)이고 방향은 캐치 자세 전 대기 핸들러가 매 프레임 공 쪽으로 맞춘다(0x8E50), 자세 중에는 바꾸지 않는다. 방어 결정 시점 = 상대 활성 선수의 투구 동작(서브 0x0C) 중(0xD7CC). 공을 든 뒤의 공격 plan·활성 외야(타입 0x74)·패스 대상 지정 대기(서브 0x0C)는 4차에 직역했다(_noteAtk). 방어 plan 0x34~0x40 은 cpu_def_a~e 로 확인(웅크림·옆걸음은 판독). [추정/미이식] 사이드 공 보유 플래그($16)가 지워지는 경로 일부, 필살기 공에 대한 수동 내야 웅크림, 공을 가진 수동 내야(0xA0D2), 난이도 1 의 blunder256(자작). 최신 미해결 목록은 analysis/25 §9-7. origSpeed/dash/outChase/catch256 등 자작 값은 rom=true 내야·외야에서 쓰지 않는다",
+    "_noteAtk": "[확인] 4차(analysis/25 §9): 활성 내야의 공 보유 plan(0xBC8E~, 10종 모두 하네스 atk_* 일치), 활성 외야 타입 0x74(0xCCE8, 일부 plan 은 판독만), 패스 대상 지정 대기. 직역 모드에서는 specialChance256 이 활성 선수에게 쓰이지 않는다(필살기는 원작 plan 0x14 등에서 나온다)",
+    "defaultLevel": 2,
+    "specialChance256": 0,
+    "dashCapPx": 4.2, "origSpeed": {"walkAdd": 1.25, "fastAdd": 3.0},
+    "levels": {
+      "1": { "holdDelayAdd": 20, "trigShift": -6, "aimFwd256": 130, "blunder256": 60, "catch256": 0, "catchShift": -4, "origSpeed": 1, "dash": 1, "dashDist": 96, "outChase": 0 },
+      "2": { "holdDelayAdd": 6, "trigShift": -4, "aimFwd256": 150, "blunder256": 0, "catch256": 0, "catchShift": -1, "origSpeed": 1, "dash": 1, "dashDist": 40, "dashMaxPx": 1.6, "outChase": 1, "outReach": 24 },
+      "3": { "holdDelayAdd": 0, "trigShift": -2, "aimFwd256": 180, "blunder256": 0, "catch256": 0, "catchShift": 0, "origSpeed": 1, "dash": 1, "dashDist": 32, "dashMaxPx": 2, "outChase": 1, "outReach": 28 }
+    }
+  },
+  "formation": {
+    "enabled": true, "uses": 3, "minRemaining": 4, "holdFrames": 60, "gatherBase": 3, "gatherDiv": 16,
+    "passSpeed": 8, "passInterval": 10, "maxPasses": 32, "endPowerMul": 4, "endSpeedBonus": 4, "endTimeout": 90,
+    "cpuRoll256": 128, "cpuEndChance256": 64, "cpuEndNeed": 5, "cam": [191, 0],
+    "_note": "[확인 analysis/14_formation_cutin.md] 포메이션 어택. enabled=false 면 전 기능 꺼짐(남은 횟수 0). uses=사이드당 경기당 횟수. 집합(3+s2/16 px/f)->대기 holdFrames->자동 패스(passSpeed px/f, 수신 후 passInterval f)->엔드 어택(위력 s4*endPowerMul, 속도 s6/16+endSpeedBonus px/f, 필살기 판정 없음). 사람: 받는 순간 B 홀드 또는 maxPasses 회. CPU: 수신마다 cpuEndChance256/256 성공 cpuEndNeed 회. CPU 발동: 공 잡을 때마다 팀 문턱(formations.json cpu_threshold) 도달 시 rng.int(256)<=cpuRoll256. cam=[좌석0, 좌석1] 대기·패스 중 카메라 x. 집합·대기 중 경기 시계 정지(원작). [추정] 엔드 어택 점프 최고점에서 투구"
+  },
+  "ai": { "holdDelayBase": 20, "holdDelayPerB13": 4, "chargeMin": 3, "chargeMax": 14, "_note": "[추정] AI 행동 선택은 ai_params 구조만 참고한 단순화" }
+}

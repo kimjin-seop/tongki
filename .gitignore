@@ -12,7 +12,7 @@ tools/cpu_orig/
 tools/diff/traces/
 tools/bgm/work/
 assets_lab/
-data/
+/data/
 _backup/
 _verify/
 node_modules/

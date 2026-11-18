@@ -1,0 +1,20 @@
+{
+  "_note": "싱글 캠페인(스토리) 15경기. teamMine/teamOpp=teams.json id, stage=stages.json id(stage_NN 번호, ROM stage 는 romStage). 근거 [확인]: analysis/09_team_names.md A-4(ROM 0x11ED2 상대·0x11EC2 스테이지·k>=7 내 팀 22). cpuLevel(1~3, rules.cpu.levels)·specialChance256(AI 가 내야 투구마다 점프 필살기를 시도할 확률 /256)은 [추정] 임시 곡선(초반 낮게~보스 높게), 임밸런이 후속 조정. 클라이언트가 보낸 값은 쓰지 않고 이 표만 신뢰한다.",
+  "chapters": [
+    { "k": 0, "teamMine": 0, "teamOpp": 1, "stage": 0, "romStage": 1, "cpuLevel": 1, "specialChance256": 0 },
+    { "k": 1, "teamMine": 0, "teamOpp": 3, "stage": 1, "romStage": 2, "cpuLevel": 1, "specialChance256": 0 },
+    { "k": 2, "teamMine": 0, "teamOpp": 2, "stage": 1, "romStage": 2, "cpuLevel": 1, "specialChance256": 4 },
+    { "k": 3, "teamMine": 0, "teamOpp": 5, "stage": 2, "romStage": 3, "cpuLevel": 2, "specialChance256": 16 },
+    { "k": 4, "teamMine": 0, "teamOpp": 6, "stage": 3, "romStage": 7, "cpuLevel": 2, "specialChance256": 24 },
+    { "k": 5, "teamMine": 0, "teamOpp": 7, "stage": 4, "romStage": 9, "cpuLevel": 2, "specialChance256": 32 },
+    { "k": 6, "teamMine": 0, "teamOpp": 4, "stage": 5, "romStage": 8, "cpuLevel": 2, "specialChance256": 40 },
+    { "k": 7, "teamMine": 22, "teamOpp": 17, "stage": 6, "romStage": 4, "cpuLevel": 2, "specialChance256": 56 },
+    { "k": 8, "teamMine": 22, "teamOpp": 18, "stage": 7, "romStage": 10, "cpuLevel": 3, "specialChance256": 64 },
+    { "k": 9, "teamMine": 22, "teamOpp": 21, "stage": 8, "romStage": 5, "cpuLevel": 3, "specialChance256": 72 },
+    { "k": 10, "teamMine": 22, "teamOpp": 19, "stage": 9, "romStage": 11, "cpuLevel": 3, "specialChance256": 72 },
+    { "k": 11, "teamMine": 22, "teamOpp": 20, "stage": 10, "romStage": 12, "cpuLevel": 3, "specialChance256": 64 },
+    { "k": 12, "teamMine": 22, "teamOpp": 16, "stage": 11, "romStage": 0, "cpuLevel": 3, "specialChance256": 72 },
+    { "k": 13, "teamMine": 22, "teamOpp": 15, "stage": 12, "romStage": 6, "cpuLevel": 3, "specialChance256": 80 },
+    { "k": 14, "teamMine": 22, "teamOpp": 23, "stage": 12, "romStage": 6, "cpuLevel": 3, "specialChance256": 80 }
+  ]
+}
