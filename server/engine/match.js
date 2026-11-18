@@ -697,6 +697,7 @@ export class Match {
         const v = romDecomp(this.data.rom.trig, p.slideA.i, p.slideA.fl, s);
         p.vx = v[0]; p.vy = v[1];
         this.faceByVel(p, p.vx, p.vy); // 0x753A
+        p.slideRun = true; // 0x753E: 이 프레임부터 애니는 0x8870(앞뒤 반대로 고름)
         p.x += p.vx; p.y += p.vy;
         this.clampCourtRom(p); // 0x754C -> 0x7F8E (이동 허용영역 클램프는 없다)
       }
@@ -1860,7 +1861,7 @@ export class Match {
         if (ang && this.data.rom && R.catch.rom) {
           // [직역 ROM 0x7400~0x7448] 지상에서 투구(필살기 포함)를 잡으면 뒤로 밀린다: 속력 (min(위력,60)+8)/16 px/f 에서 시작해 마찰만큼 감속, 방향 = 공이 날아온 각도.
           // 공에는 받아치기 창 60프레임(0x8CDC): 그 안에 지상에서 던지면 잡은 공의 위력·속력 그대로
-          if (!(q.z > 0 || q.vz !== 0)) { q.slideV = (Math.min(pw, R.catch.rom.slideCap) + R.catch.rom.slideBase) << 4; q.slideA = ang; q.vx = 0; q.vy = 0; q.slideMir = q.face < 0; }
+          if (!(q.z > 0 || q.vz !== 0)) { q.slideV = (Math.min(pw, R.catch.rom.slideCap) + R.catch.rom.slideBase) << 4; q.slideA = ang; q.vx = 0; q.vy = 0; q.slideMir = q.face < 0; q.slideRun = false; }
           b.ctr = this.tr ? 0 : R.catch.rom.counterFrames; b.cpow = pw; b.cspd = spd8; // 특훈은 받아치기 창(글로우)이 없다 [판독만 ROM 0xA3E6]
           b.cid = sk ? sk - 1 : null; // 잡은 필살 공의 ID(공 $14). 창 안에 던지면 같은 ID 의 필살 슛(romThrow, 0x8C08)
         } else if (sk) this.slideCatcher(q, dir, pw);
@@ -2216,9 +2217,15 @@ export class Match {
     const q = (v) => Math.round(v / 4096); // 1/16 px
     // 선수 배열(길이 11): [0]x [1]y [2]z [3]st [4]hp [5]slot [6]플래그 [7]charge [8]face [9]입장 보행 [10]포메이션 집합 이동
     // 플래그 bit7 = 뒤 보기(원작 $3 bit1), face = 좌우(원작 $3 bit0): 캐치 성공 여부가 이 방향으로 정해진다
+    // 단 캐치 후 밀림(bit6) 중엔 그려지는 방향을 보낸다(밀림 핸들러 0x74FA 는 $3 을 밀리는 속도 쪽으로 바꾼다(0x7868) [직역]):
+    //  face = 스프라이트 반전($2 bit7) = 잡은 순간의 좌우(0x8466 을 부르지 않음, 공 손 위치 slideMir 와 같은 값),
+    //  bit7 = 애니 앞뒤: 0x8870 은 $3 bit1 이 서 있으면 0x20(앞), 아니면 0x22(뒤)로 반대로 고른다. 잡은 프레임(핸들러가 아직 안 돎)은 캐치 자세 그대로
+    //  -> 공이 온 쪽을 본 채 밀린다 [확인: 오라클 cpu_def_a f74~f86, ctr_special f64~f97 는 밀리는 동안 $3=0x10 인데 애니 0x22 유지]
+    const slid = (o) => o.slideV > 0 && o.slideMir !== undefined;
     const p = this.players.map((o) => [
       q(o.x), q(o.y), q(o.z), o.st, o.hp, o.slot,
-      (o.charging || (o.wind && o.st === ST.JUMP) ? 1 : 0) | (o.dashFlag ? 2 : 0) | (o.role === 'out' ? 4 : 0) | (o.dead ? 8 : 0) | (o.hasBall ? 16 : 0) | (o.swing > 0 ? 32 : 0) | (o.slideV > 0 ? 64 : 0) | (o.back ? 128 : 0), o.charge, o.face,
+      (o.charging || (o.wind && o.st === ST.JUMP) ? 1 : 0) | (o.dashFlag ? 2 : 0) | (o.role === 'out' ? 4 : 0) | (o.dead ? 8 : 0) | (o.hasBall ? 16 : 0) | (o.swing > 0 ? 32 : 0) | (o.slideV > 0 ? 64 : 0) | ((slid(o) && o.slideRun ? !o.back : o.back) ? 128 : 0), o.charge,
+      slid(o) ? (o.slideMir ? -1 : 1) : o.face,
       o.en ? 1 : 0, o.fmMove ? 1 : 0,
     ]);
     const b = this.ball;
