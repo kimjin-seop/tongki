@@ -1,0 +1,1355 @@
+{
+ "_source": "ROM 0x74F8E(팀명 12B x25: 약칭3+이름8+1) / 0x753FA(선수명 8B x7 x25), 글자 변환 ROM 0x21C0. 서버 미적용 제안안",
+ "teams": [
+  {
+   "id": 0,
+   "abbr": "T.D",
+   "name_ja_rom": "たまがわしょう",
+   "name_ja_orig": "球川小",
+   "name_ko": "태동 국민학교",
+   "evidence": "확인(球川小=たまがわ, 한국 방영명)",
+   "note": null,
+   "select_screen_cell": 0,
+   "players": [
+    {
+     "idx": 0,
+     "name_ja": "いちげきだんぺい",
+     "name_ko": "통키",
+     "evidence": "확인"
+    },
+    {
+     "idx": 1,
+     "name_ja": "こぼとけちんねん",
+     "name_ko": "오맹태",
+     "evidence": "확인"
+    },
+    {
+     "idx": 2,
+     "name_ja": "ひうら　たかし",
+     "name_ko": "권총탄",
+     "evidence": "확인"
+    },
+    {
+     "idx": 3,
+     "name_ja": "かざみ　まさる",
+     "name_ko": "강철",
+     "evidence": "확인"
+    },
+    {
+     "idx": 4,
+     "name_ja": "はやみ　まなぶ",
+     "name_ko": "지상훈",
+     "evidence": "확인"
+    },
+    {
+     "idx": 5,
+     "name_ja": "みかさキャプテン",
+     "name_ko": "황금산",
+     "evidence": "확인"
+    },
+    {
+     "idx": 6,
+     "name_ja": "ひじかた　まさる",
+     "name_ko": "천일봉",
+     "evidence": "확인"
+    }
+   ]
+  },
+  {
+   "id": 1,
+   "abbr": "S.A",
+   "name_ja_rom": "セントアロ<1d>ズ",
+   "name_ja_orig": "聖アローズ学院",
+   "name_ko": "상아 국민학교",
+   "evidence": "확인",
+   "note": null,
+   "select_screen_cell": 1,
+   "players": [
+    {
+     "idx": 0,
+     "name_ja": "にかいどうたいが",
+     "name_ko": "남타이거",
+     "evidence": "추정"
+    },
+    {
+     "idx": 1,
+     "name_ja": "いがらし　ごう",
+     "name_ko": "장도끼",
+     "evidence": "확인"
+    },
+    {
+     "idx": 2,
+     "name_ja": "ひがしやま",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 3,
+     "name_ja": "さかきばらりょう",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 4,
+     "name_ja": "くすのき　しゅん",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 5,
+     "name_ja": "こばやかわまこと",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 6,
+     "name_ja": "みたむら　ふとし",
+     "name_ko": null,
+     "evidence": "미확인"
+    }
+   ]
+  },
+  {
+   "id": 2,
+   "abbr": "A.T",
+   "name_ja_rom": "あらさきしょう",
+   "name_ja_orig": "荒崎小",
+   "name_ko": "암산 국민학교",
+   "evidence": "확인",
+   "note": null,
+   "select_screen_cell": 3,
+   "players": [
+    {
+     "idx": 0,
+     "name_ja": "りくおう　とうま",
+     "name_ko": "태백산",
+     "evidence": "추정"
+    },
+    {
+     "idx": 1,
+     "name_ja": "さかまき　けん",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 2,
+     "name_ja": "たき　しょうじ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 3,
+     "name_ja": "つのだ　ゆきお",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 4,
+     "name_ja": "みさわ　たくみ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 5,
+     "name_ja": "さかまき　ごう",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 6,
+     "name_ja": "こいずみ　あきら",
+     "name_ko": "강민철",
+     "evidence": "추정(게임판 표기 小泉晶=白川晶)"
+    }
+   ]
+  },
+  {
+   "id": 3,
+   "abbr": "B.A",
+   "name_ja_rom": "B.ア<1d>マ<1d>ズ",
+   "name_ja_orig": "ブラックアーマーズ",
+   "name_ko": "백아 국민학교",
+   "evidence": "확인",
+   "note": null,
+   "select_screen_cell": 2,
+   "players": [
+    {
+     "idx": 0,
+     "name_ja": "みどう　あらし",
+     "name_ko": "민대풍",
+     "evidence": "추정"
+    },
+    {
+     "idx": 1,
+     "name_ja": "たかやま　じゅん",
+     "name_ko": "나한상",
+     "evidence": "확인"
+    },
+    {
+     "idx": 2,
+     "name_ja": "ふわりゅうのすけ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 3,
+     "name_ja": "おがた　けんじ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 4,
+     "name_ja": "はっとり　かずき",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 5,
+     "name_ja": "うさみ　しゅん",
+     "name_ko": "우갑철",
+     "evidence": "확인"
+    },
+    {
+     "idx": 6,
+     "name_ja": "ゆうき　たけし",
+     "name_ko": null,
+     "evidence": "미확인"
+    }
+   ]
+  },
+  {
+   "id": 4,
+   "abbr": "TOK",
+   "name_ja_rom": "トチョ<1d>ズ",
+   "name_ja_orig": null,
+   "name_ko": null,
+   "evidence": "미확인(한국판 이름 불명)",
+   "note": "도쿄(都庁)",
+   "select_screen_cell": 7,
+   "players": [
+    {
+     "idx": 0,
+     "name_ja": "みたか　はやと",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 1,
+     "name_ja": "かまた　よしろう",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 2,
+     "name_ja": "よつや　まなぶ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 3,
+     "name_ja": "おくたま　みつる",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 4,
+     "name_ja": "つきじ　そうし",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 5,
+     "name_ja": "きんし　たろう",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 6,
+     "name_ja": "さんちゃ　かつや",
+     "name_ko": null,
+     "evidence": "미확인"
+    }
+   ]
+  },
+  {
+   "id": 5,
+   "abbr": "HOK",
+   "name_ja_rom": "サイホクタンズ",
+   "name_ja_orig": null,
+   "name_ko": null,
+   "evidence": "미확인(한국판 이름 불명)",
+   "note": "홋카이도(西北?)",
+   "select_screen_cell": 4,
+   "players": [
+    {
+     "idx": 0,
+     "name_ja": "きたの　だいち",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 1,
+     "name_ja": "そうや　ゆきひこ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 2,
+     "name_ja": "とかち　ゆうじ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 3,
+     "name_ja": "ていね　こうじ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 4,
+     "name_ja": "あかん　ひでき",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 5,
+     "name_ja": "ふらの　とおる",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 6,
+     "name_ja": "いしかり　まなお",
+     "name_ko": null,
+     "evidence": "미확인"
+    }
+   ]
+  },
+  {
+   "id": 6,
+   "abbr": "KYO",
+   "name_ja_rom": "アラシヤマ<1d>ズ",
+   "name_ja_orig": null,
+   "name_ko": null,
+   "evidence": "미확인(한국판 이름 불명)",
+   "note": "교토(嵐山)",
+   "select_screen_cell": 5,
+   "players": [
+    {
+     "idx": 0,
+     "name_ja": "ごしょ　まさき",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 1,
+     "name_ja": "きよみず　てらお",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 2,
+     "name_ja": "かわら　まちお",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 3,
+     "name_ja": "やわた　ひろひさ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 4,
+     "name_ja": "やましろ　はやた",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 5,
+     "name_ja": "さがの　みちお",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 6,
+     "name_ja": "うじ　ちゃのすけ",
+     "name_ko": null,
+     "evidence": "미확인"
+    }
+   ]
+  },
+  {
+   "id": 7,
+   "abbr": "OKI",
+   "name_ja_rom": "サイナンタンズ",
+   "name_ja_orig": null,
+   "name_ko": null,
+   "evidence": "미확인(한국판 이름 불명)",
+   "note": "오키나와(西南?)",
+   "select_screen_cell": 6,
+   "players": [
+    {
+     "idx": 0,
+     "name_ja": "いしがき　しん",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 1,
+     "name_ja": "まんざ　こうじ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 2,
+     "name_ja": "しまぶくろ　けん",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 3,
+     "name_ja": "くめしま　てつや",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 4,
+     "name_ja": "なご　ゆういち",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 5,
+     "name_ja": "みやこ　しまお",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 6,
+     "name_ja": "よろん　とうた",
+     "name_ko": null,
+     "evidence": "미확인"
+    }
+   ]
+  },
+  {
+   "id": 8,
+   "abbr": "USA",
+   "name_ja_rom": "ユ<1d>エスエ<1d>ズ",
+   "name_ja_orig": null,
+   "name_ko": null,
+   "evidence": "미확인(한국판 이름 불명)",
+   "note": "미국",
+   "select_screen_cell": 14,
+   "players": [
+    {
+     "idx": 0,
+     "name_ja": "ジュリアン",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 1,
+     "name_ja": "ジョ<1d>ジ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 2,
+     "name_ja": "ノックス",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 3,
+     "name_ja": "デンジャ<1d>",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 4,
+     "name_ja": "ブラウン",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 5,
+     "name_ja": "デビッド",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 6,
+     "name_ja": "ハ<1d>パス",
+     "name_ko": null,
+     "evidence": "미확인"
+    }
+   ]
+  },
+  {
+   "id": 9,
+   "abbr": "CHI",
+   "name_ja_rom": "イ<1d>スタ<1d>ズ",
+   "name_ja_orig": null,
+   "name_ko": null,
+   "evidence": "미확인(한국판 이름 불명)",
+   "note": "칠레(이스터섬)",
+   "select_screen_cell": 13,
+   "players": [
+    {
+     "idx": 0,
+     "name_ja": "アレナス",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 1,
+     "name_ja": "ハイリグ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 2,
+     "name_ja": "アゲ<1d>ル",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 3,
+     "name_ja": "アンデス",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 4,
+     "name_ja": "サッフォ<1d>",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 5,
+     "name_ja": "パイスト",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 6,
+     "name_ja": "リンジ<1d>ン",
+     "name_ko": null,
+     "evidence": "미확인"
+    }
+   ]
+  },
+  {
+   "id": 10,
+   "abbr": "CHN",
+   "name_ja_rom": "カンフ<1d>ズ",
+   "name_ja_orig": null,
+   "name_ko": null,
+   "evidence": "미확인(한국판 이름 불명)",
+   "note": "중국",
+   "select_screen_cell": 8,
+   "players": [
+    {
+     "idx": 0,
+     "name_ja": "ミャン",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 1,
+     "name_ja": "シャンチン",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 2,
+     "name_ja": "フォンリ<1d>ス<1d>",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 3,
+     "name_ja": "チャオチ<1d>",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 4,
+     "name_ja": "シャンニン",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 5,
+     "name_ja": "ファンツィ<1d>",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 6,
+     "name_ja": "イ<1d>シュン",
+     "name_ko": null,
+     "evidence": "미확인"
+    }
+   ]
+  },
+  {
+   "id": 11,
+   "abbr": "URS",
+   "name_ja_rom": "ロシアンズ",
+   "name_ja_orig": null,
+   "name_ko": null,
+   "evidence": "미확인(한국판 이름 불명)",
+   "note": "러시아(소련 URS)",
+   "select_screen_cell": 9,
+   "players": [
+    {
+     "idx": 0,
+     "name_ja": "バジェスキ<1d>",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 1,
+     "name_ja": "キキルスク",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 2,
+     "name_ja": "アイ<1d>エフ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 3,
+     "name_ja": "クルシチョフ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 4,
+     "name_ja": "クナハルト",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 5,
+     "name_ja": "アバルスク",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 6,
+     "name_ja": "スタ<1d>リア",
+     "name_ko": null,
+     "evidence": "미확인"
+    }
+   ]
+  },
+  {
+   "id": 12,
+   "abbr": "GRE",
+   "name_ja_rom": "ギリシャンズ",
+   "name_ja_orig": null,
+   "name_ko": null,
+   "evidence": "미확인(한국판 이름 불명)",
+   "note": "그리스",
+   "select_screen_cell": 11,
+   "players": [
+    {
+     "idx": 0,
+     "name_ja": "スコ<1d>ピオン",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 1,
+     "name_ja": "ジェミニ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 2,
+     "name_ja": "オリオン",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 3,
+     "name_ja": "アキレス",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 4,
+     "name_ja": "サジタリアス",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 5,
+     "name_ja": "ライブラ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 6,
+     "name_ja": "レオ",
+     "name_ko": null,
+     "evidence": "미확인"
+    }
+   ]
+  },
+  {
+   "id": 13,
+   "abbr": "BRA",
+   "name_ja_rom": "カ<1d>ニバルズ",
+   "name_ja_orig": null,
+   "name_ko": null,
+   "evidence": "미확인(한국판 이름 불명)",
+   "note": "브라질",
+   "select_screen_cell": 12,
+   "players": [
+    {
+     "idx": 0,
+     "name_ja": "フォル<1d>タ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 1,
+     "name_ja": "ナントス",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 2,
+     "name_ja": "サンタ<1d>ス",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 3,
+     "name_ja": "コロリ<1d>ナ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 4,
+     "name_ja": "ジャンリア",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 5,
+     "name_ja": "トンキス",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 6,
+     "name_ja": "ダダ<1d>ル",
+     "name_ko": null,
+     "evidence": "미확인"
+    }
+   ]
+  },
+  {
+   "id": 14,
+   "abbr": "EGY",
+   "name_ja_rom": "スフィンノックス",
+   "name_ja_orig": null,
+   "name_ko": null,
+   "evidence": "미확인(한국판 이름 불명)",
+   "note": "이집트",
+   "select_screen_cell": 10,
+   "players": [
+    {
+     "idx": 0,
+     "name_ja": "アメンデ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 1,
+     "name_ja": "トリュク",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 2,
+     "name_ja": "サド<1d>ラ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 3,
+     "name_ja": "マバネク",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 4,
+     "name_ja": "バルカン",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 5,
+     "name_ja": "ゼミスト",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 6,
+     "name_ja": "ダイル",
+     "name_ko": null,
+     "evidence": "미확인"
+    }
+   ]
+  },
+  {
+   "id": 15,
+   "abbr": "USA",
+   "name_ja_rom": "マンハッタンズ",
+   "name_ja_orig": null,
+   "name_ko": null,
+   "evidence": "미확인(한국판 이름 불명)",
+   "note": "미국(맨해튼)",
+   "select_screen_cell": null,
+   "players": [
+    {
+     "idx": 0,
+     "name_ja": "キャサリン",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 1,
+     "name_ja": "デ<1d>ビス",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 2,
+     "name_ja": "ジョ<1d>ンズ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 3,
+     "name_ja": "エディ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 4,
+     "name_ja": "ジャンピン",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 5,
+     "name_ja": "ワルダ<1d>",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 6,
+     "name_ja": "キング",
+     "name_ko": null,
+     "evidence": "미확인"
+    }
+   ]
+  },
+  {
+   "id": 16,
+   "abbr": "CHI",
+   "name_ja_rom": "モアイヘッズ",
+   "name_ja_orig": null,
+   "name_ko": null,
+   "evidence": "미확인(한국판 이름 불명)",
+   "note": "칠레(모아이)",
+   "select_screen_cell": null,
+   "players": [
+    {
+     "idx": 0,
+     "name_ja": "セプシオン",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 1,
+     "name_ja": "ジョニ<1d>",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 2,
+     "name_ja": "アクシア",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 3,
+     "name_ja": "ロスアン",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 4,
+     "name_ja": "ナタ<1d>レス",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 5,
+     "name_ja": "コルデラ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 6,
+     "name_ja": "デパブロ",
+     "name_ko": null,
+     "evidence": "미확인"
+    }
+   ]
+  },
+  {
+   "id": 17,
+   "abbr": "CHN",
+   "name_ja_rom": "ペキンズ",
+   "name_ja_orig": null,
+   "name_ko": null,
+   "evidence": "미확인(한국판 이름 불명)",
+   "note": "중국(베이징)",
+   "select_screen_cell": null,
+   "players": [
+    {
+     "idx": 0,
+     "name_ja": "レイファン",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 1,
+     "name_ja": "ニ<1d>ハオ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 2,
+     "name_ja": "チュンチャオ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 3,
+     "name_ja": "チ<1d>カイシュン",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 4,
+     "name_ja": "シャオパン",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 5,
+     "name_ja": "ホ<1d>イ<1d>ソ<1d>",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 6,
+     "name_ja": "フェ<1d>ヤオ",
+     "name_ko": null,
+     "evidence": "미확인"
+    }
+   ]
+  },
+  {
+   "id": 18,
+   "abbr": "URS",
+   "name_ja_rom": "クレムリンズ",
+   "name_ja_orig": null,
+   "name_ko": null,
+   "evidence": "미확인(한국판 이름 불명)",
+   "note": "러시아(크렘린)",
+   "select_screen_cell": null,
+   "players": [
+    {
+     "idx": 0,
+     "name_ja": "オラデノフ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 1,
+     "name_ja": "ドテカンスキ<1d>",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 2,
+     "name_ja": "ナバルキン",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 3,
+     "name_ja": "パパフ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 4,
+     "name_ja": "キメリョフ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 5,
+     "name_ja": "マナ<1d>リン",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 6,
+     "name_ja": "トロスコフ",
+     "name_ko": null,
+     "evidence": "미확인"
+    }
+   ]
+  },
+  {
+   "id": 19,
+   "abbr": "GRE",
+   "name_ja_rom": "エ<1d>ゲナイツ",
+   "name_ja_orig": null,
+   "name_ko": null,
+   "evidence": "미확인(한국판 이름 불명)",
+   "note": "그리스(에게)",
+   "select_screen_cell": null,
+   "players": [
+    {
+     "idx": 0,
+     "name_ja": "ゼウス",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 1,
+     "name_ja": "ポセイドン",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 2,
+     "name_ja": "ハ<1d>デス",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 3,
+     "name_ja": "アポロン",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 4,
+     "name_ja": "ネプチュ<1d>ン",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 5,
+     "name_ja": "ケンタウルス",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 6,
+     "name_ja": "グリフォス",
+     "name_ko": null,
+     "evidence": "미확인"
+    }
+   ]
+  },
+  {
+   "id": 20,
+   "abbr": "BRA",
+   "name_ja_rom": "アマゾ<1d>ンズ",
+   "name_ja_orig": null,
+   "name_ko": null,
+   "evidence": "미확인(한국판 이름 불명)",
+   "note": "브라질(아마존)",
+   "select_screen_cell": null,
+   "players": [
+    {
+     "idx": 0,
+     "name_ja": "ゴルド<1d>ル",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 1,
+     "name_ja": "マルンバ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 2,
+     "name_ja": "ルイス",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 3,
+     "name_ja": "サルバダル",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 4,
+     "name_ja": "サンタナ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 5,
+     "name_ja": "リベロン",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 6,
+     "name_ja": "カイアス",
+     "name_ko": null,
+     "evidence": "미확인"
+    }
+   ]
+  },
+  {
+   "id": 21,
+   "abbr": "EGY",
+   "name_ja_rom": "ピラミッズ",
+   "name_ja_orig": null,
+   "name_ko": null,
+   "evidence": "미확인(한국판 이름 불명)",
+   "note": "이집트(피라미드)",
+   "select_screen_cell": null,
+   "players": [
+    {
+     "idx": 0,
+     "name_ja": "アバドラ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 1,
+     "name_ja": "バスラム",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 2,
+     "name_ja": "モハマド",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 3,
+     "name_ja": "ジョビル",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 4,
+     "name_ja": "ス<1d>リム",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 5,
+     "name_ja": "スビビ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 6,
+     "name_ja": "アスウェン",
+     "name_ko": null,
+     "evidence": "미확인"
+    }
+   ]
+  },
+  {
+   "id": 22,
+   "abbr": "TAM",
+   "name_ja_rom": "たまがわしょう",
+   "name_ja_orig": "球川小",
+   "name_ko": "태동 국민학교",
+   "evidence": "확인(후반부 로스터)",
+   "note": null,
+   "select_screen_cell": null,
+   "players": [
+    {
+     "idx": 0,
+     "name_ja": "いちげきだんぺい",
+     "name_ko": "통키",
+     "evidence": "확인"
+    },
+    {
+     "idx": 1,
+     "name_ja": "たけだ　ゆういち",
+     "name_ko": "탁용칠",
+     "evidence": "확인"
+    },
+    {
+     "idx": 2,
+     "name_ja": "おざきキャプテン",
+     "name_ko": "오동도",
+     "evidence": "확인"
+    },
+    {
+     "idx": 3,
+     "name_ja": "たけだ　ゆうじ",
+     "name_ko": "탁용팔",
+     "evidence": "확인"
+    },
+    {
+     "idx": 4,
+     "name_ja": "きのした　つよし",
+     "name_ko": "이봉원",
+     "evidence": "확인"
+    },
+    {
+     "idx": 5,
+     "name_ja": "こぼとけちんねん",
+     "name_ko": "오맹태",
+     "evidence": "확인"
+    },
+    {
+     "idx": 6,
+     "name_ja": "みうら　つとむ",
+     "name_ko": "서태지",
+     "evidence": "확인"
+    }
+   ]
+  },
+  {
+   "id": 23,
+   "abbr": "CHO",
+   "name_ja_rom": "ちょうとうきゅう",
+   "name_ja_orig": null,
+   "name_ko": null,
+   "evidence": "미확인(한국판 이름 불명)",
+   "note": "초투구부(보스)",
+   "select_screen_cell": null,
+   "players": [
+    {
+     "idx": 0,
+     "name_ja": "にかいどうたいが",
+     "name_ko": "남타이거",
+     "evidence": "추정"
+    },
+    {
+     "idx": 1,
+     "name_ja": "キャサリン",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 2,
+     "name_ja": "デ<1d>ビス",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 3,
+     "name_ja": "ジョ<1d>ンズ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 4,
+     "name_ja": "エディ",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 5,
+     "name_ja": "ジャンピン",
+     "name_ko": null,
+     "evidence": "미확인"
+    },
+    {
+     "idx": 6,
+     "name_ja": "ワルダ<1d>",
+     "name_ko": null,
+     "evidence": "미확인"
+    }
+   ]
+  },
+  {
+   "id": 24,
+   "abbr": "REN",
+   "name_ja_rom": "れんしゅう",
+   "name_ja_orig": null,
+   "name_ko": null,
+   "evidence": "미확인(한국판 이름 불명)",
+   "note": "연습",
+   "select_screen_cell": null,
+   "players": [
+    {
+     "idx": 0,
+     "name_ja": "みかさキャプテン",
+     "name_ko": "황금산",
+     "evidence": "확인"
+    },
+    {
+     "idx": 1,
+     "name_ja": "ひうら　たかし",
+     "name_ko": "권총탄",
+     "evidence": "확인"
+    },
+    {
+     "idx": 2,
+     "name_ja": "ひじかた　まさる",
+     "name_ko": "천일봉",
+     "evidence": "확인"
+    },
+    {
+     "idx": 3,
+     "name_ja": "かざみ　まさる",
+     "name_ko": "강철",
+     "evidence": "확인"
+    },
+    {
+     "idx": 4,
+     "name_ja": "はやみ　まなぶ",
+     "name_ko": "지상훈",
+     "evidence": "확인"
+    },
+    {
+     "idx": 5,
+     "name_ja": "れんしゅう1",
+     "name_ko": "연습생1",
+     "evidence": "추정(れんしゅう=연습)"
+    },
+    {
+     "idx": 6,
+     "name_ja": "れんしゅう2",
+     "name_ko": "연습생2",
+     "evidence": "추정(れんしゅう=연습)"
+    }
+   ]
+  }
+ ]
+}

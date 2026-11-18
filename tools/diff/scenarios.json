@@ -1,0 +1,93 @@
+{
+  "_doc": "차분 시나리오. pads = '키:프레임수' 를 공백으로 나열(키 U D L R B C A S 조합, '-' = 무입력). pads2 = 2P 패드(생략 시 무입력). setup = 원작 상태에 가하는 사전 조작 목록(oracle_trace.py 의 SETUP 표). watch = 합격 판정 대상(p0~p13 = 선수 객체, ball = 공, rules = HP·남은 인원, rng = 난수 시드). known = analysis/19 기준 예상 판정(하니스 자체 검증용, '?' = 예상 없음).",
+  "state": "ctrl0",
+  "scenarios": [
+    { "name": "walk_R",  "area": "걷기", "pads": "R:6 -:6",  "watch": ["p0"], "known": "FAIL" },
+    { "name": "walk_L",  "area": "걷기", "pads": "L:12 -:6", "watch": ["p0"], "known": "FAIL" },
+    { "name": "walk_U",  "area": "걷기", "pads": "U:12 -:6", "watch": ["p0"], "known": "FAIL" },
+    { "name": "walk_D",  "area": "걷기", "pads": "D:12 -:6", "watch": ["p0"], "known": "FAIL" },
+    { "name": "walk_UL", "area": "걷기", "pads": "UL:12 -:6", "watch": ["p0"], "known": "FAIL" },
+    { "name": "walk_DL", "area": "걷기", "pads": "DL:12 -:6", "watch": ["p0"], "known": "FAIL" },
+    { "name": "walk_UR", "area": "걷기", "pads": "UR:6 -:6", "watch": ["p0"], "known": "FAIL" },
+    { "name": "walk_DR", "area": "걷기", "pads": "DR:6 -:6", "watch": ["p0"], "known": "FAIL" },
+    { "name": "walk_start_stop_reverse", "area": "걷기", "pads": "L:6 -:4 R:5 -:4", "watch": ["p0"], "known": "FAIL" },
+
+    { "name": "dash_L_hold",    "area": "대시", "pads": "L:2 -:3 L:30", "watch": ["p0"], "known": "FAIL" },
+    { "name": "dash_L_release", "area": "대시", "pads": "L:2 -:3 L:2 -:35", "watch": ["p0"], "known": "FAIL" },
+    { "name": "dash_U_doubletap", "area": "대시", "pads": "U:2 -:3 U:20", "watch": ["p0"], "known": "FAIL" },
+
+    { "name": "jump_stand", "area": "점프", "pads": "C:1 -:45", "watch": ["p0"], "known": "FAIL" },
+    { "name": "jump_walk_L", "area": "점프", "pads": "L:5 LC:1 L:45", "watch": ["p0"], "known": "FAIL" },
+
+    { "name": "dashjump_L", "area": "대시점프", "pads": "L:2 -:3 L:10 LC:1 L:56", "watch": ["p0"], "known": "FAIL" },
+
+    { "name": "crouch_A", "area": "웅크림", "pads": "A:1 -:36", "watch": ["p0"], "known": "?" },
+
+    { "name": "catch_B_tap",  "area": "캐치 자세", "pads": "B:1 -:16", "watch": ["p0"], "known": "?" },
+    { "name": "catch_B_hold", "area": "캐치 자세", "pads": "B:30", "watch": ["p0"], "known": "?" },
+
+    { "name": "throw_ground_tap",  "area": "지상 투구", "setup": ["give_ball"], "pads": "B:1 -:30", "watch": ["p0"], "known": "FAIL" },
+    { "name": "throw_ground_hold", "area": "지상 투구", "setup": ["give_ball"], "pads": "B:5 -:30", "watch": ["p0"], "known": "FAIL" },
+
+    { "name": "ball_launch_tap",  "area": "공 발사", "setup": ["give_ball"], "pads": "B:1 -:30", "watch": ["ball"], "known": "FAIL" },
+    { "name": "ball_launch_hold", "area": "공 발사", "setup": ["give_ball"], "pads": "B:5 -:30", "watch": ["ball"], "known": "FAIL" },
+
+    { "name": "ball_launch_only", "area": "공 발사", "setup": ["give_ball"], "pads": "B:1 -:13", "watch": ["p0", "ball"], "known": "?", "_note": "발사 준비 10f·손 위치·발사 초기값·비행만(상대 CPU 의 피격 판정이 끼기 전 f14 까지)" },
+
+    { "name": "bound_R", "area": "이동 한계", "pads": "R:40", "watch": ["p0"], "known": "FAIL" },
+    { "name": "bound_D", "area": "이동 한계", "pads": "D:120", "watch": ["p0"], "known": "FAIL" },
+    { "name": "bound_U", "area": "이동 한계", "pads": "U:100", "watch": ["p0"], "known": "FAIL" },
+    { "name": "bound_L", "area": "이동 한계", "pin": false, "pads": "L:180", "watch": ["p0", "ctrl"], "known": "FAIL", "_note": "f63 에 바운스 전환(0xA7C6)으로 조작 선수가 바뀐 뒤 p0 은 수동 내야(타입 0x20)가 된다. 고정을 꺼서 전환 시점·대상과 수동 내야 대기점 이동(난수 포함)까지 비교" },
+    { "name": "bound_L_ball", "area": "이동 한계", "setup": ["give_ball"], "pads": "L:180", "watch": ["p0"], "known": "FAIL", "_note": "공을 들려 원작의 조작 선수 자동 전환을 막은 왼쪽 한계 측정" },
+
+    { "name": "line_dash_R", "area": "선 이탈", "pads": "R:2 -:3 R:20 -:60", "watch": ["p0"], "known": "FAIL" },
+    { "name": "line_dash_R_ball", "area": "선 이탈", "setup": ["give_ball"], "pads": "R:2 -:3 R:20 -:52", "watch": ["p0"], "known": "?", "_note": "공을 든 채 대시로 선을 넘음: 30f 정지 뒤 공을 놓고 20f 더 정지, 복귀(f77). 공은 감시하지 않는다: 대시 애니 프레임별 손 위치(미이식)와 놓인 공을 상대 CPU 가 줍는 시점(CPU 두뇌 미이식)이 달라서. 공을 놓는 프레임(f53) 위치·속도는 트레이스로 일치 확인" },
+
+    { "name": "pickup_A", "area": "줍기", "setup": ["ball:226,128"], "pads": "-:3 A:1 -:30", "watch": ["p0", "ball"], "known": "?", "_note": "정지 공 10px 옆에서 A 1프레임: 줍기 15f 뒤 보유" },
+    { "name": "pickup_B", "area": "줍기", "setup": ["ball:246,138"], "pads": "-:3 B:1 -:30", "watch": ["p0", "ball"], "known": "?", "_note": "정지 공에서 B 1프레임도 줍기" },
+    { "name": "pickup_far", "area": "줍기", "setup": ["ball:212,128"], "pads": "-:3 A:1 -:30", "watch": ["p0", "ball"], "known": "?", "_note": "24px 떨어진 정지 공: 줍기 동작은 하지만 닿지 않아 실패" },
+    { "name": "pickup_bounce_B", "area": "줍기", "setup": ["ball:244,128,50"], "pads": "-:16 B:1 -:30", "watch": ["p0", "ball"], "known": "?", "_note": "튀는 공을 캐치 자세(B)로 받기" },
+    { "name": "ball_drop_bounce", "area": "바운스", "setup": ["ball:180,90,40,1.5,-0.75,2"], "pads": "-:130", "watch": ["ball"], "known": "?", "_note": "느슨한 공 바운스·정지(선수와 떨어진 곳)" },
+
+    { "name": "ctrl_stop_in", "area": "조작 전환", "pin": false, "setup": ["ball:120,180"], "pads": "-:45", "watch": ["ctrl"], "known": "?", "_note": "내야 정지 공: 30f 째 최근접 내야로 전환" },
+    { "name": "ctrl_stop_in_dir", "area": "조작 전환", "pin": false, "setup": ["ball:120,180"], "pads": "U:45", "watch": ["ctrl"], "known": "?", "_note": "방향키를 누르고 있으면 내야 구역 공은 전환 없음" },
+    { "name": "ctrl_stop_out_top", "area": "조작 전환", "pin": false, "setup": ["ball:350,25"], "pads": "U:45", "watch": ["ctrl"], "known": "?", "_note": "외야 상단 구역 정지 공: 방향키와 무관하게 그 구역 외야로 전환" },
+    { "name": "ctrl_stop_out_back", "area": "조작 전환", "pin": false, "setup": ["ball:436,128"], "pads": "-:45", "watch": ["ctrl"], "known": "?" },
+
+    { "name": "rng_stop_45", "area": "CPU 두뇌", "pin": false, "setup": ["ball:120,180"], "pads": "-:45", "watch": ["rng", "p1", "p2", "p3", "p7", "p8", "p9", "p10"], "known": "?", "_note": "난수 호출 순서 감시: 점프볼 착지 직후 컴퓨터 활성 선수의 plan 0 -> 0x2C(대기점 난수 f15), 외야 120f 타이머(f30). 수동 내야는 구역이 바뀐 30프레임 동안 타이머 정지" },
+    { "name": "atk_plan14", "area": "CPU 공격", "pin": false, "pads": "L:180", "watch": ["rng", "p7", "ctrl", "p0", "p1", "p2", "p3", "rules"], "known": "?", "_note": "rng_roll_180 과 같은 입력. 공 손 위치(애니 프레임 카운터 미이식)를 빼고 난수·컴퓨터 보유자·활성 선수만 감시: 획득 -> plan 0x48 -> plan 0 결정(0xD474/0xD496) -> plan 0x14(뒤로 걷기·대시·점프·공중 차지)" },
+    { "name": "atk_seed1", "area": "CPU 공격", "setup": ["poke:E622,1111"], "pin": false, "pads": "L:300", "watch": ["rng", "p7", "p8", "p11", "p12", "ctrl", "p0", "p1", "p2", "p3", "rules"], "known": "?", "_note": "패스를 받은 컴퓨터 외야(타입 0x74)의 결정·실행까지 / 난수 시드 하위 워드를 바꿔 다른 공격 plan 을 본다(획득 -> 결정 -> 실행 -> 발사 뒤까지)" },
+    { "name": "atk_seed2", "area": "CPU 공격", "setup": ["poke:E622,2222"], "pin": false, "pads": "L:100", "watch": ["rng", "p7", "ctrl", "p0", "p1", "p2", "p3", "rules"], "known": "?", "_note": "f102 에 컴퓨터 포메이션(타입 0x7C, 엔진의 포메이션 진행은 별도 구현)이 시작돼 그 전에서 끊음 / 난수 시드 하위 워드를 바꿔 다른 공격 plan 을 본다(획득 -> 결정 -> 실행 -> 발사 뒤까지)" },
+    { "name": "atk_seed3", "area": "CPU 공격", "setup": ["poke:E622,3333"], "pin": false, "pads": "L:300", "watch": ["rng", "p7", "ctrl", "p0", "p1", "p2", "p3", "rules"], "known": "?", "_note": "난수 시드 하위 워드를 바꿔 다른 공격 plan 을 본다(획득 -> 결정 -> 실행 -> 발사 뒤까지)" },
+    { "name": "atk_seed4", "area": "CPU 공격", "setup": ["poke:E622,4444"], "pin": false, "pads": "L:200", "watch": ["rng", "p7", "ctrl", "p0", "p1", "p2", "p3", "rules"], "known": "?", "_note": "f190 발사가 필살기(공 타입 0x90, special.js 영역)라 그 직후에서 끊음 / 난수 시드 하위 워드를 바꿔 다른 공격 plan 을 본다(획득 -> 결정 -> 실행 -> 발사 뒤까지)" },
+    { "name": "atk_seed5", "area": "CPU 공격", "setup": ["poke:E622,5555"], "pin": false, "pads": "L:300", "watch": ["rng", "p7", "ctrl", "p0", "p1", "p2", "p3", "rules"], "known": "?", "_note": "난수 시드 하위 워드를 바꿔 다른 공격 plan 을 본다(획득 -> 결정 -> 실행 -> 발사 뒤까지)" },
+    { "name": "atk_seed6", "area": "CPU 공격", "setup": ["poke:E622,6666"], "pin": false, "pads": "L:205", "watch": ["rng", "p7", "ctrl", "p0", "p1", "p2", "p3", "rules"], "known": "?", "_note": "f195 발사가 필살기(공 타입 0x90, special.js 영역)라 그 직후에서 끊음 / 난수 시드 하위 워드를 바꿔 다른 공격 plan 을 본다(획득 -> 결정 -> 실행 -> 발사 뒤까지)" },
+    { "name": "atk_p4", "area": "CPU 공격", "setup": ["poke:E622,04"], "pin": false, "pads": "L:260", "watch": ["rng", "p7", "ctrl", "p0", "p1", "p2", "p3", "rules"], "known": "?", "_note": "plan 4: 발사선까지 걸어가 지상 투구" },
+    { "name": "atk_p8", "area": "CPU 공격", "setup": ["poke:E622,08"], "pin": false, "pads": "L:260", "watch": ["rng", "p7", "ctrl", "p0", "p1", "p2", "p3", "rules"], "known": "?", "_note": "plan 8: 발사선까지 걸어가 점프 투구" },
+    { "name": "atk_pc", "area": "CPU 공격", "setup": ["poke:E622,36"], "pin": false, "pads": "L:260", "watch": ["rng", "p7", "ctrl", "p0", "p1", "p2", "p3", "rules"], "known": "?", "_note": "plan 0x0C: 뒤로 걸어간 뒤 대시 -> 지상 대시 투구" },
+    { "name": "atk_p20", "area": "CPU 공격", "setup": ["poke:E622,18"], "pin": false, "pads": "L:260", "watch": ["rng", "p7", "p12", "ctrl", "p0", "p1", "p2", "p3", "rules"], "known": "?", "_note": "패스를 받은 컴퓨터 외야(타입 0x74)의 결정·실행까지 / plan 0x20: 대시 패스" },
+    { "name": "atk_p24", "area": "CPU 공격", "setup": ["poke:E622,46"], "pin": false, "pads": "L:260", "watch": ["rng", "p7", "p11", "ctrl", "p0", "p1", "p2", "p3", "rules"], "known": "?", "_note": "패스를 받은 컴퓨터 외야(타입 0x74)의 결정·실행까지 / plan 0x24: 대시 점프 패스" },
+    { "name": "atk_p4c", "area": "CPU 공격", "setup": ["poke:E622,05"], "pin": false, "pads": "L:260", "watch": ["rng", "p7", "ctrl", "p0", "p1", "p2", "p3", "rules"], "known": "?", "_note": "plan 0x4C: 대시 점프, 내려가기 시작하면 차지" },
+    { "name": "atk_p1c", "area": "CPU 공격", "setup": ["poke:E622,24"], "pin": false, "pads": "L:260", "watch": ["rng", "p7", "p13", "p11", "ctrl", "p0", "p1", "p2", "p3", "rules"], "known": "?", "_note": "패스를 받은 컴퓨터 외야(타입 0x74)의 결정·실행까지 / plan 0x1C: 점프 패스" },
+    { "name": "out_fetch_top", "area": "CPU 외야", "setup": ["ball:120,26"], "pin": false, "pads": "-:260", "watch": ["rng", "p11", "ctrl", "p0", "p1", "p2", "p3", "rules"], "known": "?", "_note": "컴퓨터 상단 외야 구역에 멈춘 공: 30프레임 전환 -> 활성 외야(타입 0x74) plan 0x1C 로 걸어가 줍기 -> 결정 -> 실행" },
+    { "name": "out_fetch_back", "area": "CPU 외야", "setup": ["ball:34,150"], "pin": false, "pads": "-:260", "watch": ["rng", "p13", "ctrl", "p0", "p1", "p2", "p3", "rules"], "known": "?", "_note": "컴퓨터 후방 외야 구역에 멈춘 공: 활성 외야 plan 0x1C -> 줍기 -> 결정 -> 실행" },
+    { "name": "out_fetch_seed", "area": "CPU 외야", "setup": ["ball:120,26","poke:E622,5a"], "pin": false, "pads": "-:260", "watch": ["rng", "p11", "ctrl", "p0", "p1", "p2", "p3", "rules"], "known": "?", "_note": "out_fetch_top 과 같은 배치, 난수 시드만 다름" },
+    { "name": "rng_roll_180", "area": "CPU 두뇌", "pin": false, "pads": "L:180", "watch": ["rng", "p7", "ball", "ctrl"], "known": "?", "_note": "난수 호출 순서 감시(긴 구간): 굴러가는 공을 컴퓨터 활성 선수가 걸어가 줍고(plan 0x28) 공격으로 넘어가는 구간. 공격 plan 미이식 구간부터 갈린다" },
+    { "name": "cpu_def_throw", "area": "CPU 두뇌", "setup": ["give_ball"], "pads": "B:1 -:30", "watch": ["p7", "rng", "ball", "rules"], "known": "?", "_note": "사람 투구에 대한 컴퓨터 활성 선수의 반응(착지 직후라 방어 결정 전 피격)과 난수" },
+    { "name": "cpu_def_a", "area": "CPU 두뇌", "setup": ["give_ball"], "pads": "-:40 B:1 -:45", "watch": ["p7", "rng", "ball", "rules", "ctrl"], "pin": false, "known": "?", "_note": "컴퓨터 활성 선수가 대기(plan 0x2C/0x30) 중일 때 사람이 지상 투구: 방어 결정(0xD5F0)과 방어 plan 실행. 대기 프레임 수로 난수를 바꿔 다른 방어 행동을 본다" },
+    { "name": "cpu_def_b", "area": "CPU 두뇌", "setup": ["give_ball"], "pads": "-:52 B:1 -:45", "watch": ["p7", "rng", "ball", "rules", "ctrl"], "pin": false, "known": "?", "_note": "컴퓨터 활성 선수가 대기(plan 0x2C/0x30) 중일 때 사람이 지상 투구: 방어 결정(0xD5F0)과 방어 plan 실행. 대기 프레임 수로 난수를 바꿔 다른 방어 행동을 본다" },
+    { "name": "cpu_def_c", "area": "CPU 두뇌", "setup": ["give_ball"], "pads": "-:67 B:1 -:45", "watch": ["p7", "rng", "ball", "rules", "ctrl"], "pin": false, "known": "?", "_note": "컴퓨터 활성 선수가 대기(plan 0x2C/0x30) 중일 때 사람이 지상 투구: 방어 결정(0xD5F0)과 방어 plan 실행. 대기 프레임 수로 난수를 바꿔 다른 방어 행동을 본다" },
+    { "name": "cpu_def_d", "area": "CPU 두뇌", "setup": ["give_ball"], "pads": "-:81 B:1 -:45", "watch": ["p7", "rng", "ball", "rules", "ctrl"], "pin": false, "known": "?", "_note": "컴퓨터 활성 선수가 대기(plan 0x2C/0x30) 중일 때 사람이 지상 투구: 방어 결정(0xD5F0)과 방어 plan 실행. 대기 프레임 수로 난수를 바꿔 다른 방어 행동을 본다" },
+    { "name": "cpu_def_e", "area": "CPU 두뇌", "setup": ["give_ball"], "pads": "-:95 B:1 -:45", "watch": ["p7", "rng", "ball", "rules", "ctrl"], "pin": false, "known": "?", "_note": "컴퓨터 활성 선수가 대기(plan 0x2C/0x30) 중일 때 사람이 지상 투구: 방어 결정(0xD5F0)과 방어 plan 실행. 대기 프레임 수로 난수를 바꿔 다른 방어 행동을 본다" },
+    { "name": "out_wait_400", "area": "CPU 외야", "setup": ["give_ball"], "pin": false, "pads": "-:400", "watch": ["rng", "p11", "p12", "p13"], "known": "?", "_note": "컴퓨터 외야 대기(타입 0x24/0x28 서브0/0x10): 사람이 공을 든 채 400프레임. 120프레임 타이머 -> 난수 bit3 -> 3점 표 자리 이동(0x9212/0x9248)이 원작과 전 프레임 같은지" },
+    { "name": "out_wait_seed", "area": "CPU 외야", "setup": ["give_ball", "poke:E622,5a"], "pin": false, "pads": "-:400", "watch": ["rng", "p11", "p12", "p13"], "known": "?", "_note": "out_wait_400 과 같고 난수 시드만 다름" },
+    { "name": "out_wait_move", "area": "CPU 외야", "setup": ["give_ball", "poke:E623,a0"], "pin": false, "pads": "-:400", "watch": ["rng", "p11", "p12", "p13"], "known": "?", "_note": "out_wait_400 과 같고 시드 하위 바이트의 bit3 위상만 뒤집음(0xA8 -> 0xA0): 타이머가 끝나는 프레임마다 bit3=1 이라 외야 3명이 120프레임마다 3점 표의 새 자리로 걷는다(서브 0x10)" },
+    { "name": "kou_hit_out", "area": "こうしき", "setup": ["poke:E622,04", "poke:E680,01"], "pin": false, "pads": "L:300", "watch": ["rng", "p7", "ctrl", "p0", "p1", "p2", "p3", "rules"], "known": "?", "_note": "atk_p4 와 같은 장면을 こうしき($E680=1)로: 피격 데미지 0 -> 공이 바닥에 닿음 -> 쓰러짐이 끝날 때 아웃(남은 인원 7 -> 6, 외야와 교체)" },
+    { "name": "kou_def_a", "area": "こうしき", "setup": ["give_ball", "poke:E680,01"], "pads": "-:40 B:1 -:45", "watch": ["p7", "rng", "ball", "rules", "ctrl"], "pin": false, "known": "?", "_note": "cpu_def_a 와 같은 장면을 こうしき 로: 컴퓨터 방어 결정 표 0xD624(점프 -> 캐치, 옆걸음 -> 서기), 피격 데미지 0" },
+    { "name": "kou_def_b", "area": "こうしき", "setup": ["give_ball", "poke:E680,01"], "pads": "-:52 B:1 -:45", "watch": ["p7", "rng", "ball", "rules", "ctrl"], "pin": false, "known": "?", "_note": "cpu_def_b 와 같은 장면을 こうしき 로: 컴퓨터 방어 결정 표 0xD624(점프 -> 캐치, 옆걸음 -> 서기), 피격 데미지 0" },
+    { "name": "kou_def_c", "area": "こうしき", "setup": ["give_ball", "poke:E680,01"], "pads": "-:67 B:1 -:45", "watch": ["p7", "rng", "ball", "rules", "ctrl"], "pin": false, "known": "?", "_note": "cpu_def_c 와 같은 장면을 こうしき 로: 컴퓨터 방어 결정 표 0xD624(점프 -> 캐치, 옆걸음 -> 서기), 피격 데미지 0" },
+    { "name": "kou_def_d", "area": "こうしき", "setup": ["give_ball", "poke:E680,01"], "pads": "-:81 B:1 -:45", "watch": ["p7", "rng", "ball", "rules", "ctrl"], "pin": false, "known": "?", "_note": "cpu_def_d 와 같은 장면을 こうしき 로: 컴퓨터 방어 결정 표 0xD624(점프 -> 캐치, 옆걸음 -> 서기), 피격 데미지 0" },
+    { "name": "kou_def_e", "area": "こうしき", "setup": ["give_ball", "poke:E680,01"], "pads": "-:95 B:1 -:45", "watch": ["p7", "rng", "ball", "rules", "ctrl"], "pin": false, "known": "?", "_note": "cpu_def_e 와 같은 장면을 こうしき 로: 컴퓨터 방어 결정 표 0xD624(점프 -> 캐치, 옆걸음 -> 서기), 피격 데미지 0" },
+    { "name": "ctr_special", "area": "받아치기 필살", "setup": ["give_ball"], "pads": "-:16 C:2 -:8 BC:15 -:80", "watch": ["rng", "p7", "rules", "ctrl"], "pin": false, "known": "?", "_note": "[2026-11-18 PASS: 필살 공 판정 순서(선수 단계) + 수동 내야의 필살 공 웅크림(f64 p10) + 주입 어댑터 $E214 로 해소] 사람 p0 이 공중 차지 15 로 필살(ID 22)을 던지고 컴퓨터 p7 이 잡아 밀린 뒤 받아치기 창 안에 지상 투구 = 같은 ID 의 필살(공 $76, ROM 0x8C08). analysis/scripts/t34_counter_special.py cpu 13 과 같은 입력" }
+  ]
+}

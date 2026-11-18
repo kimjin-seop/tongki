@@ -1,0 +1,26 @@
+public/assets/rom/
+# ROM 원본·ROM 파생 데이터·작업 산출물은 저장소에 올리지 않는다
+rom/
+public/assets/audio/
+analysis/state/
+analysis/gfx/
+analysis/data/
+analysis/disasm_code.asm
+analysis/strings_sjis.txt
+analysis/entropy_map.txt
+analysis/palettes.txt
+tools/ext_emu/
+tools/cpu_orig/
+tools/diff/traces/
+tools/bgm/work/
+assets_lab/
+data/
+_backup/
+_verify/
+node_modules/
+.txt
+srv_sp.pid
+*.gen
+*.pkl
+*.sav
+.env

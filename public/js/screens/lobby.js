@@ -1,0 +1,124 @@
+// 로비(시안 A): 왼쪽 로고 + 스토리 모드 / 컴퓨터와 대결(난이도 1·2·3) / 특훈(혼자 하기) / 방 만들기·방 코드 입장, 오른쪽 방 목록 창(서버 푸시로 실시간)
+import { h, clear } from '../util.js';
+import { toast } from '../ui.js';
+import { net } from '../net.js';
+import { ERR } from '../i18n.js';
+import { titleLogo, start as startIntro } from '../intro.js';
+import { arrowNav } from '../pix.js';
+import { soundButton } from '../audio.js';
+
+const CODE_RE = /^[A-Z0-9]{4,6}$/;
+
+export function mount(root, app) {
+  const list = h('div.room-list', { role: 'list', 'aria-label': '방 목록' });
+  const code = h('input.code', { type: 'text', maxLength: 6, placeholder: '방 코드', 'aria-label': '방 코드', autocomplete: 'off', spellcheck: false,
+    oninput: () => { code.value = code.value.toUpperCase(); },
+    onkeydown: (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); joinCode(); } } });
+  // 컴퓨터 대전: create_room{vsCpu, cpuLevel(1~3)}. 난이도는 다음 방문에도 유지
+  let lvl = ['1', '2', '3'].includes(localStorage.getItem('dd.cpuLevel')) ? +localStorage.getItem('dd.cpuLevel') : 2;
+  const lvBtns = [1, 2, 3].map((n) => h('button.btn.lv', { type: 'button', 'aria-label': `난이도 ${n}`, 'aria-pressed': String(n === lvl),
+    onclick: () => { lvl = n; localStorage.setItem('dd.cpuLevel', String(n)); for (const [i, b] of lvBtns.entries()) b.setAttribute('aria-pressed', String(i + 1 === lvl)); } }, String(n)));
+  const story = h('button.btn.primary.story-entry', { type: 'button', onclick: () => app.go('story', { mode: 'list' }) },
+    h('span.story-entry-t', '스토리 모드'), h('span.story-entry-n', '15경기'));
+  root.append(h('div.screen.lobby',
+    h('div.lobby-l',
+      titleLogo(), // 타이틀 로고(인트로가 끝나면 이 자리로 이동)
+      h('div.lobby-menu.title-follow',
+        story,
+        h('div.pbox.cpu-box', { role: 'group', 'aria-label': '컴퓨터와 대결' },
+          h('div.cpu-box-t', '컴퓨터와 대결'),
+          h('div.cpu-row', lvBtns, h('button.btn.go', { type: 'button', onclick: () => net.send('create_room', { vsCpu: true, cpuLevel: lvl }) }, '대결 시작'))),
+        // 특훈(혼자 하기, PROTOCOL §9): 캐치 / 필살 슛. 서버가 닫아 둔 종류는 TRAINING_UNAVAILABLE 토스트
+        h('div.train-row', { role: 'group', 'aria-label': '특훈' },
+          h('button.btn.tr-catch', { type: 'button', onclick: () => net.send('training_start', { kind: 'catch' }) }, '캐치 특훈'),
+          h('button.btn.tr-special', { type: 'button', onclick: () => net.send('training_start', { kind: 'special' }) }, '필살 특훈')),
+        h('div.join-row',
+          h('button.btn.mk', { type: 'button', onclick: () => net.send('create_room', {}) }, '방 만들기'),
+          code, h('button.btn', { type: 'button', onclick: joinCode }, '입장')),
+        h('button.btn.small.replay-intro', { type: 'button', onclick: () => { if (!app.intro?.active) app.intro = startIntro({ app, onEnd: () => { app.intro = null; } }); } }, '오프닝 다시보기'))),
+    h('div.lobby-r.title-follow',
+      h('div.nick-line', h('span.nick-t', app.nick || ''), soundButton(h)),
+      h('section.pwin.room-panel',
+        h('h1', '방 목록'),
+        h('div.rl-head', { 'aria-hidden': 'true' }, h('span', '코드'), h('span', '방장'), h('span', '인원'), h('span', '상태')),
+        list))));
+  net.send('list_rooms');
+  const offNav = arrowNav(root);
+  const offLogo = fitLogo(root.querySelector('.lobby'));
+  if (!app.intro?.active) setTimeout(() => { if (story.isConnected && document.activeElement === document.body) story.focus({ preventScroll: true }); }, 30);
+
+  function joinCode() {
+    const v = code.value.trim().toUpperCase();
+    if (!CODE_RE.test(v)) { toast(ERR.ROOM_CODE_INVALID, 'error'); code.focus(); return; }
+    net.send('join_room', { code: v });
+  }
+
+  function update() {
+    const had = list.contains(document.activeElement) ? document.activeElement.dataset.code : null;
+    clear(list);
+    if (!app.rooms.length) { list.append(h('div.empty', '방이 없습니다')); return; }
+    for (const r of app.rooms) {
+      const playing = r.status === 'playing', full = r.players >= r.max;
+      const st = playing ? '경기 중' : r.vsCpu ? '컴퓨터' : full ? '가득 참' : '대기';
+      const row = h('button.room-row', {
+        type: 'button', role: 'listitem', disabled: playing || full, 'data-code': r.code,
+        onclick: () => net.send('join_room', { code: r.code }),
+      },
+        h('b.code-t', r.code), h('span', r.host), h('span.tabular', `${r.players}/${r.max}`),
+        h('span' + (playing || full ? '' : '.st-wait'), st));
+      list.append(row);
+      if (had === r.code && !row.disabled) row.focus({ preventScroll: true });
+    }
+  }
+  update();
+  return { update, unmount: () => { offNav?.(); offLogo(); } };
+}
+
+/** 이미지 불투명 영역 bbox [x0, y0, x1, y1](원본 px, 끝 배타). 읽기 실패 시 전체 */
+const bboxCache = new Map();
+function alphaBox(img) {
+  const W = img.naturalWidth, H = img.naturalHeight;
+  if (bboxCache.has(img.src)) return bboxCache.get(img.src);
+  let b = [0, 0, W, H];
+  try {
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0);
+    const d = g.getImageData(0, 0, W, H).data;
+    let x0 = W, y0 = H, x1 = -1, y1 = -1;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      if (d[(y * W + x) * 4 + 3]) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    }
+    if (x1 >= 0) b = [x0, y0, x1 + 1, y1 + 1];
+  } catch { /* 캔버스 읽기 불가: 전체 크기 */ }
+  bboxCache.set(img.src, b);
+  return b;
+}
+
+/** 로비 로고: 투명 여백을 뺀 실제 그림 기준으로 왼쪽 패널 폭에 맞춰 확대(정수배 우선, 세로는 메뉴를 밀어내지 않게). 반환: 해제 함수 */
+function fitLogo(lobby) {
+  const img = lobby?.querySelector('.title-logo img');
+  if (!img || typeof ResizeObserver === 'undefined') return () => {};
+  const box = img.parentElement, left = box.parentElement, menu = left.querySelector('.lobby-menu');
+  const mobile = matchMedia('(max-width: 760px)');
+  const px = (el, p) => parseFloat(getComputedStyle(el)[p]) || 0;
+  function apply() {
+    if (!img.naturalWidth || !box.isConnected) return;
+    const [x0, y0, x1, y1] = alphaBox(img);
+    const cw = x1 - x0, ch = y1 - y0;
+    const availW = box.clientWidth;
+    const availH = mobile.matches ? innerHeight * 0.3
+      : lobby.clientHeight - px(lobby, 'paddingTop') - px(lobby, 'paddingBottom') - px(left, 'paddingTop') - (menu?.offsetHeight ?? 0) - px(left, 'rowGap') - 4;
+    const fit = Math.min(availW / cw, availH / ch);
+    if (!(fit > 0)) return;
+    const n = Math.floor(fit);
+    const s = n >= 1 && n / fit >= 0.9 ? n : fit; // 정수배가 90% 이상 채우면 정수배, 아니면 꽉 채움
+    Object.assign(img.style, {
+      width: Math.round(img.naturalWidth * s) + 'px', height: Math.round(img.naturalHeight * s) + 'px', maxWidth: 'none',
+      margin: `${-y0 * s}px ${-(img.naturalWidth - x1) * s}px ${-(img.naturalHeight - y1) * s}px ${-x0 * s}px`,
+    });
+  }
+  const ro = new ResizeObserver(apply);
+  ro.observe(lobby); if (menu) ro.observe(menu);
+  if (!img.complete) img.addEventListener('load', apply, { once: true });
+  return () => { ro.disconnect(); img.removeEventListener('load', apply); };
+}

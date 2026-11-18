@@ -1,0 +1,3205 @@
+{
+ "_note": "에셋 키 -> 경로. 코드는 키로만 참조. 경로는 /assets/ 기준. 변형은 variants, 선택은 gfx.quality(기본 1x).",
+ "spr.team.00": {
+  "type": "sheet",
+  "cell": 80,
+  "origin": [
+   40,
+   56
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/sprites/team_00.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "spr.team.01": {
+  "type": "sheet",
+  "cell": 80,
+  "origin": [
+   40,
+   56
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/sprites/team_01.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "spr.team.02": {
+  "type": "sheet",
+  "cell": 80,
+  "origin": [
+   40,
+   56
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/sprites/team_02.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "spr.team.03": {
+  "type": "sheet",
+  "cell": 80,
+  "origin": [
+   40,
+   56
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/sprites/team_03.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "spr.team.04": {
+  "type": "sheet",
+  "cell": 80,
+  "origin": [
+   40,
+   56
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/sprites/team_04.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "spr.team.05": {
+  "type": "sheet",
+  "cell": 80,
+  "origin": [
+   40,
+   56
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/sprites/team_05.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "spr.team.06": {
+  "type": "sheet",
+  "cell": 80,
+  "origin": [
+   40,
+   56
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/sprites/team_06.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "spr.team.07": {
+  "type": "sheet",
+  "cell": 80,
+  "origin": [
+   40,
+   56
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/sprites/team_07.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "spr.team.08": {
+  "type": "sheet",
+  "cell": 80,
+  "origin": [
+   40,
+   56
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/sprites/team_08.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "spr.team.09": {
+  "type": "sheet",
+  "cell": 80,
+  "origin": [
+   40,
+   56
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/sprites/team_09.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "spr.team.10": {
+  "type": "sheet",
+  "cell": 80,
+  "origin": [
+   40,
+   56
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/sprites/team_10.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "spr.team.11": {
+  "type": "sheet",
+  "cell": 80,
+  "origin": [
+   40,
+   56
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/sprites/team_11.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "spr.team.12": {
+  "type": "sheet",
+  "cell": 80,
+  "origin": [
+   40,
+   56
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/sprites/team_12.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "spr.team.13": {
+  "type": "sheet",
+  "cell": 80,
+  "origin": [
+   40,
+   56
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/sprites/team_13.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "spr.team.14": {
+  "type": "sheet",
+  "cell": 80,
+  "origin": [
+   40,
+   56
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/sprites/team_14.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "spr.team.15": {
+  "type": "sheet",
+  "cell": 80,
+  "origin": [
+   40,
+   56
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/sprites/team_15.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "spr.team.16": {
+  "type": "sheet",
+  "cell": 80,
+  "origin": [
+   40,
+   56
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/sprites/team_16.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "spr.team.17": {
+  "type": "sheet",
+  "cell": 80,
+  "origin": [
+   40,
+   56
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/sprites/team_17.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "spr.team.18": {
+  "type": "sheet",
+  "cell": 80,
+  "origin": [
+   40,
+   56
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/sprites/team_18.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "spr.team.19": {
+  "type": "sheet",
+  "cell": 80,
+  "origin": [
+   40,
+   56
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/sprites/team_19.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "spr.team.20": {
+  "type": "sheet",
+  "cell": 80,
+  "origin": [
+   40,
+   56
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/sprites/team_20.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "spr.team.21": {
+  "type": "sheet",
+  "cell": 80,
+  "origin": [
+   40,
+   56
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/sprites/team_21.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "spr.team.22": {
+  "type": "sheet",
+  "cell": 80,
+  "origin": [
+   40,
+   56
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/sprites/team_22.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "spr.team.23": {
+  "type": "sheet",
+  "cell": 80,
+  "origin": [
+   40,
+   56
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/sprites/team_23.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "spr.team.24": {
+  "type": "sheet",
+  "cell": 80,
+  "origin": [
+   40,
+   56
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/sprites/team_24.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "data.sprite.layout": {
+  "type": "json",
+  "path": "rom/sprites/manifest.json",
+  "preload": "boot",
+  "source": "rom-extract"
+ },
+ "anim.body": {
+  "type": "anim",
+  "path": "rom/sprites/anims.json",
+  "preload": "boot",
+  "source": "rom-extract"
+ },
+ "data.sprite.teams": {
+  "type": "json",
+  "path": "rom/sprites/teams.json",
+  "preload": "boot",
+  "source": "rom-extract"
+ },
+ "font.title": {
+  "type": "font",
+  "family": "DD Title",
+  "path": "fonts/BlackHanSans-Regular.ttf",
+  "source": "OFL-1.1"
+ },
+ "font.ui": {
+  "type": "font",
+  "family": "DD UI",
+  "path": "fonts/DoHyeon-Regular.ttf",
+  "source": "OFL-1.1"
+ },
+ "font.pixel8": {
+  "type": "font",
+  "family": "DD Pixel8",
+  "path": "fonts/Galmuri7.ttf",
+  "source": "Galmuri v2.40.4, OFL-1.1 (fonts/Galmuri-OFL-LICENSE.txt), 네이티브 8px. 출처 nekketsu/art/fonts/fonts_provenance.json"
+ },
+ "font.pixel12": {
+  "type": "font",
+  "family": "DD Pixel12",
+  "path": "fonts/Galmuri11.ttf",
+  "source": "Galmuri v2.40.4, OFL-1.1, 네이티브 12px"
+ },
+ "bg.stage.00": {
+  "type": "image",
+  "size": [
+   512,
+   224
+  ],
+  "alpha": false,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_00.png",
+    "scale": 1
+   }
+  },
+  "data": "data.bg.stage.00",
+  "source": "rom-extract",
+  "generator": "assets_lab/stage00/build_stage00_ball.py (emulator VRAM/CRAM)",
+  "qa": "pass",
+  "_note": "원경을 카메라 96 기준으로 합친 단일 이미지. 시차 스크롤은 bg.stage.00.far + bg.stage.00.near 사용"
+ },
+ "bg.stage.00.far": {
+  "type": "image",
+  "size": [
+   512,
+   96
+  ],
+  "alpha": false,
+  "preload": "stage",
+  "scroll_factor": 0.75,
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_00_far.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract",
+  "qa": "pass"
+ },
+ "bg.stage.00.near": {
+  "type": "image",
+  "size": [
+   512,
+   224
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "scroll_factor": 1,
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_00_near.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract",
+  "qa": "pass"
+ },
+ "data.bg.stage.00": {
+  "type": "json",
+  "path": "rom/bg/stage_00.json",
+  "preload": "stage",
+  "source": "rom-extract"
+ },
+ "bg.stage.01": {
+  "type": "image",
+  "size": [
+   512,
+   224
+  ],
+  "alpha": false,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_01.png",
+    "scale": 1
+   }
+  },
+  "data": "data.bg.stage.01",
+  "source": "rom-extract",
+  "_note": "원경을 카메라 96 기준으로 합친 단일 이미지(대화 배경). 경기 시차는 .far/.near + data 의 parallax"
+ },
+ "bg.stage.01.far": {
+  "type": "image",
+  "size": [
+   512,
+   96
+  ],
+  "alpha": false,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_01_far.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "bg.stage.01.near": {
+  "type": "image",
+  "size": [
+   512,
+   224
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_01_near.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "data.bg.stage.01": {
+  "type": "json",
+  "path": "rom/bg/stage_01.json",
+  "preload": "stage",
+  "source": "rom-extract"
+ },
+ "bg.stage.02": {
+  "type": "image",
+  "size": [
+   512,
+   224
+  ],
+  "alpha": false,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_02.png",
+    "scale": 1
+   }
+  },
+  "data": "data.bg.stage.02",
+  "source": "rom-extract",
+  "_note": "원경을 카메라 96 기준으로 합친 단일 이미지(대화 배경). 경기 시차는 .far/.near + data 의 parallax"
+ },
+ "bg.stage.02.far": {
+  "type": "image",
+  "size": [
+   512,
+   96
+  ],
+  "alpha": false,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_02_far.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "bg.stage.02.near": {
+  "type": "image",
+  "size": [
+   512,
+   224
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_02_near.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "data.bg.stage.02": {
+  "type": "json",
+  "path": "rom/bg/stage_02.json",
+  "preload": "stage",
+  "source": "rom-extract"
+ },
+ "bg.stage.03": {
+  "type": "image",
+  "size": [
+   512,
+   224
+  ],
+  "alpha": false,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_03.png",
+    "scale": 1
+   }
+  },
+  "data": "data.bg.stage.03",
+  "source": "rom-extract",
+  "_note": "원경을 카메라 96 기준으로 합친 단일 이미지(대화 배경). 경기 시차는 .far/.near + data 의 parallax"
+ },
+ "bg.stage.03.far": {
+  "type": "image",
+  "size": [
+   512,
+   96
+  ],
+  "alpha": false,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_03_far.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "bg.stage.03.near": {
+  "type": "image",
+  "size": [
+   512,
+   224
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_03_near.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "data.bg.stage.03": {
+  "type": "json",
+  "path": "rom/bg/stage_03.json",
+  "preload": "stage",
+  "source": "rom-extract"
+ },
+ "bg.stage.04": {
+  "type": "image",
+  "size": [
+   512,
+   224
+  ],
+  "alpha": false,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_04.png",
+    "scale": 1
+   }
+  },
+  "data": "data.bg.stage.04",
+  "source": "rom-extract",
+  "_note": "원경을 카메라 96 기준으로 합친 단일 이미지(대화 배경). 경기 시차는 .far/.near + data 의 parallax"
+ },
+ "bg.stage.04.far": {
+  "type": "image",
+  "size": [
+   512,
+   96
+  ],
+  "alpha": false,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_04_far.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "bg.stage.04.near": {
+  "type": "image",
+  "size": [
+   512,
+   224
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_04_near.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "data.bg.stage.04": {
+  "type": "json",
+  "path": "rom/bg/stage_04.json",
+  "preload": "stage",
+  "source": "rom-extract"
+ },
+ "bg.stage.05": {
+  "type": "image",
+  "size": [
+   512,
+   224
+  ],
+  "alpha": false,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_05.png",
+    "scale": 1
+   }
+  },
+  "data": "data.bg.stage.05",
+  "source": "rom-extract",
+  "_note": "원경을 카메라 96 기준으로 합친 단일 이미지(대화 배경). 경기 시차는 .far/.near + data 의 parallax"
+ },
+ "bg.stage.05.far": {
+  "type": "image",
+  "size": [
+   512,
+   96
+  ],
+  "alpha": false,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_05_far.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "bg.stage.05.near": {
+  "type": "image",
+  "size": [
+   512,
+   224
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_05_near.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "data.bg.stage.05": {
+  "type": "json",
+  "path": "rom/bg/stage_05.json",
+  "preload": "stage",
+  "source": "rom-extract"
+ },
+ "bg.stage.06": {
+  "type": "image",
+  "size": [
+   512,
+   224
+  ],
+  "alpha": false,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_06.png",
+    "scale": 1
+   }
+  },
+  "data": "data.bg.stage.06",
+  "source": "rom-extract",
+  "_note": "원경을 카메라 96 기준으로 합친 단일 이미지(대화 배경). 경기 시차는 .far/.near + data 의 parallax"
+ },
+ "bg.stage.06.far": {
+  "type": "image",
+  "size": [
+   512,
+   96
+  ],
+  "alpha": false,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_06_far.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "bg.stage.06.near": {
+  "type": "image",
+  "size": [
+   512,
+   224
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_06_near.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "data.bg.stage.06": {
+  "type": "json",
+  "path": "rom/bg/stage_06.json",
+  "preload": "stage",
+  "source": "rom-extract"
+ },
+ "bg.stage.07": {
+  "type": "image",
+  "size": [
+   512,
+   224
+  ],
+  "alpha": false,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_07.png",
+    "scale": 1
+   }
+  },
+  "data": "data.bg.stage.07",
+  "source": "rom-extract",
+  "_note": "원경을 카메라 96 기준으로 합친 단일 이미지(대화 배경). 경기 시차는 .far/.near + data 의 parallax"
+ },
+ "bg.stage.07.far": {
+  "type": "image",
+  "size": [
+   512,
+   96
+  ],
+  "alpha": false,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_07_far.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "bg.stage.07.near": {
+  "type": "image",
+  "size": [
+   512,
+   224
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_07_near.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "data.bg.stage.07": {
+  "type": "json",
+  "path": "rom/bg/stage_07.json",
+  "preload": "stage",
+  "source": "rom-extract"
+ },
+ "bg.stage.08": {
+  "type": "image",
+  "size": [
+   512,
+   224
+  ],
+  "alpha": false,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_08.png",
+    "scale": 1
+   }
+  },
+  "data": "data.bg.stage.08",
+  "source": "rom-extract",
+  "_note": "원경을 카메라 96 기준으로 합친 단일 이미지(대화 배경). 경기 시차는 .far/.near + data 의 parallax"
+ },
+ "bg.stage.08.far": {
+  "type": "image",
+  "size": [
+   512,
+   96
+  ],
+  "alpha": false,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_08_far.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "bg.stage.08.near": {
+  "type": "image",
+  "size": [
+   512,
+   224
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_08_near.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "data.bg.stage.08": {
+  "type": "json",
+  "path": "rom/bg/stage_08.json",
+  "preload": "stage",
+  "source": "rom-extract"
+ },
+ "bg.stage.09": {
+  "type": "image",
+  "size": [
+   512,
+   224
+  ],
+  "alpha": false,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_09.png",
+    "scale": 1
+   }
+  },
+  "data": "data.bg.stage.09",
+  "source": "rom-extract",
+  "_note": "원경을 카메라 96 기준으로 합친 단일 이미지(대화 배경). 경기 시차는 .far/.near + data 의 parallax"
+ },
+ "bg.stage.09.far": {
+  "type": "image",
+  "size": [
+   512,
+   96
+  ],
+  "alpha": false,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_09_far.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "bg.stage.09.near": {
+  "type": "image",
+  "size": [
+   512,
+   224
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_09_near.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "data.bg.stage.09": {
+  "type": "json",
+  "path": "rom/bg/stage_09.json",
+  "preload": "stage",
+  "source": "rom-extract"
+ },
+ "bg.stage.10": {
+  "type": "image",
+  "size": [
+   512,
+   224
+  ],
+  "alpha": false,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_10.png",
+    "scale": 1
+   }
+  },
+  "data": "data.bg.stage.10",
+  "source": "rom-extract",
+  "_note": "원경을 카메라 96 기준으로 합친 단일 이미지(대화 배경). 경기 시차는 .far/.near + data 의 parallax"
+ },
+ "bg.stage.10.far": {
+  "type": "image",
+  "size": [
+   512,
+   96
+  ],
+  "alpha": false,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_10_far.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "bg.stage.10.near": {
+  "type": "image",
+  "size": [
+   512,
+   224
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_10_near.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "data.bg.stage.10": {
+  "type": "json",
+  "path": "rom/bg/stage_10.json",
+  "preload": "stage",
+  "source": "rom-extract"
+ },
+ "bg.stage.11": {
+  "type": "image",
+  "size": [
+   512,
+   224
+  ],
+  "alpha": false,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_11.png",
+    "scale": 1
+   }
+  },
+  "data": "data.bg.stage.11",
+  "source": "rom-extract",
+  "_note": "원경을 카메라 96 기준으로 합친 단일 이미지(대화 배경). 경기 시차는 .far/.near + data 의 parallax"
+ },
+ "bg.stage.11.far": {
+  "type": "image",
+  "size": [
+   512,
+   96
+  ],
+  "alpha": false,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_11_far.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "bg.stage.11.near": {
+  "type": "image",
+  "size": [
+   512,
+   224
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_11_near.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "data.bg.stage.11": {
+  "type": "json",
+  "path": "rom/bg/stage_11.json",
+  "preload": "stage",
+  "source": "rom-extract"
+ },
+ "bg.stage.12": {
+  "type": "image",
+  "size": [
+   512,
+   224
+  ],
+  "alpha": false,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_12.png",
+    "scale": 1
+   }
+  },
+  "data": "data.bg.stage.12",
+  "source": "rom-extract",
+  "_note": "원경을 카메라 96 기준으로 합친 단일 이미지(대화 배경). 경기 시차는 .far/.near + data 의 parallax"
+ },
+ "bg.stage.12.far": {
+  "type": "image",
+  "size": [
+   512,
+   96
+  ],
+  "alpha": false,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_12_far.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "bg.stage.12.near": {
+  "type": "image",
+  "size": [
+   512,
+   224
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_12_near.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "data.bg.stage.12": {
+  "type": "json",
+  "path": "rom/bg/stage_12.json",
+  "preload": "stage",
+  "source": "rom-extract"
+ },
+ "bg.stage.13": {
+  "type": "image",
+  "size": [
+   512,
+   224
+  ],
+  "alpha": false,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_13.png",
+    "scale": 1
+   }
+  },
+  "data": "data.bg.stage.13",
+  "source": "rom-extract",
+  "_note": "원경을 카메라 96 기준으로 합친 단일 이미지(대화 배경). 경기 시차는 .far/.near + data 의 parallax"
+ },
+ "bg.stage.13.far": {
+  "type": "image",
+  "size": [
+   512,
+   96
+  ],
+  "alpha": false,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_13_far.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "bg.stage.13.near": {
+  "type": "image",
+  "size": [
+   512,
+   224
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/bg/stage_13_near.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "data.bg.stage.13": {
+  "type": "json",
+  "path": "rom/bg/stage_13.json",
+  "preload": "stage",
+  "source": "rom-extract"
+ },
+ "spr.ball": {
+  "type": "sheet",
+  "size": [
+   192,
+   144
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "data": "data.sprite.ball",
+  "variants": {
+   "1x": {
+    "path": "rom/sprites/ball.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract",
+  "qa": "pass",
+  "_note": "공 40프레임(24x24 셀, anchor [12,24]) + 그림자 2종. 프레임 rect·애니는 data.sprite.ball"
+ },
+ "data.sprite.ball": {
+  "type": "json",
+  "path": "rom/sprites/ball.json",
+  "preload": "stage",
+  "source": "rom-extract"
+ },
+ "hud.faces": {
+  "type": "image",
+  "size": [
+   168,
+   600
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/hud/faces_atlas.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract",
+  "_note": "24x24 얼굴, x=선수idx*24 y=팀id*24, 왼팀은 좌우반전해 그림"
+ },
+ "hud.pole": {
+  "type": "image",
+  "size": [
+   8,
+   32
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/hud/pole.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "hud.digits": {
+  "type": "image",
+  "size": [
+   160,
+   16
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/hud/digits_big.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract",
+  "_note": "0~9, 16x16 칸"
+ },
+ "hud.dash": {
+  "type": "image",
+  "size": [
+   8,
+   8
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/hud/dash.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "hud.marker.1p": {
+  "type": "image",
+  "size": [
+   16,
+   16
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/hud/marker_1p.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "hud.marker.com": {
+  "type": "image",
+  "size": [
+   16,
+   16
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/hud/marker_com.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract"
+ },
+ "hud.marker.2p": {
+  "type": "image",
+  "size": [
+   16,
+   16
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/hud/marker_2p.png",
+    "scale": 1
+   }
+  },
+  "source": "tools/make-marker-2p.py (marker_1p 의 '1' 을 '2' 글리프로 교체, 원작 마커 팔레트)"
+ },
+ "hud.timer": {
+  "type": "image",
+  "size": [
+   88,
+   8
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "variants": {
+   "1x": {
+    "path": "rom/hud/timer_font.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract",
+  "_note": "0~9 와 : , 8x8 칸"
+ },
+ "spr.referee": {
+  "type": "sheet",
+  "size": [
+   288,
+   48
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "data": "data.sprite.referee",
+  "variants": {
+   "1x": {
+    "path": "rom/sprites/referee.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract",
+  "qa": "pass",
+  "_note": "심판 12프레임(24x48 셀, anchor [12,48] 발밑 중앙), 팔레트 UI 라인2. 애니·공 손위치는 data.sprite.referee"
+ },
+ "data.sprite.referee": {
+  "type": "json",
+  "path": "rom/sprites/referee.json",
+  "preload": "stage",
+  "source": "rom-extract"
+ },
+ "spr.banners": {
+  "type": "sheet",
+  "size": [
+   300,
+   16
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "data": "data.sprite.banners",
+  "variants": {
+   "1x": {
+    "path": "rom/sprites/banners.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract(VRAM capture)",
+  "qa": "pass",
+  "_note": "PAUSE/PLAY OFF/GAME SET/TIME UP/GO/FIGHT! 화면 고정 배너. 위치·수명·깜빡임은 data.sprite.banners"
+ },
+ "data.sprite.banners": {
+  "type": "json",
+  "path": "rom/sprites/banners.json",
+  "preload": "stage",
+  "source": "rom-extract"
+ },
+ "spr.formation": {
+  "type": "sheet",
+  "size": [
+   104,
+   354
+  ],
+  "alpha": true,
+  "preload": "stage",
+  "data": "data.sprite.formation",
+  "variants": {
+   "1x": {
+    "path": "rom/sprites/formation.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract(ROM 0x38660 작전 이름 그래픽 + 배너 프레임 0xE130, 팔레트 0x3A1AC)",
+  "qa": "pass",
+  "_note": "포메이션(작전 타임) 연출: YES/NO 창, フォーメーション 글자, 팀별 작전 이름 15종(64x16, 원작 50% 디더 배경 포함). 화면 위치·팀 대응은 data.sprite.formation. 미사용 상태(구현 전)"
+ },
+ "data.sprite.formation": {
+  "type": "json",
+  "path": "rom/sprites/formation.json",
+  "preload": "stage",
+  "source": "rom-extract"
+ },
+ "data.names.teams": {
+  "type": "json",
+  "path": "data/team_names.json",
+  "preload": "boot",
+  "source": "analysis/09_team_names.md, analysis/teams_names.json",
+  "_note": "팀·선수 표시 이름(서버 teams.json id 기준). 없거나 실패하면 서버가 준 팀 이름 사용"
+ },
+ "intro.logo.title": {
+  "type": "image",
+  "size": [
+   254,
+   124
+  ],
+  "alpha": true,
+  "preload": "boot",
+  "screen": [
+   34,
+   4
+  ],
+  "screen_intro": [
+   34,
+   36
+  ],
+  "variants": {
+   "1x": {
+    "path": "rom/intro/title_logo.png",
+    "scale": 1
+   }
+  },
+  "source": "original(analysis/scripts/ko_logo_build.py, font BlackHanSans OFL raster+pixel process; JP original backup rom/intro/_orig_jp/)",
+  "qa": "pass",
+  "_note": "한국판 로고 합성본(불꽃+부제 불꽃의 피구소년+본체 피구왕 통키, 자체 디자인). 최종 타이틀 화면 좌상단 (34,4). 원작 일본 로고는 rom/intro/_orig_jp/"
+ },
+ "intro.logo.flames": {
+  "type": "image",
+  "size": [
+   254,
+   124
+  ],
+  "alpha": true,
+  "preload": "intro",
+  "screen": [
+   34,
+   4
+  ],
+  "variants": {
+   "1x": {
+    "path": "rom/intro/title_logo_flames.png",
+    "scale": 1
+   }
+  },
+  "source": "original(analysis/scripts/ko_logo_build.py, font BlackHanSans OFL raster+pixel process; JP original backup rom/intro/_orig_jp/)",
+  "qa": "pass",
+  "_note": "로고 레이어1(뒤): 부제·통키 윗부분 뒤 불꽃. title_logo.png 와 같은 캔버스 - 같은 좌표에 겹쳐 그림"
+ },
+ "intro.logo.main": {
+  "type": "image",
+  "size": [
+   254,
+   124
+  ],
+  "alpha": true,
+  "preload": "intro",
+  "screen": [
+   34,
+   4
+  ],
+  "variants": {
+   "1x": {
+    "path": "rom/intro/title_logo_main.png",
+    "scale": 1
+   }
+  },
+  "source": "original(analysis/scripts/ko_logo_build.py, font BlackHanSans OFL raster+pixel process; JP original backup rom/intro/_orig_jp/)",
+  "qa": "pass",
+  "_note": "로고 레이어2: 피구왕 통키(빨강 본체+검정 테+오른쪽아래 압출 그림자)+피구공 장식. 같은 캔버스"
+ },
+ "intro.logo.sub": {
+  "type": "image",
+  "size": [
+   254,
+   124
+  ],
+  "alpha": true,
+  "preload": "intro",
+  "screen": [
+   34,
+   4
+  ],
+  "variants": {
+   "1x": {
+    "path": "rom/intro/title_logo_sub.png",
+    "scale": 1
+   }
+  },
+  "source": "original(analysis/scripts/ko_logo_build.py, font BlackHanSans OFL raster+pixel process; JP original backup rom/intro/_orig_jp/)",
+  "qa": "pass",
+  "_note": "로고 레이어3(앞): 부제 불꽃의 피구소년(노랑+검정 외곽). 같은 캔버스"
+ },
+ "intro.logo.flash": {
+  "type": "image",
+  "size": [
+   254,
+   124
+  ],
+  "alpha": true,
+  "preload": "intro",
+  "screen_intro": [
+   34,
+   36
+  ],
+  "variants": {
+   "1x": {
+    "path": "rom/intro/title_logo_flash.png",
+    "scale": 1
+   }
+  },
+  "source": "original(analysis/scripts/ko_logo_build.py, font BlackHanSans OFL raster+pixel process; JP original backup rom/intro/_orig_jp/)",
+  "qa": "pass",
+  "_note": "로고 백색 플래시 변형(본체 흰색/하늘색 그림자, 부제·불꽃 원색). 같은 캔버스"
+ },
+ "intro.title.push_start": {
+  "type": "image",
+  "size": [
+   144,
+   16
+  ],
+  "alpha": true,
+  "preload": "intro",
+  "screen": [
+   88,
+   164
+  ],
+  "variants": {
+   "1x": {
+    "path": "rom/intro/title_push_start.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract(emu VDP capture, analysis/scripts/t_intro_extract.py)",
+  "qa": "pass",
+  "_note": "PUSH START BUTTON 원본(참고). 32f 표시/32f 숨김"
+ },
+ "intro.title.cursor": {
+  "type": "image",
+  "size": [
+   16,
+   14
+  ],
+  "alpha": true,
+  "preload": "intro",
+  "screen": [
+   112,
+   128
+  ],
+  "variants": {
+   "1x": {
+    "path": "rom/intro/title_cursor.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract(emu VDP capture, analysis/scripts/t_intro_extract.py)",
+  "qa": "pass",
+  "_note": "타이틀 메뉴 커서(공) 원본(참고)"
+ },
+ "intro.spr.fireball": {
+  "type": "sheet",
+  "size": [
+   76,
+   14
+  ],
+  "alpha": true,
+  "preload": "intro",
+  "frames": "intro.data.timeline#assets.intro_fireball.png.frames",
+  "variants": {
+   "1x": {
+    "path": "rom/intro/intro_fireball.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract(emu VDP capture, analysis/scripts/t_intro_extract.py)",
+  "qa": "pass",
+  "_note": "불덩이 3셀(2f씩 순환), 8px/f 왼쪽 이동. 셀 rect·위치는 intro.data.timeline tracks.fireball"
+ },
+ "intro.spr.flame_burst": {
+  "type": "sheet",
+  "size": [
+   2000,
+   93
+  ],
+  "alpha": true,
+  "preload": "intro",
+  "frames": "intro.data.timeline#assets.intro_flame_burst.png.frames",
+  "screen": [
+   16,
+   11
+  ],
+  "variants": {
+   "1x": {
+    "path": "rom/intro/intro_flame_burst.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract(emu VDP capture, analysis/scripts/t_intro_extract.py)",
+  "qa": "pass",
+  "_note": "착탄 불꽃 13셀(6f씩, 10~12 반복). tracks.flame_burst"
+ },
+ "intro.bg.band_fire": {
+  "type": "image",
+  "size": [
+   512,
+   96
+  ],
+  "alpha": true,
+  "preload": "intro",
+  "screen": [
+   0,
+   64
+  ],
+  "wrap_x": 512,
+  "variants": {
+   "1x": {
+    "path": "rom/intro/intro_band_fire.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract(emu VDP capture, analysis/scripts/t_intro_extract.py)",
+  "qa": "pass",
+  "_note": "장면3 불꽃 띠 512x96(가로 반복), 화면 y64~160, 라인별 스크롤 tracks.band_fire"
+ },
+ "intro.bg.band_cyan": {
+  "type": "image",
+  "size": [
+   512,
+   96
+  ],
+  "alpha": true,
+  "preload": "intro",
+  "screen": [
+   0,
+   64
+  ],
+  "wrap_x": 512,
+  "variants": {
+   "1x": {
+    "path": "rom/intro/intro_band_cyan.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract(emu VDP capture, analysis/scripts/t_intro_extract.py)",
+  "qa": "pass",
+  "_note": "장면5 청록 띠 512x96(가로 반복), 화면 y64~160, 라인별 스크롤 tracks.band_cyan"
+ },
+ "intro.art.team": {
+  "type": "image",
+  "size": [
+   176,
+   96
+  ],
+  "alpha": true,
+  "preload": "intro",
+  "variants": {
+   "1x": {
+    "path": "rom/intro/intro_art_team.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract(emu VDP capture, analysis/scripts/t_intro_extract.py)",
+  "qa": "pass",
+  "_note": "장면3 주인공 팀 일러스트(플레인A). 화면 y64, x 는 frames[].Ah"
+ },
+ "intro.art.rivals": {
+  "type": "image",
+  "size": [
+   173,
+   96
+  ],
+  "alpha": true,
+  "preload": "intro",
+  "variants": {
+   "1x": {
+    "path": "rom/intro/intro_art_rivals.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract(emu VDP capture, analysis/scripts/t_intro_extract.py)",
+  "qa": "pass",
+  "_note": "장면4 라이벌 3인 일러스트. 화면 (126,64) 고정. 실루엣=검정 채움, 페이드인 81f"
+ },
+ "intro.art.throw": {
+  "type": "image",
+  "size": [
+   96,
+   96
+  ],
+  "alpha": true,
+  "preload": "intro",
+  "variants": {
+   "1x": {
+    "path": "rom/intro/intro_art_throw.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract(emu VDP capture, analysis/scripts/t_intro_extract.py)",
+  "qa": "pass",
+  "_note": "장면5 투구 일러스트. 화면 y64, x 는 frames[].Ah"
+ },
+ "intro.spr.ball": {
+  "type": "sheet",
+  "size": [
+   2554,
+   96
+  ],
+  "alpha": true,
+  "preload": "intro",
+  "frames": "intro.data.timeline#assets.intro_ball.png.frames",
+  "variants": {
+   "1x": {
+    "path": "rom/intro/intro_ball.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract(emu VDP capture, analysis/scripts/t_intro_extract.py)",
+  "qa": "pass",
+  "_note": "장면5 거대 공 32셀(초반 셀 0~8 은 화면 오른쪽 밖에서 잘린 상태로 진입). tracks.ball"
+ },
+ "intro.spr.streaks": {
+  "type": "sheet",
+  "size": [
+   490,
+   3
+  ],
+  "alpha": true,
+  "preload": "intro",
+  "frames": "intro.data.timeline#assets.intro_streaks.png.frames",
+  "variants": {
+   "1x": {
+    "path": "rom/intro/intro_streaks.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract(emu VDP capture, analysis/scripts/t_intro_extract.py)",
+  "qa": "pass",
+  "_note": "띠 장면 잔상 선 18셀. tracks.streaks_fire / streaks_cyan"
+ },
+ "intro.data.timeline": {
+  "type": "json",
+  "path": "rom/intro/intro_timeline.json",
+  "preload": "intro",
+  "source": "rom-extract(analysis/scripts/t_intro_extract.py)",
+  "_note": "장면표·프레임별 스크롤/페이드/배경색·스프라이트 트랙·와이프 스팬·셀 rect. 60fps 프레임 단위. 사양은 analysis/10_intro_title.md"
+ },
+ "intro.data.play": {
+  "type": "json",
+  "path": "rom/intro/intro_play.json",
+  "preload": "intro",
+  "source": "tools/build-intro.mjs (intro.data.timeline 축약)",
+  "_note": "웹 인트로 재생용 축약본(약 78KB). 변화 시점만 남긴 배경색·오버레이·띠색·플레인A 위치·실루엣·플래시 + 스프라이트 트랙·와이프 스팬. 다시 만들기: node tools/build-intro.mjs"
+ },
+ "data.campaign.dialogue": {
+  "type": "json",
+  "path": "data/campaign_dialogue.json",
+  "preload": "story",
+  "source": "scenario",
+  "_note": "스토리 모드 15경기 pre/winPost/losePost, ending"
+ },
+ "select.bg": {
+  "type": "image",
+  "size": [
+   320,
+   224
+  ],
+  "alpha": true,
+  "preload": "menu",
+  "variants": {
+   "1x": {
+    "path": "rom/select/select_bg.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract(analysis/scripts/t_select_extract.py)",
+  "_note": "메뉴 공통 배경(플레인 B) 320x224, 화면 (0,0). 와이드는 select.bg.unit 타일링"
+ },
+ "select.bg.unit": {
+  "type": "image",
+  "size": [
+   48,
+   96
+  ],
+  "alpha": true,
+  "preload": "menu",
+  "variants": {
+   "1x": {
+    "path": "rom/select/select_bg_unit.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract(analysis/scripts/t_select_extract.py)",
+  "_note": "배경 48x96 반복 단위. (0,0)부터 가로·세로 반복"
+ },
+ "select.bg.medal_anim": {
+  "type": "sheet",
+  "size": [
+   144,
+   24
+  ],
+  "alpha": true,
+  "preload": "menu",
+  "cell": [
+   24,
+   24
+  ],
+  "variants": {
+   "1x": {
+    "path": "rom/select/select_bg_medal_anim.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract(analysis/scripts/t_select_extract.py)",
+  "_note": "메달 가운데 24x24 6프레임. 위치·주기 select.data#assets.bg_medal_anim"
+ },
+ "select.window.9s": {
+  "type": "image",
+  "size": [
+   24,
+   24
+  ],
+  "alpha": true,
+  "preload": "menu",
+  "slice": [
+   8,
+   8,
+   8,
+   8
+  ],
+  "variants": {
+   "1x": {
+    "path": "rom/select/select_window_9s.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract(analysis/scripts/t_select_extract.py)",
+  "_note": "창 9-slice 24x24, 경계 8px(slice [8,8,8,8]), 크기 8px 단위"
+ },
+ "select.emblems": {
+  "type": "sheet",
+  "size": [
+   384,
+   16
+  ],
+  "alpha": true,
+  "preload": "menu",
+  "cell": [
+   24,
+   16
+  ],
+  "variants": {
+   "1x": {
+    "path": "rom/select/select_emblems.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract(analysis/scripts/t_select_extract.py)",
+  "_note": "학교 엠블럼 16개(24x16). 팀->엠블럼 = select.data#assets.emblems.team_to_emblem. 개별 PNG rom/select/emblems/emblem_NN.png"
+ },
+ "select.font.white": {
+  "type": "sheet",
+  "size": [
+   512,
+   8
+  ],
+  "alpha": true,
+  "preload": "menu",
+  "cell": [
+   8,
+   8
+  ],
+  "variants": {
+   "1x": {
+    "path": "rom/select/select_font_white.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract(analysis/scripts/t_select_extract.py)",
+  "_note": "원작 ASCII 8x8 글리프(흰), 0x20~0x5F, x=(code-32)*8"
+ },
+ "select.font.yellow": {
+  "type": "sheet",
+  "size": [
+   512,
+   8
+  ],
+  "alpha": true,
+  "preload": "menu",
+  "cell": [
+   8,
+   8
+  ],
+  "variants": {
+   "1x": {
+    "path": "rom/select/select_font_yellow.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract(analysis/scripts/t_select_extract.py)",
+  "_note": "원작 ASCII 8x8 글리프(노랑), 0x20~0x5F"
+ },
+ "select.ball": {
+  "type": "sheet",
+  "size": [
+   64,
+   16
+  ],
+  "alpha": true,
+  "preload": "menu",
+  "cell": [
+   16,
+   16
+  ],
+  "variants": {
+   "1x": {
+    "path": "rom/select/select_ball_anim.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract(analysis/scripts/t_select_extract.py)",
+  "_note": "회전 공 아이콘 16x16 4프레임 x5f (팀 선택 제목 양옆, 메뉴 커서)"
+ },
+ "select.cursor": {
+  "type": "sheet",
+  "size": [
+   280,
+   320
+  ],
+  "alpha": true,
+  "preload": "menu",
+  "cell": [
+   40,
+   40
+  ],
+  "variants": {
+   "1x": {
+    "path": "rom/select/select_cursor_sheet.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract(analysis/scripts/t_select_extract.py)",
+  "_note": "커서 프레임 40x40, 행=1p/2p/com/plain x 이동/확정, 열=글로우 7단계(6f). select.data#assets.cursor"
+ },
+ "select.title_ja_ref": {
+  "type": "image",
+  "size": [
+   144,
+   16
+  ],
+  "alpha": true,
+  "preload": "none",
+  "variants": {
+   "1x": {
+    "path": "rom/select/select_title_ja_ref.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract(analysis/scripts/t_select_extract.py)",
+  "_note": "참고용 원작 제목 문구(일본어). 화면에 쓰지 않음"
+ },
+ "select.ref.planeA": {
+  "type": "image",
+  "size": [
+   320,
+   224
+  ],
+  "alpha": true,
+  "preload": "none",
+  "variants": {
+   "1x": {
+    "path": "rom/select/select_planeA.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract(analysis/scripts/t_select_extract.py)",
+  "_note": "참고용 원작 팀 선택 플레인 A 합성(창·엠블럼·약칭 위치 확인)"
+ },
+ "select.ref.planeA_special": {
+  "type": "image",
+  "size": [
+   320,
+   224
+  ],
+  "alpha": true,
+  "preload": "none",
+  "variants": {
+   "1x": {
+    "path": "rom/select/select_planeA_special.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract(analysis/scripts/t_select_extract.py)",
+  "_note": "참고용 SPECIAL TEAM 창 포함본"
+ },
+ "select.ref.lineup": {
+  "type": "image",
+  "size": [
+   320,
+   224
+  ],
+  "alpha": true,
+  "preload": "none",
+  "variants": {
+   "1x": {
+    "path": "rom/select/lineup_planeA_ref.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract(analysis/scripts/t_select_extract.py)",
+  "_note": "참고용 라인업(VS) 화면 플레인 A"
+ },
+ "select.ref.formation_a": {
+  "type": "image",
+  "size": [
+   320,
+   224
+  ],
+  "alpha": true,
+  "preload": "none",
+  "variants": {
+   "1x": {
+    "path": "rom/select/formation_planeA_ref.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract(analysis/scripts/t_select_extract.py)",
+  "_note": "참고용 편성·능력치 화면 플레인 A"
+ },
+ "select.ref.formation_b": {
+  "type": "image",
+  "size": [
+   320,
+   224
+  ],
+  "alpha": true,
+  "preload": "none",
+  "variants": {
+   "1x": {
+    "path": "rom/select/formation_planeB_ref.png",
+    "scale": 1
+   }
+  },
+  "source": "rom-extract(analysis/scripts/t_select_extract.py)",
+  "_note": "참고용 편성 화면 플레인 B(코트)"
+ },
+ "select.data": {
+  "type": "json",
+  "path": "rom/select/select.json",
+  "preload": "menu",
+  "source": "rom-extract(analysis/scripts/t_select_extract.py)",
+  "_note": "팀 선택 레이아웃·애니 주기·팀->엠블럼 표·커서 글로우 색. 문서 analysis/11_team_select.md"
+ },
+ "sfx.ui.cursor": {
+  "type": "sfx",
+  "path": "rom/sfx/a0.wav",
+  "prefer": "rom",
+  "rom_id": "0xA0",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.256,
+  "bytes": 11336,
+  "fallback": "audio/sfx/ui_cursor.wav",
+  "gain": 1.0,
+  "preload": "boot",
+  "event": "UI 커서 이동",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "gain_before_mix_fix": 0.7
+ },
+ "sfx.ui.confirm": {
+  "type": "sfx",
+  "path": "rom/sfx/a1.wav",
+  "prefer": "rom",
+  "rom_id": "0xA1",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.204,
+  "bytes": 9042,
+  "fallback": "audio/sfx/ui_confirm.wav",
+  "gain": 1.0,
+  "preload": "boot",
+  "event": "UI 결정",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "gain_before_mix_fix": 0.8
+ },
+ "sfx.ball.throw": {
+  "type": "sfx",
+  "path": "rom/sfx/a2.wav",
+  "prefer": "rom",
+  "rom_id": "0xA2",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.267,
+  "bytes": 11816,
+  "fallback": "audio/sfx/ball_throw.wav",
+  "gain": 1.0,
+  "preload": "stage",
+  "event": "throw",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED"
+ },
+ "sfx.ball.pass": {
+  "type": "sfx",
+  "path": "rom/sfx/a3.wav",
+  "prefer": "rom",
+  "rom_id": "0xA3",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.227,
+  "bytes": 10070,
+  "fallback": "audio/sfx/ball_pass.wav",
+  "gain": 1.0,
+  "preload": "stage",
+  "event": "pass(fm 아님)",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "A3=패스 [추정]",
+  "verify": true,
+  "gain_before_mix_fix": 0.9
+ },
+ "sfx.ball.catch": {
+  "type": "sfx",
+  "path": "rom/sfx/a4.wav",
+  "prefer": "rom",
+  "rom_id": "0xA4",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.22,
+  "bytes": 9766,
+  "fallback": "audio/sfx/ball_catch.wav",
+  "gain": 1.0,
+  "preload": "stage",
+  "event": "catch",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "A4=위험 공 캐치 [추정]",
+  "verify": true
+ },
+ "sfx.ball.receive": {
+  "type": "sfx",
+  "path": "rom/sfx/a5.wav",
+  "prefer": "rom",
+  "rom_id": "0xA5",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.203,
+  "bytes": 8996,
+  "fallback": "audio/sfx/ball_receive.wav",
+  "gain": 1.0,
+  "preload": "stage",
+  "event": "receive",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "A5=공 받기 [관측+코드]",
+  "gain_before_mix_fix": 0.8
+ },
+ "sfx.ball.pickup": {
+  "type": "sfx",
+  "path": "rom/sfx/a5.wav",
+  "prefer": "rom",
+  "rom_id": "0xA5",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.203,
+  "bytes": 8996,
+  "fallback": "audio/sfx/ball_pickup.wav",
+  "gain": 1.0,
+  "preload": "stage",
+  "event": "pickup",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "원작 전용음 미발견 - A5 공용 [추정]",
+  "verify": true,
+  "gain_before_mix_fix": 0.7
+ },
+ "sfx.ball.hit": {
+  "type": "sfx",
+  "path": "rom/sfx/aa.wav",
+  "prefer": "rom",
+  "rom_id": "0xAA",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.251,
+  "bytes": 11130,
+  "fallback": "audio/sfx/ball_hit.wav",
+  "gain": 1.0,
+  "preload": "stage",
+  "event": "hit",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "AA=피격 넉백 [추정]",
+  "verify": true
+ },
+ "sfx.ball.hit_strong": {
+  "type": "sfx",
+  "path": "rom/sfx/ab.wav",
+  "prefer": "rom",
+  "rom_id": "0xAB",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.251,
+  "bytes": 11130,
+  "fallback": "audio/sfx/ball_hit_strong.wav",
+  "gain": 1.0,
+  "preload": "stage",
+  "event": "hit(강, 선택)",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "AB=$20>=0x100 분기 [추정]",
+  "verify": true
+ },
+ "sfx.player.run": {
+  "type": "sfx",
+  "path": "rom/sfx/a9.wav",
+  "prefer": "rom",
+  "rom_id": "0xA9",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.108,
+  "bytes": 4790,
+  "gain": 1.0,
+  "preload": "stage",
+  "event": "run",
+  "qa": "auto-pass(analysis/data/rom_audio.json), 청취 UNVERIFIED",
+  "_note": "원작 대시 발소리: 공을 들고 달릴 때 6프레임마다(ROM 0x8BBA, 표 0x8BDE). 엔진 이벤트 run{p, alt}. fallback 없음(파일이 없으면 무음)",
+  "gain_before_mix_fix": 0.7
+ },
+ "sfx.player.run_alt": {
+  "type": "sfx",
+  "path": "rom/sfx/c5.wav",
+  "prefer": "rom",
+  "rom_id": "0xC5",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.096,
+  "bytes": 4272,
+  "gain": 1.0,
+  "preload": "stage",
+  "event": "run",
+  "qa": "auto-pass(analysis/data/rom_audio.json), 청취 UNVERIFIED",
+  "_note": "원작 대시 발소리: 공을 들고 달릴 때 6프레임마다(ROM 0x8BBA, 표 0x8BDE). 엔진 이벤트 run{p, alt}. fallback 없음(파일이 없으면 무음)",
+  "gain_before_mix_fix": 0.7
+ },
+ "sfx.player.jump": {
+  "type": "sfx",
+  "path": "rom/sfx/a6.wav",
+  "prefer": "rom",
+  "rom_id": "0xA6",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.438,
+  "bytes": 19380,
+  "fallback": "audio/sfx/player_jump.wav",
+  "gain": 1.0,
+  "preload": "stage",
+  "event": "jump",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "gain_before_mix_fix": 0.9
+ },
+ "sfx.tip.swing": {
+  "type": "sfx",
+  "path": "rom/sfx/a2.wav",
+  "prefer": "rom",
+  "rom_id": "0xA2",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.267,
+  "bytes": 11816,
+  "fallback": "audio/sfx/tip_swing.wav",
+  "gain": 1.0,
+  "preload": "stage",
+  "event": "tip_swing",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "08: 쳐내기 0xA2",
+  "gain_before_mix_fix": 0.9
+ },
+ "sfx.ref.whistle": {
+  "type": "sfx",
+  "path": "rom/sfx/ae.wav",
+  "prefer": "rom",
+  "rom_id": "0xAE",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.306,
+  "bytes": 13530,
+  "fallback": "audio/sfx/ref_whistle.wav",
+  "gain": 1.0,
+  "preload": "stage",
+  "event": "ref_out",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED"
+ },
+ "sfx.start.go": {
+  "type": "sfx",
+  "path": "rom/sfx/81v.wav",
+  "prefer": "rom",
+  "rom_id": "0x81 (voice $1BFF)",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.266,
+  "bytes": 11768,
+  "fallback": "audio/sfx/start_go.wav",
+  "gain": 1.0,
+  "preload": "stage",
+  "event": "go",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "원작 음성(DAC)"
+ },
+ "sfx.start.fight": {
+  "type": "sfx",
+  "path": "rom/sfx/82v.wav",
+  "prefer": "rom",
+  "rom_id": "0x82 (voice $1BFF)",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.42,
+  "bytes": 18556,
+  "fallback": "audio/sfx/start_fight.wav",
+  "gain": 1.0,
+  "preload": "stage",
+  "event": "toss",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "원작 음성(DAC)"
+ },
+ "sfx.match.gameset": {
+  "type": "sfx",
+  "path": "rom/sfx/83v.wav",
+  "prefer": "rom",
+  "rom_id": "0x83 (voice $1BFF)",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.626,
+  "bytes": 27638,
+  "fallback": "audio/sfx/match_gameset.wav",
+  "gain": 1.0,
+  "preload": "stage",
+  "event": "end",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "원작 음성(DAC)"
+ },
+ "sfx.formation.open": {
+  "type": "sfx",
+  "path": "rom/sfx/a1.wav",
+  "prefer": "rom",
+  "rom_id": "0xA1",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.204,
+  "bytes": 9042,
+  "fallback": "audio/sfx/formation_open.wav",
+  "gain": 1.0,
+  "preload": "stage",
+  "event": "fm_ready 또는 작전 창",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "14: 창 열기·결정 0xA1",
+  "gain_before_mix_fix": 0.8
+ },
+ "sfx.formation.pass": {
+  "type": "sfx",
+  "path": "rom/sfx/c3.wav",
+  "prefer": "rom",
+  "rom_id": "0xC3",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.204,
+  "bytes": 9048,
+  "fallback": "audio/sfx/formation_pass.wav",
+  "gain": 1.0,
+  "preload": "stage",
+  "event": "pass(fm=1)",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "14: 0xC3 [관측]"
+ },
+ "sfx.formation.receive": {
+  "type": "sfx",
+  "path": "rom/sfx/a5.wav",
+  "prefer": "rom",
+  "rom_id": "0xA5",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.203,
+  "bytes": 8996,
+  "fallback": "audio/sfx/formation_receive.wav",
+  "gain": 1.0,
+  "preload": "stage",
+  "event": "receive(포메이션)",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "14: 0xA5 [관측]",
+  "gain_before_mix_fix": 0.8
+ },
+ "sfx.special.b7": {
+  "type": "sfx",
+  "path": "rom/sfx/b7.wav",
+  "prefer": "rom",
+  "rom_id": "0xB7",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.478,
+  "bytes": 21114,
+  "fallback": "audio/sfx/special_b7.wav",
+  "gain": 1.0,
+  "preload": "stage",
+  "event": "special(specialSfxKey)",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "06 ROM[0xB866+ID]"
+ },
+ "sfx.special.b8": {
+  "type": "sfx",
+  "path": "rom/sfx/b8.wav",
+  "prefer": "rom",
+  "rom_id": "0xB8",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.79,
+  "bytes": 34864,
+  "fallback": "audio/sfx/special_b8.wav",
+  "gain": 1.0,
+  "preload": "stage",
+  "event": "special(specialSfxKey)",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "06 ROM[0xB866+ID]"
+ },
+ "sfx.special.b9": {
+  "type": "sfx",
+  "path": "rom/sfx/b9.wav",
+  "prefer": "rom",
+  "rom_id": "0xB9",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.478,
+  "bytes": 21114,
+  "fallback": "audio/sfx/special_b9.wav",
+  "gain": 1.0,
+  "preload": "stage",
+  "event": "special(specialSfxKey)",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "06 ROM[0xB866+ID]"
+ },
+ "sfx.special.ba": {
+  "type": "sfx",
+  "path": "rom/sfx/ba.wav",
+  "prefer": "rom",
+  "rom_id": "0xBA",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.43,
+  "bytes": 19002,
+  "fallback": "audio/sfx/special_ba.wav",
+  "gain": 1.0,
+  "preload": "stage",
+  "event": "special(specialSfxKey)",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "06 ROM[0xB866+ID]"
+ },
+ "sfx.special.bb": {
+  "type": "sfx",
+  "path": "rom/sfx/bb.wav",
+  "prefer": "rom",
+  "rom_id": "0xBB",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.508,
+  "bytes": 22468,
+  "fallback": "audio/sfx/special_bb.wav",
+  "gain": 1.0,
+  "preload": "stage",
+  "event": "special(specialSfxKey)",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "06 ROM[0xB866+ID]"
+ },
+ "sfx.special.bd": {
+  "type": "sfx",
+  "path": "rom/sfx/bd.wav",
+  "prefer": "rom",
+  "rom_id": "0xBD",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.603,
+  "bytes": 26628,
+  "fallback": "audio/sfx/special_bd.wav",
+  "gain": 1.0,
+  "preload": "stage",
+  "event": "special(specialSfxKey)",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "06 ROM[0xB866+ID]"
+ },
+ "sfx.special.be": {
+  "type": "sfx",
+  "path": "rom/sfx/be.wav",
+  "prefer": "rom",
+  "rom_id": "0xBE",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.721,
+  "bytes": 31824,
+  "fallback": "audio/sfx/special_be.wav",
+  "gain": 1.0,
+  "preload": "stage",
+  "event": "special(specialSfxKey)",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "06 ROM[0xB866+ID]"
+ },
+ "sfx.special.bf": {
+  "type": "sfx",
+  "path": "rom/sfx/bf.wav",
+  "prefer": "rom",
+  "rom_id": "0xBF",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.618,
+  "bytes": 27304,
+  "fallback": "audio/sfx/special_bf.wav",
+  "gain": 1.0,
+  "preload": "stage",
+  "event": "special(specialSfxKey)",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "06 ROM[0xB866+ID]"
+ },
+ "sfx.special.c0": {
+  "type": "sfx",
+  "path": "rom/sfx/c0.wav",
+  "prefer": "rom",
+  "rom_id": "0xC0",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.665,
+  "bytes": 29368,
+  "fallback": "audio/sfx/special_c0.wav",
+  "gain": 1.0,
+  "preload": "stage",
+  "event": "special(specialSfxKey)",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "06 ROM[0xB866+ID]"
+ },
+ "sfx.special.c1": {
+  "type": "sfx",
+  "path": "rom/sfx/c1.wav",
+  "prefer": "rom",
+  "rom_id": "0xC1",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.72,
+  "bytes": 31786,
+  "fallback": "audio/sfx/special_c1.wav",
+  "gain": 1.0,
+  "preload": "stage",
+  "event": "special(specialSfxKey)",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "06 ROM[0xB866+ID]"
+ },
+ "sfx.intro.fireball": {
+  "type": "sfx",
+  "path": "rom/sfx/b0.wav",
+  "prefer": "rom",
+  "rom_id": "0xB0",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.971,
+  "bytes": 42846,
+  "fallback": "audio/sfx/intro_fireball.wav",
+  "gain": 1.0,
+  "preload": "intro",
+  "event": "intro CUES",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "10 §4"
+ },
+ "sfx.intro.impact": {
+  "type": "sfx",
+  "path": "rom/sfx/b1.wav",
+  "prefer": "rom",
+  "rom_id": "0xB1",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.861,
+  "bytes": 38026,
+  "fallback": "audio/sfx/intro_impact.wav",
+  "gain": 1.0,
+  "preload": "intro",
+  "event": "intro CUES",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "10 §4"
+ },
+ "sfx.intro.flame": {
+  "type": "sfx",
+  "path": "rom/sfx/b2.wav",
+  "prefer": "rom",
+  "rom_id": "0xB2",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.653,
+  "bytes": 28862,
+  "fallback": "audio/sfx/intro_flame.wav",
+  "gain": 1.0,
+  "preload": "intro",
+  "event": "intro CUES",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "10 §4"
+ },
+ "sfx.intro.sublogo": {
+  "type": "sfx",
+  "path": "rom/sfx/b5.wav",
+  "prefer": "rom",
+  "rom_id": "0xB5",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.603,
+  "bytes": 26634,
+  "fallback": "audio/sfx/intro_sublogo.wav",
+  "gain": 1.0,
+  "preload": "intro",
+  "event": "intro CUES",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "10 §4"
+ },
+ "sfx.intro.wipe": {
+  "type": "sfx",
+  "path": "rom/sfx/b4.wav",
+  "prefer": "rom",
+  "rom_id": "0xB4",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.971,
+  "bytes": 42848,
+  "fallback": "audio/sfx/intro_wipe.wav",
+  "gain": 1.0,
+  "preload": "intro",
+  "event": "intro CUES",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "10 §4"
+ },
+ "sfx.intro.flash": {
+  "type": "sfx",
+  "path": "rom/sfx/b3.wav",
+  "prefer": "rom",
+  "rom_id": "0xB3",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.752,
+  "bytes": 33206,
+  "fallback": "audio/sfx/intro_flash.wav",
+  "gain": 1.0,
+  "preload": "intro",
+  "event": "intro CUES",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "10 §4"
+ },
+ "data.prematch": {
+  "type": "json",
+  "path": "data/prematch.json",
+  "preload": "menu",
+  "source": "rom-extract(analysis/scripts/prematch_extract.py)",
+  "_note": "편성(능력치 보기) 화면 좌표·능력치·문구. analysis/20_prematch_screens.md"
+ },
+ "prematch.fm.bg": {
+  "type": "image",
+  "path": "rom/prematch/fm_bg.png",
+  "size": [
+   320,
+   224
+  ],
+  "preload": "menu",
+  "source": "rom-extract(analysis/scripts/prematch_extract.py)",
+  "_note": "편성 화면 배경(창 4개+코트, 글자 제거). 원작 320x224"
+ },
+ "prematch.fm.bar": {
+  "type": "image",
+  "path": "rom/prematch/fm_bar.png",
+  "size": [
+   4,
+   8
+  ],
+  "preload": "menu",
+  "source": "rom-extract(analysis/scripts/prematch_extract.py)",
+  "_note": "능력치 막대 1칸 4x8"
+ },
+ "prematch.fm.exit": {
+  "type": "image",
+  "path": "rom/prematch/fm_exit.png",
+  "size": [
+   22,
+   12
+  ],
+  "preload": "menu",
+  "source": "rom-extract(analysis/scripts/prematch_extract.py)",
+  "_note": "EXIT 글자(원작 그래픽 그대로)"
+ },
+ "bgm.title": {
+  "type": "bgm",
+  "path": "rom/bgm/8a.ogg",
+  "alt": "rom/bgm/8a.mp3",
+  "prefer": "rom",
+  "rom_id": "0x8A",
+  "verified": true,
+  "loop": false,
+  "gain": 1.0,
+  "fade_sec": 1.73,
+  "preload": "intro",
+  "sec": 44.95,
+  "bytes": 678151,
+  "source": "rom-render(tools/bgm/loop_exact.py + render.py)",
+  "scene": "인트로 로고 드러남(f642)~타이틀. 68k 0xF042 [확인: 10 §4 큐 관측]",
+  "check": "1회 재생 곡: 드라이버 상태 정지 44.913초, 마지막 소리 44.900초 / 청취 UNVERIFIED"
+ },
+ "bgm.menu": {
+  "type": "bgm",
+  "path": "rom/bgm/8c.ogg",
+  "alt": "rom/bgm/8c.mp3",
+  "prefer": "rom",
+  "rom_id": "0x8C",
+  "verified": true,
+  "loop": true,
+  "gain": 1.0,
+  "fade_sec": 1.901,
+  "preload": "menu",
+  "sec": 20.562,
+  "bytes": 374589,
+  "source": "rom-render(tools/bgm/loop_exact.py + render.py)",
+  "scene": "모드 메뉴·팀 선택. 68k 0x109A6 [확인: 10 §4, 11 관측]",
+  "check": "루프 6.143~18.312초(길이 12.169초, 768틱), 키 온 693개·PSG 0개 일치, 스펙트럼 상관 0.937, 지연 0.00ms / 청취 UNVERIFIED",
+  "loop_start": 8.14272,
+  "loop_end": 20.31154
+ },
+ "bgm.vs": {
+  "type": "bgm",
+  "path": "rom/bgm/8b.ogg",
+  "alt": "rom/bgm/8b.mp3",
+  "prefer": "rom",
+  "rom_id": "0x8B",
+  "verified": true,
+  "loop": true,
+  "gain": 1.0,
+  "fade_sec": 2.055,
+  "preload": "menu",
+  "sec": 51.755,
+  "bytes": 851486,
+  "source": "rom-render(tools/bgm/loop_exact.py + render.py)",
+  "scene": "라인업(VS)·편성 화면. 68k 0x14880 [확인: 11, 20 관측]",
+  "check": "루프 10.057~49.505초(길이 39.447초, 2304틱), 키 온 2750개·PSG 6458개 일치, 스펙트럼 상관 0.926, 지연 0.00ms / 청취 UNVERIFIED",
+  "loop_start": 12.05728,
+  "loop_end": 51.50467
+ },
+ "bgm.enter": {
+  "type": "bgm",
+  "path": "rom/bgm/95.ogg",
+  "alt": "rom/bgm/95.mp3",
+  "prefer": "rom",
+  "rom_id": "0x95",
+  "verified": true,
+  "loop": false,
+  "gain": 1.0,
+  "fade_sec": 2.14,
+  "preload": "stage",
+  "sec": 4.714,
+  "bytes": 80615,
+  "source": "rom-render(tools/bgm/loop_exact.py + render.py)",
+  "scene": "경기 시작 입장 행진(매치 서브상태 0x0C, f7). 68k 0x5ED2 [확인: 08 §1]",
+  "check": "1회 재생 곡: 드라이버 상태 정지 4.733초, 마지막 소리 4.664초 / 청취 UNVERIFIED"
+ },
+ "bgm.result.win": {
+  "type": "bgm",
+  "path": "rom/bgm/8e.ogg",
+  "alt": "rom/bgm/8e.mp3",
+  "prefer": "rom",
+  "rom_id": "0x8E",
+  "verified": true,
+  "loop": false,
+  "gain": 1.0,
+  "fade_sec": 1.73,
+  "preload": "stage",
+  "sec": 4.621,
+  "bytes": 73930,
+  "source": "rom-render(tools/bgm/loop_exact.py + render.py)",
+  "scene": "결과: 68k 0x40E2 - 사람 대 컴퓨터가 아니거나 승자가 1P 쪽($E68A==$E700) [코드]",
+  "check": "1회 재생 곡: 드라이버 상태 정지 4.873초, 마지막 소리 4.571초 / 청취 UNVERIFIED"
+ },
+ "bgm.result.lose": {
+  "type": "bgm",
+  "path": "rom/bgm/93.ogg",
+  "alt": "rom/bgm/93.mp3",
+  "prefer": "rom",
+  "rom_id": "0x93",
+  "verified": true,
+  "loop": false,
+  "gain": 1.0,
+  "fade_sec": 1.901,
+  "preload": "stage",
+  "sec": 7.497,
+  "bytes": 111924,
+  "source": "rom-render(tools/bgm/loop_exact.py + render.py)",
+  "scene": "결과: 68k 0x4100 - 사람 대 컴퓨터에서 1P 쪽 패배 [코드]",
+  "check": "1회 재생 곡: 드라이버 상태 정지 7.458초, 마지막 소리 7.447초 / 청취 UNVERIFIED"
+ },
+ "bgm.stage.00": {
+  "type": "bgm",
+  "path": "rom/bgm/81.ogg",
+  "alt": "rom/bgm/81.mp3",
+  "prefer": "rom",
+  "rom_id": "0x81",
+  "verified": true,
+  "loop": true,
+  "gain": 1.0,
+  "fade_sec": 1.802,
+  "preload": "stage",
+  "sec": 73.316,
+  "bytes": 1053758,
+  "source": "rom-render(tools/bgm/loop_exact.py + render.py)",
+  "scene": "경기 곡(스토리 외): 68k 0x50C2 표 0x50D2[ROM 스테이지 1] = 0x81 [코드]. 시작 시점 0xDC6C(심판 복귀 완료)",
+  "check": "루프 17.720~71.066초(길이 53.346초, 3552틱), 키 온 2375개·PSG 24119개 일치, 스펙트럼 상관 0.936, 지연 0.00ms / 청취 UNVERIFIED",
+  "loop_start": 19.71952,
+  "loop_end": 73.0658
+ },
+ "bgm.stage.01": {
+  "type": "bgm",
+  "path": "rom/bgm/81.ogg",
+  "alt": "rom/bgm/81.mp3",
+  "prefer": "rom",
+  "rom_id": "0x81",
+  "verified": true,
+  "loop": true,
+  "gain": 1.0,
+  "fade_sec": 1.802,
+  "preload": "stage",
+  "sec": 73.316,
+  "bytes": 1053758,
+  "source": "rom-render(tools/bgm/loop_exact.py + render.py)",
+  "scene": "경기 곡(스토리 외): 68k 0x50C2 표 0x50D2[ROM 스테이지 2] = 0x81 [코드]. 시작 시점 0xDC6C(심판 복귀 완료)",
+  "check": "루프 17.720~71.066초(길이 53.346초, 3552틱), 키 온 2375개·PSG 24119개 일치, 스펙트럼 상관 0.936, 지연 0.00ms / 청취 UNVERIFIED",
+  "loop_start": 19.71952,
+  "loop_end": 73.0658
+ },
+ "bgm.stage.06": {
+  "type": "bgm",
+  "path": "rom/bgm/83.ogg",
+  "alt": "rom/bgm/83.mp3",
+  "prefer": "rom",
+  "rom_id": "0x83",
+  "verified": true,
+  "loop": true,
+  "gain": 1.0,
+  "fade_sec": 1.901,
+  "preload": "stage",
+  "sec": 205.089,
+  "bytes": 3672039,
+  "source": "rom-render(tools/bgm/loop_exact.py + render.py)",
+  "scene": "경기 곡(스토리 외): 68k 0x50C2 표 0x50D2[ROM 스테이지 4] = 0x83 [코드]. 시작 시점 0xDC6C(심판 복귀 완료)",
+  "check": "루프 40.589~202.839초(길이 162.250초, 10240틱), 키 온 10848개·PSG 88160개 일치, 스펙트럼 상관 0.949, 지연 0.00ms / 청취 UNVERIFIED",
+  "loop_start": 42.58914,
+  "loop_end": 204.83884
+ },
+ "bgm.stage.07": {
+  "type": "bgm",
+  "path": "rom/bgm/84.ogg",
+  "alt": "rom/bgm/84.mp3",
+  "prefer": "rom",
+  "rom_id": "0x84",
+  "verified": true,
+  "loop": true,
+  "gain": 1.0,
+  "fade_sec": 1.901,
+  "preload": "stage",
+  "sec": 90.643,
+  "bytes": 1563469,
+  "source": "rom-render(tools/bgm/loop_exact.py + render.py)",
+  "scene": "경기 곡(스토리 외): 68k 0x50C2 표 0x50D2[ROM 스테이지 10] = 0x84 [코드]. 시작 시점 0xDC6C(심판 복귀 완료)",
+  "check": "루프 0.169~88.393초(길이 88.223초, 5568틱), 키 온 6035개·PSG 45764개 일치, 스펙트럼 상관 0.944, 지연 0.00ms / 청취 UNVERIFIED",
+  "loop_start": 2.16932,
+  "loop_end": 90.39263
+ },
+ "bgm.stage.09": {
+  "type": "bgm",
+  "path": "rom/bgm/86.ogg",
+  "alt": "rom/bgm/86.mp3",
+  "prefer": "rom",
+  "rom_id": "0x86",
+  "verified": true,
+  "loop": true,
+  "gain": 1.0,
+  "fade_sec": 1.901,
+  "preload": "stage",
+  "sec": 98.185,
+  "bytes": 1623463,
+  "source": "rom-render(tools/bgm/loop_exact.py + render.py)",
+  "scene": "경기 곡(스토리 외): 68k 0x50C2 표 0x50D2[ROM 스테이지 11] = 0x86 [코드]. 시작 시점 0xDC6C(심판 복귀 완료)",
+  "check": "루프 24.063~95.935초(길이 71.872초, 4536틱), 키 온 5251개·PSG 39062개 일치, 스펙트럼 상관 0.962, 지연 0.00ms / 청취 UNVERIFIED",
+  "loop_start": 26.06306,
+  "loop_end": 97.93467
+ },
+ "bgm.stage.10": {
+  "type": "bgm",
+  "path": "rom/bgm/87.ogg",
+  "alt": "rom/bgm/87.mp3",
+  "prefer": "rom",
+  "rom_id": "0x87",
+  "verified": true,
+  "loop": true,
+  "gain": 1.0,
+  "fade_sec": 1.901,
+  "preload": "stage",
+  "sec": 170.864,
+  "bytes": 2689112,
+  "source": "rom-render(tools/bgm/loop_exact.py + render.py)",
+  "scene": "경기 곡(스토리 외): 68k 0x50C2 표 0x50D2[ROM 스테이지 12] = 0x87 [코드]. 시작 시점 0xDC6C(심판 복귀 완료)",
+  "check": "루프 33.744~168.614초(길이 134.870초, 8512틱), 키 온 7236개·PSG 59498개 일치, 스펙트럼 상관 0.946, 지연 0.00ms / 청취 UNVERIFIED",
+  "loop_start": 35.7442,
+  "loop_end": 170.61426
+ },
+ "bgm.stage.11": {
+  "type": "bgm",
+  "path": "rom/bgm/88.ogg",
+  "alt": "rom/bgm/88.mp3",
+  "prefer": "rom",
+  "rom_id": "0x88",
+  "verified": true,
+  "loop": true,
+  "gain": 1.0,
+  "fade_sec": 1.793,
+  "preload": "stage",
+  "sec": 156.197,
+  "bytes": 2571315,
+  "source": "rom-render(tools/bgm/loop_exact.py + render.py)",
+  "scene": "경기 곡(스토리 외): 68k 0x50C2 표 0x50D2[ROM 스테이지 0] = 0x88 [코드]. 시작 시점 0xDC6C(심판 복귀 완료)",
+  "check": "루프 70.024~153.947초(길이 83.923초, 5616틱), 키 온 3974개·PSG 46995개 일치, 스펙트럼 상관 0.948, 지연 0.00ms / 청취 UNVERIFIED",
+  "loop_start": 72.02417,
+  "loop_end": 155.9473
+ },
+ "bgm.stage.12": {
+  "type": "bgm",
+  "path": "rom/bgm/89.ogg",
+  "alt": "rom/bgm/89.mp3",
+  "prefer": "rom",
+  "rom_id": "0x89",
+  "verified": true,
+  "loop": true,
+  "gain": 1.0,
+  "fade_sec": 1.802,
+  "preload": "stage",
+  "sec": 97.751,
+  "bytes": 1339175,
+  "source": "rom-render(tools/bgm/loop_exact.py + render.py)",
+  "scene": "경기 곡(스토리 외): 68k 0x50C2 표 0x50D2[ROM 스테이지 6] = 0x89 [코드]. 시작 시점 0xDC6C(심판 복귀 완료)",
+  "check": "루프 43.597~95.501초(길이 51.905초, 3456틱), 키 온 2993개·PSG 23664개 일치, 스펙트럼 상관 0.945, 지연 0.00ms / 청취 UNVERIFIED",
+  "loop_start": 45.59667,
+  "loop_end": 97.50118
+ },
+ "bgm.stage.13": {
+  "type": "bgm",
+  "path": "rom/bgm/96.ogg",
+  "alt": "rom/bgm/96.mp3",
+  "prefer": "rom",
+  "rom_id": "0x96",
+  "verified": true,
+  "loop": true,
+  "gain": 1.0,
+  "fade_sec": 1.901,
+  "preload": "stage",
+  "sec": 51.966,
+  "bytes": 795235,
+  "source": "rom-render(tools/bgm/loop_exact.py + render.py)",
+  "scene": "경기 곡(스토리 외): 68k 0x50C2 표 0x50D2[ROM 스테이지 13] = 0x96 [코드]. 시작 시점 0xDC6C(심판 복귀 완료)",
+  "check": "루프 21.322~49.716초(길이 28.394초, 1792틱), 키 온 2072개·PSG 15336개 일치, 스펙트럼 상관 0.941, 지연 0.00ms / 청취 UNVERIFIED",
+  "loop_start": 23.32197,
+  "loop_end": 51.71569
+ },
+ "bgm.story.00": {
+  "type": "bgm",
+  "path": "rom/bgm/81.ogg",
+  "alt": "rom/bgm/81.mp3",
+  "prefer": "rom",
+  "rom_id": "0x81",
+  "verified": true,
+  "loop": true,
+  "gain": 1.0,
+  "fade_sec": 1.802,
+  "preload": "stage",
+  "sec": 73.316,
+  "bytes": 1053758,
+  "source": "rom-render(tools/bgm/loop_exact.py + render.py)",
+  "scene": "경기 곡(스토리): 68k 0x50E2 표 0x50F2[경기 번호 0] = 0x81 [코드]",
+  "check": "루프 17.720~71.066초(길이 53.346초, 3552틱), 키 온 2375개·PSG 24119개 일치, 스펙트럼 상관 0.936, 지연 0.00ms / 청취 UNVERIFIED",
+  "loop_start": 19.71952,
+  "loop_end": 73.0658
+ },
+ "bgm.story.01": {
+  "type": "bgm",
+  "path": "rom/bgm/81.ogg",
+  "alt": "rom/bgm/81.mp3",
+  "prefer": "rom",
+  "rom_id": "0x81",
+  "verified": true,
+  "loop": true,
+  "gain": 1.0,
+  "fade_sec": 1.802,
+  "preload": "stage",
+  "sec": 73.316,
+  "bytes": 1053758,
+  "source": "rom-render(tools/bgm/loop_exact.py + render.py)",
+  "scene": "경기 곡(스토리): 68k 0x50E2 표 0x50F2[경기 번호 1] = 0x81 [코드]",
+  "check": "루프 17.720~71.066초(길이 53.346초, 3552틱), 키 온 2375개·PSG 24119개 일치, 스펙트럼 상관 0.936, 지연 0.00ms / 청취 UNVERIFIED",
+  "loop_start": 19.71952,
+  "loop_end": 73.0658
+ },
+ "bgm.story.02": {
+  "type": "bgm",
+  "path": "rom/bgm/81.ogg",
+  "alt": "rom/bgm/81.mp3",
+  "prefer": "rom",
+  "rom_id": "0x81",
+  "verified": true,
+  "loop": true,
+  "gain": 1.0,
+  "fade_sec": 1.802,
+  "preload": "stage",
+  "sec": 73.316,
+  "bytes": 1053758,
+  "source": "rom-render(tools/bgm/loop_exact.py + render.py)",
+  "scene": "경기 곡(스토리): 68k 0x50E2 표 0x50F2[경기 번호 2] = 0x81 [코드]",
+  "check": "루프 17.720~71.066초(길이 53.346초, 3552틱), 키 온 2375개·PSG 24119개 일치, 스펙트럼 상관 0.936, 지연 0.00ms / 청취 UNVERIFIED",
+  "loop_start": 19.71952,
+  "loop_end": 73.0658
+ },
+ "bgm.story.07": {
+  "type": "bgm",
+  "path": "rom/bgm/83.ogg",
+  "alt": "rom/bgm/83.mp3",
+  "prefer": "rom",
+  "rom_id": "0x83",
+  "verified": true,
+  "loop": true,
+  "gain": 1.0,
+  "fade_sec": 1.901,
+  "preload": "stage",
+  "sec": 205.089,
+  "bytes": 3672039,
+  "source": "rom-render(tools/bgm/loop_exact.py + render.py)",
+  "scene": "경기 곡(스토리): 68k 0x50E2 표 0x50F2[경기 번호 7] = 0x83 [코드]",
+  "check": "루프 40.589~202.839초(길이 162.250초, 10240틱), 키 온 10848개·PSG 88160개 일치, 스펙트럼 상관 0.949, 지연 0.00ms / 청취 UNVERIFIED",
+  "loop_start": 42.58914,
+  "loop_end": 204.83884
+ },
+ "bgm.story.08": {
+  "type": "bgm",
+  "path": "rom/bgm/84.ogg",
+  "alt": "rom/bgm/84.mp3",
+  "prefer": "rom",
+  "rom_id": "0x84",
+  "verified": true,
+  "loop": true,
+  "gain": 1.0,
+  "fade_sec": 1.901,
+  "preload": "stage",
+  "sec": 90.643,
+  "bytes": 1563469,
+  "source": "rom-render(tools/bgm/loop_exact.py + render.py)",
+  "scene": "경기 곡(스토리): 68k 0x50E2 표 0x50F2[경기 번호 8] = 0x84 [코드]",
+  "check": "루프 0.169~88.393초(길이 88.223초, 5568틱), 키 온 6035개·PSG 45764개 일치, 스펙트럼 상관 0.944, 지연 0.00ms / 청취 UNVERIFIED",
+  "loop_start": 2.16932,
+  "loop_end": 90.39263
+ },
+ "bgm.story.10": {
+  "type": "bgm",
+  "path": "rom/bgm/86.ogg",
+  "alt": "rom/bgm/86.mp3",
+  "prefer": "rom",
+  "rom_id": "0x86",
+  "verified": true,
+  "loop": true,
+  "gain": 1.0,
+  "fade_sec": 1.901,
+  "preload": "stage",
+  "sec": 98.185,
+  "bytes": 1623463,
+  "source": "rom-render(tools/bgm/loop_exact.py + render.py)",
+  "scene": "경기 곡(스토리): 68k 0x50E2 표 0x50F2[경기 번호 10] = 0x86 [코드]",
+  "check": "루프 24.063~95.935초(길이 71.872초, 4536틱), 키 온 5251개·PSG 39062개 일치, 스펙트럼 상관 0.962, 지연 0.00ms / 청취 UNVERIFIED",
+  "loop_start": 26.06306,
+  "loop_end": 97.93467
+ },
+ "bgm.story.11": {
+  "type": "bgm",
+  "path": "rom/bgm/87.ogg",
+  "alt": "rom/bgm/87.mp3",
+  "prefer": "rom",
+  "rom_id": "0x87",
+  "verified": true,
+  "loop": true,
+  "gain": 1.0,
+  "fade_sec": 1.901,
+  "preload": "stage",
+  "sec": 170.864,
+  "bytes": 2689112,
+  "source": "rom-render(tools/bgm/loop_exact.py + render.py)",
+  "scene": "경기 곡(스토리): 68k 0x50E2 표 0x50F2[경기 번호 11] = 0x87 [코드]",
+  "check": "루프 33.744~168.614초(길이 134.870초, 8512틱), 키 온 7236개·PSG 59498개 일치, 스펙트럼 상관 0.946, 지연 0.00ms / 청취 UNVERIFIED",
+  "loop_start": 35.7442,
+  "loop_end": 170.61426
+ },
+ "bgm.story.12": {
+  "type": "bgm",
+  "path": "rom/bgm/88.ogg",
+  "alt": "rom/bgm/88.mp3",
+  "prefer": "rom",
+  "rom_id": "0x88",
+  "verified": true,
+  "loop": true,
+  "gain": 1.0,
+  "fade_sec": 1.793,
+  "preload": "stage",
+  "sec": 156.197,
+  "bytes": 2571315,
+  "source": "rom-render(tools/bgm/loop_exact.py + render.py)",
+  "scene": "경기 곡(스토리): 68k 0x50E2 표 0x50F2[경기 번호 12] = 0x88 [코드]",
+  "check": "루프 70.024~153.947초(길이 83.923초, 5616틱), 키 온 3974개·PSG 46995개 일치, 스펙트럼 상관 0.948, 지연 0.00ms / 청취 UNVERIFIED",
+  "loop_start": 72.02417,
+  "loop_end": 155.9473
+ },
+ "bgm.story.13": {
+  "type": "bgm",
+  "path": "rom/bgm/89.ogg",
+  "alt": "rom/bgm/89.mp3",
+  "prefer": "rom",
+  "rom_id": "0x89",
+  "verified": true,
+  "loop": true,
+  "gain": 1.0,
+  "fade_sec": 1.802,
+  "preload": "stage",
+  "sec": 97.751,
+  "bytes": 1339175,
+  "source": "rom-render(tools/bgm/loop_exact.py + render.py)",
+  "scene": "경기 곡(스토리): 68k 0x50E2 표 0x50F2[경기 번호 13] = 0x89 [코드]",
+  "check": "루프 43.597~95.501초(길이 51.905초, 3456틱), 키 온 2993개·PSG 23664개 일치, 스펙트럼 상관 0.945, 지연 0.00ms / 청취 UNVERIFIED",
+  "loop_start": 45.59667,
+  "loop_end": 97.50118
+ },
+ "bgm.story.14": {
+  "type": "bgm",
+  "path": "rom/bgm/96.ogg",
+  "alt": "rom/bgm/96.mp3",
+  "prefer": "rom",
+  "rom_id": "0x96",
+  "verified": true,
+  "loop": true,
+  "gain": 1.0,
+  "fade_sec": 1.901,
+  "preload": "stage",
+  "sec": 51.966,
+  "bytes": 795235,
+  "source": "rom-render(tools/bgm/loop_exact.py + render.py)",
+  "scene": "경기 곡(스토리): 68k 0x50E2 표 0x50F2[경기 번호 14] = 0x96 [코드]",
+  "check": "루프 21.322~49.716초(길이 28.394초, 1792틱), 키 온 2072개·PSG 15336개 일치, 스펙트럼 상관 0.941, 지연 0.00ms / 청취 UNVERIFIED",
+  "loop_start": 23.32197,
+  "loop_end": 51.71569
+ }
+}
