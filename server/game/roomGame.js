@@ -21,6 +21,7 @@ export class RoomGame {
     this.cpuSeat = o.seats.findIndex((s) => s.cpu);
     const cpuLevels = [0, 1].map((i) => (o.seats[i].cpu ? o.seats[i].level : null));
     this.campaign = o.campaign ?? null; // {k, stage}: 싱글 캠페인 경기(서버가 정한 값)
+    this.league = o.league ?? null; // {i, j}: 리그 카드(PROTOCOL §10). game_start·결과 레코드에 싣는다
     this.training = o.training ?? null; // {kind}: 특훈(혼자 하기). 팀·스테이지는 엔진이 training.json 으로 정한다. 결과 레코드를 남기지 않는다
     this.match = new Match({
       seed: this.seed, teams: [o.seats[0].team, o.seats[1].team], data: o.data,
@@ -45,7 +46,7 @@ export class RoomGame {
   }
 
   startPayload(seat, resumed) {
-    return { t: 'game_start', matchId: this.matchId, resumed, you: seat, ...(this.campaign ? { campaign: { k: this.campaign.k } } : {}), ...this.match.info() };
+    return { t: 'game_start', matchId: this.matchId, resumed, you: seat, ...(this.campaign ? { campaign: { k: this.campaign.k } } : {}), ...(this.league ? { league: { ...this.league } } : {}), ...this.match.info() };
   }
 
   begin() {
@@ -142,6 +143,7 @@ export class RoomGame {
         players: seats.map((s, i) => (s.cpu ? { seat: i, nickname: s.nick, team: s.team, cpu: true, cpuLevel: s.level } : { seat: i, nickname: s.nick, team: s.team })),
         ...(this.cpuSeat >= 0 ? { vsCpu: true, cpuLevel: seats[this.cpuSeat].level } : {}),
         ...(this.campaign ? { campaign: { k: this.campaign.k, stage: this.match.stageInfo.id } } : {}),
+        ...(this.league ? { league: { ...this.league, stage: this.match.stageInfo.id } } : {}),
         rules: { mode: this.match.ruleMode, limitFrames: this.match.limitFrames },
         winner: res.winnerNick, loser: winner >= 0 ? seats[1 - winner].nick : null,
         endReason: reason, ticks: this.match.f, remaining: rem, seed: this.seed,

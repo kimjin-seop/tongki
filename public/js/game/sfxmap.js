@@ -59,6 +59,8 @@ export const UI_SFX = { move: ['sfx.ui.cursor'], ok: ['sfx.ui.confirm'], cancel:
 export const SCREEN_BGM = {
   nick: () => (audio.wantBgm === 'bgm.title' ? ['bgm.title'] : []), // 타이틀: 인트로에서 시작한 0x8A 가 이어질 뿐, 새로 틀지 않는다
   lobby: () => ['bgm.menu'], // 모드 메뉴 0x8C
+  tutorial: () => ['bgm.menu'], // 튜토리얼 고르기: 로비 곡 유지
+  league: () => ['bgm.menu'], // 리그 화면들: 리그 곡은 후속(analysis/33 A), 로비 곡 유지
   room: () => ['bgm.menu'], // 팀 선택: 새 곡 명령 없음(0x8C 유지)
   prematch: () => ['bgm.vs'], // 라인업(VS)·편성 0x8B
   rules: (d) => (d?.silent ? [] : ['bgm.menu']), // 규칙 창: 새 곡 명령 없음(0x8C 유지). silent = 스토리 흐름(곡 미확정 → 무음)

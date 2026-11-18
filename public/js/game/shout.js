@@ -50,15 +50,26 @@ export class ShoutFx {
 
   clear() { this.cur = null; this.last = null; }
 
-  /** 상자 + 꼬리를 합친 캔버스(문구·꼬리 x·폰트 준비 상태별 캐시). 꼬리 끝 = (tail, height - 1) */
+  /**
+   * 상자 + 꼬리를 합친 캔버스(문구·꼬리 자리·폰트 준비 상태별 캐시). tail = 가리킬 x(상자 왼쪽 기준).
+   * 꼬리 뿌리(c.tx)는 상자 양끝 TAIL_MIN 안에 두고, 꼬리 끝(c.tip, height - 1 행)은 상자 폭 안에서 tail 을 그대로 따라간다
+   * → 상자가 캔버스 가장자리에 가둬져도 꼬리가 기울어 선수 중심을 가리킨다(가운데에서는 tip = tx 로 곧은 꼬리)
+   */
   img(text, tail) {
     const ok = globalThis.document?.fonts?.check?.(`${TEXT_H}px ${FONT}`, '가') ?? true;
-    const key = `${text}|${tail}|${ok}`;
+    const wk = `${text}|${ok}`;
+    let mk = this.masks?.get(wk);
+    if (!mk) {
+      mk = dotMask(text, { h: TEXT_H, font: FONT, th: 0.55, ct: 0.65, maxW: MAX_W - PAD_X * 2 });
+      (this.masks ??= new Map()).set(wk, mk);
+      if (this.masks.size > 64) { this.masks.clear(); this.masks.set(wk, mk); }
+    }
+    const bw = mk.w + PAD_X * 2, bh = mk.hh + PAD_Y * 2;
+    const tx = Math.max(TAIL_MIN, Math.min(bw - 1 - TAIL_MIN, tail)), tip = Math.max(0, Math.min(bw - 1, tail));
+    const key = `${wk}|${tx}|${tip}`;
     let c = this.cache.get(key);
     if (c) return c;
     if (this.cache.size > 48) this.cache.clear();
-    const mk = dotMask(text, { h: TEXT_H, font: FONT, th: 0.55, ct: 0.65, maxW: MAX_W - PAD_X * 2 });
-    const bw = mk.w + PAD_X * 2, bh = mk.hh + PAD_Y * 2;
     c = document.createElement('canvas');
     c.width = bw; c.height = bh + TAIL_H - 1; // 맨 아래 행 = 꼬리 끝 한 점
     const g = c.getContext('2d');
@@ -67,18 +78,18 @@ export class ShoutFx {
     g.fillStyle = C_BG; g.fillRect(2, 1, bw - 4, bh - 2); g.fillRect(1, 2, bw - 2, bh - 4);
     g.fillStyle = C_SHADE; g.fillRect(2, bh - 2, bw - 4, 1);
     // 꼬리: 아래로 좁아지는 삼각형(폭 7 → 1), 상자 아랫변 윤곽을 열고 잇는다
-    const tx = Math.max(TAIL_MIN, Math.min(bw - 1 - TAIL_MIN, tail));
     g.fillStyle = C_BG; g.fillRect(tx - 2, bh - 2, 5, 2);
     for (let r = 0; r < TAIL_H; r++) {
       const hw = TAIL_H - 2 - r; // 흰 안쪽 반폭: 3, 2, 1, 0, -1(끝은 검정 한 점)
-      g.fillStyle = C_LINE; g.fillRect(tx - hw - 1, bh - 1 + r, (hw + 1) * 2 + 1, 1);
-      if (hw >= 0 && r < TAIL_H - 1) { g.fillStyle = C_BG; g.fillRect(tx - hw, bh - 1 + r, hw * 2 + 1, 1); }
+      const cx = tx + Math.round(((tip - tx) * r) / (TAIL_H - 1)); // 행 중심: 뿌리 tx → 끝 tip
+      g.fillStyle = C_LINE; g.fillRect(cx - hw - 1, bh - 1 + r, (hw + 1) * 2 + 1, 1);
+      if (hw >= 0 && r < TAIL_H - 1) { g.fillStyle = C_BG; g.fillRect(cx - hw, bh - 1 + r, hw * 2 + 1, 1); }
     }
     // 글자(검정, 외곽선 없이 마스크 그대로)
     g.fillStyle = C_TXT;
     const ox = PAD_X, oy = PAD_Y - mk.top;
     for (let y = 0; y < mk.h; y++) for (let x = 0; x < mk.w; x++) if (mk.m[y * mk.w + x] && oy + y >= 1 && oy + y < bh - 1) g.fillRect(ox + x, oy + y, 1, 1);
-    c.tx = tx;
+    c.tx = tx; c.tip = tip;
     this.cache.set(key, c);
     return c;
   }
@@ -101,17 +112,18 @@ export class ShoutFx {
     if (!p) return;
     const [x, y, z] = p.pos;
     const sx = Math.round(x - o.cam), head = Math.round(y / 2 - z + Y0) + (p.top ?? HEAD_DEF) + (o.sy ?? 0);
-    // 상자는 선수 x 가운데, 캔버스 좌우 안으로 가두고 꼬리만 선수 x 를 가리킨다
+    // 상자는 선수 x 가운데, 캔버스 좌우 안으로 가둔다. 꼬리 끝은 선수 x 를 가리킨다(상자가 가둬지면 꼬리가 기운다).
+    // 선수 중심이 캔버스 밖이면 꼬리 끝이 그쪽 상자 끝(캔버스 가장자리 1px 안)에 붙는다
     const probe = this.img(cur.text, 0), bw = probe.width, ch = probe.height;
     const bx = Math.max(1, Math.min(W - 1 - bw, sx - (bw >> 1)));
     const c = this.img(cur.text, sx - bx);
     const by = Math.max(0, head - GAP - ch); // 위로 잘리지 않게
-    const tipX = bx + c.tx, tipY = by + ch;
-    this.last = { x: bx, y: by, w: bw, h: ch, tipX, tipY, head, z, age };
+    const tipX = bx + c.tip, tipY = by + ch;
+    this.last = { x: bx, y: by, w: bw, h: ch, tipX, tipY, head, z, age, sx };
     const k = age < T_IN ? POP[age] : 1;
     if (k === 1) { g.drawImage(c, bx, by); return; }
     const dw = Math.max(1, Math.round(bw * k)), dh = Math.max(1, Math.round(ch * k));
-    const dx = Math.round(tipX - c.tx * k), dy = Math.max(0, tipY - dh);
+    const dx = Math.round(tipX - c.tip * k), dy = Math.max(0, tipY - dh);
     g.drawImage(c, 0, 0, bw, ch, Math.max(0, Math.min(W - dw, dx)), dy, dw, dh);
   }
 }

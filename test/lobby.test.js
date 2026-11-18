@@ -340,3 +340,23 @@ test('필살 특훈: training_start{special} -> game_start(training)·스냅샷 
     a.ws.close();
   } finally { await app.close(); }
 });
+
+test('방 목록: 로비 사용자에게 새 방이 푸시되고 항목에 규칙 요약(rules)·인원이 실린다', async () => {
+  const app = createServer({ store: new MemoryResultStore(), log: () => {} });
+  const port = await app.listen(0);
+  try {
+    const a = client(port), b = client(port);
+    await Promise.all([a.open, b.open]);
+    a.send({ t: 'hello', nickname: '목록방장' }); await a.type('welcome');
+    b.send({ t: 'hello', nickname: '목록손님' }); await b.type('welcome');
+    a.send({ t: 'create_room', rules: { mode: 'official', time: 3 } });
+    const code = (await a.type('room_joined')).room.code;
+    // list_rooms 를 보내지 않아도 푸시로 온다
+    const l1 = await b.wait((m) => m.t === 'room_list' && m.rooms.length === 1);
+    assert.deepEqual(l1.rooms[0], { code, host: '목록방장', players: 1, max: 2, status: 'waiting', rules: { mode: 'official', time: 3 } });
+    b.send({ t: 'join_room', code }); await b.type('room_joined');
+    b.send({ t: 'leave_room' }); await b.type('room_left');
+    assert.equal((await b.wait((m) => m.t === 'room_list' && m.rooms[0]?.players === 1)).rooms[0].code, code);
+    a.ws.close(); b.ws.close();
+  } finally { await app.close(); }
+});

@@ -2,6 +2,8 @@
 import { randomBytes, randomInt } from 'node:crypto';
 import { RoomGame } from '../game/roomGame.js';
 import { MemoryProgressStore } from '../store/progress.js';
+import { MemoryLeagueStore } from '../store/league.js';
+import { makeLeagueHandlers, leagueEnd } from '../league/handlers.js';
 import { mono, loadLimits } from '../net/limits.js';
 import { ERR, PROTOCOL, GRACE_MS, NICK_RE, CODE_RE, CODE_CHARS, isInt, normRules, TRAINING_KINDS, TRAINING_READY } from '../net/protocol.js';
 import { RULE_TIMES } from '../engine/consts.js';
@@ -19,6 +21,7 @@ export class Lobby {
   constructor(o) {
     this.o = o;
     this.progress = o.progress ?? new MemoryProgressStore();
+    this.leagues = o.leagues ?? new MemoryLeagueStore(); // 리그 저장소(get/set/flush, PROTOCOL §10)
     this.graceMs = o.graceMs ?? GRACE_MS;
     this.limits = o.limits ?? loadLimits();
     this.helloWin = new Map(); // ip -> {start,count}
@@ -180,6 +183,7 @@ export class Lobby {
       ...(room.vsCpu ? { vsCpu: true, cpuLevel: room.cpuLevel } : {}),
       ...(room.campaign ? { campaign: { k: room.campaign.k } } : {}),
       ...(room.training ? { training: { kind: room.training.kind } } : {}),
+      ...(room.league ? { league: { i: room.league.i, j: room.league.j } } : {}),
       rules: { ...room.rules },
       start: st.ok ? { ok: true } : { ok: false, code: st.code, msg: ERR[st.code] },
       slots: room.seats.map((m, i) => (!m && i === 1 && room.vsCpu ? { seat: 1, nick: CPU_NICK, ready: true, team: room.cpuTeam, host: false, connected: true, cpu: true } : m ? { seat: i, nick: m.s.nick, ready: m.ready, team: m.team, host: i === 0, connected: !!m.s.conn } : null)),
@@ -237,8 +241,9 @@ export class Lobby {
   }
 
   roomListMsg() {
-    const rooms = [...this.rooms.values()].filter((r) => !r.campaign && !r.training).sort((a, b) => b.createdAt - a.createdAt).map((r) => ({
+    const rooms = [...this.rooms.values()].filter((r) => !r.campaign && !r.training && !r.league).sort((a, b) => b.createdAt - a.createdAt).map((r) => ({
       code: r.code, host: r.seats[0]?.s.nick ?? '', players: r.vsCpu ? 2 : r.seats.filter(Boolean).length, max: 2, ...(r.vsCpu ? { vsCpu: true } : {}), status: r.game ? 'playing' : 'waiting',
+      rules: { ...r.rules }, // 방 목록 행의 규칙 요약용(추가 필드, 하위 호환)
     }));
     return { t: 'room_list', rooms };
   }
@@ -309,7 +314,7 @@ export class Lobby {
       set_team(s, m) {
         const room = this.roomOf(s) ?? fail('NOT_IN_ROOM');
         if (room.game) fail('IN_GAME');
-        if (room.campaign || room.training) fail('NOT_IN_CAMPAIGN_ROOM');
+        if (room.campaign || room.training || room.league) fail('NOT_IN_CAMPAIGN_ROOM');
         if (!isInt(m.team, 0, this.o.data.teams.length - 1)) fail('TEAM_INVALID');
         const mem = room.seats[room.seatOf(s)];
         if (mem.team !== m.team) { mem.team = m.team; mem.ready = false; }
@@ -321,6 +326,7 @@ export class Lobby {
         const room = this.roomOf(s) ?? fail('NOT_IN_ROOM');
         if (room.game) fail('IN_GAME');
         if (room.seatOf(s) !== 0) fail('NOT_HOST');
+        if (room.league) fail('NOT_IN_CAMPAIGN_ROOM'); // 리그 규칙은 league_config 로만
         const r = this.parseRules(m.rules, room.rules, !!room.campaign);
         if (r.mode !== room.rules.mode || r.time !== room.rules.time) {
           room.rules = r;
@@ -340,7 +346,7 @@ export class Lobby {
       },
       start(s) {
         const room = this.roomOf(s) ?? fail('NOT_IN_ROOM');
-        if (room.training) fail('NOT_IN_CAMPAIGN_ROOM'); // 특훈 방은 training_start 로만 시작한다(일반 경기로 다시 시작 금지, set_team 과 같은 코드)
+        if (room.training || room.league) fail('NOT_IN_CAMPAIGN_ROOM'); // 특훈 방은 training_start, 리그 방은 league_play 로만 시작한다(일반 경기로 다시 시작 금지, set_team 과 같은 코드)
         if (room.game) fail('IN_GAME');
         if (room.seatOf(s) !== 0) fail('NOT_HOST');
         const c = this.startCheck(room);
@@ -391,6 +397,7 @@ export class Lobby {
         if (!room?.training || !room.game) fail('NOT_IN_TRAINING');
         room.game.abort(-1, 'training_quit');
       },
+      ...makeLeagueHandlers(fail), // league_get/new/config/abandon/play (server/league/handlers.js)
       input(s, m) {
         const room = this.roomOf(s);
         if (!room?.game || !isInt(m.bits, 0, 255)) return; // 게임 종료 직후 입력은 조용히 무시
@@ -403,6 +410,13 @@ export class Lobby {
     const now = mono();
     if (!s.campWin || now - s.campWin.start >= 60000) s.campWin = { start: now, count: 0 };
     if (++s.campWin.count > this.limits.maxCampaignPerMin) fail('CAMPAIGN_RATE_LIMITED');
+  }
+
+  /** 리그 전용 창(league_*, 사람 카드 방 생성 포함). 거절된 요청도 횟수에 든다. 초과 코드는 캠페인과 같다 */
+  leagueRate(s) {
+    const now = mono();
+    if (!s.leagueWin || now - s.leagueWin.start >= 60000) s.leagueWin = { start: now, count: 0 };
+    if (++s.leagueWin.count > this.limits.maxLeaguePerMin) fail('CAMPAIGN_RATE_LIMITED');
   }
 
   campaignListMsg(s) {
@@ -421,7 +435,7 @@ export class Lobby {
     if (room.vsCpu) seats[1] = { nick: CPU_NICK, team: room.cpuTeam, cpu: true, level: room.cpuLevel, ...(ch ? { special256: ch.specialChance256 } : {}) };
     for (const m of room.seats) if (m) m.ready = false;
     room.game = new RoomGame({
-      roomCode: room.code, seats, data: this.o.data, stage: ch?.stage ?? 0,
+      roomCode: room.code, seats, data: this.o.data, stage: ch?.stage ?? room.league?.stage ?? 0, league: room.league ? { i: room.league.i, j: room.league.j } : null,
       rules: { mode: room.rules.mode, timeMin: room.rules.time, limitFrames: room.rules.time * 60 * this.o.data.rules.tickRate }, campaign: room.campaign, training: room.training ?? null, store: this.o.store, build: this.o.build, seed: this.o.seed, limits: this.limits,
       send: (seat, obj) => this.sendTo(room.seats[seat]?.s, obj),
       onEnd: (res) => this.onGameEnd(room, res),
@@ -436,6 +450,7 @@ export class Lobby {
     for (const [i, m] of room.seats.entries()) if (m) this.sendTo(m.s, { ...res, you: i });
     if (room.campaign && room.seats[0]) this.campaignEnd(room, res);
     if (room.training) { this.trainingEnd(room, res); return; }
+    if (room.league) { leagueEnd(this, room, res); return; } // 기록 1회 + 방 삭제 -> room_left
     for (const m of room.seats) if (m) m.ready = false;
     if (this.rooms.get(room.code) === room) this.broadcastRoom(room);
     this.markListDirty();

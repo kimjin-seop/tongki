@@ -50,6 +50,7 @@ async function loadStage(st, renderer) {
 export function mount(root, app, { start }) {
   const campaign = start.campaign && Number.isInteger(start.campaign.k) ? start.campaign : null;
   const training = start.training?.kind ? start.training : null; // 특훈(혼자 하기, PROTOCOL §9): {kind, step, balls, pass, steps, gauge?}
+  const league = start.league && Number.isInteger(start.league.i) ? start.league : null; // 리그 사람 경기(PROTOCOL §10): 끝나면 방이 없어지고 리그 메뉴로
   const trSpecial = training?.kind === 'special'; // 필살 슛 특훈(§9.5): 공중 차지 필살, 차지 게이지 HUD
   const you = start.you;
   const canvas = h('canvas.game-canvas', { width: W, height: H, 'aria-label': '경기 화면' });
@@ -70,7 +71,7 @@ export function mount(root, app, { start }) {
   const quitStay = h('button.btn.small', { type: 'button', onclick: () => toggleQuitWin(false) }, '계속');
   const quitGo = h('button.btn.small.danger', { type: 'button', onclick: () => { toggleQuitWin(false); net.send('training_quit'); } }, '그만두기');
   const quitWin = h('div.tr-quit', { hidden: true },
-    h('div.pwin.tr-quit-card', { role: 'dialog', 'aria-label': '특훈 그만두기' },
+    h('div.pwin.tr-quit-card', { role: 'dialog', 'aria-label': '튜토리얼 그만두기' },
       h('div.tr-quit-t', '그만둘까요?'), h('div.tr-quit-n', '경기는 멈추지 않습니다'), h('div.tr-quit-b', quitStay, quitGo)));
   if (training) stage.append(quitWin);
   function toggleQuitWin(on = quitWin.hidden) {
@@ -90,7 +91,14 @@ export function mount(root, app, { start }) {
   // 필살슛 이름 말풍선 켬/끔(fx.shout, 기본 켬, game/shout.js)
   const shoutBtn = h('button.btn.small', { type: 'button', 'aria-pressed': String(shoutOn()), title: '필살슛 말풍선',
     onclick: () => { setShoutOn(!shoutOn()); shoutBtn.setAttribute('aria-pressed', String(shoutOn())); shoutBtn.blur(); } }, '말풍선');
-  const help = h('div.help', soundButton(h), impactBtn, shoutBtn, quit);
+  // 하단 줄은 `설정`·기권 2개. 소리·이펙트·말풍선 토글은 `설정` 을 누르면 그 위로 펼쳐지는 칸 안에 둔다(바깥을 누르거나 다시 누르면 접힘).
+  // 칸은 접혀 있어도 DOM 에 남긴다(소리 버튼 구독 유지, audio.js soundButton). 단축키 M(소리)·H(조작키 안내)·Esc(특훈 그만두기)는 그대로
+  const opts = h('div.game-opts', { hidden: true, role: 'group', 'aria-label': '설정' }, soundButton(h), impactBtn, shoutBtn);
+  const optBtn = h('button.btn.small', { type: 'button', 'aria-expanded': 'false', onclick: () => toggleOpts() }, '설정');
+  function toggleOpts(on = opts.hidden) { opts.hidden = !on; optBtn.setAttribute('aria-expanded', String(on)); optBtn.blur(); }
+  const help = h('div.help', opts, optBtn, quit);
+  const onOptsOut = (e) => { if (!opts.hidden && !help.contains(e.target)) toggleOpts(false); };
+  addEventListener('pointerdown', onOptsOut);
   const wrap = h('div.game' + (training ? '.train' : ''), bar, stage, help);
   root.append(wrap);
   // 조작키 안내(키보드 전용, input.js KEYMAP 과 일치: A=A, S=B, D=C 점프, F=S 포메이션). 옆 여백이 있으면 캔버스 밖, 없으면 캔버스 왼쪽 아래 반투명.
@@ -323,7 +331,7 @@ export function mount(root, app, { start }) {
       ended = m; input.setEnabled(false); buf.frozen = true; keys.hidden = true; quitWin.hidden = true; placeToast();
       return;
     }
-    playResult(m.winner, you, !!campaign || isCpuSeat(app.room, you === 1 ? 0 : 1));
+    playResult(m.winner, you, !!campaign || !!league || isCpuSeat(app.room, you === 1 ? 0 : 1));
     if (!campaign) return showResult(m);
     ended = m;
     input.setEnabled(false);
@@ -351,7 +359,7 @@ export function mount(root, app, { start }) {
     setTimeout(() => btn.focus(), 30);
     armBack(BACK_MS);
   }
-  /** 특훈 종료: 3단계 통과만 완료 카드(→ 로비). 그만두기·기권·오류는 이어지는 room_left 가 바로 로비로 보낸다(오류 사유는 서버 토스트) */
+  /** 특훈(화면 표기 = 튜토리얼) 종료: 3단계 통과만 완료 카드(→ 튜토리얼 화면). 그만두기·기권·오류는 이어지는 room_left 가 바로 튜토리얼 화면으로 보낸다(오류 사유는 서버 토스트) */
   let trainDone = false;
   function onTrainingEnd(m) {
     if (!training || !m.cleared) return;
@@ -359,14 +367,14 @@ export function mount(root, app, { start }) {
     input.setEnabled(false); buf.frozen = true; banner.hidden = true; quitWin.hidden = true; placeToast(); keys.hidden = true;
     btn = h('button.btn.primary', { type: 'button', onclick: back }, backLabel);
     overlay.className = 'overlay result';
-    overlay.replaceChildren(h('div.pwin.result-card', h('div.result-title.win', '특훈 완료'), btn));
+    overlay.replaceChildren(h('div.pwin.result-card', h('div.result-title.win', '튜토리얼 완료'), btn));
     overlay.hidden = false;
     setTimeout(() => btn.focus(), 30);
     armBack(BACK_MS);
   }
   // 결과 화면 자동 복귀: 10초 카운트다운(버튼에 표시), 버튼을 누르면 즉시
   const BACK_MS = 10000;
-  const backLabel = training ? '로비로' : campaign ? '스토리로' : '대기실로';
+  const backLabel = training ? '튜토리얼로' : campaign ? '스토리로' : league ? '리그로' : '대기실로';
   let btn = null, backAt = 0, backTick = 0;
   function armBack(ms) {
     clearTimeout(backTimer); clearInterval(backTick);
@@ -378,8 +386,9 @@ export function mount(root, app, { start }) {
   function back() {
     clearTimeout(backTimer); clearInterval(backTick);
     if (app.view !== 'game') return;
-    if (training) app.go('lobby');
+    if (training) app.go('tutorial');
     else if (campaign) app.go('story', { mode: 'list' });
+    else if (league) app.go('league', { mode: 'menu' });
     else if (app.room) app.go('room');
   }
 
@@ -409,8 +418,8 @@ export function mount(root, app, { start }) {
     },
     on_game_end: onGameEnd,
     on_training_end: onTrainingEnd,
-    holdLobby: () => trainDone, // 완료 카드가 떠 있으면 room_left 가 로비로 넘기지 않는다(main.js)
-    renderer, campaign, training,
+    holdLobby: () => trainDone || (!!league && !!ended), // 완료·결과 카드가 떠 있으면 room_left 가 화면을 넘기지 않는다(main.js)
+    renderer, campaign, training, league,
     onRoom(room) {
       roomWaiting = room.status === 'waiting';
       if (ended && roomWaiting && !backAt && btn) armBack(BACK_MS);
@@ -425,7 +434,7 @@ export function mount(root, app, { start }) {
       mbgm.stop();
       cancelAnimationFrame(raf); clearTimeout(backTimer); clearInterval(backTick); clearTimeout(quitArmed); clearTimeout(campFallback); clearTimeout(helpDim);
       input.setEnabled(false); input.destroy();
-      removeEventListener('resize', fit); removeEventListener('blur', onBlur); removeEventListener('keydown', onGuideKey); removeEventListener('keydown', onEsc); removeEventListener('wheel', noWheelZoom, { passive: false });
+      removeEventListener('resize', fit); removeEventListener('blur', onBlur); removeEventListener('keydown', onGuideKey); removeEventListener('keydown', onEsc); removeEventListener('pointerdown', onOptsOut); removeEventListener('wheel', noWheelZoom, { passive: false });
       coarse.removeEventListener('change', applyTouch);
       document.removeEventListener('gesturestart', noMenu);
     },

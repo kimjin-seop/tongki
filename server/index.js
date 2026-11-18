@@ -10,6 +10,7 @@ import { mono, loadLimits } from './net/limits.js';
 import { Lobby } from './lobby/lobby.js';
 import { JsonlResultStore } from './store/results.js';
 import { JsonProgressStore } from './store/progress.js';
+import { JsonLeagueStore } from './store/league.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MIME = {
@@ -24,8 +25,9 @@ export function createServer(opts = {}) {
   const data = opts.data ?? loadData();
   const store = opts.store ?? new JsonlResultStore(process.env.RESULTS_PATH ?? path.join(root, 'data/results/results.jsonl'));
   const progress = opts.progress ?? new JsonProgressStore(process.env.PROGRESS_PATH ?? path.join(root, 'data/progress/progress.json'));
+  const leagues = opts.leagues ?? new JsonLeagueStore(process.env.LEAGUE_PATH ?? path.join(root, 'data/progress/league.json'));
   const limits = loadLimits(process.env, opts.limits);
-  const lobby = new Lobby({ data, store, progress, build: pkg.version, graceMs: opts.graceMs, limits, seed: opts.seed, log: opts.log });
+  const lobby = new Lobby({ data, store, progress, leagues, leagueRand: opts.leagueRand, build: pkg.version, graceMs: opts.graceMs, limits, seed: opts.seed, log: opts.log });
   const publicDir = path.join(root, 'public');
 
   const server = http.createServer(async (req, res) => {
@@ -115,9 +117,13 @@ export function createServer(opts = {}) {
   };
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+// 직접 실행(node server/index.js, npm start) 또는 pm2 실행일 때만 시작한다. import 시에는 시작하지 않는다.
+// pm2 는 argv[1] 이 자체 래퍼(ProcessContainerFork.js)라서, pm2 가 넣어 주는 pm_exec_path 로도 판정한다.
+const selfPath = fileURLToPath(import.meta.url);
+const isEntry = [process.argv[1], process.env.pm_exec_path].some((p) => p && path.resolve(p) === selfPath);
+if (isEntry) {
   const app = createServer();
   app.listen().then((p) => console.log(`[dodge-danpei] listening :${p}`));
   process.on('uncaughtException', (e) => console.error('[uncaught]', e));
-  for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => { app.lobby.progress.flush?.(); process.exit(0); });
+  for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => { app.lobby.progress.flush?.(); app.lobby.leagues.flush?.(); process.exit(0); });
 }

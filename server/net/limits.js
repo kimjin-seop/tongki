@@ -16,6 +16,7 @@ export function loadLimits(env = process.env, over = {}) {
     maxPauseMs: num(env.MAX_PAUSE_MS, 90000), // 경기당 좌석별 누적 일시정지
     maxDisconnects: num(env.MAX_DISCONNECTS, 5), // 경기당 좌석별 끊김 횟수
     maxCampaignPerMin: num(env.MAX_CAMPAIGN_PER_MIN, 30), // 세션당 분당 campaign_list/campaign_start
+    maxLeaguePerMin: num(env.MAX_LEAGUE_PER_MIN, 200), // 세션당 분당 league_* (6팀 9턴 135카드 즉시 판정을 막지 않게 캠페인 창과 분리)
     ...over,
   };
 }

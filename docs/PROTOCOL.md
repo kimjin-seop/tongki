@@ -39,8 +39,8 @@
 | NOT_IN_CAMPAIGN_ROOM | 캠페인 방에서는 할 수 없습니다 (캠페인·특훈 방의 `set_team`, 특훈 방의 `start`) |
 | RULES_INVALID | 규칙 값이 올바르지 않습니다 (`set_rules`, `create_room`·`campaign_start` 의 `rules`) |
 | LOGIN_TIMEOUT | 로그인 시간이 지나 연결이 종료됩니다 (연결 후 30초 내 `hello` 없음. 전송 후 close 1008) |
-| TRAINING_UNAVAILABLE | 아직 준비되지 않은 특훈입니다 (서버가 닫아 둔 `training_start.kind`, §9.1. 지금은 닫힌 종류가 없다) |
-| NOT_IN_TRAINING | 특훈 중이 아닙니다 (`training_quit`) |
+| TRAINING_UNAVAILABLE | 아직 준비되지 않은 튜토리얼입니다 (서버가 닫아 둔 `training_start.kind`, §9.1. 지금은 닫힌 종류가 없다) |
+| NOT_IN_TRAINING | 튜토리얼 중이 아닙니다 (`training_quit`) |
 | GAME_ABORTED | 경기가 서버 오류로 중단되었습니다 (아래 toast로만 전달) |
 
 정의 위치는 `server/net/protocol.js`의 `ERR`이며 이 표와 일치한다. `NOT_IN_GAME`은 정의만 있고 현재 서버가 보내지 않는다.
@@ -79,7 +79,7 @@
 ## 3. 로비
 - `{t:'list_rooms'}` -> `room_list`. 로비에 있는 사용자에게는 방 생성/삭제/인원/상태 변화 시 서버가 `room_list`를 푸시한다(최대 250ms 단위로 합쳐서 전체 목록).
 ```js
-{ t:'room_list', rooms:[{ code, host:'방장닉네임', players:1|2, max:2, status:'waiting'|'playing' }] }  // 최근 생성 순
+{ t:'room_list', rooms:[{ code, host:'방장닉네임', players:1|2, max:2, status:'waiting'|'playing', rules:{mode, time} }] }  // 최근 생성 순. rules = 추가 필드(하위 호환, 방 목록 행의 규칙 요약용)
 ```
 - 입장 불가 표시는 클라이언트가 `status==='playing'` 또는 `players>=max`로 한다. 최종 판정은 서버(`ROOM_IN_GAME`, `ROOM_FULL`).
 
@@ -110,6 +110,7 @@ room = { code, status:'waiting'|'playing', host:'방장닉네임', serverTime,
     { seat:0, nick, ready:boolean, team:0~24, host:boolean, connected:boolean } | null,
     ...] }
 ```
+- 시작 조건(서버 판정, 2026-11-18 클라이언트 표시 정리): 방장은 준비가 없다(`HOST_NO_READY`). 2명이 모이고 방장이 아닌 사람이 `ready:true` 일 때만 `start.ok`. 클라이언트는 조건 미달이어도 `시작` 버튼을 누를 수 있게 두고(흐리게), 누르면 `start.msg`(START_NEED_PLAYERS / START_NOT_READY 문구)를 토스트로 낸다. 로비는 방 코드 입력 없이 `room_list` 행을 눌러 그 `code` 로 `join_room` 을 보낸다(메시지 불변).
 - **컴퓨터 대전(`vsCpu:true`)** [추가 필드, 하위 호환]
   - 좌석 1은 서버 AI 좌석: `slots[1] = { seat:1, nick:'컴퓨터', ready:true, team, host:false, connected:true, cpu:true }`(접속 세션 없음). `room`에 `vsCpu:true, cpuLevel` 추가. 컴퓨터 팀은 방 생성 시 무작위.
   - `room.start.ok`는 항상 true: 방장이 준비 없이 바로 `start`. 다른 사람은 `join_room` 불가(`ROOM_FULL`). `transfer_host`는 `START_NEED_PLAYERS`. `room_list` 항목에 `vsCpu:true`, `players:2`.
@@ -346,7 +347,7 @@ cpuLevel(1~3)은 `server/data/rules.json` `cpu.levels` 의 난이도(holdDelayAd
 - 진행은 **세션 토큰으로 인증된 연결**에서만 읽고 쓰며, 값은 서버가 경기 결과로만 올린다(클라이언트가 보낸 진행 값은 없음).
 - **알려진 한계(공개 전 재검토)**: 계정/비밀번호가 없어 닉네임이 곧 신원이다. 세션 만료(유예 30초 후) 뒤 다른 사람이 같은 닉네임으로 접속하면 그 진행을 이어받는다(닉네임 탈취). 개인용 단계에서는 수용하며, 공개 전에 계정 또는 영구 토큰 도입을 재검토한다. 결과 레코드(§6)에는 `campaign:{k, stage}` 가 추가된다.
 
-## 9. 특훈 (혼자 하기 전용) — 캐치 특훈·필살 슛 특훈
+## 9. 특훈 (혼자 하기 전용) — 캐치 특훈·필살 슛 특훈 (화면 표기 = `튜토리얼`: 공 받기·필살기, §9.4)
 원작 `炎の猛特訓`(analysis/29 §1). 온라인 방이 아니다: 서버가 비공개 방을 만들어 준비 없이 바로 시작하고, 끝나면 방을 없애고 로비로 돌려보낸다. 진입 조건·저장·보상 없음. 팀(내 쪽 22, 연습 상대 24)·스테이지(`stage.id` 13)·투구 표는 전부 서버 표(`server/data/training.json`)가 정한다.
 
 ### 9.1 요청 (로비 상태에서만. 방·게임 중이면 `ALREADY_IN_ROOM`)
@@ -409,13 +410,13 @@ tr: { step:0~2,          // 현재 단계(0부터)
 | 외야 6명 배치 | 슬롯 5,6,8,9,11,12 | 같음. 선수 1~6 을 그 순서로 세웠다 | 어느 선수가 어느 슬롯인지 추정 |
 | 연습 상대 난이도 값 | 없음 | 방이 컴퓨터 레벨 2 값을 넘긴다. 직역 두뇌 경로에서는 방어 실수 값만 쓰이는데 특훈은 언제나 캐치라 영향 없음 | 동작 차이 없음(시뮬은 레벨 값 없이 돌렸다) |
 | 일시정지 창 | つづける / やめる | Esc·`그만두기` 버튼 -> 확인 창(`계속` / `그만두기` = `training_quit`). 서버 일시정지 없음: 창을 띄운 동안에도 공이 오고, 창은 화면을 덮지 않으며 조작 입력도 그대로 간다 | 일시정지는 미구현 |
-| 완료 뒤 | 완료 대사 화면 -> 모드 메뉴 | `training_end{cleared:true}` -> `특훈 완료` 카드(10초 뒤 자동) -> 로비. 도입 대사·3지선다·완료 대사 화면은 없다 | 대사 화면 미구현 |
+| 완료 뒤 | 완료 대사 화면 -> 모드 메뉴 | `training_end{cleared:true}` -> `튜토리얼 완료` 카드(10초 뒤 자동) -> 튜토리얼 화면. 도입 대사·3지선다·완료 대사 화면은 없다 | 대사 화면 미구현 |
 | 2P 패드 디버그(카운터 채우기) | 있음 | 없음 | 제외 |
 | 무입력·총 시간 상한 | 없음(시계가 없어 무한히 계속된다) | **[자작 안전망, 원작에 없음]** 사용자 입력(`bits` != 0)이 36,000f(10분) 동안 없으면 `reason:'idle'`, 한 판 총 108,000f(30분)에 닿으면 `reason:'cap'` 으로 `training_end{cleared:false}`. 값은 `training.json` `frames.idleMax`/`totalMax`, 서버 방(`roomGame.js`)이 센다(끊김 일시정지 중에는 세지 않는다. 완료 연출 중에는 끊지 않는다) | 자작. 방이 끝없이 남는 것을 막는 용도 |
 | B 연타로 캐치 통과 | 미확인(원작 대조 불가) | B 를 연타하는 것만으로 합격선을 넘을 수 있다는 리뷰 지적(정검수, 2026-11-18). 캐치 입력 창·연타 제한이 원작과 같은지 대조할 자료가 없어 손대지 않았다 | 미확인 |
 
 ### 9.4 클라이언트 구현 (2026-11-18, 윤프론)
-- 로비 `캐치 특훈` -> `training_start{kind:'catch'}`, `필살 특훈` -> `training_start{kind:'special'}`(낮은 가로 화면에서도 두 버튼 모두 보인다). `room_joined`(`room.training`)는 대기실로 가지 않고 `game_start` 를 기다린다(`main.js`).
+- **화면 표기는 `튜토리얼`(2026-11-18 통일).** 메시지·코드 이름(`training_*`, `kind`)과 이 문서의 '특훈' 은 그대로다. 로비 `튜토리얼` 버튼 1개 -> 튜토리얼 화면(`screens/tutorial.js`) `1 공 받기` -> `training_start{kind:'catch'}`, `2 필살기` -> `training_start{kind:'special'}`. 서버 거절(`TRAINING_UNAVAILABLE` 등)은 토스트. `room_joined`(`room.training`)는 대기실로 가지 않고 `game_start` 를 기다린다(`main.js`).
 - 경기 화면(`screens/game.js`, `game/training.js`): `game_start.training` 이 있으면 얼굴·인원 HUD 대신 `캐치 NN구`(숫자 x=80·96, y=8) / `남은 NN구`(숫자 x=256·272 + 와이드 78, y=8) + 가운데 `N/3단계`(웹 추가). 말풍선은 `tr.msg` 번호를 한글로 연습 상대(pid 7) 머리 왼쪽 위에 그린다(번호 -> 한글 표는 `training.js` `TR_MSG_KO`, analysis/29 §4-2-2). `tr.phase==='result'` 동안 가운데 `합격`(`count >= pass`) / `재시도`.
 - `tr` 이 있으면 `ref` 가 null 이어도 공을 그린다(`render.js`).
 - 2차(2026-11-18) 화면 규칙 — 원작 실측 `analysis/gfx/modes/tr_05_speech_bubbles.png`:
@@ -424,7 +425,7 @@ tr: { step:0~2,          // 현재 단계(0부터)
   - 터치 패드(`touchpad.js`, `TouchPad(onBits, {training:true})`): F(포메이션) 버튼 없음, A 표기 `던지기`. 일반 경기는 그대로(A `패스`, F 있음).
   - 웹 추가 표시 위치: `합격`/`재시도` 는 HUD 아래 벽 구간(`.game.train .banner.big` top 13%), 특훈 중 토스트는 HUD 줄 아래(`body` 의 `--toast-top`, 화면을 떠날 때 해제).
 - 그만두기: Esc 또는 `그만두기` 버튼 -> 확인 창 -> `training_quit`. 경기 곡·GAME SET·결과 곡은 내지 않는다(특훈 곡 장면 미확정).
-- 종료: `game_end`(입력·화면 정지) -> `training_end`(`cleared` 면 완료 카드, `idle`/`cap` 은 토스트 `i18n.js TRAIN_END`) -> `room_left`(완료 카드가 없으면 로비로) -> `room_list`. 오류 종료의 `GAME_ABORTED` 토스트는 로비에서 뜬다.
+- 종료: `game_end`(입력·화면 정지) -> `training_end`(`cleared` 면 완료 카드, `idle`/`cap` 은 토스트 `i18n.js TRAIN_END`) -> `room_left`(완료 카드가 없으면 튜토리얼 화면으로, 완료 카드의 `튜토리얼로` 도 같은 화면) -> `room_list`. 오류 종료의 `GAME_ABORTED` 토스트는 튜토리얼 화면에서 뜬다.
 - 필살 슛 특훈(`kind:'special'`, §9.5. 2026-11-18 윤프론) — 캐치 특훈과 같은 화면·같은 경로이고 아래만 다르다:
   - HUD(`game/training.js` `TrainHud`): 왼쪽 `필살 슛 NN구`(`tr.count`, 숫자 x=112·128, y=8), 오른쪽 `남은 NN구`(`tr.left`)는 캐치와 같은 자리. 가운데 단계 표시는 없다(단계가 하나).
   - 차지 게이지: 막대 x 16~160·y 33~39(눈금 18칸, 칸 폭 8), `game_start.training.gauge.ok` 구간(13~15 = x 120~143)만 초록, 그 앞 4칸 밝은 빨강, 나머지 어두운 빨강. 위쪽 ▽ 표식(7x7, y 25~31)이 `tr.ch` 칸 위에 서고(원작 표식 x = 20 + 8 x 차지), 성공 구간에 있으면 노랑이다. `tr.chb` > 0 인 동안 표식이 4틱 켜짐 / 4틱 꺼짐으로 점멸한다. **막대 그림·색 구간 좌표·점멸 주기와 모양은 원작 미확정이라 자작이다**(29 §4-2-3 미확정 2·5. 화면에는 근거 표기를 넣지 않는다).
@@ -452,3 +453,49 @@ tr: { step:0,
 - 연습 상대: 필살 슛에는 캐치 자세를 잡지 않고 맞는다(데미지 65, HP 80 -> 15 -> 0, 아웃 없음). 일반 투구는 잡는다. 공을 주우면 지상 투구로 나(pid 0)에게 되던진다(위력 1/4 이라 내 HP 는 줄지 않는다. 잡아도 되고 맞아도 된다).
 - 이벤트: 필살 슛을 던진 틱에 `throw` 와 `special{p:0, id:22}`. `tr_result{step:0, count, grade:0~3, pass}`, `tr_step{step:0, retry}`, 완료 `end{winner:0, reason:'training_clear'}` 는 캐치와 같다.
 - 미확정(클라이언트는 §9.4 처럼 자작 그림으로 먼저 넣었다. 원작 대조가 남은 것. 상세 analysis/29 §4-2-3 미확정 표): 게이지 깜빡임의 주기·모양, 게이지 막대 그림과 색 구간 좌표, 차지가 투구 없이 끝났을 때의 게이지, 차지 16(자동 발사)의 게이지 값, 선수 0 이 아닌 선수의 패스 장면(코드 판독만).
+
+## 10. 리그 (혼자 + 컴퓨터) — 서버 1차 (2026-11-18, 박백엔)
+원작 `闘球リーグ`(analysis/29 §2·§4-3, 확정본 analysis/33 A). 닉네임(소문자)당 리그 1개를 서버가 저장하고 이어 한다. 클라이언트 화면은 후속(윤프론). 구현 `server/league/rules.js`(순수 규칙)·`server/league/handlers.js`(요청)·`server/store/league.js`(저장).
+
+### 10.1 데이터
+```js
+league = { id, teams:[{team, com:boolean} x 2~6],   // 참가 순번 = 배열 순서(idx). com=false 가 사람 팀(최대 1팀, 0팀 = 전원 컴퓨터)
+           turns:1~9, rules:{mode:'knockout', time:0} | {mode:'official', time:3|5|8},
+           res:[[[승,패] x n] x n],                  // res[i][j] = i 가 j 에게 거둔 승·패 누적(res[j][i] 는 뒤집은 값)
+           done:boolean, createdAt, updatedAt }
+table = [{idx, team, com, w, l, rate, left, rank}]  // 순위 목록 순서(rank 오름차순, 같은 rank 는 idx 순). 저장하지 않고 매번 계산
+```
+- `rate = floor(w*1000/(w+l))`(0경기 = 0), `left = (n-1)*turns - w - l`, `rank` = 자기보다 `rate` 가 높은 팀 수(0부터, 동률 같은 번호. 화면 표시는 +1). 승점·득실 없음.
+- 팀: 0~14 = 기본 15팀, 15~21 = SPECIAL 줄(스토리 14번째 경기 승리 = `progress.clearedMax >= 13` 인 계정만), 22·23·24 는 거절. 중복 불가.
+- 규칙: 원작 조합 4가지만(`knockout`+무제한, `official`+3/5/8분). `rules` 생략 = `knockout`·0, `official` 의 `time` 생략 = 3. 그 밖(`knockout`+5분 등)은 `LEAGUE_INVALID`.
+
+### 10.2 요청 (로비 상태에서만. 방·게임 중이면 `league_get` 외에는 `ALREADY_IN_ROOM`)
+| 요청 | 동작 |
+|---|---|
+| `{t:'league_get'}` | `league_state` |
+| `{t:'league_new', teams:[{team, com?}], turns, rules?}` | 새 리그(있으면 덮어쓴다. `처음부터` 확인은 클라이언트). `com` 생략 = 컴퓨터. -> `league_state` |
+| `{t:'league_config', com?:[boolean x n], rules?}` | 팀별 사람/컴퓨터·규칙만 바꾼다(팀 수·턴 수·결과 불변). -> `league_state` |
+| `{t:'league_play', i, j}` | 카드(행 i, 열 j). `i != j` 이고 `res[i][j]` 의 승+패 < `turns` 이며 리그가 끝나지 않았어야 한다(아니면 `LEAGUE_CARD_INVALID`) |
+| `{t:'league_abandon'}` | 리그 지우기 -> `league_state{league:null}` |
+- 레이트 리밋: **리그 전용 창**(세션당 분당 `league_*` 합산 200회, 환경변수 `MAX_LEAGUE_PER_MIN`, 사람 카드 방 생성·즉시 판정 포함, 거절된 요청도 센다). 6팀 9턴 135카드를 연달아 눌러도 걸리지 않는다. 초과 코드는 캠페인과 같은 `CAMPAIGN_RATE_LIMITED`. (2026-11-18 캠페인 창 30회에서 분리) 오류는 모두 `error` -> 토스트.
+- 오류 코드: `LEAGUE_NONE`(리그 없음), `LEAGUE_INVALID`(팀 수·턴·중복·22~24·사람 2팀 이상·규칙 조합·형식), `LEAGUE_CARD_INVALID`, `LEAGUE_TEAM_LOCKED`(해금 전 SPECIAL 팀).
+
+### 10.3 서버 -> 클라이언트
+```js
+{ t:'league_state', league:league|null, table:table|null, special:boolean, champions?:[idx] }   // champions 는 done 일 때만
+{ t:'league_result', i, j, left, right, winner:idx|null, quick:boolean,
+  p?, r?,                                   // quick: 즉시 판정 확률(왼쪽 승 = r <= p, 0~255)
+  matchId?, reason?, recorded? }            // 실제 경기: 결과 기록 여부
+{ t:'league_end', champions:[idx] }        // 전원 left 0. rank 0 인 팀 전부(참가 순)
+```
+- **컴-컴 카드**: 경기 화면·방 없이 즉시 판정(analysis/29 §2-5): 왼쪽 = 행 i, 오른쪽 = 열 j. 레이팅 `(raw - 14224) mod 65536` 의 상위 바이트 a·c, 낮거나 같은 쪽 절반, `p = floor(a*256/(a+c))`, 서버 난수 1바이트 `r <= p` 면 왼쪽 승. 순서 `league_result{quick:true}` -> `league_state` (-> `league_end`).
+- **사람 낀 카드**: 사람 팀이 언제나 왼쪽(좌석 0, 행이 컴퓨터면 좌우를 바꾼다). 비공개 방(`room_list` 에 없음, 다른 사람 `join_room` 불가)을 만들어 준비 없이 바로 시작: `room_joined{room.league:{i,j}, room.vsCpu:true}` -> `room_state` -> `game_start{league:{i,j}}`. 상대 = 오른쪽 팀, 컴퓨터 레벨 2 고정, 스테이지 = 오른쪽 팀의 홈(ROM 표 0x1257A -> `romStage` -> `stages.json` id), 규칙 = 리그 `rules`(`official`·5분 = `game_start.rules.limitFrames` 18000, `knockout` = 0).
+  - 리그 방에서 `set_team`·`start`·`set_rules` 는 `NOT_IN_CAMPAIGN_ROOM`(경기 중에는 `IN_GAME` 이 먼저). 그만두기는 `leave_room`(= 기권).
+  - 종료 순서: `game_end` -> `league_result{quick:false, reason, recorded}` -> `league_state` (-> `league_end`) -> `room_left{reason:'leave'}` -> `room_list`. `room_state`(waiting)는 오지 않는다. 방은 어떤 사유로 끝나든 없어진다.
+  - 기록: `annihilation`/`timeup`/`sudden_death` = 승자 기록, `forfeit_leave`/`forfeit_disconnect` = 사람 패배 기록, `draw_cap`·`error` = 기록 없음(`recorded:false, winner:null`, 같은 카드를 다시 칠 수 있다). 한 경기에 한 번만 기록한다. 경기 중 리그가 바뀌었으면(다른 리그 id·그 카드를 이미 다 침) 기록하지 않는다.
+  - 재접속·끊김 일시정지·유예는 컴퓨터 대전과 같다(`welcome.location='game'` -> `room_joined` + `game_start{resumed:true, league}`). 결과 레코드(§6)에 `league:{i, j, stage}` 가 붙는다.
+
+### 10.4 저장
+- `data/progress/league.json`(환경변수 `LEAGUE_PATH`), `{version:1, users:{<소문자 닉네임>:{nick, league, updatedAt}}}`. 만들 때·설정 변경·매 경기 뒤 저장(100ms 디바운스, 임시 파일 -> rename, 종료 시 flush). 마지막 경기 뒤에도 저장하고 `done:true`(원작은 마지막 경기 전 상태로 남는다. 원작대로 하려면 `rules.js SAVE_AFTER_FINAL=false`). JSON 손상 시 원본을 `league.json.corrupt-<시각>` 으로 보존하고 빈 상태로 시작, 형식이 틀린 항목(팀·턴·결과 대칭·합 > 턴)은 버린다. 항목 상한 5000(오래된 갱신부터 정리).
+- 저장 계층은 `get(key)` / `set(key, nick, league|null)` / `flush()` 세 함수뿐이다(SQLite 계정 저장으로 옮길 때 이 클래스만 바꾼다). 인증 범위는 §8.3 과 같다(닉네임이 곧 신원).
+- 원작과 다른 점: 사람 팀 최대 1(사람끼리 카드는 2P 패드가 필요해 없음), 사람 경기 기권 = 패배, 즉시 판정 K 고정(원작은 경기마다 쓰레기 값이 들어올 수 있다), 컴-컴 관전(`しあいをみる`)·개막식은 후속.

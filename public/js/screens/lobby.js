@@ -1,19 +1,18 @@
-// 로비(시안 A): 왼쪽 로고 + 스토리 모드 / 컴퓨터와 대결(난이도 1·2·3) / 특훈(혼자 하기) / 방 만들기·방 코드 입장, 오른쪽 방 목록 창(서버 푸시로 실시간)
+// 로비(시안 A): 왼쪽 로고 + 스토리 모드 / 컴퓨터와 대결(난이도 1·2·3) / 튜토리얼·리그(한 줄), 오른쪽 방 목록 창(방 만들기 + 행을 눌러 입장, 서버 푸시로 실시간).
+// 방 코드 입력 입장은 화면에서 뺐다(프로토콜 join_room{code} 는 그대로: 행을 누르면 그 방의 code 로 보낸다).
+// 튜토리얼 = 종전 특훈 2종(training_start). 고르는 화면은 screens/tutorial.js
 import { h, clear } from '../util.js';
 import { toast } from '../ui.js';
 import { net } from '../net.js';
-import { ERR } from '../i18n.js';
+import { ROOM_OFF } from '../i18n.js';
+import { rulesText } from './rules.js';
+import { isNew as tutorialNew } from './tutorial.js';
 import { titleLogo, start as startIntro } from '../intro.js';
 import { arrowNav } from '../pix.js';
 import { soundButton } from '../audio.js';
 
-const CODE_RE = /^[A-Z0-9]{4,6}$/;
-
 export function mount(root, app) {
-  const list = h('div.room-list', { role: 'list', 'aria-label': '방 목록' });
-  const code = h('input.code', { type: 'text', maxLength: 6, placeholder: '방 코드', 'aria-label': '방 코드', autocomplete: 'off', spellcheck: false,
-    oninput: () => { code.value = code.value.toUpperCase(); },
-    onkeydown: (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); joinCode(); } } });
+  const list = h('div.room-list', { role: 'group', 'aria-label': '방 목록' });
   // 컴퓨터 대전: create_room{vsCpu, cpuLevel(1~3)}. 난이도는 다음 방문에도 유지
   let lvl = ['1', '2', '3'].includes(localStorage.getItem('dd.cpuLevel')) ? +localStorage.getItem('dd.cpuLevel') : 2;
   const lvBtns = [1, 2, 3].map((n) => h('button.btn.lv', { type: 'button', 'aria-label': `난이도 ${n}`, 'aria-pressed': String(n === lvl),
@@ -28,46 +27,41 @@ export function mount(root, app) {
         h('div.pbox.cpu-box', { role: 'group', 'aria-label': '컴퓨터와 대결' },
           h('div.cpu-box-t', '컴퓨터와 대결'),
           h('div.cpu-row', lvBtns, h('button.btn.go', { type: 'button', onclick: () => net.send('create_room', { vsCpu: true, cpuLevel: lvl }) }, '대결 시작'))),
-        // 특훈(혼자 하기, PROTOCOL §9): 캐치 / 필살 슛. 서버가 닫아 둔 종류는 TRAINING_UNAVAILABLE 토스트
-        h('div.train-row', { role: 'group', 'aria-label': '특훈' },
-          h('button.btn.tr-catch', { type: 'button', onclick: () => net.send('training_start', { kind: 'catch' }) }, '캐치 특훈'),
-          h('button.btn.tr-special', { type: 'button', onclick: () => net.send('training_start', { kind: 'special' }) }, '필살 특훈')),
-        h('div.join-row',
-          h('button.btn.mk', { type: 'button', onclick: () => net.send('create_room', {}) }, '방 만들기'),
-          code, h('button.btn', { type: 'button', onclick: joinCode }, '입장')),
+        h('div.mini-row',
+          h('button.btn.tut-entry', { type: 'button', onclick: () => app.go('tutorial') },
+            h('span.tut-entry-t', '튜토리얼'), tutorialNew() ? h('span.tag.new', '신규') : null),
+          h('button.btn.tut-entry.league-entry', { type: 'button', onclick: () => app.go('league') }, h('span.tut-entry-t', '리그'))),
         h('button.btn.small.replay-intro', { type: 'button', onclick: () => { if (!app.intro?.active) app.intro = startIntro({ app, onEnd: () => { app.intro = null; } }); } }, '오프닝 다시보기'))),
     h('div.lobby-r.title-follow',
       h('div.nick-line', h('span.nick-t', app.nick || ''), soundButton(h)),
       h('section.pwin.room-panel',
-        h('h1', '방 목록'),
-        h('div.rl-head', { 'aria-hidden': 'true' }, h('span', '코드'), h('span', '방장'), h('span', '인원'), h('span', '상태')),
+        h('div.rl-top', h('h1', '방 목록'),
+          h('button.btn.primary.mk', { type: 'button', onclick: () => net.send('create_room', {}) }, '방 만들기')),
         list))));
   net.send('list_rooms');
   const offNav = arrowNav(root);
   const offLogo = fitLogo(root.querySelector('.lobby'));
   if (!app.intro?.active) setTimeout(() => { if (story.isConnected && document.activeElement === document.body) story.focus({ preventScroll: true }); }, 30);
 
-  function joinCode() {
-    const v = code.value.trim().toUpperCase();
-    if (!CODE_RE.test(v)) { toast(ERR.ROOM_CODE_INVALID, 'error'); code.focus(); return; }
-    net.send('join_room', { code: v });
-  }
-
   function update() {
     const had = list.contains(document.activeElement) ? document.activeElement.dataset.code : null;
     clear(list);
     if (!app.rooms.length) { list.append(h('div.empty', '방이 없습니다')); return; }
     for (const r of app.rooms) {
-      const playing = r.status === 'playing', full = r.players >= r.max;
-      const st = playing ? '경기 중' : r.vsCpu ? '컴퓨터' : full ? '가득 참' : '대기';
-      const row = h('button.room-row', {
-        type: 'button', role: 'listitem', disabled: playing || full, 'data-code': r.code,
-        onclick: () => net.send('join_room', { code: r.code }),
+      // 들어갈 수 없는 방: 흐리게 두되 포커스·클릭은 받는다(누르면 사유 토스트). 최종 판정은 서버(ROOM_IN_GAME / ROOM_FULL)
+      const off = r.status === 'playing' ? 'playing' : r.vsCpu ? 'cpu' : r.players >= r.max ? 'full' : null;
+      const st = off ? ROOM_OFF[off].st : '대기';
+      const name = `${r.host}의 방`, rules = r.rules ? rulesText(r.rules) : '';
+      const row = h('button.room-row' + (off ? '.off' : ''), {
+        type: 'button', 'data-code': r.code, 'aria-disabled': off ? 'true' : null,
+        'aria-label': `${name}, ${rules ? rules + ', ' : ''}${r.players}/${r.max}, ${st}`,
+        onclick: () => { if (off) toast(ROOM_OFF[off].msg, 'warn'); else net.send('join_room', { code: r.code }); },
       },
-        h('b.code-t', r.code), h('span', r.host), h('span.tabular', `${r.players}/${r.max}`),
-        h('span' + (playing || full ? '' : '.st-wait'), st));
+        h('span.rr-main', h('b.rr-name', name), rules ? h('span.rr-rules', rules) : null),
+        h('span.rr-n.tabular', `${r.players}/${r.max}`),
+        h('span.rr-st' + (off ? '' : '.st-wait'), st));
       list.append(row);
-      if (had === r.code && !row.disabled) row.focus({ preventScroll: true });
+      if (had === r.code) row.focus({ preventScroll: true });
     }
   }
   update();

@@ -6,14 +6,29 @@ export const ERR = {
   ASSETS: '리소스를 불러오지 못했습니다',
   NICK_INVALID: '닉네임은 2~10자의 한글·영문·숫자만 쓸 수 있습니다',
   ROOM_CODE_INVALID: '방 코드는 4~6자의 영문 대문자·숫자입니다',
+  READY_RESET_RULES: '규칙이 바뀌어 준비가 풀렸습니다',
+  READY_RESET_TEAM: '팀을 바꿔 준비가 풀렸습니다',
+};
+/** 방 목록에서 들어갈 수 없는 방: 상태 칸 문구(st)와 눌렀을 때 토스트(msg, 서버 ERR 문구와 같게) */
+export const ROOM_OFF = {
+  playing: { st: '게임 중', msg: '게임이 진행 중인 방입니다' },
+  full: { st: '가득 참', msg: '방이 가득 찼습니다' },
+  cpu: { st: '컴퓨터 대결', msg: '컴퓨터와 대결 중인 방입니다' },
 };
 export const ROOM_LEFT = { closed: '방이 닫혔습니다', grace: '연결이 오래 끊겨 방에서 나왔습니다' };
 export const END_REASON = {
   annihilation: '전멸', timeup: '시간 종료', sudden_death: '서든데스', forfeit_disconnect: '연결 끊김 기권',
   forfeit_leave: '기권', draw_cap: '시간 초과 무승부', error: '서버 오류로 중단',
 };
-/** 특훈이 서버 상한으로 끝났을 때 토스트(PROTOCOL 9.2: idle = 무입력 10분, cap = 총 30분) */
-export const TRAIN_END = { idle: '입력이 없어 특훈을 끝냈습니다', cap: '특훈 시간이 끝났습니다' };
+/** 튜토리얼(특훈)이 서버 상한으로 끝났을 때 토스트(PROTOCOL 9.2: idle = 무입력 10분, cap = 총 30분) */
+export const TRAIN_END = { idle: '입력이 없어 튜토리얼을 끝냈습니다', cap: '튜토리얼 시간이 끝났습니다' };
+/** 리그(PROTOCOL §10) 화면 문구. 서버 거절은 서버 msg 토스트가 우선 */
+export const LEAGUE = {
+  OVERWRITE: '진행 중인 리그를 지우고 새로 시작합니다',
+  DUP: '이미 고른 팀입니다',
+  CARD_DONE: '고를 수 없는 대전입니다',
+  NOT_RECORDED: '이 경기는 기록되지 않았습니다',
+};
 /** 결과 화면 승패 기준 한 줄 */
 export const END_RULE = {
   annihilation: '전멸: 내야를 모두 아웃시킨 팀 승리',

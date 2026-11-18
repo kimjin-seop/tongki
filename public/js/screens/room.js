@@ -1,8 +1,11 @@
-// 대기실(시안 A): 1P(하늘)/2P(빨강) 좌석 창 + VS + 명령(팀 변경·준비·시작·나가기).
+// 대기실(시안 A): 1P(하늘)/2P(빨강) 좌석 창 + VS + 명령(팀 변경·준비 완료·시작·나가기).
+// 시작 = 방장만. 2명이 모이고 방장이 아닌 사람이 준비 완료여야 한다(room.start). 조건이 안 되면 버튼은 흐리게 두고, 누르면 사유를 토스트로 낸다(인라인 문구 없음).
 // 팀 변경 = 원작 팀 선택 화면(엠블럼 격자 + 1P/2P 커서 + 선수 얼굴 창). 확정하면 set_team(기존 메시지) 후 대기실로.
 // 컴퓨터 좌석 팀은 서버가 정한다(클라이언트 지정 메시지 없음) → COM 커서는 표시만.
 import { h, clear } from '../util.js';
 import { net } from '../net.js';
+import { toast } from '../ui.js';
+import { ERR } from '../i18n.js';
 import { available as prematchOk } from './prematch.js';
 import { available as lineupOk } from './lineup.js';
 import { rulesText } from './rules.js';
@@ -18,8 +21,21 @@ export function mount(root, app) {
   const teamText = (id) => { const t = app.teams.find((x) => x.id === id); return t ? t.label ?? t.name : id != null ? `팀 ${id + 1}` : ''; };
   const myIdx = () => app.room?.slots?.findIndex((s) => s && s.nick === app.nick) ?? -1;
 
+  // 준비 완료였는데 서버가 풀었을 때(규칙 변경·내 팀 변경) 한 번 알린다. 내가 누른 준비 취소·경기 종료는 알리지 않는다
+  let prev = null;
+  function noteReady() {
+    const r = app.room, m = r?.slots?.[myIdx()];
+    const now = m && !m.host ? { ready: m.ready, rules: `${r.rules?.mode}/${r.rules?.time}`, team: m.team } : null;
+    if (prev?.ready && now && !now.ready && r.status === 'waiting') {
+      if (prev.rules !== now.rules) toast(ERR.READY_RESET_RULES, 'warn');
+      else if (prev.team !== now.team) toast(ERR.READY_RESET_TEAM, 'warn');
+    }
+    prev = now;
+  }
+
   function update() {
     const r = app.room; if (!r) return;
+    noteReady();
     if (selecting && myIdx() >= 0 && r.status === 'waiting') { if (root.querySelector('.tsel')) marks(); else paintSelect(); } else { selecting = false; paintRoom(); }
   }
 
@@ -35,10 +51,11 @@ export function mount(root, app) {
       const cpu = isCpuSeat(r, i);
       const lab = h('b.pl.' + (cpu ? 'com' : i ? 'p2' : 'p1'), cpu ? 'COM' : i ? '2P' : '1P');
       if (!s && !cpu) return h('section.seat.s' + i, h('div.seat-top', lab), h('div.seat-empty', '빈 자리'));
+      const rdy = !cpu && !s.host && s.ready;
       const tag = cpu ? h('span.tag.cpu', `난이도 ${cpuLevel(r, s)}`)
-        : s.host ? h('span.tag.host', '방장') : h('span.tag' + (s.ready ? '.ready' : '.off'), s.ready ? '준비 완료' : '준비 안 함');
+        : s.host ? h('span.tag.host', '방장') : h('span.tag.rdy' + (rdy ? '.on' : ''), rdy ? '준비 완료' : '준비 중');
       const team = s?.team;
-      return h('section.seat.s' + i + (i === me ? '.me' : ''), { 'aria-label': `${i ? '오른쪽' : '왼쪽'} 좌석` },
+      return h('section.seat.s' + i + (i === me ? '.me' : '') + (rdy ? '.is-ready' : ''), { 'aria-label': `${i ? '오른쪽' : '왼쪽'} 좌석` },
         h('div.seat-top', lab, h('span.seat-nick', cpu ? '컴퓨터' : s.nick), s && !s.connected && !cpu ? h('span.tag.off', '연결 끊김') : null, tag),
         team != null ? [
           h('div.seat-team', emblem(team), h('span.tn', teamText(team)),
@@ -50,20 +67,20 @@ export function mount(root, app) {
     if (mine) cmds.push(h('button.btn', { type: 'button', 'data-cmd': 'team', onclick: openSelect }, '팀 변경'));
     if (mine?.host) {
       cmds.push(h('button.btn', { type: 'button', 'data-cmd': 'rules', onclick: openRules }, '규칙'));
-      cmds.push(h('button.btn.primary', { type: 'button', 'data-cmd': 'start', disabled: !r.start.ok, title: r.start.ok ? null : r.start.msg,
-        onclick: startFlow }, '시작'));
+      // 조건 미달이어도 누를 수 있게 둔다(disabled 가 아니라 aria-disabled): 누르면 사유 토스트
+      cmds.push(h('button.btn.primary' + (r.start.ok ? '' : '.dim'), { type: 'button', 'data-cmd': 'start', 'aria-disabled': r.start.ok ? null : 'true',
+        onclick: () => { const st = app.room?.start; if (st && !st.ok) { toast(st.msg, 'warn'); return; } startFlow(); } }, '시작'));
     } else if (mine) {
       cmds.push(h('button.btn' + (mine.ready ? '' : '.primary'), { type: 'button', 'data-cmd': 'ready', onclick: () => net.send('ready', { ready: !mine.ready }) },
-        mine.ready ? '준비 취소' : '준비'));
+        mine.ready ? '준비 취소' : '준비 완료'));
     }
     cmds.push(h('button.btn', { type: 'button', 'data-cmd': 'leave', onclick: () => net.send('leave_room') }, '나가기'));
     root.append(h('div.screen.room',
-      h('header.room-head', h('h1.pix-title', '대기실'), h('span.code-lbl', '방 코드 ', h('span.code-t', r.code)),
+      h('header.room-head', h('h1.pix-title', r.vsCpu || !r.host ? '대기실' : `${r.host}의 방`),
         r.rules ? h('span.rules-line', '규칙 ', h('b', rulesText(r.rules))) : null,
-        h('span.spacer'), h('span.nick-me', app.nick || '')),
+        h('span.spacer'), h('span.room-code', { title: '방 코드' }, r.code), h('span.nick-me', app.nick || '')),
       h('div.seats', seat(0), h('div.vs', { 'aria-hidden': 'true' }, 'VS'), seat(1)),
-      h('div.cmds', { style: { '--n': cmds.length } }, cmds),
-      mine?.host && !r.start.ok ? h('div.start-msg', r.start.msg) : null));
+      h('div.cmds', { style: { '--n': cmds.length } }, cmds)));
     setNav(root);
     const want = root.querySelector(`[data-cmd="${had ?? (mine?.host ? 'start' : 'ready')}"]:not(:disabled)`) ?? root.querySelector('[data-cmd="team"]');
     if (had || document.activeElement === document.body || !root.contains(document.activeElement)) want?.focus({ preventScroll: true });

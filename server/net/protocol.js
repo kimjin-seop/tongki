@@ -41,8 +41,12 @@ export const ERR = {
   NOT_IN_CAMPAIGN_ROOM: '캠페인 방에서는 할 수 없습니다',
   RULES_INVALID: '규칙 값이 올바르지 않습니다',
   LOGIN_TIMEOUT:'로그인 시간이 지나 연결이 종료됩니다',
-  TRAINING_UNAVAILABLE: '아직 준비되지 않은 특훈입니다',
-  NOT_IN_TRAINING: '특훈 중이 아닙니다',
+  TRAINING_UNAVAILABLE: '아직 준비되지 않은 튜토리얼입니다',
+  NOT_IN_TRAINING: '튜토리얼 중이 아닙니다',
+  LEAGUE_NONE: '진행 중인 리그가 없습니다',
+  LEAGUE_INVALID: '리그 설정이 올바르지 않습니다',
+  LEAGUE_CARD_INVALID: '고를 수 없는 대전입니다',
+  LEAGUE_TEAM_LOCKED: '아직 고를 수 없는 팀입니다',
 };
 
 /** 특훈 종류(PROTOCOL §9). TRAINING_READY 에 든 것만 시작할 수 있다(빠진 종류는 TRAINING_UNAVAILABLE). 지금은 둘 다 열려 있다 */

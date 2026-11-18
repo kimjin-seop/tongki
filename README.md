@@ -10,6 +10,7 @@ npm install
 npm start          # http://localhost:3100
 ```
 `GET /health` 로 상태 확인.
+pm2 로 띄울 때: `PORT=3100 pm2 start server/index.js --name dodge-danpei` (프로젝트 루트에서 실행).
 
 ## 테스트
 ```
@@ -23,6 +24,8 @@ npm test
 | `HOST` | (미사용) | 현재 코드는 읽지 않는다. 모든 인터페이스에서 수신 |
 | `TRUST_PROXY` | 없음 | 값이 있으면 `X-Forwarded-For` 마지막 값을 클라이언트 IP로 사용(리버스 프록시 뒤에서만 설정) |
 | `RESULTS_PATH` | `data/results/results.jsonl` | 경기 결과 JSONL 저장 경로 |
+| `PROGRESS_PATH` / `LEAGUE_PATH` | `data/progress/progress.json` / `league.json` | 캠페인 진행·리그 JSON 저장 경로 |
+| `MAX_LEAGUE_PER_MIN` | 200 | 세션당 분당 리그 요청 |
 | `MAX_CONN_PER_IP` | 20 | IP당 동시 연결 |
 | `MAX_HELLO_PER_MIN` | 60 | IP당 분당 로그인 시도 |
 | `MAX_SESSIONS` | 2000 | 최대 세션 |

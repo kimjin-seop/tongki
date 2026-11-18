@@ -16,8 +16,10 @@ export const setImpactOn = (v) => { on = !!v; try { localStorage.setItem(IMPACT_
 
 /** 필살 ID(0~53) → 속성. F 화염, B 번개, W 바람, S 충격파.
  *  규칙(디자인 선택): 공 색 치환 키(special.js PAL_ID)가 Y(순환 점멸) = 번개, C·D·E·H(하늘색 계열) = 바람, F·G(회색 계열) = 충격파,
- *  A·B(빨강 계열) = 화염, 기본 색(N·-)은 잔상/분신이 있는 ID = 충격파, 없으면 화염 */
-const ELEM_BY_ID = 'FSSSWBFBFWBSFFBFBBBBBBFBBFBBWFFSSFBFFWFWSBSFFFFWFFWWWF';
+ *  A·B(빨강 계열) = 화염, 기본 색(N·-)은 잔상/분신이 있는 ID = 충격파, 없으면 화염.
+ *  예외(2026-11-18): 슛 이름(special_shouts.json byId)이 다른 속성을 가리키는 7개는 이름을 따른다 —
+ *  1 회오리·2 회전회오리·20 파도 = 바람, 7 면도날 = 충격파, 14 폭격 = 화염, 28 번개·37 별무리 = 번개 */
+const ELEM_BY_ID = 'FWWSWBFSFWBSFFFFBBBBWBFBBFBBBFFSSFBFFBFWSBSFFFFWFFWWWF';
 export const specialElement = (id) => ELEM_BY_ID[id] ?? 'F';
 /** 속성별 5색(밝음 → 어두움) */
 const PAL = {

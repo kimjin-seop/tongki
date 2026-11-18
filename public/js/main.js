@@ -3,7 +3,7 @@ import { net } from './net.js';
 import { loadManifest, loadFonts } from './game/assets.js';
 import { toast } from './ui.js';
 import { loadNames, teamName, teamLabel } from './names.js';
-import { ERR, ROOM_LEFT, TRAIN_END } from './i18n.js';
+import { ERR, ROOM_LEFT, TRAIN_END, LEAGUE } from './i18n.js';
 import { $, isTyping } from './util.js';
 import { loadPix } from './pix.js';
 import * as Nick from './screens/nick.js';
@@ -14,6 +14,8 @@ import * as Story from './screens/story.js';
 import * as Prematch from './screens/prematch.js';
 import * as Rules from './screens/rules.js';
 import * as Lineup from './screens/lineup.js';
+import * as Tutorial from './screens/tutorial.js';
+import * as League from './screens/league.js';
 import * as Intro from './intro.js';
 import { audio } from './audio.js';
 import { screenBgm, bindUiSfx } from './game/sfxmap.js';
@@ -21,13 +23,14 @@ import { screenBgm, bindUiSfx } from './game/sfxmap.js';
 export const app = {
   nick: null, you: null, rooms: [], room: null, welcome: null, teams: [],
   campaign: null, // 최근 campaign_list {progress, chapters}
+  league: null, leagueChamp: null, // 최근 league_state(PROTOCOL §10) / 아직 보여 주지 않은 league_end 우승 팀 idx
   view: null, screen: null,
   intro: null, // 부팅 인트로 제어(재생 중일 때만)
   sfx: (key, opt) => audio.play(key, opt), // 소리 키 재생(bgm.* 는 BGM 전환). 없는 키·잠금 전은 무음
   bgm: (key) => audio.bgm(key),
   bgmStop: () => audio.bgmStop(), // 원작 0xE1(즉시 정지)
   go(name, data) {
-    const mods = { nick: Nick, lobby: Lobby, room: Room, game: Game, story: Story, prematch: Prematch, rules: Rules, lineup: Lineup };
+    const mods = { nick: Nick, lobby: Lobby, room: Room, game: Game, story: Story, prematch: Prematch, rules: Rules, lineup: Lineup, tutorial: Tutorial, league: League };
     if (name === 'game' && this.intro?.active) this.intro.abort(); // 진행 중 경기로 복귀하면 인트로를 바로 끝낸다
     this.screen?.unmount?.();
     const root = $('#app'); root.innerHTML = '';
@@ -81,7 +84,7 @@ function wire() {
   net.on('welcome', (m) => {
     if (m.resumed && app.view && app.view !== 'nick') toast(ERR.RECONNECTED, 'ok', 1500);
     app.welcome = m; app.nick = m.nickname; app.teams = (m.teams || []).map((t) => ({ ...t, name: teamName(t.id, t.name), label: teamLabel(t.id, t.name) }));
-    if (m.location === 'lobby' && app.view !== 'story') app.go('lobby');
+    if (m.location === 'lobby' && !['story', 'tutorial', 'league'].includes(app.view)) app.go('lobby');
     else if (m.location === 'lobby') app.screen?.onWelcome?.();
   });
   net.on('room_list', (m) => { app.rooms = m.rooms || []; if (app.view === 'lobby') app.screen.update?.(); });
@@ -90,6 +93,7 @@ function wire() {
     // 캠페인 방은 대기실을 거치지 않는다: 곧 game_start 가 온다(campaign_start·재접속 'game').
     // 경기가 끝난 대기 상태 방으로 재접속('room')했으면 스토리 목록으로
     if (m.room?.training) return; // 특훈 방(PROTOCOL §9): 대기실 없이 곧 game_start 가 온다
+    if (m.room?.league) return; // 리그 방(PROTOCOL §10): 대기실 없이 곧 game_start{league} 가 온다
     if (m.room?.campaign) { if (app.welcome?.location === 'room' && app.view !== 'story' && app.view !== 'game') app.go('story', { mode: 'list' }); return; }
     app.go('room');
   });
@@ -102,11 +106,21 @@ function wire() {
     app.room = null;
     if (ROOM_LEFT[m.reason]) toast(ROOM_LEFT[m.reason], 'warn');
     if (app.view === 'story') return; // 캠페인 방 정리(재시작·목록 복귀)는 스토리 화면 안에서 처리
-    if (app.view === 'game' && app.screen.holdLobby?.()) return; // 특훈 완료 카드가 떠 있다: 카드의 '로비로'(자동 복귀 포함)가 넘긴다
+    if (app.view === 'game' && app.screen.holdLobby?.()) return; // 튜토리얼(특훈) 완료 카드가 떠 있다: 카드의 '튜토리얼로'(자동 복귀 포함)가 넘긴다
+    if (app.view === 'game' && app.screen.training) { app.go('tutorial'); return; } // 튜토리얼을 그만두거나 상한으로 끝났다: 고르는 화면으로
+    if (app.view === 'game' && app.screen.league) { app.go('league', { mode: 'menu' }); return; } // 리그 경기 방 정리(결과 카드가 없을 때): 리그 메뉴로
+    if (app.view === 'league') return;
     if (app.view !== 'lobby') app.go('lobby');
   });
   net.on('game_start', (m) => { app.you = m.you; app.go('game', { start: m }); });
   net.on('training_end', (m) => { if (TRAIN_END[m.reason]) toast(TRAIN_END[m.reason], 'warn'); }); // 상한 종료 사유(화면 처리는 아래 game 화면 on_training_end)
+  // 리그(PROTOCOL §10): 상태는 app.league 에 두고 리그 화면에 넘긴다. 사람 경기 중 온 우승은 리그 화면으로 돌아갈 때 보여 준다
+  net.on('league_state', (m) => { app.league = m; if (app.view === 'league') app.screen.onLeagueState?.(m); });
+  net.on('league_result', (m) => {
+    if (!m.quick && !m.recorded) toast(LEAGUE.NOT_RECORDED, 'warn');
+    if (app.view === 'league') app.screen.onLeagueResult?.(m);
+  });
+  net.on('league_end', (m) => { app.leagueChamp = m.champions || []; if (app.view === 'league') app.screen.onLeagueEnd?.(m); });
   net.on('campaign_list', (m) => { app.campaign = m; app.screen?.onCampaignList?.(m); });
   net.on('campaign_result', (m) => {
     if (app.campaign) app.campaign.progress = m.progress;
