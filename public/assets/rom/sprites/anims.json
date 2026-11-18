@@ -1,0 +1,4572 @@
+{
+ "body0": {
+  "table_rom": "0x2fe0c",
+  "anims": {
+   "0": {
+    "name": "walk_a",
+    "speed": 6,
+    "loop": true,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 0,
+      "rom": "0x301ac",
+      "hitbox": 1,
+      "head_dx": 5,
+      "head_dy": -18,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -20,
+        "size": 9,
+        "tile": 624,
+        "x": -5,
+        "xf": -19
+       },
+       {
+        "y": -14,
+        "size": 9,
+        "tile": 645,
+        "x": -10,
+        "xf": -14
+       }
+      ]
+     },
+     {
+      "col": 1,
+      "rom": "0x301ba",
+      "hitbox": 1,
+      "head_dx": 4,
+      "head_dy": -19,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -21,
+        "size": 9,
+        "tile": 624,
+        "x": -6,
+        "xf": -18
+       },
+       {
+        "y": -15,
+        "size": 5,
+        "tile": 651,
+        "x": -8,
+        "xf": -8
+       }
+      ]
+     },
+     {
+      "col": 2,
+      "rom": "0x301c8",
+      "hitbox": 1,
+      "head_dx": 5,
+      "head_dy": -18,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -20,
+        "size": 9,
+        "tile": 624,
+        "x": -5,
+        "xf": -19
+       },
+       {
+        "y": -15,
+        "size": 4,
+        "tile": 655,
+        "x": -9,
+        "xf": -7
+       },
+       {
+        "y": -7,
+        "size": 8,
+        "tile": 657,
+        "x": -9,
+        "xf": -15
+       }
+      ]
+     },
+     {
+      "col": 3,
+      "rom": "0x301ba",
+      "hitbox": 1,
+      "head_dx": 4,
+      "head_dy": -19,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -21,
+        "size": 9,
+        "tile": 624,
+        "x": -6,
+        "xf": -18
+       },
+       {
+        "y": -15,
+        "size": 5,
+        "tile": 651,
+        "x": -8,
+        "xf": -8
+       }
+      ]
+     }
+    ]
+   },
+   "2": {
+    "name": "walk_b",
+    "speed": 6,
+    "loop": true,
+    "head_pose_index": 1,
+    "frames": [
+     {
+      "col": 4,
+      "rom": "0x302b0",
+      "hitbox": 1,
+      "head_dx": 7,
+      "head_dy": -17,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -19,
+        "size": 9,
+        "tile": 757,
+        "x": -8,
+        "xf": -16
+       },
+       {
+        "y": -14,
+        "size": 5,
+        "tile": 777,
+        "x": -8,
+        "xf": -8
+       }
+      ]
+     },
+     {
+      "col": 5,
+      "rom": "0x302be",
+      "hitbox": 1,
+      "head_dx": 7,
+      "head_dy": -17,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -18,
+        "size": 9,
+        "tile": 757,
+        "x": -8,
+        "xf": -16
+       },
+       {
+        "y": -14,
+        "size": 5,
+        "tile": 781,
+        "x": -6,
+        "xf": -10
+       }
+      ]
+     },
+     {
+      "col": 6,
+      "rom": "0x302cc",
+      "hitbox": 1,
+      "head_dx": 6,
+      "head_dy": -17,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -19,
+        "size": 9,
+        "tile": 757,
+        "x": -9,
+        "xf": -15
+       },
+       {
+        "y": -14,
+        "size": 4,
+        "tile": 785,
+        "x": -9,
+        "xf": -7
+       },
+       {
+        "y": -6,
+        "size": 8,
+        "tile": 787,
+        "x": -9,
+        "xf": -15
+       }
+      ]
+     },
+     {
+      "col": 7,
+      "rom": "0x302be",
+      "hitbox": 1,
+      "head_dx": 7,
+      "head_dy": -17,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -18,
+        "size": 9,
+        "tile": 757,
+        "x": -8,
+        "xf": -16
+       },
+       {
+        "y": -14,
+        "size": 5,
+        "tile": 781,
+        "x": -6,
+        "xf": -10
+       }
+      ]
+     }
+    ]
+   },
+   "4": {
+    "name": "dash",
+    "speed": 3,
+    "loop": true,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 8,
+      "rom": "0x301dc",
+      "hitbox": 1,
+      "head_dx": 9,
+      "head_dy": -18,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -20,
+        "size": 9,
+        "tile": 624,
+        "x": -1,
+        "xf": -23
+       },
+       {
+        "y": -14,
+        "size": 9,
+        "tile": 660,
+        "x": -10,
+        "xf": -14
+       }
+      ]
+     },
+     {
+      "col": 9,
+      "rom": "0x301ba",
+      "hitbox": 1,
+      "head_dx": 4,
+      "head_dy": -19,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -21,
+        "size": 9,
+        "tile": 624,
+        "x": -6,
+        "xf": -18
+       },
+       {
+        "y": -15,
+        "size": 5,
+        "tile": 651,
+        "x": -8,
+        "xf": -8
+       }
+      ]
+     },
+     {
+      "col": 10,
+      "rom": "0x301ea",
+      "hitbox": 1,
+      "head_dx": 9,
+      "head_dy": -17,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -20,
+        "size": 9,
+        "tile": 624,
+        "x": -3,
+        "xf": -21
+       },
+       {
+        "y": -13,
+        "size": 9,
+        "tile": 666,
+        "x": -9,
+        "xf": -15
+       }
+      ]
+     },
+     {
+      "col": 11,
+      "rom": "0x301ba",
+      "hitbox": 1,
+      "head_dx": 4,
+      "head_dy": -19,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -21,
+        "size": 9,
+        "tile": 624,
+        "x": -6,
+        "xf": -18
+       },
+       {
+        "y": -15,
+        "size": 5,
+        "tile": 651,
+        "x": -8,
+        "xf": -8
+       }
+      ]
+     }
+    ]
+   },
+   "6": {
+    "name": "throw_a",
+    "speed": 2,
+    "loop": true,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 12,
+      "rom": "0x30206",
+      "hitbox": 1,
+      "head_dx": 7,
+      "head_dy": -17,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 0,
+        "tile": 672,
+        "x": -13,
+        "xf": 5
+       },
+       {
+        "y": -23,
+        "size": 13,
+        "tile": 673,
+        "x": -13,
+        "xf": -19
+       },
+       {
+        "y": -7,
+        "size": 8,
+        "tile": 681,
+        "x": -13,
+        "xf": -11
+       }
+      ]
+     },
+     {
+      "col": 13,
+      "rom": "0x30206",
+      "hitbox": 1,
+      "head_dx": 7,
+      "head_dy": -17,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 0,
+        "tile": 672,
+        "x": -13,
+        "xf": 5
+       },
+       {
+        "y": -23,
+        "size": 13,
+        "tile": 673,
+        "x": -13,
+        "xf": -19
+       },
+       {
+        "y": -7,
+        "size": 8,
+        "tile": 681,
+        "x": -13,
+        "xf": -11
+       }
+      ]
+     },
+     {
+      "col": 14,
+      "rom": "0x3021a",
+      "hitbox": 1,
+      "head_dx": 9,
+      "head_dy": -18,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -29,
+        "size": 4,
+        "tile": 684,
+        "x": -13,
+        "xf": -3
+       },
+       {
+        "y": -21,
+        "size": 13,
+        "tile": 686,
+        "x": -13,
+        "xf": -19
+       },
+       {
+        "y": -5,
+        "size": 0,
+        "tile": 694,
+        "x": -13,
+        "xf": 5
+       },
+       {
+        "y": -5,
+        "size": 4,
+        "tile": 695,
+        "x": 3,
+        "xf": -19
+       }
+      ]
+     },
+     {
+      "col": 15,
+      "rom": "0x30234",
+      "hitbox": 1,
+      "head_dx": 8,
+      "head_dy": -17,
+      "head_on_top": 0,
+      "pieces": [
+       {
+        "y": -23,
+        "size": 9,
+        "tile": 697,
+        "x": -13,
+        "xf": -11
+       },
+       {
+        "y": -7,
+        "size": 12,
+        "tile": 703,
+        "x": -13,
+        "xf": -19
+       }
+      ]
+     }
+    ]
+   },
+   "8": {
+    "name": "throw_b",
+    "speed": 2,
+    "loop": true,
+    "head_pose_index": 1,
+    "frames": [
+     {
+      "col": 16,
+      "rom": "0x302ee",
+      "hitbox": 1,
+      "head_dx": 11,
+      "head_dy": -20,
+      "head_on_top": 0,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 4,
+        "tile": 790,
+        "x": -1,
+        "xf": -15
+       },
+       {
+        "y": -23,
+        "size": 8,
+        "tile": 792,
+        "x": -9,
+        "xf": -15
+       },
+       {
+        "y": -15,
+        "size": 5,
+        "tile": 795,
+        "x": -9,
+        "xf": -7
+       }
+      ]
+     },
+     {
+      "col": 17,
+      "rom": "0x302ee",
+      "hitbox": 1,
+      "head_dx": 11,
+      "head_dy": -20,
+      "head_on_top": 0,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 4,
+        "tile": 790,
+        "x": -1,
+        "xf": -15
+       },
+       {
+        "y": -23,
+        "size": 8,
+        "tile": 792,
+        "x": -9,
+        "xf": -15
+       },
+       {
+        "y": -15,
+        "size": 5,
+        "tile": 795,
+        "x": -9,
+        "xf": -7
+       }
+      ]
+     },
+     {
+      "col": 18,
+      "rom": "0x30302",
+      "hitbox": 1,
+      "head_dx": 10,
+      "head_dy": -20,
+      "head_on_top": 0,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 4,
+        "tile": 799,
+        "x": -4,
+        "xf": -12
+       },
+       {
+        "y": -23,
+        "size": 12,
+        "tile": 801,
+        "x": -12,
+        "xf": -20
+       },
+       {
+        "y": -15,
+        "size": 8,
+        "tile": 805,
+        "x": -12,
+        "xf": -12
+       },
+       {
+        "y": -7,
+        "size": 4,
+        "tile": 808,
+        "x": -12,
+        "xf": -4
+       }
+      ]
+     },
+     {
+      "col": 19,
+      "rom": "0x3031c",
+      "hitbox": 1,
+      "head_dx": 12,
+      "head_dy": -17,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -23,
+        "size": 10,
+        "tile": 810,
+        "x": -11,
+        "xf": -13
+       }
+      ]
+     }
+    ]
+   },
+   "10": {
+    "name": "unk0A",
+    "speed": 10,
+    "loop": true,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 20,
+      "rom": "0x30190",
+      "hitbox": 1,
+      "head_dx": 6,
+      "head_dy": -18,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -21,
+        "size": 9,
+        "tile": 624,
+        "x": -5,
+        "xf": -19
+       },
+       {
+        "y": -15,
+        "size": 9,
+        "tile": 633,
+        "x": -8,
+        "xf": -16
+       }
+      ]
+     },
+     {
+      "col": 21,
+      "rom": "0x301f8",
+      "hitbox": 1,
+      "head_dx": 6,
+      "head_dy": -17,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -20,
+        "size": 8,
+        "tile": 630,
+        "x": -11,
+        "xf": -13
+       },
+       {
+        "y": -15,
+        "size": 9,
+        "tile": 633,
+        "x": -8,
+        "xf": -16
+       }
+      ]
+     }
+    ]
+   },
+   "12": {
+    "name": "unk0C",
+    "speed": 10,
+    "loop": true,
+    "head_pose_index": 1,
+    "frames": [
+     {
+      "col": 22,
+      "rom": "0x30294",
+      "hitbox": 1,
+      "head_dx": 6,
+      "head_dy": -17,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -17,
+        "size": 8,
+        "tile": 751,
+        "x": -9,
+        "xf": -15
+       },
+       {
+        "y": -15,
+        "size": 9,
+        "tile": 763,
+        "x": -9,
+        "xf": -15
+       }
+      ]
+     },
+     {
+      "col": 23,
+      "rom": "0x302e0",
+      "hitbox": 1,
+      "head_dx": 7,
+      "head_dy": -16,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -17,
+        "size": 8,
+        "tile": 754,
+        "x": -9,
+        "xf": -15
+       },
+       {
+        "y": -15,
+        "size": 9,
+        "tile": 763,
+        "x": -9,
+        "xf": -15
+       }
+      ]
+     }
+    ]
+   },
+   "14": {
+    "name": "stand_a",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 24,
+      "rom": "0x30190",
+      "hitbox": 1,
+      "head_dx": 6,
+      "head_dy": -18,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -21,
+        "size": 9,
+        "tile": 624,
+        "x": -5,
+        "xf": -19
+       },
+       {
+        "y": -15,
+        "size": 9,
+        "tile": 633,
+        "x": -8,
+        "xf": -16
+       }
+      ]
+     }
+    ]
+   },
+   "16": {
+    "name": "stand_b",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 1,
+    "frames": [
+     {
+      "col": 25,
+      "rom": "0x30294",
+      "hitbox": 1,
+      "head_dx": 6,
+      "head_dy": -17,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -17,
+        "size": 8,
+        "tile": 751,
+        "x": -9,
+        "xf": -15
+       },
+       {
+        "y": -15,
+        "size": 9,
+        "tile": 763,
+        "x": -9,
+        "xf": -15
+       }
+      ]
+     }
+    ]
+   },
+   "18": {
+    "name": "jump_a",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 26,
+      "rom": "0x3026a",
+      "hitbox": 8,
+      "head_dx": 3,
+      "head_dy": -23,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -27,
+        "size": 9,
+        "tile": 729,
+        "x": -11,
+        "xf": -13
+       },
+       {
+        "y": -11,
+        "size": 4,
+        "tile": 735,
+        "x": -11,
+        "xf": -5
+       },
+       {
+        "y": -3,
+        "size": 0,
+        "tile": 737,
+        "x": -11,
+        "xf": 3
+       }
+      ]
+     }
+    ]
+   },
+   "20": {
+    "name": "jump_b",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 1,
+    "frames": [
+     {
+      "col": 27,
+      "rom": "0x30324",
+      "hitbox": 8,
+      "head_dx": 3,
+      "head_dy": -26,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -29,
+        "size": 9,
+        "tile": 819,
+        "x": -15,
+        "xf": -9
+       },
+       {
+        "y": -13,
+        "size": 1,
+        "tile": 825,
+        "x": -7,
+        "xf": -1
+       }
+      ]
+     }
+    ]
+   },
+   "22": {
+    "name": "duck_a",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 28,
+      "rom": "0x3028c",
+      "hitbox": 3,
+      "head_dx": 2,
+      "head_dy": -11,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -14,
+        "size": 9,
+        "tile": 745,
+        "x": -11,
+        "xf": -13
+       }
+      ]
+     }
+    ]
+   },
+   "24": {
+    "name": "duck_b",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 1,
+    "frames": [
+     {
+      "col": 29,
+      "rom": "0x30332",
+      "hitbox": 3,
+      "head_dx": 8,
+      "head_dy": -12,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -15,
+        "size": 9,
+        "tile": 827,
+        "x": -10,
+        "xf": -14
+       }
+      ]
+     }
+    ]
+   },
+   "26": {
+    "name": "hit_a",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 2,
+    "frames": [
+     {
+      "col": 30,
+      "rom": "0x30242",
+      "hitbox": 1,
+      "head_dx": 1,
+      "head_dy": -22,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 4,
+        "tile": 707,
+        "x": -7,
+        "xf": -9
+       },
+       {
+        "y": -23,
+        "size": 13,
+        "tile": 709,
+        "x": -15,
+        "xf": -17
+       },
+       {
+        "y": -7,
+        "size": 4,
+        "tile": 717,
+        "x": -7,
+        "xf": -9
+       }
+      ]
+     }
+    ]
+   },
+   "28": {
+    "name": "hit_b",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 3,
+    "frames": [
+     {
+      "col": 31,
+      "rom": "0x30256",
+      "hitbox": 1,
+      "head_dx": 0,
+      "head_dy": -19,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -23,
+        "size": 8,
+        "tile": 719,
+        "x": -7,
+        "xf": -17
+       },
+       {
+        "y": -15,
+        "size": 12,
+        "tile": 722,
+        "x": -15,
+        "xf": -17
+       },
+       {
+        "y": -7,
+        "size": 8,
+        "tile": 726,
+        "x": -15,
+        "xf": -9
+       }
+      ]
+     }
+    ]
+   },
+   "30": {
+    "name": "down",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 4,
+    "frames": [
+     {
+      "col": 32,
+      "rom": "0x3027e",
+      "hitbox": 1,
+      "head_dx": 5,
+      "head_dy": -8,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -15,
+        "size": 8,
+        "tile": 738,
+        "x": -14,
+        "xf": -10
+       },
+       {
+        "y": -7,
+        "size": 12,
+        "tile": 741,
+        "x": -14,
+        "xf": -18
+       }
+      ]
+     }
+    ]
+   },
+   "32": {
+    "name": "catch_a",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 33,
+      "rom": "0x301f8",
+      "hitbox": 1,
+      "head_dx": 6,
+      "head_dy": -18,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -20,
+        "size": 8,
+        "tile": 630,
+        "x": -11,
+        "xf": -13
+       },
+       {
+        "y": -15,
+        "size": 9,
+        "tile": 633,
+        "x": -8,
+        "xf": -16
+       }
+      ]
+     }
+    ]
+   },
+   "34": {
+    "name": "catch_b",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 1,
+    "frames": [
+     {
+      "col": 34,
+      "rom": "0x302e0",
+      "hitbox": 1,
+      "head_dx": 6,
+      "head_dy": -17,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -17,
+        "size": 8,
+        "tile": 754,
+        "x": -9,
+        "xf": -15
+       },
+       {
+        "y": -15,
+        "size": 9,
+        "tile": 763,
+        "x": -9,
+        "xf": -15
+       }
+      ]
+     }
+    ]
+   },
+   "36": {
+    "name": "unk24",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 35,
+      "rom": "0x3019e",
+      "hitbox": 1,
+      "head_dx": 6,
+      "head_dy": -18,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -20,
+        "size": 9,
+        "tile": 624,
+        "x": -5,
+        "xf": -19
+       },
+       {
+        "y": -15,
+        "size": 9,
+        "tile": 639,
+        "x": -8,
+        "xf": -16
+       }
+      ]
+     }
+    ]
+   },
+   "38": {
+    "name": "unk26",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 1,
+    "frames": [
+     {
+      "col": 36,
+      "rom": "0x302a2",
+      "hitbox": 0,
+      "head_dx": 6,
+      "head_dy": -16,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -23,
+        "size": 4,
+        "tile": 769,
+        "x": -9,
+        "xf": -7
+       },
+       {
+        "y": -15,
+        "size": 9,
+        "tile": 771,
+        "x": -9,
+        "xf": -15
+       }
+      ]
+     }
+    ]
+   },
+   "40": {
+    "name": "pass_a",
+    "speed": 2,
+    "loop": true,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 37,
+      "rom": "0x30206",
+      "hitbox": 1,
+      "head_dx": 7,
+      "head_dy": -17,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 0,
+        "tile": 672,
+        "x": -13,
+        "xf": 5
+       },
+       {
+        "y": -23,
+        "size": 13,
+        "tile": 673,
+        "x": -13,
+        "xf": -19
+       },
+       {
+        "y": -7,
+        "size": 8,
+        "tile": 681,
+        "x": -13,
+        "xf": -11
+       }
+      ]
+     },
+     {
+      "col": 38,
+      "rom": "0x30206",
+      "hitbox": 1,
+      "head_dx": 7,
+      "head_dy": -17,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 0,
+        "tile": 672,
+        "x": -13,
+        "xf": 5
+       },
+       {
+        "y": -23,
+        "size": 13,
+        "tile": 673,
+        "x": -13,
+        "xf": -19
+       },
+       {
+        "y": -7,
+        "size": 8,
+        "tile": 681,
+        "x": -13,
+        "xf": -11
+       }
+      ]
+     },
+     {
+      "col": 39,
+      "rom": "0x3021a",
+      "hitbox": 1,
+      "head_dx": 9,
+      "head_dy": -18,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -29,
+        "size": 4,
+        "tile": 684,
+        "x": -13,
+        "xf": -3
+       },
+       {
+        "y": -21,
+        "size": 13,
+        "tile": 686,
+        "x": -13,
+        "xf": -19
+       },
+       {
+        "y": -5,
+        "size": 0,
+        "tile": 694,
+        "x": -13,
+        "xf": 5
+       },
+       {
+        "y": -5,
+        "size": 4,
+        "tile": 695,
+        "x": 3,
+        "xf": -19
+       }
+      ]
+     },
+     {
+      "col": 40,
+      "rom": "0x30234",
+      "hitbox": 1,
+      "head_dx": 8,
+      "head_dy": -17,
+      "head_on_top": 0,
+      "pieces": [
+       {
+        "y": -23,
+        "size": 9,
+        "tile": 697,
+        "x": -13,
+        "xf": -11
+       },
+       {
+        "y": -7,
+        "size": 12,
+        "tile": 703,
+        "x": -13,
+        "xf": -19
+       }
+      ]
+     }
+    ]
+   },
+   "42": {
+    "name": "pass_b",
+    "speed": 2,
+    "loop": true,
+    "head_pose_index": 1,
+    "frames": [
+     {
+      "col": 41,
+      "rom": "0x302ee",
+      "hitbox": 1,
+      "head_dx": 11,
+      "head_dy": -20,
+      "head_on_top": 0,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 4,
+        "tile": 790,
+        "x": -1,
+        "xf": -15
+       },
+       {
+        "y": -23,
+        "size": 8,
+        "tile": 792,
+        "x": -9,
+        "xf": -15
+       },
+       {
+        "y": -15,
+        "size": 5,
+        "tile": 795,
+        "x": -9,
+        "xf": -7
+       }
+      ]
+     },
+     {
+      "col": 42,
+      "rom": "0x302ee",
+      "hitbox": 1,
+      "head_dx": 11,
+      "head_dy": -20,
+      "head_on_top": 0,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 4,
+        "tile": 790,
+        "x": -1,
+        "xf": -15
+       },
+       {
+        "y": -23,
+        "size": 8,
+        "tile": 792,
+        "x": -9,
+        "xf": -15
+       },
+       {
+        "y": -15,
+        "size": 5,
+        "tile": 795,
+        "x": -9,
+        "xf": -7
+       }
+      ]
+     },
+     {
+      "col": 43,
+      "rom": "0x30302",
+      "hitbox": 1,
+      "head_dx": 10,
+      "head_dy": -20,
+      "head_on_top": 0,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 4,
+        "tile": 799,
+        "x": -4,
+        "xf": -12
+       },
+       {
+        "y": -23,
+        "size": 12,
+        "tile": 801,
+        "x": -12,
+        "xf": -20
+       },
+       {
+        "y": -15,
+        "size": 8,
+        "tile": 805,
+        "x": -12,
+        "xf": -12
+       },
+       {
+        "y": -7,
+        "size": 4,
+        "tile": 808,
+        "x": -12,
+        "xf": -4
+       }
+      ]
+     },
+     {
+      "col": 44,
+      "rom": "0x3031c",
+      "hitbox": 1,
+      "head_dx": 12,
+      "head_dy": -17,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -23,
+        "size": 10,
+        "tile": 810,
+        "x": -11,
+        "xf": -13
+       }
+      ]
+     }
+    ]
+   },
+   "44": {
+    "name": "jumpthrow_a",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 45,
+      "rom": "0x30206",
+      "hitbox": 1,
+      "head_dx": 7,
+      "head_dy": -17,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 0,
+        "tile": 672,
+        "x": -13,
+        "xf": 5
+       },
+       {
+        "y": -23,
+        "size": 13,
+        "tile": 673,
+        "x": -13,
+        "xf": -19
+       },
+       {
+        "y": -7,
+        "size": 8,
+        "tile": 681,
+        "x": -13,
+        "xf": -11
+       }
+      ]
+     }
+    ]
+   },
+   "46": {
+    "name": "jumpthrow_b",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 1,
+    "frames": [
+     {
+      "col": 46,
+      "rom": "0x302ee",
+      "hitbox": 1,
+      "head_dx": 11,
+      "head_dy": -20,
+      "head_on_top": 0,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 4,
+        "tile": 790,
+        "x": -1,
+        "xf": -15
+       },
+       {
+        "y": -23,
+        "size": 8,
+        "tile": 792,
+        "x": -9,
+        "xf": -15
+       },
+       {
+        "y": -15,
+        "size": 5,
+        "tile": 795,
+        "x": -9,
+        "xf": -7
+       }
+      ]
+     }
+    ]
+   }
+  }
+ },
+ "body1": {
+  "table_rom": "0x2ff38",
+  "anims": {
+   "0": {
+    "name": "walk_a",
+    "speed": 6,
+    "loop": true,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 0,
+      "rom": "0x3035c",
+      "hitbox": 4,
+      "head_dx": 2,
+      "head_dy": -23,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -29,
+        "size": 9,
+        "tile": 833,
+        "x": -8,
+        "xf": -16
+       },
+       {
+        "y": -23,
+        "size": 0,
+        "tile": 861,
+        "x": -5,
+        "xf": -3
+       },
+       {
+        "y": -15,
+        "size": 9,
+        "tile": 862,
+        "x": -13,
+        "xf": -11
+       }
+      ]
+     },
+     {
+      "col": 1,
+      "rom": "0x30370",
+      "hitbox": 4,
+      "head_dx": 3,
+      "head_dy": -24,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -30,
+        "size": 9,
+        "tile": 833,
+        "x": -7,
+        "xf": -17
+       },
+       {
+        "y": -23,
+        "size": 6,
+        "tile": 868,
+        "x": -8,
+        "xf": -8
+       }
+      ]
+     },
+     {
+      "col": 2,
+      "rom": "0x3037e",
+      "hitbox": 4,
+      "head_dx": 2,
+      "head_dy": -23,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -29,
+        "size": 9,
+        "tile": 833,
+        "x": -9,
+        "xf": -15
+       },
+       {
+        "y": -23,
+        "size": 4,
+        "tile": 874,
+        "x": -5,
+        "xf": -11
+       },
+       {
+        "y": -15,
+        "size": 9,
+        "tile": 876,
+        "x": -13,
+        "xf": -11
+       }
+      ]
+     },
+     {
+      "col": 3,
+      "rom": "0x30370",
+      "hitbox": 4,
+      "head_dx": 3,
+      "head_dy": -24,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -30,
+        "size": 9,
+        "tile": 833,
+        "x": -7,
+        "xf": -17
+       },
+       {
+        "y": -23,
+        "size": 6,
+        "tile": 868,
+        "x": -8,
+        "xf": -8
+       }
+      ]
+     }
+    ]
+   },
+   "2": {
+    "name": "walk_b",
+    "speed": 6,
+    "loop": true,
+    "head_pose_index": 1,
+    "frames": [
+     {
+      "col": 4,
+      "rom": "0x30490",
+      "hitbox": 4,
+      "head_dx": 8,
+      "head_dy": -22,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -30,
+        "size": 9,
+        "tile": 985,
+        "x": -3,
+        "xf": -21
+       },
+       {
+        "y": -23,
+        "size": 6,
+        "tile": 1007,
+        "x": -7,
+        "xf": -9
+       }
+      ]
+     },
+     {
+      "col": 5,
+      "rom": "0x3049e",
+      "hitbox": 4,
+      "head_dx": 7,
+      "head_dy": -24,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 9,
+        "tile": 985,
+        "x": -4,
+        "xf": -20
+       },
+       {
+        "y": -23,
+        "size": 6,
+        "tile": 1013,
+        "x": -8,
+        "xf": -8
+       }
+      ]
+     },
+     {
+      "col": 6,
+      "rom": "0x304ac",
+      "hitbox": 4,
+      "head_dx": 8,
+      "head_dy": -23,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -30,
+        "size": 9,
+        "tile": 985,
+        "x": -3,
+        "xf": -21
+       },
+       {
+        "y": -17,
+        "size": 4,
+        "tile": 1019,
+        "x": -10,
+        "xf": -6
+       },
+       {
+        "y": -9,
+        "size": 8,
+        "tile": 1021,
+        "x": -10,
+        "xf": -14
+       },
+       {
+        "y": -1,
+        "size": 4,
+        "tile": 1024,
+        "x": -2,
+        "xf": -14
+       }
+      ]
+     },
+     {
+      "col": 7,
+      "rom": "0x3049e",
+      "hitbox": 4,
+      "head_dx": 7,
+      "head_dy": -24,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 9,
+        "tile": 985,
+        "x": -4,
+        "xf": -20
+       },
+       {
+        "y": -23,
+        "size": 6,
+        "tile": 1013,
+        "x": -8,
+        "xf": -8
+       }
+      ]
+     }
+    ]
+   },
+   "4": {
+    "name": "dash",
+    "speed": 3,
+    "loop": true,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 8,
+      "rom": "0x30392",
+      "hitbox": 4,
+      "head_dx": 8,
+      "head_dy": -22,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -29,
+        "size": 9,
+        "tile": 833,
+        "x": -3,
+        "xf": -21
+       },
+       {
+        "y": -22,
+        "size": 4,
+        "tile": 882,
+        "x": -4,
+        "xf": -12
+       },
+       {
+        "y": -14,
+        "size": 12,
+        "tile": 884,
+        "x": -12,
+        "xf": -20
+       },
+       {
+        "y": -6,
+        "size": 8,
+        "tile": 888,
+        "x": -12,
+        "xf": -12
+       }
+      ]
+     },
+     {
+      "col": 9,
+      "rom": "0x30370",
+      "hitbox": 4,
+      "head_dx": 4,
+      "head_dy": -24,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -30,
+        "size": 9,
+        "tile": 833,
+        "x": -7,
+        "xf": -17
+       },
+       {
+        "y": -23,
+        "size": 6,
+        "tile": 868,
+        "x": -8,
+        "xf": -8
+       }
+      ]
+     },
+     {
+      "col": 10,
+      "rom": "0x303ac",
+      "hitbox": 4,
+      "head_dx": 7,
+      "head_dy": -23,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -29,
+        "size": 9,
+        "tile": 833,
+        "x": -4,
+        "xf": -20
+       },
+       {
+        "y": -23,
+        "size": 4,
+        "tile": 891,
+        "x": -3,
+        "xf": -13
+       },
+       {
+        "y": -15,
+        "size": 9,
+        "tile": 893,
+        "x": -11,
+        "xf": -13
+       }
+      ]
+     },
+     {
+      "col": 11,
+      "rom": "0x30370",
+      "hitbox": 4,
+      "head_dx": 4,
+      "head_dy": -24,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -30,
+        "size": 9,
+        "tile": 833,
+        "x": -7,
+        "xf": -17
+       },
+       {
+        "y": -23,
+        "size": 6,
+        "tile": 868,
+        "x": -8,
+        "xf": -8
+       }
+      ]
+     }
+    ]
+   },
+   "6": {
+    "name": "throw_a",
+    "speed": 2,
+    "loop": true,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 12,
+      "rom": "0x303ce",
+      "hitbox": 4,
+      "head_dx": 6,
+      "head_dy": -22,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -30,
+        "size": 8,
+        "tile": 899,
+        "x": -14,
+        "xf": -10
+       },
+       {
+        "y": -22,
+        "size": 4,
+        "tile": 902,
+        "x": -6,
+        "xf": -10
+       },
+       {
+        "y": -14,
+        "size": 9,
+        "tile": 904,
+        "x": -14,
+        "xf": -10
+       },
+       {
+        "y": -30,
+        "size": 2,
+        "tile": 910,
+        "x": 10,
+        "xf": -18
+       }
+      ]
+     },
+     {
+      "col": 13,
+      "rom": "0x303ce",
+      "hitbox": 4,
+      "head_dx": 6,
+      "head_dy": -22,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -30,
+        "size": 8,
+        "tile": 899,
+        "x": -14,
+        "xf": -10
+       },
+       {
+        "y": -22,
+        "size": 4,
+        "tile": 902,
+        "x": -6,
+        "xf": -10
+       },
+       {
+        "y": -14,
+        "size": 9,
+        "tile": 904,
+        "x": -14,
+        "xf": -10
+       },
+       {
+        "y": -30,
+        "size": 2,
+        "tile": 910,
+        "x": 10,
+        "xf": -18
+       }
+      ]
+     },
+     {
+      "col": 14,
+      "rom": "0x303e8",
+      "hitbox": 4,
+      "head_dx": 7,
+      "head_dy": -21,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -30,
+        "size": 9,
+        "tile": 913,
+        "x": -7,
+        "xf": -17
+       },
+       {
+        "y": -14,
+        "size": 12,
+        "tile": 919,
+        "x": -15,
+        "xf": -17
+       },
+       {
+        "y": -6,
+        "size": 8,
+        "tile": 923,
+        "x": -15,
+        "xf": -9
+       }
+      ]
+     },
+     {
+      "col": 15,
+      "rom": "0x303fc",
+      "hitbox": 4,
+      "head_dx": 6,
+      "head_dy": -21,
+      "head_on_top": 0,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 5,
+        "tile": 926,
+        "x": -6,
+        "xf": -10
+       },
+       {
+        "y": -15,
+        "size": 8,
+        "tile": 930,
+        "x": -14,
+        "xf": -10
+       },
+       {
+        "y": -7,
+        "size": 4,
+        "tile": 933,
+        "x": 2,
+        "xf": -18
+       }
+      ]
+     }
+    ]
+   },
+   "8": {
+    "name": "throw_b",
+    "speed": 2,
+    "loop": true,
+    "head_pose_index": 1,
+    "frames": [
+     {
+      "col": 16,
+      "rom": "0x304d4",
+      "hitbox": 4,
+      "head_dx": 8,
+      "head_dy": -22,
+      "head_on_top": 0,
+      "pieces": [
+       {
+        "y": -39,
+        "size": 0,
+        "tile": 1026,
+        "x": 2,
+        "xf": -10
+       },
+       {
+        "y": -31,
+        "size": 7,
+        "tile": 1027,
+        "x": -6,
+        "xf": -10
+       }
+      ]
+     },
+     {
+      "col": 17,
+      "rom": "0x304d4",
+      "hitbox": 4,
+      "head_dx": 8,
+      "head_dy": -22,
+      "head_on_top": 0,
+      "pieces": [
+       {
+        "y": -39,
+        "size": 0,
+        "tile": 1026,
+        "x": 2,
+        "xf": -10
+       },
+       {
+        "y": -31,
+        "size": 7,
+        "tile": 1027,
+        "x": -6,
+        "xf": -10
+       }
+      ]
+     },
+     {
+      "col": 18,
+      "rom": "0x304e2",
+      "hitbox": 4,
+      "head_dx": 4,
+      "head_dy": -23,
+      "head_on_top": 0,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 4,
+        "tile": 1035,
+        "x": -2,
+        "xf": -14
+       },
+       {
+        "y": -23,
+        "size": 8,
+        "tile": 1037,
+        "x": -10,
+        "xf": -14
+       },
+       {
+        "y": -15,
+        "size": 5,
+        "tile": 1040,
+        "x": -10,
+        "xf": -6
+       }
+      ]
+     },
+     {
+      "col": 19,
+      "rom": "0x304f6",
+      "hitbox": 4,
+      "head_dx": 6,
+      "head_dy": -19,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -21,
+        "size": 8,
+        "tile": 1044,
+        "x": -9,
+        "xf": -15
+       },
+       {
+        "y": -13,
+        "size": 5,
+        "tile": 1047,
+        "x": -9,
+        "xf": -7
+       }
+      ]
+     }
+    ]
+   },
+   "10": {
+    "name": "unk0A",
+    "speed": 10,
+    "loop": true,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 20,
+      "rom": "0x3033a",
+      "hitbox": 4,
+      "head_dx": 0,
+      "head_dy": -23,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -29,
+        "size": 9,
+        "tile": 833,
+        "x": -9,
+        "xf": -15
+       },
+       {
+        "y": -23,
+        "size": 10,
+        "tile": 845,
+        "x": -9,
+        "xf": -15
+       }
+      ]
+     },
+     {
+      "col": 21,
+      "rom": "0x303c0",
+      "hitbox": 4,
+      "head_dx": -1,
+      "head_dy": -23,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -30,
+        "size": 9,
+        "tile": 839,
+        "x": -10,
+        "xf": -14
+       },
+       {
+        "y": -23,
+        "size": 10,
+        "tile": 845,
+        "x": -9,
+        "xf": -15
+       }
+      ]
+     }
+    ]
+   },
+   "12": {
+    "name": "unk0C",
+    "speed": 10,
+    "loop": true,
+    "head_pose_index": 1,
+    "frames": [
+     {
+      "col": 22,
+      "rom": "0x3046e",
+      "hitbox": 4,
+      "head_dx": 6,
+      "head_dy": -24,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 9,
+        "tile": 985,
+        "x": -5,
+        "xf": -19
+       },
+       {
+        "y": -23,
+        "size": 6,
+        "tile": 994,
+        "x": -7,
+        "xf": -9
+       }
+      ]
+     },
+     {
+      "col": 23,
+      "rom": "0x304c6",
+      "hitbox": 4,
+      "head_dx": 5,
+      "head_dy": -23,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -25,
+        "size": 8,
+        "tile": 991,
+        "x": -5,
+        "xf": -19
+       },
+       {
+        "y": -23,
+        "size": 6,
+        "tile": 994,
+        "x": -7,
+        "xf": -9
+       }
+      ]
+     }
+    ]
+   },
+   "14": {
+    "name": "stand_a",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 24,
+      "rom": "0x3033a",
+      "hitbox": 4,
+      "head_dx": 0,
+      "head_dy": -23,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -29,
+        "size": 9,
+        "tile": 833,
+        "x": -9,
+        "xf": -15
+       },
+       {
+        "y": -23,
+        "size": 10,
+        "tile": 845,
+        "x": -9,
+        "xf": -15
+       }
+      ]
+     }
+    ]
+   },
+   "16": {
+    "name": "stand_b",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 1,
+    "frames": [
+     {
+      "col": 25,
+      "rom": "0x3046e",
+      "hitbox": 4,
+      "head_dx": 6,
+      "head_dy": -24,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 9,
+        "tile": 985,
+        "x": -5,
+        "xf": -19
+       },
+       {
+        "y": -23,
+        "size": 6,
+        "tile": 994,
+        "x": -7,
+        "xf": -9
+       }
+      ]
+     }
+    ]
+   },
+   "18": {
+    "name": "jump_a",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 26,
+      "rom": "0x30410",
+      "hitbox": 9,
+      "head_dx": 1,
+      "head_dy": -30,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 9,
+        "tile": 935,
+        "x": -11,
+        "xf": -13
+       },
+       {
+        "y": -15,
+        "size": 4,
+        "tile": 941,
+        "x": -11,
+        "xf": -5
+       },
+       {
+        "y": -7,
+        "size": 0,
+        "tile": 943,
+        "x": -11,
+        "xf": 3
+       }
+      ]
+     }
+    ]
+   },
+   "20": {
+    "name": "jump_b",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 1,
+    "frames": [
+     {
+      "col": 27,
+      "rom": "0x30504",
+      "hitbox": 9,
+      "head_dx": 3,
+      "head_dy": -31,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 9,
+        "tile": 1051,
+        "x": -11,
+        "xf": -13
+       },
+       {
+        "y": -15,
+        "size": 4,
+        "tile": 1057,
+        "x": -11,
+        "xf": -5
+       },
+       {
+        "y": -7,
+        "size": 0,
+        "tile": 1059,
+        "x": -11,
+        "xf": 3
+       }
+      ]
+     }
+    ]
+   },
+   "22": {
+    "name": "duck_a",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 28,
+      "rom": "0x30460",
+      "hitbox": 5,
+      "head_dx": 1,
+      "head_dy": -15,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -23,
+        "size": 4,
+        "tile": 977,
+        "x": -10,
+        "xf": -6
+       },
+       {
+        "y": -15,
+        "size": 9,
+        "tile": 979,
+        "x": -10,
+        "xf": -14
+       }
+      ]
+     }
+    ]
+   },
+   "24": {
+    "name": "duck_b",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 1,
+    "frames": [
+     {
+      "col": 29,
+      "rom": "0x30518",
+      "hitbox": 5,
+      "head_dx": 5,
+      "head_dy": -16,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -23,
+        "size": 9,
+        "tile": 985,
+        "x": -6,
+        "xf": -18
+       },
+       {
+        "y": -15,
+        "size": 8,
+        "tile": 1060,
+        "x": -8,
+        "xf": -16
+       },
+       {
+        "y": -7,
+        "size": 4,
+        "tile": 1063,
+        "x": -8,
+        "xf": -8
+       }
+      ]
+     }
+    ]
+   },
+   "26": {
+    "name": "hit_a",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 2,
+    "frames": [
+     {
+      "col": 30,
+      "rom": "0x30424",
+      "hitbox": 4,
+      "head_dx": 10,
+      "head_dy": -23,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -30,
+        "size": 10,
+        "tile": 944,
+        "x": -10,
+        "xf": -14
+       },
+       {
+        "y": -14,
+        "size": 1,
+        "tile": 953,
+        "x": -18,
+        "xf": 10
+       },
+       {
+        "y": -22,
+        "size": 0,
+        "tile": 955,
+        "x": 14,
+        "xf": -22
+       },
+       {
+        "y": -6,
+        "size": 0,
+        "tile": 956,
+        "x": -2,
+        "xf": -6
+       }
+      ]
+     }
+    ]
+   },
+   "28": {
+    "name": "hit_b",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 3,
+    "frames": [
+     {
+      "col": 31,
+      "rom": "0x3043e",
+      "hitbox": 4,
+      "head_dx": 2,
+      "head_dy": -24,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 4,
+        "tile": 957,
+        "x": -6,
+        "xf": -10
+       },
+       {
+        "y": -23,
+        "size": 12,
+        "tile": 959,
+        "x": -14,
+        "xf": -18
+       },
+       {
+        "y": -15,
+        "size": 12,
+        "tile": 963,
+        "x": -22,
+        "xf": -10
+       },
+       {
+        "y": -7,
+        "size": 4,
+        "tile": 967,
+        "x": -14,
+        "xf": -2
+       }
+      ]
+     }
+    ]
+   },
+   "30": {
+    "name": "down",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 4,
+    "frames": [
+     {
+      "col": 32,
+      "rom": "0x30458",
+      "hitbox": 4,
+      "head_dx": 9,
+      "head_dy": -7,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -15,
+        "size": 13,
+        "tile": 969,
+        "x": -13,
+        "xf": -19
+       }
+      ]
+     }
+    ]
+   },
+   "32": {
+    "name": "catch_a",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 33,
+      "rom": "0x303c0",
+      "hitbox": 4,
+      "head_dx": -1,
+      "head_dy": -23,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -30,
+        "size": 9,
+        "tile": 839,
+        "x": -10,
+        "xf": -14
+       },
+       {
+        "y": -23,
+        "size": 10,
+        "tile": 845,
+        "x": -9,
+        "xf": -15
+       }
+      ]
+     }
+    ]
+   },
+   "34": {
+    "name": "catch_b",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 1,
+    "frames": [
+     {
+      "col": 34,
+      "rom": "0x304c6",
+      "hitbox": 4,
+      "head_dx": 6,
+      "head_dy": -24,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -25,
+        "size": 8,
+        "tile": 991,
+        "x": -5,
+        "xf": -19
+       },
+       {
+        "y": -23,
+        "size": 6,
+        "tile": 994,
+        "x": -7,
+        "xf": -9
+       }
+      ]
+     }
+    ]
+   },
+   "36": {
+    "name": "unk24",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 35,
+      "rom": "0x30348",
+      "hitbox": 4,
+      "head_dx": 0,
+      "head_dy": -22,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -28,
+        "size": 9,
+        "tile": 833,
+        "x": -9,
+        "xf": -15
+       },
+       {
+        "y": -17,
+        "size": 9,
+        "tile": 854,
+        "x": -9,
+        "xf": -15
+       },
+       {
+        "y": -1,
+        "size": 0,
+        "tile": 860,
+        "x": -9,
+        "xf": 1
+       }
+      ]
+     }
+    ]
+   },
+   "38": {
+    "name": "unk26",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 1,
+    "frames": [
+     {
+      "col": 36,
+      "rom": "0x3047c",
+      "hitbox": 4,
+      "head_dx": 4,
+      "head_dy": -22,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -30,
+        "size": 9,
+        "tile": 985,
+        "x": -6,
+        "xf": -18
+       },
+       {
+        "y": -23,
+        "size": 6,
+        "tile": 1000,
+        "x": -8,
+        "xf": -8
+       },
+       {
+        "y": -15,
+        "size": 0,
+        "tile": 1006,
+        "x": 8,
+        "xf": -16
+       }
+      ]
+     }
+    ]
+   },
+   "40": {
+    "name": "pass_a",
+    "speed": 2,
+    "loop": true,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 37,
+      "rom": "0x303ce",
+      "hitbox": 4,
+      "head_dx": 6,
+      "head_dy": -22,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -30,
+        "size": 8,
+        "tile": 899,
+        "x": -14,
+        "xf": -10
+       },
+       {
+        "y": -22,
+        "size": 4,
+        "tile": 902,
+        "x": -6,
+        "xf": -10
+       },
+       {
+        "y": -14,
+        "size": 9,
+        "tile": 904,
+        "x": -14,
+        "xf": -10
+       },
+       {
+        "y": -30,
+        "size": 2,
+        "tile": 910,
+        "x": 10,
+        "xf": -18
+       }
+      ]
+     },
+     {
+      "col": 38,
+      "rom": "0x303ce",
+      "hitbox": 4,
+      "head_dx": 6,
+      "head_dy": -22,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -30,
+        "size": 8,
+        "tile": 899,
+        "x": -14,
+        "xf": -10
+       },
+       {
+        "y": -22,
+        "size": 4,
+        "tile": 902,
+        "x": -6,
+        "xf": -10
+       },
+       {
+        "y": -14,
+        "size": 9,
+        "tile": 904,
+        "x": -14,
+        "xf": -10
+       },
+       {
+        "y": -30,
+        "size": 2,
+        "tile": 910,
+        "x": 10,
+        "xf": -18
+       }
+      ]
+     },
+     {
+      "col": 39,
+      "rom": "0x303e8",
+      "hitbox": 4,
+      "head_dx": 7,
+      "head_dy": -21,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -30,
+        "size": 9,
+        "tile": 913,
+        "x": -7,
+        "xf": -17
+       },
+       {
+        "y": -14,
+        "size": 12,
+        "tile": 919,
+        "x": -15,
+        "xf": -17
+       },
+       {
+        "y": -6,
+        "size": 8,
+        "tile": 923,
+        "x": -15,
+        "xf": -9
+       }
+      ]
+     },
+     {
+      "col": 40,
+      "rom": "0x303fc",
+      "hitbox": 4,
+      "head_dx": 6,
+      "head_dy": -21,
+      "head_on_top": 0,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 5,
+        "tile": 926,
+        "x": -6,
+        "xf": -10
+       },
+       {
+        "y": -15,
+        "size": 8,
+        "tile": 930,
+        "x": -14,
+        "xf": -10
+       },
+       {
+        "y": -7,
+        "size": 4,
+        "tile": 933,
+        "x": 2,
+        "xf": -18
+       }
+      ]
+     }
+    ]
+   },
+   "42": {
+    "name": "pass_b",
+    "speed": 2,
+    "loop": true,
+    "head_pose_index": 1,
+    "frames": [
+     {
+      "col": 41,
+      "rom": "0x304d4",
+      "hitbox": 4,
+      "head_dx": 8,
+      "head_dy": -22,
+      "head_on_top": 0,
+      "pieces": [
+       {
+        "y": -39,
+        "size": 0,
+        "tile": 1026,
+        "x": 2,
+        "xf": -10
+       },
+       {
+        "y": -31,
+        "size": 7,
+        "tile": 1027,
+        "x": -6,
+        "xf": -10
+       }
+      ]
+     },
+     {
+      "col": 42,
+      "rom": "0x304d4",
+      "hitbox": 4,
+      "head_dx": 8,
+      "head_dy": -22,
+      "head_on_top": 0,
+      "pieces": [
+       {
+        "y": -39,
+        "size": 0,
+        "tile": 1026,
+        "x": 2,
+        "xf": -10
+       },
+       {
+        "y": -31,
+        "size": 7,
+        "tile": 1027,
+        "x": -6,
+        "xf": -10
+       }
+      ]
+     },
+     {
+      "col": 43,
+      "rom": "0x304e2",
+      "hitbox": 4,
+      "head_dx": 4,
+      "head_dy": -23,
+      "head_on_top": 0,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 4,
+        "tile": 1035,
+        "x": -2,
+        "xf": -14
+       },
+       {
+        "y": -23,
+        "size": 8,
+        "tile": 1037,
+        "x": -10,
+        "xf": -14
+       },
+       {
+        "y": -15,
+        "size": 5,
+        "tile": 1040,
+        "x": -10,
+        "xf": -6
+       }
+      ]
+     },
+     {
+      "col": 44,
+      "rom": "0x304f6",
+      "hitbox": 4,
+      "head_dx": 6,
+      "head_dy": -19,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -21,
+        "size": 8,
+        "tile": 1044,
+        "x": -9,
+        "xf": -15
+       },
+       {
+        "y": -13,
+        "size": 5,
+        "tile": 1047,
+        "x": -9,
+        "xf": -7
+       }
+      ]
+     }
+    ]
+   },
+   "44": {
+    "name": "jumpthrow_a",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 45,
+      "rom": "0x303ce",
+      "hitbox": 4,
+      "head_dx": 6,
+      "head_dy": -22,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -30,
+        "size": 8,
+        "tile": 899,
+        "x": -14,
+        "xf": -10
+       },
+       {
+        "y": -22,
+        "size": 4,
+        "tile": 902,
+        "x": -6,
+        "xf": -10
+       },
+       {
+        "y": -14,
+        "size": 9,
+        "tile": 904,
+        "x": -14,
+        "xf": -10
+       },
+       {
+        "y": -30,
+        "size": 2,
+        "tile": 910,
+        "x": 10,
+        "xf": -18
+       }
+      ]
+     }
+    ]
+   },
+   "46": {
+    "name": "jumpthrow_b",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 1,
+    "frames": [
+     {
+      "col": 46,
+      "rom": "0x304d4",
+      "hitbox": 4,
+      "head_dx": 8,
+      "head_dy": -22,
+      "head_on_top": 0,
+      "pieces": [
+       {
+        "y": -39,
+        "size": 0,
+        "tile": 1026,
+        "x": 2,
+        "xf": -10
+       },
+       {
+        "y": -31,
+        "size": 7,
+        "tile": 1027,
+        "x": -6,
+        "xf": -10
+       }
+      ]
+     }
+    ]
+   }
+  }
+ },
+ "body2": {
+  "table_rom": "0x30064",
+  "anims": {
+   "0": {
+    "name": "walk_a",
+    "speed": 6,
+    "loop": true,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 0,
+      "rom": "0x3054e",
+      "hitbox": 6,
+      "head_dx": 7,
+      "head_dy": -25,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -30,
+        "size": 13,
+        "tile": 1065,
+        "x": -10,
+        "xf": -22
+       },
+       {
+        "y": -22,
+        "size": 4,
+        "tile": 1096,
+        "x": -6,
+        "xf": -10
+       },
+       {
+        "y": -14,
+        "size": 8,
+        "tile": 1098,
+        "x": -14,
+        "xf": -10
+       },
+       {
+        "y": -6,
+        "size": 12,
+        "tile": 1101,
+        "x": -14,
+        "xf": -18
+       }
+      ]
+     },
+     {
+      "col": 1,
+      "rom": "0x30568",
+      "hitbox": 6,
+      "head_dx": 8,
+      "head_dy": -26,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 13,
+        "tile": 1065,
+        "x": -10,
+        "xf": -22
+       },
+       {
+        "y": -23,
+        "size": 6,
+        "tile": 1105,
+        "x": -8,
+        "xf": -8
+       }
+      ]
+     },
+     {
+      "col": 2,
+      "rom": "0x30576",
+      "hitbox": 6,
+      "head_dx": 7,
+      "head_dy": -25,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -30,
+        "size": 13,
+        "tile": 1065,
+        "x": -11,
+        "xf": -21
+       },
+       {
+        "y": -23,
+        "size": 4,
+        "tile": 1111,
+        "x": -10,
+        "xf": -6
+       },
+       {
+        "y": -15,
+        "size": 9,
+        "tile": 1113,
+        "x": -10,
+        "xf": -14
+       }
+      ]
+     },
+     {
+      "col": 3,
+      "rom": "0x30568",
+      "hitbox": 6,
+      "head_dx": 8,
+      "head_dy": -26,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 13,
+        "tile": 1065,
+        "x": -10,
+        "xf": -22
+       },
+       {
+        "y": -23,
+        "size": 6,
+        "tile": 1105,
+        "x": -8,
+        "xf": -8
+       }
+      ]
+     }
+    ]
+   },
+   "2": {
+    "name": "walk_b",
+    "speed": 6,
+    "loop": true,
+    "head_pose_index": 1,
+    "frames": [
+     {
+      "col": 4,
+      "rom": "0x3068e",
+      "hitbox": 6,
+      "head_dx": 8,
+      "head_dy": -29,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -32,
+        "size": 9,
+        "tile": 1243,
+        "x": -8,
+        "xf": -16
+       },
+       {
+        "y": -23,
+        "size": 10,
+        "tile": 1272,
+        "x": -11,
+        "xf": -13
+       }
+      ]
+     },
+     {
+      "col": 5,
+      "rom": "0x3069c",
+      "hitbox": 6,
+      "head_dx": 7,
+      "head_dy": -30,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -33,
+        "size": 9,
+        "tile": 1243,
+        "x": -8,
+        "xf": -16
+       },
+       {
+        "y": -23,
+        "size": 6,
+        "tile": 1281,
+        "x": -8,
+        "xf": -8
+       }
+      ]
+     },
+     {
+      "col": 6,
+      "rom": "0x306aa",
+      "hitbox": 6,
+      "head_dx": 9,
+      "head_dy": -29,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -32,
+        "size": 9,
+        "tile": 1243,
+        "x": -7,
+        "xf": -17
+       },
+       {
+        "y": -23,
+        "size": 10,
+        "tile": 1287,
+        "x": -11,
+        "xf": -13
+       }
+      ]
+     },
+     {
+      "col": 7,
+      "rom": "0x3069c",
+      "hitbox": 6,
+      "head_dx": 7,
+      "head_dy": -30,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -33,
+        "size": 9,
+        "tile": 1243,
+        "x": -8,
+        "xf": -16
+       },
+       {
+        "y": -23,
+        "size": 6,
+        "tile": 1281,
+        "x": -8,
+        "xf": -8
+       }
+      ]
+     }
+    ]
+   },
+   "4": {
+    "name": "dash",
+    "speed": 3,
+    "loop": true,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 8,
+      "rom": "0x3058a",
+      "hitbox": 6,
+      "head_dx": 12,
+      "head_dy": -24,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -29,
+        "size": 13,
+        "tile": 1065,
+        "x": -7,
+        "xf": -25
+       },
+       {
+        "y": -19,
+        "size": 8,
+        "tile": 1119,
+        "x": -7,
+        "xf": -17
+       },
+       {
+        "y": -11,
+        "size": 12,
+        "tile": 1122,
+        "x": -15,
+        "xf": -17
+       },
+       {
+        "y": -3,
+        "size": 0,
+        "tile": 1126,
+        "x": -15,
+        "xf": 7
+       }
+      ]
+     },
+     {
+      "col": 9,
+      "rom": "0x30568",
+      "hitbox": 6,
+      "head_dx": 8,
+      "head_dy": -26,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 13,
+        "tile": 1065,
+        "x": -10,
+        "xf": -22
+       },
+       {
+        "y": -23,
+        "size": 6,
+        "tile": 1105,
+        "x": -8,
+        "xf": -8
+       }
+      ]
+     },
+     {
+      "col": 10,
+      "rom": "0x305a4",
+      "hitbox": 6,
+      "head_dx": 11,
+      "head_dy": -24,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -30,
+        "size": 13,
+        "tile": 1065,
+        "x": -8,
+        "xf": -24
+       },
+       {
+        "y": -23,
+        "size": 4,
+        "tile": 1127,
+        "x": -5,
+        "xf": -11
+       },
+       {
+        "y": -15,
+        "size": 12,
+        "tile": 1129,
+        "x": -13,
+        "xf": -19
+       },
+       {
+        "y": -7,
+        "size": 8,
+        "tile": 1133,
+        "x": -13,
+        "xf": -11
+       }
+      ]
+     },
+     {
+      "col": 11,
+      "rom": "0x30568",
+      "hitbox": 6,
+      "head_dx": 8,
+      "head_dy": -26,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 13,
+        "tile": 1065,
+        "x": -10,
+        "xf": -22
+       },
+       {
+        "y": -23,
+        "size": 6,
+        "tile": 1105,
+        "x": -8,
+        "xf": -8
+       }
+      ]
+     }
+    ]
+   },
+   "6": {
+    "name": "throw_a",
+    "speed": 2,
+    "loop": true,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 12,
+      "rom": "0x305cc",
+      "hitbox": 6,
+      "head_dx": 9,
+      "head_dy": -25,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -39,
+        "size": 0,
+        "tile": 1136,
+        "x": -10,
+        "xf": 2
+       },
+       {
+        "y": -31,
+        "size": 8,
+        "tile": 1137,
+        "x": -10,
+        "xf": -14
+       },
+       {
+        "y": -23,
+        "size": 12,
+        "tile": 1140,
+        "x": -10,
+        "xf": -22
+       },
+       {
+        "y": -15,
+        "size": 13,
+        "tile": 1144,
+        "x": -18,
+        "xf": -14
+       }
+      ]
+     },
+     {
+      "col": 13,
+      "rom": "0x305cc",
+      "hitbox": 6,
+      "head_dx": 9,
+      "head_dy": -25,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -39,
+        "size": 0,
+        "tile": 1136,
+        "x": -10,
+        "xf": 2
+       },
+       {
+        "y": -31,
+        "size": 8,
+        "tile": 1137,
+        "x": -10,
+        "xf": -14
+       },
+       {
+        "y": -23,
+        "size": 12,
+        "tile": 1140,
+        "x": -10,
+        "xf": -22
+       },
+       {
+        "y": -15,
+        "size": 13,
+        "tile": 1144,
+        "x": -18,
+        "xf": -14
+       }
+      ]
+     },
+     {
+      "col": 14,
+      "rom": "0x305e6",
+      "hitbox": 6,
+      "head_dx": 9,
+      "head_dy": -25,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -27,
+        "size": 12,
+        "tile": 1152,
+        "x": -11,
+        "xf": -21
+       },
+       {
+        "y": -19,
+        "size": 9,
+        "tile": 1156,
+        "x": -11,
+        "xf": -13
+       },
+       {
+        "y": -11,
+        "size": 1,
+        "tile": 1162,
+        "x": -19,
+        "xf": 11
+       },
+       {
+        "y": -3,
+        "size": 4,
+        "tile": 1164,
+        "x": -3,
+        "xf": -13
+       }
+      ]
+     },
+     {
+      "col": 15,
+      "rom": "0x30600",
+      "hitbox": 6,
+      "head_dx": 11,
+      "head_dy": -24,
+      "head_on_top": 0,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 9,
+        "tile": 1166,
+        "x": -7,
+        "xf": -17
+       },
+       {
+        "y": -15,
+        "size": 13,
+        "tile": 1172,
+        "x": -15,
+        "xf": -17
+       }
+      ]
+     }
+    ]
+   },
+   "8": {
+    "name": "throw_b",
+    "speed": 2,
+    "loop": true,
+    "head_pose_index": 1,
+    "frames": [
+     {
+      "col": 16,
+      "rom": "0x306c6",
+      "hitbox": 6,
+      "head_dx": 8,
+      "head_dy": -29,
+      "head_on_top": 0,
+      "pieces": [
+       {
+        "y": -39,
+        "size": 4,
+        "tile": 1296,
+        "x": -3,
+        "xf": -13
+       },
+       {
+        "y": -31,
+        "size": 10,
+        "tile": 1298,
+        "x": -11,
+        "xf": -13
+       },
+       {
+        "y": -7,
+        "size": 4,
+        "tile": 1307,
+        "x": -11,
+        "xf": -5
+       }
+      ]
+     },
+     {
+      "col": 17,
+      "rom": "0x306c6",
+      "hitbox": 6,
+      "head_dx": 8,
+      "head_dy": -29,
+      "head_on_top": 0,
+      "pieces": [
+       {
+        "y": -39,
+        "size": 4,
+        "tile": 1296,
+        "x": -3,
+        "xf": -13
+       },
+       {
+        "y": -31,
+        "size": 10,
+        "tile": 1298,
+        "x": -11,
+        "xf": -13
+       },
+       {
+        "y": -7,
+        "size": 4,
+        "tile": 1307,
+        "x": -11,
+        "xf": -5
+       }
+      ]
+     },
+     {
+      "col": 18,
+      "rom": "0x306da",
+      "hitbox": 6,
+      "head_dx": 6,
+      "head_dy": -29,
+      "head_on_top": 0,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 12,
+        "tile": 1309,
+        "x": -13,
+        "xf": -19
+       },
+       {
+        "y": -23,
+        "size": 8,
+        "tile": 1313,
+        "x": -13,
+        "xf": -11
+       },
+       {
+        "y": -15,
+        "size": 5,
+        "tile": 1316,
+        "x": -13,
+        "xf": -3
+       }
+      ]
+     },
+     {
+      "col": 19,
+      "rom": "0x306ee",
+      "hitbox": 6,
+      "head_dx": 9,
+      "head_dy": -27,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -30,
+        "size": 9,
+        "tile": 1320,
+        "x": -12,
+        "xf": -12
+       },
+       {
+        "y": -14,
+        "size": 5,
+        "tile": 1326,
+        "x": -12,
+        "xf": -4
+       }
+      ]
+     }
+    ]
+   },
+   "10": {
+    "name": "unk0A",
+    "speed": 10,
+    "loop": true,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 20,
+      "rom": "0x3052c",
+      "hitbox": 6,
+      "head_dx": 7,
+      "head_dy": -26,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 13,
+        "tile": 1065,
+        "x": -11,
+        "xf": -21
+       },
+       {
+        "y": -23,
+        "size": 10,
+        "tile": 1079,
+        "x": -11,
+        "xf": -13
+       }
+      ]
+     },
+     {
+      "col": 21,
+      "rom": "0x305be",
+      "hitbox": 6,
+      "head_dx": 7,
+      "head_dy": -25,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -30,
+        "size": 9,
+        "tile": 1073,
+        "x": -6,
+        "xf": -18
+       },
+       {
+        "y": -23,
+        "size": 10,
+        "tile": 1079,
+        "x": -11,
+        "xf": -13
+       }
+      ]
+     }
+    ]
+   },
+   "12": {
+    "name": "unk0C",
+    "speed": 10,
+    "loop": true,
+    "head_pose_index": 1,
+    "frames": [
+     {
+      "col": 22,
+      "rom": "0x3066c",
+      "hitbox": 6,
+      "head_dx": 6,
+      "head_dy": -27,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -30,
+        "size": 9,
+        "tile": 1243,
+        "x": -9,
+        "xf": -15
+       },
+       {
+        "y": -23,
+        "size": 10,
+        "tile": 1255,
+        "x": -11,
+        "xf": -13
+       }
+      ]
+     },
+     {
+      "col": 23,
+      "rom": "0x306b8",
+      "hitbox": 6,
+      "head_dx": 6,
+      "head_dy": -26,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -30,
+        "size": 9,
+        "tile": 1249,
+        "x": -7,
+        "xf": -17
+       },
+       {
+        "y": -23,
+        "size": 10,
+        "tile": 1255,
+        "x": -11,
+        "xf": -13
+       }
+      ]
+     }
+    ]
+   },
+   "14": {
+    "name": "stand_a",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 24,
+      "rom": "0x3052c",
+      "hitbox": 6,
+      "head_dx": 7,
+      "head_dy": -26,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 13,
+        "tile": 1065,
+        "x": -11,
+        "xf": -21
+       },
+       {
+        "y": -23,
+        "size": 10,
+        "tile": 1079,
+        "x": -11,
+        "xf": -13
+       }
+      ]
+     }
+    ]
+   },
+   "16": {
+    "name": "stand_b",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 1,
+    "frames": [
+     {
+      "col": 25,
+      "rom": "0x3066c",
+      "hitbox": 6,
+      "head_dx": 6,
+      "head_dy": -27,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -30,
+        "size": 9,
+        "tile": 1243,
+        "x": -9,
+        "xf": -15
+       },
+       {
+        "y": -23,
+        "size": 10,
+        "tile": 1255,
+        "x": -11,
+        "xf": -13
+       }
+      ]
+     }
+    ]
+   },
+   "18": {
+    "name": "jump_a",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 26,
+      "rom": "0x3060e",
+      "hitbox": 10,
+      "head_dx": 4,
+      "head_dy": -30,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -37,
+        "size": 11,
+        "tile": 1180,
+        "x": -13,
+        "xf": -11
+       },
+       {
+        "y": -29,
+        "size": 0,
+        "tile": 1192,
+        "x": 11,
+        "xf": -19
+       },
+       {
+        "y": -5,
+        "size": 0,
+        "tile": 1193,
+        "x": -13,
+        "xf": 5
+       }
+      ]
+     }
+    ]
+   },
+   "20": {
+    "name": "jump_b",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 1,
+    "frames": [
+     {
+      "col": 27,
+      "rom": "0x306fc",
+      "hitbox": 10,
+      "head_dx": 2,
+      "head_dy": -35,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -39,
+        "size": 7,
+        "tile": 1330,
+        "x": -7,
+        "xf": -9
+       },
+       {
+        "y": -7,
+        "size": 0,
+        "tile": 1338,
+        "x": -7,
+        "xf": -1
+       }
+      ]
+     }
+    ]
+   },
+   "22": {
+    "name": "duck_a",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 28,
+      "rom": "0x3065e",
+      "hitbox": 7,
+      "head_dx": 5,
+      "head_dy": -18,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -23,
+        "size": 13,
+        "tile": 1232,
+        "x": -14,
+        "xf": -18
+       },
+       {
+        "y": -7,
+        "size": 8,
+        "tile": 1240,
+        "x": -14,
+        "xf": -10
+       }
+      ]
+     }
+    ]
+   },
+   "24": {
+    "name": "duck_b",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 1,
+    "frames": [
+     {
+      "col": 29,
+      "rom": "0x3070a",
+      "hitbox": 7,
+      "head_dx": 4,
+      "head_dy": -20,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -23,
+        "size": 9,
+        "tile": 1243,
+        "x": -11,
+        "xf": -13
+       },
+       {
+        "y": -15,
+        "size": 4,
+        "tile": 1339,
+        "x": -10,
+        "xf": -6
+       },
+       {
+        "y": -7,
+        "size": 8,
+        "tile": 1341,
+        "x": -10,
+        "xf": -14
+       }
+      ]
+     }
+    ]
+   },
+   "26": {
+    "name": "hit_a",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 2,
+    "frames": [
+     {
+      "col": 30,
+      "rom": "0x30622",
+      "hitbox": 6,
+      "head_dx": 10,
+      "head_dy": -24,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 10,
+        "tile": 1194,
+        "x": -6,
+        "xf": -18
+       },
+       {
+        "y": -15,
+        "size": 4,
+        "tile": 1203,
+        "x": -22,
+        "xf": 6
+       },
+       {
+        "y": -7,
+        "size": 8,
+        "tile": 1205,
+        "x": -14,
+        "xf": -10
+       }
+      ]
+     }
+    ]
+   },
+   "28": {
+    "name": "hit_b",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 3,
+    "frames": [
+     {
+      "col": 31,
+      "rom": "0x30636",
+      "hitbox": 6,
+      "head_dx": 12,
+      "head_dy": -26,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 9,
+        "tile": 1208,
+        "x": -4,
+        "xf": -20
+       },
+       {
+        "y": -23,
+        "size": 4,
+        "tile": 1214,
+        "x": -20,
+        "xf": 4
+       },
+       {
+        "y": -15,
+        "size": 12,
+        "tile": 1216,
+        "x": -20,
+        "xf": -12
+       },
+       {
+        "y": -7,
+        "size": 4,
+        "tile": 1220,
+        "x": -12,
+        "xf": -4
+       }
+      ]
+     }
+    ]
+   },
+   "30": {
+    "name": "down",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 4,
+    "frames": [
+     {
+      "col": 32,
+      "rom": "0x30650",
+      "hitbox": 6,
+      "head_dx": 15,
+      "head_dy": -7,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -15,
+        "size": 13,
+        "tile": 1222,
+        "x": -20,
+        "xf": -12
+       },
+       {
+        "y": -15,
+        "size": 1,
+        "tile": 1230,
+        "x": 12,
+        "xf": -20
+       }
+      ]
+     }
+    ]
+   },
+   "32": {
+    "name": "catch_a",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 33,
+      "rom": "0x305be",
+      "hitbox": 6,
+      "head_dx": 7,
+      "head_dy": -26,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -30,
+        "size": 9,
+        "tile": 1073,
+        "x": -6,
+        "xf": -18
+       },
+       {
+        "y": -23,
+        "size": 10,
+        "tile": 1079,
+        "x": -11,
+        "xf": -13
+       }
+      ]
+     }
+    ]
+   },
+   "34": {
+    "name": "catch_b",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 1,
+    "frames": [
+     {
+      "col": 34,
+      "rom": "0x306b8",
+      "hitbox": 6,
+      "head_dx": 6,
+      "head_dy": -26,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -30,
+        "size": 9,
+        "tile": 1249,
+        "x": -7,
+        "xf": -17
+       },
+       {
+        "y": -23,
+        "size": 10,
+        "tile": 1255,
+        "x": -11,
+        "xf": -13
+       }
+      ]
+     }
+    ]
+   },
+   "36": {
+    "name": "unk24",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 35,
+      "rom": "0x3053a",
+      "hitbox": 6,
+      "head_dx": 7,
+      "head_dy": -26,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -30,
+        "size": 13,
+        "tile": 1065,
+        "x": -11,
+        "xf": -21
+       },
+       {
+        "y": -18,
+        "size": 9,
+        "tile": 1088,
+        "x": -11,
+        "xf": -13
+       },
+       {
+        "y": -2,
+        "size": 4,
+        "tile": 1094,
+        "x": -11,
+        "xf": -5
+       }
+      ]
+     }
+    ]
+   },
+   "38": {
+    "name": "unk26",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 1,
+    "frames": [
+     {
+      "col": 36,
+      "rom": "0x3067a",
+      "hitbox": 6,
+      "head_dx": 6,
+      "head_dy": -26,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -29,
+        "size": 9,
+        "tile": 1243,
+        "x": -9,
+        "xf": -15
+       },
+       {
+        "y": -23,
+        "size": 4,
+        "tile": 1264,
+        "x": -11,
+        "xf": -5
+       },
+       {
+        "y": -15,
+        "size": 9,
+        "tile": 1266,
+        "x": -11,
+        "xf": -13
+       }
+      ]
+     }
+    ]
+   },
+   "40": {
+    "name": "pass_a",
+    "speed": 2,
+    "loop": true,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 37,
+      "rom": "0x305cc",
+      "hitbox": 6,
+      "head_dx": 9,
+      "head_dy": -25,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -39,
+        "size": 0,
+        "tile": 1136,
+        "x": -10,
+        "xf": 2
+       },
+       {
+        "y": -31,
+        "size": 8,
+        "tile": 1137,
+        "x": -10,
+        "xf": -14
+       },
+       {
+        "y": -23,
+        "size": 12,
+        "tile": 1140,
+        "x": -10,
+        "xf": -22
+       },
+       {
+        "y": -15,
+        "size": 13,
+        "tile": 1144,
+        "x": -18,
+        "xf": -14
+       }
+      ]
+     },
+     {
+      "col": 38,
+      "rom": "0x305cc",
+      "hitbox": 6,
+      "head_dx": 9,
+      "head_dy": -25,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -39,
+        "size": 0,
+        "tile": 1136,
+        "x": -10,
+        "xf": 2
+       },
+       {
+        "y": -31,
+        "size": 8,
+        "tile": 1137,
+        "x": -10,
+        "xf": -14
+       },
+       {
+        "y": -23,
+        "size": 12,
+        "tile": 1140,
+        "x": -10,
+        "xf": -22
+       },
+       {
+        "y": -15,
+        "size": 13,
+        "tile": 1144,
+        "x": -18,
+        "xf": -14
+       }
+      ]
+     },
+     {
+      "col": 39,
+      "rom": "0x305e6",
+      "hitbox": 6,
+      "head_dx": 9,
+      "head_dy": -25,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -27,
+        "size": 12,
+        "tile": 1152,
+        "x": -11,
+        "xf": -21
+       },
+       {
+        "y": -19,
+        "size": 9,
+        "tile": 1156,
+        "x": -11,
+        "xf": -13
+       },
+       {
+        "y": -11,
+        "size": 1,
+        "tile": 1162,
+        "x": -19,
+        "xf": 11
+       },
+       {
+        "y": -3,
+        "size": 4,
+        "tile": 1164,
+        "x": -3,
+        "xf": -13
+       }
+      ]
+     },
+     {
+      "col": 40,
+      "rom": "0x30600",
+      "hitbox": 6,
+      "head_dx": 11,
+      "head_dy": -24,
+      "head_on_top": 0,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 9,
+        "tile": 1166,
+        "x": -7,
+        "xf": -17
+       },
+       {
+        "y": -15,
+        "size": 13,
+        "tile": 1172,
+        "x": -15,
+        "xf": -17
+       }
+      ]
+     }
+    ]
+   },
+   "42": {
+    "name": "pass_b",
+    "speed": 2,
+    "loop": true,
+    "head_pose_index": 1,
+    "frames": [
+     {
+      "col": 41,
+      "rom": "0x306c6",
+      "hitbox": 6,
+      "head_dx": 8,
+      "head_dy": -29,
+      "head_on_top": 0,
+      "pieces": [
+       {
+        "y": -39,
+        "size": 4,
+        "tile": 1296,
+        "x": -3,
+        "xf": -13
+       },
+       {
+        "y": -31,
+        "size": 10,
+        "tile": 1298,
+        "x": -11,
+        "xf": -13
+       },
+       {
+        "y": -7,
+        "size": 4,
+        "tile": 1307,
+        "x": -11,
+        "xf": -5
+       }
+      ]
+     },
+     {
+      "col": 42,
+      "rom": "0x306c6",
+      "hitbox": 6,
+      "head_dx": 8,
+      "head_dy": -29,
+      "head_on_top": 0,
+      "pieces": [
+       {
+        "y": -39,
+        "size": 4,
+        "tile": 1296,
+        "x": -3,
+        "xf": -13
+       },
+       {
+        "y": -31,
+        "size": 10,
+        "tile": 1298,
+        "x": -11,
+        "xf": -13
+       },
+       {
+        "y": -7,
+        "size": 4,
+        "tile": 1307,
+        "x": -11,
+        "xf": -5
+       }
+      ]
+     },
+     {
+      "col": 43,
+      "rom": "0x306da",
+      "hitbox": 6,
+      "head_dx": 6,
+      "head_dy": -29,
+      "head_on_top": 0,
+      "pieces": [
+       {
+        "y": -31,
+        "size": 12,
+        "tile": 1309,
+        "x": -13,
+        "xf": -19
+       },
+       {
+        "y": -23,
+        "size": 8,
+        "tile": 1313,
+        "x": -13,
+        "xf": -11
+       },
+       {
+        "y": -15,
+        "size": 5,
+        "tile": 1316,
+        "x": -13,
+        "xf": -3
+       }
+      ]
+     },
+     {
+      "col": 44,
+      "rom": "0x306ee",
+      "hitbox": 6,
+      "head_dx": 9,
+      "head_dy": -27,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -30,
+        "size": 9,
+        "tile": 1320,
+        "x": -12,
+        "xf": -12
+       },
+       {
+        "y": -14,
+        "size": 5,
+        "tile": 1326,
+        "x": -12,
+        "xf": -4
+       }
+      ]
+     }
+    ]
+   },
+   "44": {
+    "name": "jumpthrow_a",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 0,
+    "frames": [
+     {
+      "col": 45,
+      "rom": "0x305cc",
+      "hitbox": 6,
+      "head_dx": 9,
+      "head_dy": -25,
+      "head_on_top": 1,
+      "pieces": [
+       {
+        "y": -39,
+        "size": 0,
+        "tile": 1136,
+        "x": -10,
+        "xf": 2
+       },
+       {
+        "y": -31,
+        "size": 8,
+        "tile": 1137,
+        "x": -10,
+        "xf": -14
+       },
+       {
+        "y": -23,
+        "size": 12,
+        "tile": 1140,
+        "x": -10,
+        "xf": -22
+       },
+       {
+        "y": -15,
+        "size": 13,
+        "tile": 1144,
+        "x": -18,
+        "xf": -14
+       }
+      ]
+     }
+    ]
+   },
+   "46": {
+    "name": "jumpthrow_b",
+    "speed": 1,
+    "loop": false,
+    "head_pose_index": 1,
+    "frames": [
+     {
+      "col": 46,
+      "rom": "0x306c6",
+      "hitbox": 6,
+      "head_dx": 8,
+      "head_dy": -29,
+      "head_on_top": 0,
+      "pieces": [
+       {
+        "y": -39,
+        "size": 4,
+        "tile": 1296,
+        "x": -3,
+        "xf": -13
+       },
+       {
+        "y": -31,
+        "size": 10,
+        "tile": 1298,
+        "x": -11,
+        "xf": -13
+       },
+       {
+        "y": -7,
+        "size": 4,
+        "tile": 1307,
+        "x": -11,
+        "xf": -5
+       }
+      ]
+     }
+    ]
+   }
+  }
+ }
+}

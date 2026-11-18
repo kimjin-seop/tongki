@@ -1,0 +1,754 @@
+{
+ "key": "spr.ball",
+ "image": "rom/sprites/ball.png",
+ "image_size": [
+  192,
+  144
+ ],
+ "alpha": true,
+ "scale": 1,
+ "source": "rom-extract: ROM 0x335E6 (40 frames x 3x3 tiles, raw 4bpp), palette CRAM line2 = ROM 0x3A1AC; shadow tiles from VRAM 0x580-0x582 (ctrl0.pkl)",
+ "coords": "screen_x = world.x - cam, ground_y = world.y/2 + 96 - cam_y(0), ball_y = ground_y - world.z (stage_00.json world_to_image 와 동일)",
+ "ball": {
+  "draw": "(screen_x - anchor.x, ball_y - anchor.y) 에 rect 를 그린다. anchor=[12,24] (셀 하단 중앙)",
+  "hflip": "world.vx < 0 이면 좌우 반전 (코드 0xA88A: $30(obj)<0 -> 반전 비트). 셀이 24폭이라 앵커 그대로",
+  "frames": [
+   {
+    "id": 0,
+    "rect": [
+     0,
+     0,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 1,
+    "rect": [
+     24,
+     0,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 2,
+    "rect": [
+     48,
+     0,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 3,
+    "rect": [
+     72,
+     0,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 4,
+    "rect": [
+     96,
+     0,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 5,
+    "rect": [
+     120,
+     0,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 6,
+    "rect": [
+     144,
+     0,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 7,
+    "rect": [
+     168,
+     0,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 8,
+    "rect": [
+     0,
+     24,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 9,
+    "rect": [
+     24,
+     24,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 10,
+    "rect": [
+     48,
+     24,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 11,
+    "rect": [
+     72,
+     24,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 12,
+    "rect": [
+     96,
+     24,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 13,
+    "rect": [
+     120,
+     24,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 14,
+    "rect": [
+     144,
+     24,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 15,
+    "rect": [
+     168,
+     24,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 16,
+    "rect": [
+     0,
+     48,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 17,
+    "rect": [
+     24,
+     48,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 18,
+    "rect": [
+     48,
+     48,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 19,
+    "rect": [
+     72,
+     48,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 20,
+    "rect": [
+     96,
+     48,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 21,
+    "rect": [
+     120,
+     48,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 22,
+    "rect": [
+     144,
+     48,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 23,
+    "rect": [
+     168,
+     48,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 24,
+    "rect": [
+     0,
+     72,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 25,
+    "rect": [
+     24,
+     72,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 26,
+    "rect": [
+     48,
+     72,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 27,
+    "rect": [
+     72,
+     72,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 28,
+    "rect": [
+     96,
+     72,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 29,
+    "rect": [
+     120,
+     72,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 30,
+    "rect": [
+     144,
+     72,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 31,
+    "rect": [
+     168,
+     72,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 32,
+    "rect": [
+     0,
+     96,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 33,
+    "rect": [
+     24,
+     96,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 34,
+    "rect": [
+     48,
+     96,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 35,
+    "rect": [
+     72,
+     96,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 36,
+    "rect": [
+     96,
+     96,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 37,
+    "rect": [
+     120,
+     96,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 38,
+    "rect": [
+     144,
+     96,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   },
+   {
+    "id": 39,
+    "rect": [
+     168,
+     96,
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     24
+    ]
+   }
+  ],
+  "anims": {
+   "held": {
+    "frames": [
+     0
+    ],
+    "frame_ticks": 1,
+    "loop": false,
+    "rom_anim": "0x04",
+    "use": "선수 보유 중/정지(굴러가다 멈춤)"
+   },
+   "pass": {
+    "frames": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "frame_ticks": 5,
+    "loop": true,
+    "rom_anim": "0x00",
+    "use": "패스 비행(타입 0x18)"
+   },
+   "throw": {
+    "frames": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "frame_ticks": 3,
+    "loop": true,
+    "rom_anim": "0x02",
+    "use": "일반 투구 비행(타입 0x14)"
+   },
+   "throw_fast_flat": {
+    "frames": [
+     4,
+     5,
+     6,
+     7
+    ],
+    "frame_ticks": 2,
+    "loop": true,
+    "rom_anim": "0x06",
+    "use": "강투구(공속 $74>=0x600, 낮은 높이, |vz|<0.25) - 납작한 공"
+   },
+   "throw_fast_drop": {
+    "frames": [
+     8,
+     9,
+     10,
+     11
+    ],
+    "frame_ticks": 2,
+    "loop": true,
+    "rom_anim": "0x08",
+    "use": "강투구 급강하(vz<=-2.0) - 세로로 긴 공"
+   },
+   "bounce": {
+    "frames": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "frame_ticks": 5,
+    "loop": true,
+    "rom_anim": "0x0A",
+    "use": "튕김/굴러감(타입 0x1C)"
+   },
+   "special_0c": {
+    "frames": [
+     12,
+     13
+    ],
+    "frame_ticks": 5,
+    "loop": true,
+    "rom_anim": "0x0C",
+    "use": "필살 공(빛나는 공) verify"
+   },
+   "special_0e": {
+    "frames": [
+     14,
+     28,
+     29,
+     30
+    ],
+    "frame_ticks": 5,
+    "loop": true,
+    "rom_anim": "0x0E",
+    "use": "필살 공(바위/불탄 공) verify"
+   },
+   "special_10": {
+    "frames": [
+     15
+    ],
+    "frame_ticks": 1,
+    "loop": false,
+    "rom_anim": "0x10",
+    "use": "필살 공 verify"
+   },
+   "special_12": {
+    "frames": [
+     16,
+     17,
+     18
+    ],
+    "frame_ticks": 3,
+    "loop": true,
+    "rom_anim": "0x12",
+    "use": "필살 공(별) verify"
+   },
+   "special_14": {
+    "frames": [
+     19,
+     20
+    ],
+    "frame_ticks": 4,
+    "loop": true,
+    "rom_anim": "0x14",
+    "use": "필살 공(섬광) verify"
+   },
+   "special_16": {
+    "frames": [
+     21,
+     22,
+     24,
+     23
+    ],
+    "frame_ticks": 4,
+    "loop": true,
+    "rom_anim": "0x16",
+    "use": "필살 공(도끼 모양) verify"
+   },
+   "special_18": {
+    "frames": [
+     25,
+     26,
+     27
+    ],
+    "frame_ticks": 4,
+    "loop": true,
+    "rom_anim": "0x18",
+    "use": "필살 공(가시) verify"
+   },
+   "special_1a": {
+    "frames": [
+     31,
+     32,
+     33
+    ],
+    "frame_ticks": 2,
+    "loop": true,
+    "rom_anim": "0x1A",
+    "use": "필살 공(납작 섬광) verify"
+   },
+   "special_1c": {
+    "frames": [
+     34,
+     35,
+     36
+    ],
+    "frame_ticks": 2,
+    "loop": true,
+    "rom_anim": "0x1C",
+    "use": "필살 공(잔상) verify"
+   },
+   "special_1e": {
+    "frames": [
+     37,
+     38,
+     39
+    ],
+    "frame_ticks": 2,
+    "loop": true,
+    "rom_anim": "0x1E",
+    "use": "필살 공(잔상2) verify"
+   }
+  },
+  "frame_ticks_note": "원작 애니 표의 speed+1 = 한 프레임 유지 틱(60fps). 에뮬레이터 실측: bounce 5틱 확인"
+ },
+ "shadow": {
+  "large": {
+   "rect": [
+    0,
+    120,
+    16,
+    8
+   ],
+   "anchor": [
+    8,
+    6
+   ],
+   "when": "world.z <= 16"
+  },
+  "small": {
+   "rect": [
+    24,
+    120,
+    8,
+    8
+   ],
+   "anchor": [
+    4,
+    6
+   ],
+   "when": "world.z > 16 (실측 경계 z 16.0 큰 그림자 / 17.2 작은 그림자)"
+  },
+  "draw": "(screen_x - anchor.x, ground_y - anchor.y). 검정 체커 디더(반투명 효과는 디더로 표현, 알파 블렌딩 없음)",
+  "shared": "선수 그림자도 같은 타일(원작 공용 그림자 오브젝트 타입 0x0C). 선수용으로 재사용 가능",
+  "order": "그림자는 배경 바로 위, 선수·공보다 아래"
+ },
+ "qa": "pass",
+ "verify": [
+  "special_* 애니와 필살기 ID 대응 미분석",
+  "그림자 크기 전환 경계는 실측값(코드 미확인)"
+ ]
+}

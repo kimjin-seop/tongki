@@ -1,0 +1,293 @@
+{
+ "cell": 80,
+ "origin_in_cell": [
+  40,
+  56
+ ],
+ "columns": [
+  {
+   "col": 0,
+   "anim_id": 0,
+   "anim": "walk_a",
+   "frame": 0
+  },
+  {
+   "col": 1,
+   "anim_id": 0,
+   "anim": "walk_a",
+   "frame": 1
+  },
+  {
+   "col": 2,
+   "anim_id": 0,
+   "anim": "walk_a",
+   "frame": 2
+  },
+  {
+   "col": 3,
+   "anim_id": 0,
+   "anim": "walk_a",
+   "frame": 3
+  },
+  {
+   "col": 4,
+   "anim_id": 2,
+   "anim": "walk_b",
+   "frame": 0
+  },
+  {
+   "col": 5,
+   "anim_id": 2,
+   "anim": "walk_b",
+   "frame": 1
+  },
+  {
+   "col": 6,
+   "anim_id": 2,
+   "anim": "walk_b",
+   "frame": 2
+  },
+  {
+   "col": 7,
+   "anim_id": 2,
+   "anim": "walk_b",
+   "frame": 3
+  },
+  {
+   "col": 8,
+   "anim_id": 4,
+   "anim": "dash",
+   "frame": 0
+  },
+  {
+   "col": 9,
+   "anim_id": 4,
+   "anim": "dash",
+   "frame": 1
+  },
+  {
+   "col": 10,
+   "anim_id": 4,
+   "anim": "dash",
+   "frame": 2
+  },
+  {
+   "col": 11,
+   "anim_id": 4,
+   "anim": "dash",
+   "frame": 3
+  },
+  {
+   "col": 12,
+   "anim_id": 6,
+   "anim": "throw_a",
+   "frame": 0
+  },
+  {
+   "col": 13,
+   "anim_id": 6,
+   "anim": "throw_a",
+   "frame": 1
+  },
+  {
+   "col": 14,
+   "anim_id": 6,
+   "anim": "throw_a",
+   "frame": 2
+  },
+  {
+   "col": 15,
+   "anim_id": 6,
+   "anim": "throw_a",
+   "frame": 3
+  },
+  {
+   "col": 16,
+   "anim_id": 8,
+   "anim": "throw_b",
+   "frame": 0
+  },
+  {
+   "col": 17,
+   "anim_id": 8,
+   "anim": "throw_b",
+   "frame": 1
+  },
+  {
+   "col": 18,
+   "anim_id": 8,
+   "anim": "throw_b",
+   "frame": 2
+  },
+  {
+   "col": 19,
+   "anim_id": 8,
+   "anim": "throw_b",
+   "frame": 3
+  },
+  {
+   "col": 20,
+   "anim_id": 10,
+   "anim": "unk0A",
+   "frame": 0
+  },
+  {
+   "col": 21,
+   "anim_id": 10,
+   "anim": "unk0A",
+   "frame": 1
+  },
+  {
+   "col": 22,
+   "anim_id": 12,
+   "anim": "unk0C",
+   "frame": 0
+  },
+  {
+   "col": 23,
+   "anim_id": 12,
+   "anim": "unk0C",
+   "frame": 1
+  },
+  {
+   "col": 24,
+   "anim_id": 14,
+   "anim": "stand_a",
+   "frame": 0
+  },
+  {
+   "col": 25,
+   "anim_id": 16,
+   "anim": "stand_b",
+   "frame": 0
+  },
+  {
+   "col": 26,
+   "anim_id": 18,
+   "anim": "jump_a",
+   "frame": 0
+  },
+  {
+   "col": 27,
+   "anim_id": 20,
+   "anim": "jump_b",
+   "frame": 0
+  },
+  {
+   "col": 28,
+   "anim_id": 22,
+   "anim": "duck_a",
+   "frame": 0
+  },
+  {
+   "col": 29,
+   "anim_id": 24,
+   "anim": "duck_b",
+   "frame": 0
+  },
+  {
+   "col": 30,
+   "anim_id": 26,
+   "anim": "hit_a",
+   "frame": 0
+  },
+  {
+   "col": 31,
+   "anim_id": 28,
+   "anim": "hit_b",
+   "frame": 0
+  },
+  {
+   "col": 32,
+   "anim_id": 30,
+   "anim": "down",
+   "frame": 0
+  },
+  {
+   "col": 33,
+   "anim_id": 32,
+   "anim": "catch_a",
+   "frame": 0
+  },
+  {
+   "col": 34,
+   "anim_id": 34,
+   "anim": "catch_b",
+   "frame": 0
+  },
+  {
+   "col": 35,
+   "anim_id": 36,
+   "anim": "unk24",
+   "frame": 0
+  },
+  {
+   "col": 36,
+   "anim_id": 38,
+   "anim": "unk26",
+   "frame": 0
+  },
+  {
+   "col": 37,
+   "anim_id": 40,
+   "anim": "pass_a",
+   "frame": 0
+  },
+  {
+   "col": 38,
+   "anim_id": 40,
+   "anim": "pass_a",
+   "frame": 1
+  },
+  {
+   "col": 39,
+   "anim_id": 40,
+   "anim": "pass_a",
+   "frame": 2
+  },
+  {
+   "col": 40,
+   "anim_id": 40,
+   "anim": "pass_a",
+   "frame": 3
+  },
+  {
+   "col": 41,
+   "anim_id": 42,
+   "anim": "pass_b",
+   "frame": 0
+  },
+  {
+   "col": 42,
+   "anim_id": 42,
+   "anim": "pass_b",
+   "frame": 1
+  },
+  {
+   "col": 43,
+   "anim_id": 42,
+   "anim": "pass_b",
+   "frame": 2
+  },
+  {
+   "col": 44,
+   "anim_id": 42,
+   "anim": "pass_b",
+   "frame": 3
+  },
+  {
+   "col": 45,
+   "anim_id": 44,
+   "anim": "jumpthrow_a",
+   "frame": 0
+  },
+  {
+   "col": 46,
+   "anim_id": 46,
+   "anim": "jumpthrow_b",
+   "frame": 0
+  }
+ ],
+ "rows": "row = player*2 + flip (flip=object flags bit7: mirror, use head_dx negated)",
+ "note": "sheet column ci is (anim,frame) from the anim list of body class (frames differ per body class, columns identical). origin = object ground position. Screen y: obj.y/2 - obj.z (pseudo 3D)."
+}

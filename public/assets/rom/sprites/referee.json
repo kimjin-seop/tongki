@@ -1,0 +1,347 @@
+{
+ "key": "spr.referee",
+ "image": "rom/sprites/referee.png",
+ "image_size": [
+  288,
+  48
+ ],
+ "alpha": true,
+ "scale": 1,
+ "source": "rom-extract: ROM 0x363DE 무압축 4bpp, 12프레임 x 18타일(576B). 코드 0x598A 가 RAM $FF6000 에 복사, 매 프레임 $E23E 경유로 VRAM 타일 0x00A 에 DMA. 조각 레이아웃 ROM 0xDDC2(24x32 + 24x16), 팔레트 CRAM 라인2 = ROM 0x3A1AC(타일 속성 0xC00A: 우선순위1, 팔레트2)",
+ "coords": "ball.json 과 동일: screen_x = world.x - cam_x, screen_y = world.y/2 + 96 - world.z (심판 z=0). rect 를 (screen_x - anchor.x, screen_y - anchor.y) 에 그림. 그리기 순서는 다른 오브젝트와 world.y 기준 정렬",
+ "hflip": "obj+2 bit7. 이동 중 vx<0 이면 반전(0xDD4A). out_call 은 아웃 선수 사이드 기준(0xDCC0: 왼팀 선수 아웃 = 반전). 앵커가 셀 가로 중앙이라 반전해도 앵커 동일",
+ "frames": [
+  {
+   "id": 0,
+   "rect": [
+    0,
+    0,
+    24,
+    48
+   ],
+   "anchor": [
+    12,
+    48
+   ],
+   "rom": "0x363de"
+  },
+  {
+   "id": 1,
+   "rect": [
+    24,
+    0,
+    24,
+    48
+   ],
+   "anchor": [
+    12,
+    48
+   ],
+   "rom": "0x3661e"
+  },
+  {
+   "id": 2,
+   "rect": [
+    48,
+    0,
+    24,
+    48
+   ],
+   "anchor": [
+    12,
+    48
+   ],
+   "rom": "0x3685e"
+  },
+  {
+   "id": 3,
+   "rect": [
+    72,
+    0,
+    24,
+    48
+   ],
+   "anchor": [
+    12,
+    48
+   ],
+   "rom": "0x36a9e"
+  },
+  {
+   "id": 4,
+   "rect": [
+    96,
+    0,
+    24,
+    48
+   ],
+   "anchor": [
+    12,
+    48
+   ],
+   "rom": "0x36cde"
+  },
+  {
+   "id": 5,
+   "rect": [
+    120,
+    0,
+    24,
+    48
+   ],
+   "anchor": [
+    12,
+    48
+   ],
+   "rom": "0x36f1e"
+  },
+  {
+   "id": 6,
+   "rect": [
+    144,
+    0,
+    24,
+    48
+   ],
+   "anchor": [
+    12,
+    48
+   ],
+   "rom": "0x3715e"
+  },
+  {
+   "id": 7,
+   "rect": [
+    168,
+    0,
+    24,
+    48
+   ],
+   "anchor": [
+    12,
+    48
+   ],
+   "rom": "0x3739e"
+  },
+  {
+   "id": 8,
+   "rect": [
+    192,
+    0,
+    24,
+    48
+   ],
+   "anchor": [
+    12,
+    48
+   ],
+   "rom": "0x375de"
+  },
+  {
+   "id": 9,
+   "rect": [
+    216,
+    0,
+    24,
+    48
+   ],
+   "anchor": [
+    12,
+    48
+   ],
+   "rom": "0x3781e"
+  },
+  {
+   "id": 10,
+   "rect": [
+    240,
+    0,
+    24,
+    48
+   ],
+   "anchor": [
+    12,
+    48
+   ],
+   "rom": "0x37a5e"
+  },
+  {
+   "id": 11,
+   "rect": [
+    264,
+    0,
+    24,
+    48
+   ],
+   "anchor": [
+    12,
+    48
+   ],
+   "rom": "0x37c9e"
+  }
+ ],
+ "anims": {
+  "stand": {
+   "id": 0,
+   "rom": "0xdd8a",
+   "frames": [
+    0
+   ],
+   "ticks_per_frame": null,
+   "loop": false
+  },
+  "walk": {
+   "id": 2,
+   "rom": "0xdd8e",
+   "frames": [
+    6,
+    5,
+    6,
+    7
+   ],
+   "ticks_per_frame": 7,
+   "loop": true
+  },
+  "hold_ball_go": {
+   "id": 4,
+   "rom": "0xdd98",
+   "frames": [
+    1
+   ],
+   "ticks_per_frame": null,
+   "loop": false
+  },
+  "toss": {
+   "id": 6,
+   "rom": "0xdd9c",
+   "frames": [
+    2
+   ],
+   "ticks_per_frame": null,
+   "loop": false
+  },
+  "out_call": {
+   "id": 8,
+   "rom": "0xdda0",
+   "frames": [
+    8,
+    8,
+    9,
+    9,
+    9,
+    3,
+    3,
+    3
+   ],
+   "ticks_per_frame": 7,
+   "loop": false,
+   "note": "1회 재생 후 상태 0x14(관전)로 복귀(코드 0xDCF8 애니 종료 비트). 실측 50프레임"
+  },
+  "unused_a": {
+   "id": 10,
+   "rom": "0xddb2",
+   "frames": [
+    3
+   ],
+   "ticks_per_frame": null,
+   "loop": false,
+   "note": "코드에서 사용처 미발견"
+  },
+  "game_set": {
+   "id": 12,
+   "rom": "0xddb6",
+   "frames": [
+    4
+   ],
+   "ticks_per_frame": null,
+   "loop": false
+  },
+  "look_left": {
+   "id": 14,
+   "rom": "0xddba",
+   "frames": [
+    11
+   ],
+   "ticks_per_frame": null,
+   "loop": false
+  },
+  "look_right": {
+   "id": 16,
+   "rom": "0xddbe",
+   "frames": [
+    10
+   ],
+   "ticks_per_frame": null,
+   "loop": false
+  }
+ },
+ "ball_hold": {
+  "stand": [
+   {
+    "dx": 0,
+    "dz": 16,
+    "dy": 2
+   }
+  ],
+  "walk": [
+   {
+    "dx": 0,
+    "dz": 16,
+    "dy": 2
+   },
+   {
+    "dx": -2,
+    "dz": 16,
+    "dy": 2
+   },
+   {
+    "dx": 0,
+    "dz": 16,
+    "dy": 2
+   },
+   {
+    "dx": 2,
+    "dz": 16,
+    "dy": 2
+   }
+  ],
+  "hold_ball_go": [
+   {
+    "dx": 0,
+    "dz": 14,
+    "dy": 2
+   }
+  ],
+  "toss": [
+   {
+    "dx": 0,
+    "dz": 14,
+    "dy": 2
+   }
+  ]
+ },
+ "ball_hold_note": "공(타입 0x68)이 심판 손에 붙어 있는 동안 공 world = (ref.x + dx(반전 시 -dx), ref.y + dy, ref.z + dz). index = 현재 애니 프레임 index (코드 0xA32E)",
+ "world_positions": {
+  "spawn": [
+   256,
+   16
+  ],
+  "center_target": [
+   256,
+   120
+  ],
+  "center_actual": [
+   256,
+   116
+  ],
+  "return_target": [
+   256,
+   12
+  ],
+  "idle": [
+   256,
+   16
+  ]
+ },
+ "qa": "확인: 에뮬레이터 VRAM 타일 0x00A~ 와 ROM 프레임 바이트 일치, 화면 렌더(analysis/gfx/start/)와 대조"
+}

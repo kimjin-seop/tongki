@@ -1,0 +1,477 @@
+{
+ "key": "spr.formation",
+ "image": "rom/sprites/formation.png",
+ "image_size": [
+  104,
+  354
+ ],
+ "alpha": true,
+ "scale": 1,
+ "source": "ROM: 배너 프레임 0xE130[1,7,8] + 타일속성 0xE0FC, 작전 이름 그래픽 0x38660 표(0x18718[팀]=이름 번호), 팔레트 0x3A1AC(CRAM 라인2), 경기 VRAM(ctrl0) 위에 합성. analysis/14_formation_cutin.md",
+ "coords": "화면 고정(320x224 기준). (screen_pos - anchor) 에 rect 를 그림. 작전 배너 = name_NN(사이드1 (128,96)/사이드2 같은 자리) + label_formation (192,96) 을 동시에 표시",
+ "team_to_name": [
+  7,
+  0,
+  8,
+  1,
+  6,
+  2,
+  3,
+  4,
+  14,
+  12,
+  5,
+  9,
+  10,
+  11,
+  13,
+  14,
+  12,
+  5,
+  9,
+  10,
+  11,
+  13,
+  7,
+  14,
+  7
+ ],
+ "items": {
+  "window": {
+   "rect": [
+    0,
+    0,
+    104,
+    64
+   ],
+   "anchor": [
+    52,
+    68
+   ],
+   "banner_type": 1,
+   "screen_pos": [
+    160,
+    80
+   ],
+   "note": "YES/NO 커서(오브젝트 0x58)·남은 횟수 공 아이콘(오브젝트 0xBC)은 별도 스프라이트라 미포함. 문구: フォーメーション アタック? / YES NO / のこり"
+  },
+  "label_formation": {
+   "rect": [
+    0,
+    66,
+    64,
+    16
+   ],
+   "anchor": [
+    32,
+    16
+   ],
+   "banner_type": 7,
+   "screen_pos": [
+    192,
+    96
+   ],
+   "text_ja": "フォーメーション"
+  },
+  "name_00": {
+   "rect": [
+    0,
+    84,
+    64,
+    16
+   ],
+   "anchor": [
+    32,
+    16
+   ],
+   "banner_type": 8,
+   "screen_pos_side1": [
+    128,
+    96
+   ],
+   "screen_pos_side2": [
+    128,
+    96
+   ],
+   "text_ja": "五芒星",
+   "teams": [
+    1
+   ],
+   "rom_gfx": "0x38770"
+  },
+  "name_01": {
+   "rect": [
+    0,
+    102,
+    64,
+    16
+   ],
+   "anchor": [
+    32,
+    16
+   ],
+   "banner_type": 8,
+   "screen_pos_side1": [
+    128,
+    96
+   ],
+   "screen_pos_side2": [
+    128,
+    96
+   ],
+   "text_ja": "V字",
+   "teams": [
+    3
+   ],
+   "rom_gfx": "0x3884e"
+  },
+  "name_02": {
+   "rect": [
+    0,
+    120,
+    64,
+    16
+   ],
+   "anchor": [
+    32,
+    16
+   ],
+   "banner_type": 8,
+   "screen_pos_side1": [
+    128,
+    96
+   ],
+   "screen_pos_side2": [
+    128,
+    96
+   ],
+   "text_ja": "十勝岳",
+   "teams": [
+    5
+   ],
+   "rom_gfx": "0x388fa"
+  },
+  "name_03": {
+   "rect": [
+    0,
+    138,
+    64,
+    16
+   ],
+   "anchor": [
+    32,
+    16
+   ],
+   "banner_type": 8,
+   "screen_pos_side1": [
+    128,
+    96
+   ],
+   "screen_pos_side2": [
+    128,
+    96
+   ],
+   "text_ja": "大文字",
+   "teams": [
+    6
+   ],
+   "rom_gfx": "0x389d4"
+  },
+  "name_04": {
+   "rect": [
+    0,
+    156,
+    64,
+    16
+   ],
+   "anchor": [
+    32,
+    16
+   ],
+   "banner_type": 8,
+   "screen_pos_side1": [
+    128,
+    96
+   ],
+   "screen_pos_side2": [
+    128,
+    96
+   ],
+   "text_ja": "琉球アタック",
+   "teams": [
+    7
+   ],
+   "rom_gfx": "0x38ab8"
+  },
+  "name_05": {
+   "rect": [
+    0,
+    174,
+    64,
+    16
+   ],
+   "anchor": [
+    32,
+    16
+   ],
+   "banner_type": 8,
+   "screen_pos_side1": [
+    128,
+    96
+   ],
+   "screen_pos_side2": [
+    128,
+    96
+   ],
+   "text_ja": "虎牢関",
+   "teams": [
+    10,
+    17
+   ],
+   "rom_gfx": "0x38bbc"
+  },
+  "name_06": {
+   "rect": [
+    0,
+    192,
+    64,
+    16
+   ],
+   "anchor": [
+    32,
+    16
+   ],
+   "banner_type": 8,
+   "screen_pos_side1": [
+    128,
+    96
+   ],
+   "screen_pos_side2": [
+    128,
+    96
+   ],
+   "text_ja": "山の手",
+   "teams": [
+    4
+   ],
+   "rom_gfx": "0x38cac"
+  },
+  "name_07": {
+   "rect": [
+    0,
+    210,
+    64,
+    16
+   ],
+   "anchor": [
+    32,
+    16
+   ],
+   "banner_type": 8,
+   "screen_pos_side1": [
+    128,
+    96
+   ],
+   "screen_pos_side2": [
+    128,
+    96
+   ],
+   "text_ja": "エンドアタック",
+   "teams": [
+    0,
+    22,
+    24
+   ],
+   "rom_gfx": "0x38d90"
+  },
+  "name_08": {
+   "rect": [
+    0,
+    228,
+    64,
+    16
+   ],
+   "anchor": [
+    32,
+    16
+   ],
+   "banner_type": 8,
+   "screen_pos_side1": [
+    128,
+    96
+   ],
+   "screen_pos_side2": [
+    128,
+    96
+   ],
+   "text_ja": "ミックスパス",
+   "teams": [
+    2
+   ],
+   "rom_gfx": "0x38e96"
+  },
+  "name_09": {
+   "rect": [
+    0,
+    246,
+    64,
+    16
+   ],
+   "anchor": [
+    32,
+    16
+   ],
+   "banner_type": 8,
+   "screen_pos_side1": [
+    128,
+    96
+   ],
+   "screen_pos_side2": [
+    128,
+    96
+   ],
+   "text_ja": "モスクワン",
+   "teams": [
+    11,
+    18
+   ],
+   "rom_gfx": "0x38f9a"
+  },
+  "name_10": {
+   "rect": [
+    0,
+    264,
+    64,
+    16
+   ],
+   "anchor": [
+    32,
+    16
+   ],
+   "banner_type": 8,
+   "screen_pos_side1": [
+    128,
+    96
+   ],
+   "screen_pos_side2": [
+    128,
+    96
+   ],
+   "text_ja": "パルテノン",
+   "teams": [
+    12,
+    19
+   ],
+   "rom_gfx": "0x39098"
+  },
+  "name_11": {
+   "rect": [
+    0,
+    282,
+    64,
+    16
+   ],
+   "anchor": [
+    32,
+    16
+   ],
+   "banner_type": 8,
+   "screen_pos_side1": [
+    128,
+    96
+   ],
+   "screen_pos_side2": [
+    128,
+    96
+   ],
+   "text_ja": "サンドイッチ",
+   "teams": [
+    13,
+    20
+   ],
+   "rom_gfx": "0x3918c"
+  },
+  "name_12": {
+   "rect": [
+    0,
+    300,
+    64,
+    16
+   ],
+   "anchor": [
+    32,
+    16
+   ],
+   "banner_type": 8,
+   "screen_pos_side1": [
+    128,
+    96
+   ],
+   "screen_pos_side2": [
+    128,
+    96
+   ],
+   "text_ja": "モアイゴッド",
+   "teams": [
+    9,
+    16
+   ],
+   "rom_gfx": "0x3928a"
+  },
+  "name_13": {
+   "rect": [
+    0,
+    318,
+    64,
+    16
+   ],
+   "anchor": [
+    32,
+    16
+   ],
+   "banner_type": 8,
+   "screen_pos_side1": [
+    128,
+    96
+   ],
+   "screen_pos_side2": [
+    128,
+    96
+   ],
+   "text_ja": "ファラオアタック",
+   "teams": [
+    14,
+    21
+   ],
+   "rom_gfx": "0x3938c"
+  },
+  "name_14": {
+   "rect": [
+    0,
+    336,
+    64,
+    16
+   ],
+   "anchor": [
+    32,
+    16
+   ],
+   "banner_type": 8,
+   "screen_pos_side1": [
+    128,
+    96
+   ],
+   "screen_pos_side2": [
+    128,
+    96
+   ],
+   "text_ja": "スタークラッシュ",
+   "teams": [
+    8,
+    15,
+    23
+   ],
+   "rom_gfx": "0x3948c"
+  }
+ }
+}

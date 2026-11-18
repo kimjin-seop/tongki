@@ -1,0 +1,2277 @@
+[
+ {
+  "team": 0,
+  "palette_index": 0,
+  "players": [
+   {
+    "player": 0,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4d24c",
+     "0x4d254",
+     "0x4d25c",
+     "0x4d264",
+     "0x4d272"
+    ],
+    "special_shot_id": 22
+   },
+   {
+    "player": 1,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4d27a",
+     "0x4d282",
+     "0x4d28a",
+     "0x4d292",
+     "0x4d29a"
+    ],
+    "special_shot_id": 18
+   },
+   {
+    "player": 2,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4d2a2",
+     "0x4d2aa",
+     "0x4d2b2",
+     "0x4d2c0",
+     "0x4d2ce"
+    ],
+    "special_shot_id": 41
+   },
+   {
+    "player": 3,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4d2dc",
+     "0x4d2e4",
+     "0x4d2ec",
+     "0x4d2f4",
+     "0x4d2fc"
+    ],
+    "special_shot_id": 7
+   },
+   {
+    "player": 4,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4d30a",
+     "0x4d312",
+     "0x4d31a",
+     "0x4d322",
+     "0x4d32a"
+    ],
+    "special_shot_id": 21
+   },
+   {
+    "player": 5,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4d332",
+     "0x4d33a",
+     "0x4d342",
+     "0x4d34a",
+     "0x4d352"
+    ],
+    "special_shot_id": 19
+   },
+   {
+    "player": 6,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4d35a",
+     "0x4d362",
+     "0x4d36a",
+     "0x4d372",
+     "0x4d37a"
+    ],
+    "special_shot_id": 12
+   }
+  ],
+  "sheet": "team_00.png"
+ },
+ {
+  "team": 1,
+  "palette_index": 1,
+  "players": [
+   {
+    "player": 0,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4d40e",
+     "0x4d416",
+     "0x4d41e",
+     "0x4d42c",
+     "0x4d43a"
+    ],
+    "special_shot_id": 28
+   },
+   {
+    "player": 1,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4d442",
+     "0x4d44a",
+     "0x4d452",
+     "0x4d460",
+     "0x4d46e"
+    ],
+    "special_shot_id": 11
+   },
+   {
+    "player": 2,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4d47c",
+     "0x4d484",
+     "0x4d48c",
+     "0x4d494",
+     "0x4d49c"
+    ],
+    "special_shot_id": 20
+   },
+   {
+    "player": 3,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4d4a4",
+     "0x4d4ac",
+     "0x4d4b4",
+     "0x4d4bc",
+     "0x4d4c4"
+    ],
+    "special_shot_id": 21
+   },
+   {
+    "player": 4,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4d4cc",
+     "0x4d4d4",
+     "0x4d4dc",
+     "0x4d4e4",
+     "0x4d4ec"
+    ],
+    "special_shot_id": 18
+   },
+   {
+    "player": 5,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4d4fa",
+     "0x4d502",
+     "0x4d50a",
+     "0x4d512",
+     "0x4d520"
+    ],
+    "special_shot_id": 10
+   },
+   {
+    "player": 6,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4d52e",
+     "0x4d536",
+     "0x4d53e",
+     "0x4d546",
+     "0x4d54e"
+    ],
+    "special_shot_id": 6
+   }
+  ],
+  "sheet": "team_01.png"
+ },
+ {
+  "team": 2,
+  "palette_index": 2,
+  "players": [
+   {
+    "player": 0,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4d5e2",
+     "0x4d5ea",
+     "0x4d5f2",
+     "0x4d5fa",
+     "0x4d602"
+    ],
+    "special_shot_id": 29
+   },
+   {
+    "player": 1,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4d60a",
+     "0x4d612",
+     "0x4d61a",
+     "0x4d622",
+     "0x4d62a"
+    ],
+    "special_shot_id": 42
+   },
+   {
+    "player": 2,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4d632",
+     "0x4d63a",
+     "0x4d642",
+     "0x4d64a",
+     "0x4d652"
+    ],
+    "special_shot_id": 1
+   },
+   {
+    "player": 3,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4d65a",
+     "0x4d662",
+     "0x4d66a",
+     "0x4d672",
+     "0x4d67a"
+    ],
+    "special_shot_id": 18
+   },
+   {
+    "player": 4,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4d682",
+     "0x4d68a",
+     "0x4d692",
+     "0x4d69a",
+     "0x4d6a2"
+    ],
+    "special_shot_id": 17
+   },
+   {
+    "player": 5,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4d6aa",
+     "0x4d6b2",
+     "0x4d6ba",
+     "0x4d6c2",
+     "0x4d6ca"
+    ],
+    "special_shot_id": 21
+   },
+   {
+    "player": 6,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4d6d2",
+     "0x4d6da",
+     "0x4d6e2",
+     "0x4d6ea",
+     "0x4d6f2"
+    ],
+    "special_shot_id": 12
+   }
+  ],
+  "sheet": "team_02.png"
+ },
+ {
+  "team": 3,
+  "palette_index": 3,
+  "players": [
+   {
+    "player": 0,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4d786",
+     "0x4d78e",
+     "0x4d796",
+     "0x4d79e",
+     "0x4d7a6"
+    ],
+    "special_shot_id": 2
+   },
+   {
+    "player": 1,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4d7ae",
+     "0x4d7b6",
+     "0x4d7be",
+     "0x4d7c6",
+     "0x4d7ce"
+    ],
+    "special_shot_id": 41
+   },
+   {
+    "player": 2,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4d7d6",
+     "0x4d7de",
+     "0x4d7e6",
+     "0x4d7ee",
+     "0x4d7f6"
+    ],
+    "special_shot_id": 3
+   },
+   {
+    "player": 3,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4d7fe",
+     "0x4d806",
+     "0x4d80e",
+     "0x4d816",
+     "0x4d81e"
+    ],
+    "special_shot_id": 41
+   },
+   {
+    "player": 4,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4d826",
+     "0x4d82e",
+     "0x4d836",
+     "0x4d83e",
+     "0x4d846"
+    ],
+    "special_shot_id": 6
+   },
+   {
+    "player": 5,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4d84e",
+     "0x4d856",
+     "0x4d85e",
+     "0x4d866",
+     "0x4d86e"
+    ],
+    "special_shot_id": 19
+   },
+   {
+    "player": 6,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4d876",
+     "0x4d87e",
+     "0x4d886",
+     "0x4d88e",
+     "0x4d896"
+    ],
+    "special_shot_id": 7
+   }
+  ],
+  "sheet": "team_03.png"
+ },
+ {
+  "team": 4,
+  "palette_index": 4,
+  "players": [
+   {
+    "player": 0,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4d92a",
+     "0x4d932",
+     "0x4d93a",
+     "0x4d942",
+     "0x4d94a"
+    ],
+    "special_shot_id": 3
+   },
+   {
+    "player": 1,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4d952",
+     "0x4d95a",
+     "0x4d962",
+     "0x4d96a",
+     "0x4d972"
+    ],
+    "special_shot_id": 41
+   },
+   {
+    "player": 2,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4d97a",
+     "0x4d982",
+     "0x4d98a",
+     "0x4d992",
+     "0x4d99a"
+    ],
+    "special_shot_id": 12
+   },
+   {
+    "player": 3,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4d9a2",
+     "0x4d9aa",
+     "0x4d9b2",
+     "0x4d9ba",
+     "0x4d9c2"
+    ],
+    "special_shot_id": 41
+   },
+   {
+    "player": 4,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4d9ca",
+     "0x4d9d2",
+     "0x4d9da",
+     "0x4d9e2",
+     "0x4d9ea"
+    ],
+    "special_shot_id": 18
+   },
+   {
+    "player": 5,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4d9f2",
+     "0x4d9fa",
+     "0x4da02",
+     "0x4da0a",
+     "0x4da12"
+    ],
+    "special_shot_id": 48
+   },
+   {
+    "player": 6,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4da1a",
+     "0x4da22",
+     "0x4da2a",
+     "0x4da32",
+     "0x4da3a"
+    ],
+    "special_shot_id": 27
+   }
+  ],
+  "sheet": "team_04.png"
+ },
+ {
+  "team": 5,
+  "palette_index": 5,
+  "players": [
+   {
+    "player": 0,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4dace",
+     "0x4dad6",
+     "0x4dade",
+     "0x4dae6",
+     "0x4daee"
+    ],
+    "special_shot_id": 9
+   },
+   {
+    "player": 1,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4daf6",
+     "0x4dafe",
+     "0x4db06",
+     "0x4db0e",
+     "0x4db16"
+    ],
+    "special_shot_id": 50
+   },
+   {
+    "player": 2,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4db1e",
+     "0x4db26",
+     "0x4db2e",
+     "0x4db36",
+     "0x4db3e"
+    ],
+    "special_shot_id": 51
+   },
+   {
+    "player": 3,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4db46",
+     "0x4db4e",
+     "0x4db56",
+     "0x4db5e",
+     "0x4db66"
+    ],
+    "special_shot_id": 18
+   },
+   {
+    "player": 4,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4db6e",
+     "0x4db76",
+     "0x4db7e",
+     "0x4db86",
+     "0x4db8e"
+    ],
+    "special_shot_id": 52
+   },
+   {
+    "player": 5,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4db96",
+     "0x4db9e",
+     "0x4dba6",
+     "0x4dbae",
+     "0x4dbb6"
+    ],
+    "special_shot_id": 10
+   },
+   {
+    "player": 6,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4dbbe",
+     "0x4dbc6",
+     "0x4dbce",
+     "0x4dbd6",
+     "0x4dbde"
+    ],
+    "special_shot_id": 7
+   }
+  ],
+  "sheet": "team_05.png"
+ },
+ {
+  "team": 6,
+  "palette_index": 6,
+  "players": [
+   {
+    "player": 0,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4dc72",
+     "0x4dc7a",
+     "0x4dc82",
+     "0x4dc90",
+     "0x4dc98"
+    ],
+    "special_shot_id": 33
+   },
+   {
+    "player": 1,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4dca0",
+     "0x4dca8",
+     "0x4dcb0",
+     "0x4dcb8",
+     "0x4dcc0"
+    ],
+    "special_shot_id": 21
+   },
+   {
+    "player": 2,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4dcc8",
+     "0x4dcd0",
+     "0x4dcd8",
+     "0x4dce0",
+     "0x4dce8"
+    ],
+    "special_shot_id": 12
+   },
+   {
+    "player": 3,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4dcf0",
+     "0x4dcfe",
+     "0x4dd0c",
+     "0x4dd14",
+     "0x4dd22"
+    ],
+    "special_shot_id": 41
+   },
+   {
+    "player": 4,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4dd2a",
+     "0x4dd32",
+     "0x4dd3a",
+     "0x4dd42",
+     "0x4dd4a"
+    ],
+    "special_shot_id": 10
+   },
+   {
+    "player": 5,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4dd58",
+     "0x4dd66",
+     "0x4dd6e",
+     "0x4dd76",
+     "0x4dd7e"
+    ],
+    "special_shot_id": 23
+   },
+   {
+    "player": 6,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4dd8c",
+     "0x4dd94",
+     "0x4dd9c",
+     "0x4dda4",
+     "0x4ddac"
+    ],
+    "special_shot_id": 14
+   }
+  ],
+  "sheet": "team_06.png"
+ },
+ {
+  "team": 7,
+  "palette_index": 7,
+  "players": [
+   {
+    "player": 0,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4de96",
+     "0x4de9e",
+     "0x4dea6",
+     "0x4deae",
+     "0x4deb6"
+    ],
+    "special_shot_id": 8
+   },
+   {
+    "player": 1,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4de6e",
+     "0x4de76",
+     "0x4de7e",
+     "0x4de86",
+     "0x4de8e"
+    ],
+    "special_shot_id": 26
+   },
+   {
+    "player": 2,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4de46",
+     "0x4de4e",
+     "0x4de56",
+     "0x4de5e",
+     "0x4de66"
+    ],
+    "special_shot_id": 41
+   },
+   {
+    "player": 3,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4debe",
+     "0x4dec6",
+     "0x4dece",
+     "0x4ded6",
+     "0x4dede"
+    ],
+    "special_shot_id": 41
+   },
+   {
+    "player": 4,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4dee6",
+     "0x4deee",
+     "0x4def6",
+     "0x4defe",
+     "0x4df06"
+    ],
+    "special_shot_id": 17
+   },
+   {
+    "player": 5,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4df0e",
+     "0x4df16",
+     "0x4df1e",
+     "0x4df26",
+     "0x4df2e"
+    ],
+    "special_shot_id": 49
+   },
+   {
+    "player": 6,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4df36",
+     "0x4df3e",
+     "0x4df46",
+     "0x4df4e",
+     "0x4df56"
+    ],
+    "special_shot_id": 7
+   }
+  ],
+  "sheet": "team_07.png"
+ },
+ {
+  "team": 8,
+  "palette_index": 8,
+  "players": [
+   {
+    "player": 0,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4dfea",
+     "0x4dff2",
+     "0x4dffa",
+     "0x4e002",
+     "0x4e00a"
+    ],
+    "special_shot_id": 4
+   },
+   {
+    "player": 1,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e012",
+     "0x4e01a",
+     "0x4e022",
+     "0x4e02a",
+     "0x4e032"
+    ],
+    "special_shot_id": 20
+   },
+   {
+    "player": 2,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e03a",
+     "0x4e042",
+     "0x4e04a",
+     "0x4e052",
+     "0x4e05a"
+    ],
+    "special_shot_id": 8
+   },
+   {
+    "player": 3,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e062",
+     "0x4e06a",
+     "0x4e072",
+     "0x4e07a",
+     "0x4e082"
+    ],
+    "special_shot_id": 41
+   },
+   {
+    "player": 4,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e08a",
+     "0x4e092",
+     "0x4e09a",
+     "0x4e0a2",
+     "0x4e0aa"
+    ],
+    "special_shot_id": 33
+   },
+   {
+    "player": 5,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e0b2",
+     "0x4e0ba",
+     "0x4e0c2",
+     "0x4e0ca",
+     "0x4e0d2"
+    ],
+    "special_shot_id": 5
+   },
+   {
+    "player": 6,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e0da",
+     "0x4e0e2",
+     "0x4e0ea",
+     "0x4e0f2",
+     "0x4e0fa"
+    ],
+    "special_shot_id": 12
+   }
+  ],
+  "sheet": "team_08.png"
+ },
+ {
+  "team": 9,
+  "palette_index": 9,
+  "players": [
+   {
+    "player": 0,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e18e",
+     "0x4e196",
+     "0x4e19e",
+     "0x4e1a6",
+     "0x4e1ae"
+    ],
+    "special_shot_id": 35
+   },
+   {
+    "player": 1,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e1b6",
+     "0x4e1be",
+     "0x4e1c6",
+     "0x4e1ce",
+     "0x4e1d6"
+    ],
+    "special_shot_id": 13
+   },
+   {
+    "player": 2,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e1de",
+     "0x4e1e6",
+     "0x4e1ee",
+     "0x4e1f6",
+     "0x4e1fe"
+    ],
+    "special_shot_id": 15
+   },
+   {
+    "player": 3,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4e206",
+     "0x4e20e",
+     "0x4e216",
+     "0x4e21e",
+     "0x4e226"
+    ],
+    "special_shot_id": 3
+   },
+   {
+    "player": 4,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4e22e",
+     "0x4e236",
+     "0x4e23e",
+     "0x4e246",
+     "0x4e24e"
+    ],
+    "special_shot_id": 13
+   },
+   {
+    "player": 5,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4e256",
+     "0x4e25e",
+     "0x4e266",
+     "0x4e26e",
+     "0x4e276"
+    ],
+    "special_shot_id": 36
+   },
+   {
+    "player": 6,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4e27e",
+     "0x4e286",
+     "0x4e28e",
+     "0x4e296",
+     "0x4e29e"
+    ],
+    "special_shot_id": 36
+   }
+  ],
+  "sheet": "team_09.png"
+ },
+ {
+  "team": 10,
+  "palette_index": 10,
+  "players": [
+   {
+    "player": 0,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e332",
+     "0x4e33a",
+     "0x4e342",
+     "0x4e34a",
+     "0x4e352"
+    ],
+    "special_shot_id": 8
+   },
+   {
+    "player": 1,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e35a",
+     "0x4e362",
+     "0x4e36a",
+     "0x4e372",
+     "0x4e37a"
+    ],
+    "special_shot_id": 27
+   },
+   {
+    "player": 2,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e382",
+     "0x4e38a",
+     "0x4e392",
+     "0x4e39a",
+     "0x4e3a2"
+    ],
+    "special_shot_id": 3
+   },
+   {
+    "player": 3,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e3aa",
+     "0x4e3b2",
+     "0x4e3ba",
+     "0x4e3c2",
+     "0x4e3ca"
+    ],
+    "special_shot_id": 23
+   },
+   {
+    "player": 4,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4e3d2",
+     "0x4e3da",
+     "0x4e3e2",
+     "0x4e3ea",
+     "0x4e3f2"
+    ],
+    "special_shot_id": 41
+   },
+   {
+    "player": 5,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4e3fa",
+     "0x4e402",
+     "0x4e40a",
+     "0x4e412",
+     "0x4e41a"
+    ],
+    "special_shot_id": 41
+   },
+   {
+    "player": 6,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4e422",
+     "0x4e42a",
+     "0x4e432",
+     "0x4e43a",
+     "0x4e442"
+    ],
+    "special_shot_id": 24
+   }
+  ],
+  "sheet": "team_10.png"
+ },
+ {
+  "team": 11,
+  "palette_index": 11,
+  "players": [
+   {
+    "player": 0,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e4d6",
+     "0x4e4de",
+     "0x4e4e6",
+     "0x4e4ee",
+     "0x4e4f6"
+    ],
+    "special_shot_id": 9
+   },
+   {
+    "player": 1,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e4fe",
+     "0x4e506",
+     "0x4e50e",
+     "0x4e516",
+     "0x4e51e"
+    ],
+    "special_shot_id": 39
+   },
+   {
+    "player": 2,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e526",
+     "0x4e52e",
+     "0x4e536",
+     "0x4e53e",
+     "0x4e546"
+    ],
+    "special_shot_id": 18
+   },
+   {
+    "player": 3,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e54e",
+     "0x4e556",
+     "0x4e55e",
+     "0x4e566",
+     "0x4e56e"
+    ],
+    "special_shot_id": 50
+   },
+   {
+    "player": 4,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4e576",
+     "0x4e57e",
+     "0x4e586",
+     "0x4e58e",
+     "0x4e596"
+    ],
+    "special_shot_id": 24
+   },
+   {
+    "player": 5,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4e59e",
+     "0x4e5a6",
+     "0x4e5ae",
+     "0x4e5b6",
+     "0x4e5be"
+    ],
+    "special_shot_id": 23
+   },
+   {
+    "player": 6,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4e5c6",
+     "0x4e5ce",
+     "0x4e5d6",
+     "0x4e5de",
+     "0x4e5e6"
+    ],
+    "special_shot_id": 52
+   }
+  ],
+  "sheet": "team_11.png"
+ },
+ {
+  "team": 12,
+  "palette_index": 12,
+  "players": [
+   {
+    "player": 0,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e67a",
+     "0x4e682",
+     "0x4e68a",
+     "0x4e692",
+     "0x4e69a"
+    ],
+    "special_shot_id": 28
+   },
+   {
+    "player": 1,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4e6a2",
+     "0x4e6aa",
+     "0x4e6b2",
+     "0x4e6ba",
+     "0x4e6c2"
+    ],
+    "special_shot_id": 37
+   },
+   {
+    "player": 2,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4e6ca",
+     "0x4e6d2",
+     "0x4e6da",
+     "0x4e6e2",
+     "0x4e6ea"
+    ],
+    "special_shot_id": 5
+   },
+   {
+    "player": 3,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4e6f2",
+     "0x4e6fa",
+     "0x4e702",
+     "0x4e70a",
+     "0x4e712"
+    ],
+    "special_shot_id": 8
+   },
+   {
+    "player": 4,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4e71a",
+     "0x4e722",
+     "0x4e72a",
+     "0x4e732",
+     "0x4e73a"
+    ],
+    "special_shot_id": 6
+   },
+   {
+    "player": 5,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4e742",
+     "0x4e74a",
+     "0x4e752",
+     "0x4e75a",
+     "0x4e762"
+    ],
+    "special_shot_id": 26
+   },
+   {
+    "player": 6,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4e76a",
+     "0x4e772",
+     "0x4e77a",
+     "0x4e782",
+     "0x4e78a"
+    ],
+    "special_shot_id": 27
+   }
+  ],
+  "sheet": "team_12.png"
+ },
+ {
+  "team": 13,
+  "palette_index": 13,
+  "players": [
+   {
+    "player": 0,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e81e",
+     "0x4e826",
+     "0x4e82e",
+     "0x4e836",
+     "0x4e83e"
+    ],
+    "special_shot_id": 20
+   },
+   {
+    "player": 1,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e846",
+     "0x4e84e",
+     "0x4e856",
+     "0x4e85e",
+     "0x4e866"
+    ],
+    "special_shot_id": 6
+   },
+   {
+    "player": 2,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e86e",
+     "0x4e876",
+     "0x4e87e",
+     "0x4e886",
+     "0x4e88e"
+    ],
+    "special_shot_id": 48
+   },
+   {
+    "player": 3,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e896",
+     "0x4e89e",
+     "0x4e8a6",
+     "0x4e8ae",
+     "0x4e8b6"
+    ],
+    "special_shot_id": 19
+   },
+   {
+    "player": 4,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4e8be",
+     "0x4e8c6",
+     "0x4e8ce",
+     "0x4e8d6",
+     "0x4e8de"
+    ],
+    "special_shot_id": 18
+   },
+   {
+    "player": 5,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4e8e6",
+     "0x4e8ee",
+     "0x4e8f6",
+     "0x4e8fe",
+     "0x4e906"
+    ],
+    "special_shot_id": 49
+   },
+   {
+    "player": 6,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4e90e",
+     "0x4e916",
+     "0x4e91e",
+     "0x4e926",
+     "0x4e92e"
+    ],
+    "special_shot_id": 1
+   }
+  ],
+  "sheet": "team_13.png"
+ },
+ {
+  "team": 14,
+  "palette_index": 14,
+  "players": [
+   {
+    "player": 0,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4e9c2",
+     "0x4e9ca",
+     "0x4e9d2",
+     "0x4e9da",
+     "0x4e9e2"
+    ],
+    "special_shot_id": 40
+   },
+   {
+    "player": 1,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4e9ea",
+     "0x4e9f2",
+     "0x4e9fa",
+     "0x4ea02",
+     "0x4ea0a"
+    ],
+    "special_shot_id": 17
+   },
+   {
+    "player": 2,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4ea12",
+     "0x4ea1a",
+     "0x4ea22",
+     "0x4ea2a",
+     "0x4ea32"
+    ],
+    "special_shot_id": 3
+   },
+   {
+    "player": 3,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4ea3a",
+     "0x4ea42",
+     "0x4ea4a",
+     "0x4ea52",
+     "0x4ea5a"
+    ],
+    "special_shot_id": 8
+   },
+   {
+    "player": 4,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4ea62",
+     "0x4ea6a",
+     "0x4ea72",
+     "0x4ea7a",
+     "0x4ea82"
+    ],
+    "special_shot_id": 6
+   },
+   {
+    "player": 5,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4ea8a",
+     "0x4ea92",
+     "0x4ea9a",
+     "0x4eaa2",
+     "0x4eaaa"
+    ],
+    "special_shot_id": 49
+   },
+   {
+    "player": 6,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4eab2",
+     "0x4eaba",
+     "0x4eac2",
+     "0x4eaca",
+     "0x4ead2"
+    ],
+    "special_shot_id": 41
+   }
+  ],
+  "sheet": "team_14.png"
+ },
+ {
+  "team": 15,
+  "palette_index": 15,
+  "players": [
+   {
+    "player": 0,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4dfea",
+     "0x4dff2",
+     "0x4dffa",
+     "0x4e002",
+     "0x4e00a"
+    ],
+    "special_shot_id": 31
+   },
+   {
+    "player": 1,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e012",
+     "0x4e01a",
+     "0x4e022",
+     "0x4e02a",
+     "0x4e032"
+    ],
+    "special_shot_id": 34
+   },
+   {
+    "player": 2,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e03a",
+     "0x4e042",
+     "0x4e04a",
+     "0x4e052",
+     "0x4e05a"
+    ],
+    "special_shot_id": 4
+   },
+   {
+    "player": 3,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e062",
+     "0x4e06a",
+     "0x4e072",
+     "0x4e07a",
+     "0x4e082"
+    ],
+    "special_shot_id": 49
+   },
+   {
+    "player": 4,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e08a",
+     "0x4e092",
+     "0x4e09a",
+     "0x4e0a2",
+     "0x4e0aa"
+    ],
+    "special_shot_id": 20
+   },
+   {
+    "player": 5,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e0b2",
+     "0x4e0ba",
+     "0x4e0c2",
+     "0x4e0ca",
+     "0x4e0d2"
+    ],
+    "special_shot_id": 33
+   },
+   {
+    "player": 6,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e0da",
+     "0x4e0e2",
+     "0x4e0ea",
+     "0x4e0f2",
+     "0x4e0fa"
+    ],
+    "special_shot_id": 6
+   }
+  ],
+  "sheet": "team_15.png"
+ },
+ {
+  "team": 16,
+  "palette_index": 16,
+  "players": [
+   {
+    "player": 0,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e18e",
+     "0x4e196",
+     "0x4e19e",
+     "0x4e1a6",
+     "0x4e1ae"
+    ],
+    "special_shot_id": 53
+   },
+   {
+    "player": 1,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e1b6",
+     "0x4e1be",
+     "0x4e1c6",
+     "0x4e1ce",
+     "0x4e1d6"
+    ],
+    "special_shot_id": 43
+   },
+   {
+    "player": 2,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e1de",
+     "0x4e1e6",
+     "0x4e1ee",
+     "0x4e1f6",
+     "0x4e1fe"
+    ],
+    "special_shot_id": 35
+   },
+   {
+    "player": 3,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4e206",
+     "0x4e20e",
+     "0x4e216",
+     "0x4e21e",
+     "0x4e226"
+    ],
+    "special_shot_id": 44
+   },
+   {
+    "player": 4,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4e22e",
+     "0x4e236",
+     "0x4e23e",
+     "0x4e246",
+     "0x4e24e"
+    ],
+    "special_shot_id": 36
+   },
+   {
+    "player": 5,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4e256",
+     "0x4e25e",
+     "0x4e266",
+     "0x4e26e",
+     "0x4e276"
+    ],
+    "special_shot_id": 45
+   },
+   {
+    "player": 6,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4e27e",
+     "0x4e286",
+     "0x4e28e",
+     "0x4e296",
+     "0x4e29e"
+    ],
+    "special_shot_id": 48
+   }
+  ],
+  "sheet": "team_16.png"
+ },
+ {
+  "team": 17,
+  "palette_index": 17,
+  "players": [
+   {
+    "player": 0,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e332",
+     "0x4e33a",
+     "0x4e342",
+     "0x4e34a",
+     "0x4e352"
+    ],
+    "special_shot_id": 8
+   },
+   {
+    "player": 1,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e35a",
+     "0x4e362",
+     "0x4e36a",
+     "0x4e372",
+     "0x4e37a"
+    ],
+    "special_shot_id": 6
+   },
+   {
+    "player": 2,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e382",
+     "0x4e38a",
+     "0x4e392",
+     "0x4e39a",
+     "0x4e3a2"
+    ],
+    "special_shot_id": 3
+   },
+   {
+    "player": 3,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e3aa",
+     "0x4e3b2",
+     "0x4e3ba",
+     "0x4e3c2",
+     "0x4e3ca"
+    ],
+    "special_shot_id": 18
+   },
+   {
+    "player": 4,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4e3d2",
+     "0x4e3da",
+     "0x4e3e2",
+     "0x4e3ea",
+     "0x4e3f2"
+    ],
+    "special_shot_id": 12
+   },
+   {
+    "player": 5,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4e3fa",
+     "0x4e402",
+     "0x4e40a",
+     "0x4e412",
+     "0x4e41a"
+    ],
+    "special_shot_id": 17
+   },
+   {
+    "player": 6,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4e422",
+     "0x4e42a",
+     "0x4e432",
+     "0x4e43a",
+     "0x4e442"
+    ],
+    "special_shot_id": 41
+   }
+  ],
+  "sheet": "team_17.png"
+ },
+ {
+  "team": 18,
+  "palette_index": 18,
+  "players": [
+   {
+    "player": 0,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e4d6",
+     "0x4e4de",
+     "0x4e4e6",
+     "0x4e4ee",
+     "0x4e4f6"
+    ],
+    "special_shot_id": 1
+   },
+   {
+    "player": 1,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e4fe",
+     "0x4e506",
+     "0x4e50e",
+     "0x4e516",
+     "0x4e51e"
+    ],
+    "special_shot_id": 9
+   },
+   {
+    "player": 2,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e526",
+     "0x4e52e",
+     "0x4e536",
+     "0x4e53e",
+     "0x4e546"
+    ],
+    "special_shot_id": 50
+   },
+   {
+    "player": 3,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e54e",
+     "0x4e556",
+     "0x4e55e",
+     "0x4e566",
+     "0x4e56e"
+    ],
+    "special_shot_id": 39
+   },
+   {
+    "player": 4,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4e576",
+     "0x4e57e",
+     "0x4e586",
+     "0x4e58e",
+     "0x4e596"
+    ],
+    "special_shot_id": 51
+   },
+   {
+    "player": 5,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4e59e",
+     "0x4e5a6",
+     "0x4e5ae",
+     "0x4e5b6",
+     "0x4e5be"
+    ],
+    "special_shot_id": 7
+   },
+   {
+    "player": 6,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4e5c6",
+     "0x4e5ce",
+     "0x4e5d6",
+     "0x4e5de",
+     "0x4e5e6"
+    ],
+    "special_shot_id": 23
+   }
+  ],
+  "sheet": "team_18.png"
+ },
+ {
+  "team": 19,
+  "palette_index": 19,
+  "players": [
+   {
+    "player": 0,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e67a",
+     "0x4e682",
+     "0x4e68a",
+     "0x4e692",
+     "0x4e69a"
+    ],
+    "special_shot_id": 28
+   },
+   {
+    "player": 1,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4e6a2",
+     "0x4e6aa",
+     "0x4e6b2",
+     "0x4e6ba",
+     "0x4e6c2"
+    ],
+    "special_shot_id": 5
+   },
+   {
+    "player": 2,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4e6ca",
+     "0x4e6d2",
+     "0x4e6da",
+     "0x4e6e2",
+     "0x4e6ea"
+    ],
+    "special_shot_id": 34
+   },
+   {
+    "player": 3,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4e6f2",
+     "0x4e6fa",
+     "0x4e702",
+     "0x4e70a",
+     "0x4e712"
+    ],
+    "special_shot_id": 10
+   },
+   {
+    "player": 4,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4e71a",
+     "0x4e722",
+     "0x4e72a",
+     "0x4e732",
+     "0x4e73a"
+    ],
+    "special_shot_id": 18
+   },
+   {
+    "player": 5,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4e742",
+     "0x4e74a",
+     "0x4e752",
+     "0x4e75a",
+     "0x4e762"
+    ],
+    "special_shot_id": 26
+   },
+   {
+    "player": 6,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4e76a",
+     "0x4e772",
+     "0x4e77a",
+     "0x4e782",
+     "0x4e78a"
+    ],
+    "special_shot_id": 27
+   }
+  ],
+  "sheet": "team_19.png"
+ },
+ {
+  "team": 20,
+  "palette_index": 20,
+  "players": [
+   {
+    "player": 0,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e81e",
+     "0x4e826",
+     "0x4e82e",
+     "0x4e836",
+     "0x4e83e"
+    ],
+    "special_shot_id": 48
+   },
+   {
+    "player": 1,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e846",
+     "0x4e84e",
+     "0x4e856",
+     "0x4e85e",
+     "0x4e866"
+    ],
+    "special_shot_id": 41
+   },
+   {
+    "player": 2,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e86e",
+     "0x4e876",
+     "0x4e87e",
+     "0x4e886",
+     "0x4e88e"
+    ],
+    "special_shot_id": 1
+   },
+   {
+    "player": 3,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4e896",
+     "0x4e89e",
+     "0x4e8a6",
+     "0x4e8ae",
+     "0x4e8b6"
+    ],
+    "special_shot_id": 49
+   },
+   {
+    "player": 4,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4e8be",
+     "0x4e8c6",
+     "0x4e8ce",
+     "0x4e8d6",
+     "0x4e8de"
+    ],
+    "special_shot_id": 1
+   },
+   {
+    "player": 5,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4e8e6",
+     "0x4e8ee",
+     "0x4e8f6",
+     "0x4e8fe",
+     "0x4e906"
+    ],
+    "special_shot_id": 14
+   },
+   {
+    "player": 6,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4e90e",
+     "0x4e916",
+     "0x4e91e",
+     "0x4e926",
+     "0x4e92e"
+    ],
+    "special_shot_id": 3
+   }
+  ],
+  "sheet": "team_20.png"
+ },
+ {
+  "team": 21,
+  "palette_index": 21,
+  "players": [
+   {
+    "player": 0,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4e9c2",
+     "0x4e9ca",
+     "0x4e9d2",
+     "0x4e9da",
+     "0x4e9e2"
+    ],
+    "special_shot_id": 28
+   },
+   {
+    "player": 1,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4e9ea",
+     "0x4e9f2",
+     "0x4e9fa",
+     "0x4ea02",
+     "0x4ea0a"
+    ],
+    "special_shot_id": 6
+   },
+   {
+    "player": 2,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4ea12",
+     "0x4ea1a",
+     "0x4ea22",
+     "0x4ea2a",
+     "0x4ea32"
+    ],
+    "special_shot_id": 41
+   },
+   {
+    "player": 3,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4ea3a",
+     "0x4ea42",
+     "0x4ea4a",
+     "0x4ea52",
+     "0x4ea5a"
+    ],
+    "special_shot_id": 18
+   },
+   {
+    "player": 4,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4ea62",
+     "0x4ea6a",
+     "0x4ea72",
+     "0x4ea7a",
+     "0x4ea82"
+    ],
+    "special_shot_id": 8
+   },
+   {
+    "player": 5,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4ea8a",
+     "0x4ea92",
+     "0x4ea9a",
+     "0x4eaa2",
+     "0x4eaaa"
+    ],
+    "special_shot_id": 12
+   },
+   {
+    "player": 6,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4eab2",
+     "0x4eaba",
+     "0x4eac2",
+     "0x4eaca",
+     "0x4ead2"
+    ],
+    "special_shot_id": 42
+   }
+  ],
+  "sheet": "team_21.png"
+ },
+ {
+  "team": 22,
+  "palette_index": 22,
+  "players": [
+   {
+    "player": 0,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4eb66",
+     "0x4eb6e",
+     "0x4eb76",
+     "0x4eb7e",
+     "0x4eb86"
+    ],
+    "special_shot_id": 25
+   },
+   {
+    "player": 1,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4eb8e",
+     "0x4eb96",
+     "0x4eb9e",
+     "0x4eba6",
+     "0x4ebae"
+    ],
+    "special_shot_id": 41
+   },
+   {
+    "player": 2,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4ebb6",
+     "0x4ebbe",
+     "0x4ebc6",
+     "0x4ebce",
+     "0x4ebd6"
+    ],
+    "special_shot_id": 12
+   },
+   {
+    "player": 3,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4ebde",
+     "0x4ebe6",
+     "0x4ebee",
+     "0x4ebf6",
+     "0x4ebfe"
+    ],
+    "special_shot_id": 41
+   },
+   {
+    "player": 4,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4ec06",
+     "0x4ec0e",
+     "0x4ec16",
+     "0x4ec1e",
+     "0x4ec26"
+    ],
+    "special_shot_id": 20
+   },
+   {
+    "player": 5,
+    "body_class": 0,
+    "head_frames_rom": [
+     "0x4ec2e",
+     "0x4ec36",
+     "0x4ec3e",
+     "0x4ec46",
+     "0x4ec4e"
+    ],
+    "special_shot_id": 18
+   },
+   {
+    "player": 6,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4ec56",
+     "0x4ec5e",
+     "0x4ec66",
+     "0x4ec6e",
+     "0x4ec76"
+    ],
+    "special_shot_id": 19
+   }
+  ],
+  "sheet": "team_22.png"
+ },
+ {
+  "team": 23,
+  "palette_index": 23,
+  "players": [
+   {
+    "player": 0,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4ed0a",
+     "0x4ed12",
+     "0x4ed1a",
+     "0x4ed22",
+     "0x4ed2a"
+    ],
+    "special_shot_id": -1
+   },
+   {
+    "player": 1,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4ed32",
+     "0x4ed3a",
+     "0x4ed42",
+     "0x4ed4a",
+     "0x4ed52"
+    ],
+    "special_shot_id": 0
+   },
+   {
+    "player": 2,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4ed5a",
+     "0x4ed62",
+     "0x4ed6a",
+     "0x4ed72",
+     "0x4ed7a"
+    ],
+    "special_shot_id": 0
+   },
+   {
+    "player": 3,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4ed82",
+     "0x4ed8a",
+     "0x4ed92",
+     "0x4ed9a",
+     "0x4eda2"
+    ],
+    "special_shot_id": 0
+   },
+   {
+    "player": 4,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4edaa",
+     "0x4edb2",
+     "0x4edba",
+     "0x4edc2",
+     "0x4edca"
+    ],
+    "special_shot_id": 0
+   },
+   {
+    "player": 5,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4edd2",
+     "0x4edda",
+     "0x4ede2",
+     "0x4edea",
+     "0x4edf2"
+    ],
+    "special_shot_id": 0
+   },
+   {
+    "player": 6,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4edfa",
+     "0x4ee02",
+     "0x4ee0a",
+     "0x4ee12",
+     "0x4ee1a"
+    ],
+    "special_shot_id": 0
+   }
+  ],
+  "sheet": "team_23.png"
+ },
+ {
+  "team": 24,
+  "palette_index": 24,
+  "players": [
+   {
+    "player": 0,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4eefe",
+     "0x4ef06",
+     "0x4ef0e",
+     "0x4ef16",
+     "0x4ef1e"
+    ],
+    "special_shot_id": 0
+   },
+   {
+    "player": 1,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4ef26",
+     "0x4ef2e",
+     "0x4ef36",
+     "0x4ef3e",
+     "0x4ef46"
+    ],
+    "special_shot_id": 0
+   },
+   {
+    "player": 2,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4ef4e",
+     "0x4ef56",
+     "0x4ef5e",
+     "0x4ef66",
+     "0x4ef6e"
+    ],
+    "special_shot_id": 0
+   },
+   {
+    "player": 3,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4ef76",
+     "0x4ef7e",
+     "0x4ef86",
+     "0x4ef8e",
+     "0x4ef96"
+    ],
+    "special_shot_id": 0
+   },
+   {
+    "player": 4,
+    "body_class": 2,
+    "head_frames_rom": [
+     "0x4ef9e",
+     "0x4efa6",
+     "0x4efae",
+     "0x4efb6",
+     "0x4efbe"
+    ],
+    "special_shot_id": 0
+   },
+   {
+    "player": 5,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4eeae",
+     "0x4eeb6",
+     "0x4eebe",
+     "0x4eec6",
+     "0x4eece"
+    ],
+    "special_shot_id": 0
+   },
+   {
+    "player": 6,
+    "body_class": 1,
+    "head_frames_rom": [
+     "0x4eed6",
+     "0x4eede",
+     "0x4eee6",
+     "0x4eeee",
+     "0x4eef6"
+    ],
+    "special_shot_id": 0
+   }
+  ],
+  "sheet": "team_24.png"
+ }
+]

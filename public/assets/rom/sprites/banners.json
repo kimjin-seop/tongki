@@ -1,0 +1,164 @@
+{
+ "key": "spr.banners",
+ "image": "rom/sprites/banners.png",
+ "image_size": [
+  300,
+  16
+ ],
+ "alpha": true,
+ "scale": 1,
+ "source": "경기 중 VRAM 캡처(에뮬레이터, 타일 0x60~ UI 팔레트 라인2) + 배너 프레임 구조 ROM 0xE130 표, 위치 0xE190, 수명 0xE1EA, 타일속성 0xE0FC (배너 오브젝트 타입 0x54 @ $D900, 핸들러 0xDFD0)",
+ "coords": "화면 고정(카메라 무관). rect 를 (screen_pos.x - anchor.x, screen_pos.y - anchor.y) 에 그림. 같은 슬롯($D900)이라 새 배너가 이전 배너를 즉시 대체",
+ "banners": {
+  "pause": {
+   "type": 0,
+   "anchor": [
+    20,
+    16
+   ],
+   "screen_pos": [
+    160,
+    112
+   ],
+   "size": [
+    40,
+    16
+   ],
+   "frame_rom": "0x2e06c",
+   "tile_attr": "0xc060",
+   "life_frames": null,
+   "blink": "카운터 bit5 (32f 표시/32f 숨김)",
+   "rect": [
+    0,
+    0,
+    40,
+    16
+   ]
+  },
+  "play_off": {
+   "type": 2,
+   "anchor": [
+    32,
+    16
+   ],
+   "screen_pos": [
+    160,
+    112
+   ],
+   "size": [
+    64,
+    16
+   ],
+   "frame_rom": "0x2e0b2",
+   "tile_attr": "0xc060",
+   "life_frames": null,
+   "blink": "카운터 bit3 (8f 표시/8f 숨김)",
+   "rect": [
+    42,
+    0,
+    64,
+    16
+   ]
+  },
+  "game_set": {
+   "type": 3,
+   "anchor": [
+    32,
+    16
+   ],
+   "screen_pos": [
+    160,
+    112
+   ],
+   "size": [
+    64,
+    16
+   ],
+   "frame_rom": "0x2e040",
+   "tile_attr": "0xc060",
+   "life_frames": null,
+   "blink": null,
+   "rect": [
+    108,
+    0,
+    64,
+    16
+   ]
+  },
+  "time_up": {
+   "type": 4,
+   "anchor": [
+    28,
+    16
+   ],
+   "screen_pos": [
+    160,
+    112
+   ],
+   "size": [
+    56,
+    16
+   ],
+   "frame_rom": "0x2e08c",
+   "tile_attr": "0xc060",
+   "life_frames": null,
+   "blink": null,
+   "rect": [
+    174,
+    0,
+    56,
+    16
+   ]
+  },
+  "go": {
+   "type": 11,
+   "anchor": [
+    8,
+    16
+   ],
+   "screen_pos": [
+    160,
+    72
+   ],
+   "size": [
+    16,
+    16
+   ],
+   "frame_rom": "0x2e110",
+   "tile_attr": "0xc060",
+   "life_frames": 60,
+   "blink": null,
+   "rect": [
+    232,
+    0,
+    16,
+    16
+   ]
+  },
+  "fight": {
+   "type": 12,
+   "anchor": [
+    24,
+    16
+   ],
+   "screen_pos": [
+    160,
+    72
+   ],
+   "size": [
+    48,
+    16
+   ],
+   "frame_rom": "0x2e11e",
+   "tile_attr": "0xc060",
+   "life_frames": 32,
+   "blink": null,
+   "rect": [
+    250,
+    0,
+    48,
+    16
+   ]
+  }
+ }
+}

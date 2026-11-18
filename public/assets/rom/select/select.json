@@ -1,0 +1,277 @@
+{
+ "source": "ROM 에뮬 재생(analysis/scripts/t_select_rec.py, t_select_extract.py). 좌표 = 논리 320x224 화면 px, 1x. 색0 투명 RGBA",
+ "assets": {
+  "bg_full": {
+   "file": "select_bg.png",
+   "size": [
+    320,
+    224
+   ],
+   "pos": [
+    0,
+    0
+   ],
+   "note": "플레인 B, 스크롤 0 고정. 모드 메뉴/팀 선택/규칙 화면 공통 배경"
+  },
+  "bg_unit": {
+   "file": "select_bg_unit.png",
+   "size": [
+    48,
+    96
+   ],
+   "note": "48x96 반복 단위(6x12 타일). 화면 (0,0)부터 타일링. 위 48x48 블록과 아래 블록은 가로 24px 어긋남(벽돌 배치)"
+  },
+  "bg_medal_anim": {
+   "file": "select_bg_medal_anim.png",
+   "cell": [
+    24,
+    24
+   ],
+   "frames": 6,
+   "place": "배경 타일 0xD3~0xDB(메달 가운데 3x3). bg_unit 안 (8,0) 과 (32,48) (+48 가로 반복)",
+   "idle_cycle": [
+    [
+     0,
+     5
+    ],
+    [
+     1,
+     5
+    ]
+   ],
+   "confirm_seq": [
+    [
+     0,
+     5
+    ],
+    [
+     1,
+     5
+    ],
+    [
+     2,
+     5
+    ],
+    [
+     3,
+     5
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     0,
+     5
+    ],
+    [
+     1,
+     5
+    ]
+   ],
+   "note": "평상시 프레임 0/1 을 5f 마다 교대. 팀 확정 직후 0~5,0,1 을 5f 씩(40f) 재생 후 다음 화면. 3·5번째 프레임 때 팔레트2 색8 을 #fcd890/#fcd848 로 바꿈(번쩍)"
+  },
+  "window_9slice": {
+   "file": "select_window_9s.png",
+   "size": [
+    24,
+    24
+   ],
+   "slice": [
+    8,
+    8,
+    8,
+    8
+   ],
+   "fill": "#004824",
+   "note": "플레인 A 타일 0x16 모서리 / 0x11 위·아래(아래=V반전) / 0x12 좌우(오른쪽=H반전) / 0x17 채움, 팔레트2. 가운데 8x8 반복. 크기는 8px 단위"
+  },
+  "emblems": {
+   "file": "select_emblems.png",
+   "cell": [
+    24,
+    16
+   ],
+   "count": 16,
+   "dir": "emblems/emblem_NN.png",
+   "team_to_emblem": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    0,
+    15,
+    null
+   ],
+   "note": "ROM 표 0x1505A(팀->엠블럼), 타일 0x284+6n 3x2(열 우선), 팔레트3. 스토리 해외팀 15~21 은 같은 나라 엠블럼 재사용, 22(TAM)=T.D, 23(CHO)=15번 전용, 24(REN) 는 표 밖"
+  },
+  "font_white": {
+   "file": "select_font_white.png",
+   "cell": [
+    8,
+    8
+   ],
+   "first": 32,
+   "chars": " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_",
+   "note": "타일 번호 = ASCII 코드, 고정폭 8x8. 글자 타일 인덱스1(창 바탕 초록)은 투명 처리, 인덱스2=글자색. white=팀 약칭(팔레트2), yellow=SPECIAL TEAM(팔레트0)"
+  },
+  "font_yellow": {
+   "file": "select_font_yellow.png",
+   "cell": [
+    8,
+    8
+   ],
+   "first": 32,
+   "chars": " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_",
+   "note": "타일 번호 = ASCII 코드, 고정폭 8x8. 글자 타일 인덱스1(창 바탕 초록)은 투명 처리, 인덱스2=글자색. white=팀 약칭(팔레트2), yellow=SPECIAL TEAM(팔레트0)"
+  },
+  "title_ja_ref": {
+   "file": "select_title_ja_ref.png",
+   "size": [
+    144,
+    16
+   ],
+   "pos": [
+    80,
+    16
+   ],
+   "note": "참고용(プレイするチームを えらんでください, 탁점 줄 포함 2행). 한국판은 한글로 대체"
+  },
+  "planeA_main": {
+   "file": "select_planeA.png",
+   "size": [
+    320,
+    224
+   ],
+   "pos": [
+    0,
+    0
+   ],
+   "note": "창+제목+엠블럼+약칭 원본 합성(일반)"
+  },
+  "planeA_special": {
+   "file": "select_planeA_special.png",
+   "size": [
+    320,
+    224
+   ],
+   "pos": [
+    0,
+    0
+   ],
+   "note": "SPECIAL TEAM 창 포함(스토리 클리어 후)"
+  },
+  "ball_icon": {
+   "file": "select_ball_anim.png",
+   "cell": [
+    16,
+    16
+   ],
+   "frames": 4,
+   "frame_len": 5,
+   "pos": [
+    [
+     56,
+     16
+    ],
+    [
+     240,
+     16
+    ]
+   ],
+   "note": "스프라이트 팔레트2, 4프레임 x 5f 회전(20f 주기)"
+  },
+  "cursor": {
+   "file": "select_cursor_sheet.png",
+   "cell": [
+    40,
+    40
+   ],
+   "rows": [
+    "1p_move",
+    "1p_picked",
+    "2p_move",
+    "2p_picked",
+    "com_move",
+    "com_picked",
+    "plain_move",
+    "plain_picked"
+   ],
+   "cols": "글로우 단계 0~6, 단계당 6f(한 바퀴 42f, 무한 반복)",
+   "anchor": "셀 좌상단 = 엠블럼 좌상단 - (8,8). 메인 격자: (56+40*c, 32+40*r)",
+   "glow_move": [
+    "#fcfcfc",
+    "#fcfcfc",
+    "#00fcfc",
+    "#48b4fc",
+    "#0024b4",
+    "#00006c",
+    "#000000"
+   ],
+   "glow_picked": [
+    "#fcfcfc",
+    "#fcfc00",
+    "#fcb400",
+    "#fc0000",
+    "#900000",
+    "#480000",
+    "#000000"
+   ],
+   "glow_offsets": [
+    2,
+    1,
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "note": "라벨(1P/2P/COM)은 위 변 타일에 포함. plain=라벨 없는 프레임(편성 화면 선수 커서와 같은 구성). 이동 중=하늘색 계열 글로우, 확정=빨강·노랑 글로우. 표시/숨김 깜빡임 없음"
+  },
+  "lineup_planeA_ref": {
+   "file": "lineup_planeA_ref.png",
+   "size": [
+    320,
+    224
+   ],
+   "note": "팀 확정 후 라인업(VS) 화면 플레인 A. 얼굴 = 스프라이트 24x24, 왼쪽 (24,40+24i) 오른쪽 (184,40+24i), i=0~6"
+  },
+  "formation_planeA_ref": {
+   "file": "formation_planeA_ref.png",
+   "size": [
+    320,
+    224
+   ],
+   "note": "편성(포지션 변경) 화면 플레인 A: 팀 패널 + 능력치 6줄 막대 + 선수 2명 비교"
+  },
+  "formation_planeB_ref": {
+   "file": "formation_planeB_ref.png",
+   "size": [
+    320,
+    224
+   ]
+  }
+ }
+}
