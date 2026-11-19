@@ -4,6 +4,9 @@ import { RoomGame } from '../game/roomGame.js';
 import { MemoryProgressStore } from '../store/progress.js';
 import { MemoryLeagueStore } from '../store/league.js';
 import { makeLeagueHandlers, leagueEnd } from '../league/handlers.js';
+import { MemoryFlameStore } from '../store/flame.js';
+import { makeFlameHandlers, flameEnd, initFlameCatalog } from '../flame/handlers.js';
+import { FlameRanking } from '../flame/ranking.js';
 import { mono, loadLimits } from '../net/limits.js';
 import { openDb } from '../store/db.js';
 import { AccountStore, LoginGuard, passwordOk } from '../store/accounts.js';
@@ -39,6 +42,10 @@ export class Lobby {
     this.authWin = new Map(); // ip -> {start,count} (register/login)
     this.loginGuard = o.loginGuard ?? new LoginGuard({ failNick: this.limits.loginFailNick, failIp: this.limits.loginFailIp, lockMs: this.limits.loginLockMs, slowStepMs: this.limits.loginSlowStepMs, slowMaxMs: this.limits.loginSlowMaxMs });
     this.log = o.log ?? ((...a) => console.error(...a));
+    this.flame = o.flame ?? new MemoryFlameStore(); // 불꽃의 계승 저장소(getProfile/getRun/save, PROTOCOL §13)
+    this.flameCat = initFlameCatalog(o.data, this.log); // 데이터 카탈로그(깨져 있으면 null = flame 요청만 거절, 기존 모드는 그대로)
+    // 도달 순위표(PROTOCOL §13.13): 시작 때 영구 저장 전 행에서 메모리 표를 만든다. 계정만 오른다(accounts 표로 판정)
+    this.flameRank = new FlameRanking({ store: this.flame, isAccount: (k) => this.accounts.has(k), top: this.flameCat?.endless?.rankTop, segments: this.flameCat?.rules.run.segments, log: this.log });
     this.sessions = new Map(); // token -> session
     this.byNick = new Map(); // lower nick -> session
     this.rooms = new Map(); // code -> room
@@ -321,11 +328,14 @@ export class Lobby {
     const db = this.progress.db;
     if (db && db === this.leagues.db && typeof db.tx === 'function') {
       // 같은 SQLite DB: 진행·리그를 한 트랜잭션으로 옮긴다(한쪽만 옮겨지는 상태를 남기지 않음)
-      try { moved = db.tx(() => (this.progress.setAside(key, aside) ?? 0) + (this.leagues.setAside(key, aside) ?? 0)); }
+      try { moved = db.tx(() => (this.progress.setAside(key, aside) ?? 0) + (this.leagues.setAside(key, aside) ?? 0) + (this.flame.db === db ? this.flame.setAside(key, aside) ?? 0 : 0)); }
       catch (e) { this.log('[aside]', e?.message ?? e); }
     } else {
       try { moved += this.progress.setAside?.(key, aside) ?? 0; } catch (e) { this.log('[aside progress]', e?.message ?? e); }
       try { moved += this.leagues.setAside?.(key, aside) ?? 0; } catch (e) { this.log('[aside league]', e?.message ?? e); }
+    }
+    if (!(db && db === this.leagues.db && typeof db.tx === 'function' && this.flame.db === db)) { // flame 저장소가 같은 DB 가 아니면(메모리 등) 따로 옮긴다
+      try { moved += this.flame.setAside?.(key, aside) ?? 0; } catch (e) { this.log('[aside flame]', e?.message ?? e); }
     }
     if (moved) this.log(`[account] 가입 닉네임의 손님 데이터 ${moved}건을 승계하지 않고 보존: ${aside}`);
   }
@@ -388,6 +398,7 @@ export class Lobby {
       ...(room.campaign ? { campaign: { k: room.campaign.k } } : {}),
       ...(room.training ? { training: { kind: room.training.kind } } : {}),
       ...(room.league ? { league: { i: room.league.i, j: room.league.j } } : {}),
+      ...(room.flame ? { flame: { node: room.flame.node, type: room.flame.type } } : {}),
       ...(room.ranked ? { ranked: true } : {}),
       rules: { ...room.rules },
       start: st.ok ? { ok: true } : { ok: false, code: st.code, msg: ERR[st.code] },
@@ -452,7 +463,7 @@ export class Lobby {
   }
 
   roomListMsg() {
-    const rooms = [...this.rooms.values()].filter((r) => !r.campaign && !r.training && !r.league).sort((a, b) => b.createdAt - a.createdAt).map((r) => ({
+    const rooms = [...this.rooms.values()].filter((r) => !r.campaign && !r.training && !r.league && !r.flame).sort((a, b) => b.createdAt - a.createdAt).map((r) => ({
       code: r.code, host: r.seats[0]?.s.nick ?? '', players: r.vsCpu ? 2 : r.seats.filter(Boolean).length, max: 2, ...(r.vsCpu ? { vsCpu: true } : {}), ...(r.ranked ? { ranked: true } : {}), status: r.game ? 'playing' : 'waiting',
       rules: { ...r.rules }, // 방 목록 행의 규칙 요약용(추가 필드, 하위 호환)
     }));
@@ -536,7 +547,7 @@ export class Lobby {
       set_team(s, m) {
         const room = this.roomOf(s) ?? fail('NOT_IN_ROOM');
         if (room.game) fail('IN_GAME');
-        if (room.campaign || room.training || room.league) fail('NOT_IN_CAMPAIGN_ROOM');
+        if (room.campaign || room.training || room.league || room.flame) fail('NOT_IN_CAMPAIGN_ROOM');
         if (!isInt(m.team, 0, this.o.data.teams.length - 1)) fail('TEAM_INVALID');
         if (room.ranked && m.team > RANK.maxTeam) fail('TEAM_INVALID'); // 랭크: SPECIAL(15~21)까지, 22~24 금지
         const mem = room.seats[room.seatOf(s)];
@@ -549,7 +560,7 @@ export class Lobby {
         const room = this.roomOf(s) ?? fail('NOT_IN_ROOM');
         if (room.game) fail('IN_GAME');
         if (room.seatOf(s) !== 0) fail('NOT_HOST');
-        if (room.league) fail('NOT_IN_CAMPAIGN_ROOM'); // 리그 규칙은 league_config 로만
+        if (room.league || room.flame) fail('NOT_IN_CAMPAIGN_ROOM'); // 리그 규칙은 league_config 로만, flame 경기 규칙은 서버 데이터(run_config.json)
         if (room.ranked) fail('RANKED_RULES_FIXED');
         const r = this.parseRules(m.rules, room.rules, !!room.campaign);
         if (r.mode !== room.rules.mode || r.time !== room.rules.time) {
@@ -570,7 +581,7 @@ export class Lobby {
       },
       start(s) {
         const room = this.roomOf(s) ?? fail('NOT_IN_ROOM');
-        if (room.training || room.league) fail('NOT_IN_CAMPAIGN_ROOM'); // 특훈 방은 training_start, 리그 방은 league_play 로만 시작한다(일반 경기로 다시 시작 금지, set_team 과 같은 코드)
+        if (room.training || room.league || room.flame) fail('NOT_IN_CAMPAIGN_ROOM'); // 특훈 방은 training_start, 리그 방은 league_play 로만 시작한다(일반 경기로 다시 시작 금지, set_team 과 같은 코드)
         if (room.game) fail('IN_GAME');
         if (room.seatOf(s) !== 0) fail('NOT_HOST');
         const c = this.startCheck(room);
@@ -631,6 +642,7 @@ export class Lobby {
         room.game.abort(-1, 'training_quit');
       },
       ...makeLeagueHandlers(fail), // league_get/new/config/abandon/play (server/league/handlers.js)
+      ...makeFlameHandlers(fail), // flame_* (server/flame/handlers.js, PROTOCOL §13)
       input(s, m) {
         const room = this.roomOf(s);
         if (!room?.game || !isInt(m.bits, 0, 255)) return; // 게임 종료 직후 입력은 조용히 무시
@@ -675,6 +687,13 @@ export class Lobby {
     if (++s.leagueWin.count > this.limits.maxLeaguePerMin) fail('CAMPAIGN_RATE_LIMITED');
   }
 
+  /** 불꽃의 계승 전용 창(flame_*). 거절된 요청도 횟수에 든다. 초과 코드는 캠페인과 같다 */
+  flameRate(s) {
+    const now = mono();
+    if (!s.flameWin || now - s.flameWin.start >= 60000) s.flameWin = { start: now, count: 0 };
+    if (++s.flameWin.count > this.limits.maxFlamePerMin) fail('CAMPAIGN_RATE_LIMITED');
+  }
+
   campaignListMsg(s) {
     const p = this.progress.get(s.key);
     return {
@@ -687,17 +706,21 @@ export class Lobby {
     const seats = room.seats.map((m) => (m ? { nick: m.s.nick, team: m.team } : null));
     const ch = room.campaign ? this.o.data.campaign[room.campaign.k] : null;
     if (ch) seats[0].team = ch.teamMine;
-    if (room.vsCpu && !ch && seats[0] && room.cpuTeam === seats[0].team) room.cpuTeam = this.pickCpuTeam(seats[0].team);
+    // 일반 컴퓨터 대전만: 내 팀과 같은 상대는 다른 팀으로 바꾼다. flame 방은 바꾸지 않는다 - 상대는 지도 노드가 정한 팀이고(결과 기록 done[].opp 와 같아야 한다),
+    // 좌석 0 팀은 주장 칸 선수의 몸 출처(roster[0].from.team)일 뿐이라 클론을 주장에 두면 상대 팀과 같을 수 있다(엔진은 같은 팀끼리도 받는다)
+    if (room.vsCpu && !ch && !room.flame && seats[0] && room.cpuTeam === seats[0].team) room.cpuTeam = this.pickCpuTeam(seats[0].team);
     if (room.vsCpu) seats[1] = { nick: CPU_NICK, team: room.cpuTeam, cpu: true, level: room.cpuLevel, ...(ch ? { special256: ch.specialChance256 } : {}) };
     for (const m of room.seats) if (m) m.ready = false;
     if (room.ranked) room.rankPlayers = room.seats.map((m) => ({ key: m.s.key, nick: m.s.nick })); // 시작 시점 두 사람(종료 때 좌석이 비어도)
     room.rankOut = null;
     room.game = new RoomGame({
-      roomCode: room.code, seats, data: this.o.data, stage: ch?.stage ?? room.league?.stage ?? 0, league: room.league ? { i: room.league.i, j: room.league.j } : null,
+      roomCode: room.code, seats, data: this.o.data, stage: ch?.stage ?? room.league?.stage ?? room.flame?.stage ?? 0, league: room.league ? { i: room.league.i, j: room.league.j } : null,
       rules: { mode: room.rules.mode, timeMin: room.rules.time, limitFrames: room.rules.time * 60 * this.o.data.rules.tickRate }, campaign: room.campaign, training: room.training ?? null, store: this.o.store, build: this.o.build, seed: this.o.seed, limits: this.limits,
       send: (seat, obj) => this.sendTo(room.seats[seat]?.s, obj),
       onEnd: (res) => this.onGameEnd(room, res),
       ...(room.ranked ? { onRanked: (r) => this.rankedResult(room, r) } : {}),
+      ...(room.flame?.practice ? { noRecord: true } : {}), // 연습 경기(PROTOCOL §13.15): 결과 레코드를 남기지 않는다
+      ...(room.flame ? { flame: room.flame.opts, flameCast: room.flame.cast ?? null } : {}), // 엔진 flame 옵션(저장된 도전 상태에서 서버가 조립한 값, PROTOCOL §12.1·§13) + 표시용 정의(game_start.flameCast, 엔진에는 넘기지 않는다)
     });
     room.game.begin();
     this.broadcastRoom(room);
@@ -716,6 +739,7 @@ export class Lobby {
     if (room.campaign && room.seats[0]) this.campaignEnd(room, res);
     if (room.training) { this.trainingEnd(room, res); return; }
     if (room.league) { leagueEnd(this, room, res); return; } // 기록 1회 + 방 삭제 -> room_left
+    if (room.flame) { flameEnd(this, room, res); return; } // 도전 상태 반영 + flame_result/flame_end/flame_state + 방 삭제 -> room_left
     for (const m of room.seats) if (m) m.ready = false;
     if (this.rooms.get(room.code) === room) this.broadcastRoom(room);
     this.markListDirty();

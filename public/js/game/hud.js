@@ -18,6 +18,7 @@ const TEAM_H = 10, NICK_H = 8, NICK_Y = 2, TEAM_Y1 = 18, TEAM_Y2 = [13, 25];
 const NAME_FONT = '"DD UI", sans-serif', NAME_TH = 0.55, NAME_CT = 0.65; // 덮임 임계값, 둥근 모서리 정리 임계값(dottext.js)
 const TEAM_COL = '#fcfcfc', NICK_COL = '#fcfc00'; // HUD 숫자 흰색, 원작 노랑
 const FL_DEAD = 8, ST_OUTMOVE = 12, ST_GONE = 14;
+const HP_FACE_MAX = 112; // 얼굴 상단 y = 28 - floor(hp/4) 가 0(화면 맨 위)이 되는 HP
 const SUB_FACE_DELAY = 70;
 const FM_DOT = 6; // 포메이션 남은 횟수 공 간격(5px 공 + 1px)
 const HUD_IN_DELAY = 2; // 입장 완료 +2틱 후 얼굴 등장(rules.start.hud.delay, 08 §7) // 교체 투입 얼굴 등장 지연(틱): 원작 인원 감소(f349) 후 약 70f 뒤(f420) 등장. 표시 전용
@@ -67,6 +68,7 @@ export class Hud {
     const steps = first ? 0 : Math.max(0, Math.min(120, t - this.lastTick));
     this.lastTick = t;
     this.updateRem(a, t, first);
+    if (this.orig) for (const p of a.p) if (p && p[4] > (this.hpCap ?? 0)) this.hpCap = p[4]; // 혼합 로스터: 경기 중 본 최대 HP(game_start 에 값이 없을 때를 대비)
     // 시작 연출(PROTOCOL 5.5): 입장(sq 0) 중엔 얼굴 없음, HUD 대기(sq 1) +2틱에 8개가 함께 올라온다(서버 sq 없으면 즉시)
     const sq = a.sq;
     if (sq && (sq[0] === 0 || (sq[0] === 1 && sq[1] < HUD_IN_DELAY))) return;
@@ -84,7 +86,7 @@ export class Hud {
             f.y = Math.min(FLOOR_Y, f.y + steps);
             if (f.y >= FLOOR_Y) { this.faces[seat][slot] = f = null; }
           } else {
-            const target = this.official ? POLE_Y : faceY(a.p[f.pid][4]);
+            const target = this.official ? POLE_Y : this.faceTop(a.p[f.pid][4]);
             if (f.mode === 'in') { f.y = Math.max(target, f.y - steps); if (f.y <= target) f.mode = 'on'; }
             if (f.mode === 'on') f.y = target;
           }
@@ -97,12 +99,15 @@ export class Hud {
           else if (first || intro || t >= pd[slot].at) {
             pd[slot] = null;
             const on = first && this.resumed; // 재접속 복귀는 연출 없이 제자리
-            this.faces[seat][slot] = { pid, y: on ? (this.official ? POLE_Y : faceY(a.p[pid][4])) : FLOOR_Y, mode: on ? 'on' : 'in' };
+            this.faces[seat][slot] = { pid, y: on ? (this.official ? POLE_Y : this.faceTop(a.p[pid][4])) : FLOOR_Y, mode: on ? 'on' : 'in' };
           }
         }
       }
     }
   }
+
+  /** 얼굴 상단 y. 혼합 로스터(불꽃의 계승)는 장비·특훈으로 HP 가 원작 범위를 넘을 수 있다: 이 경기의 최대 HP(hpCap)가 112 를 넘으면 그 값에 맞춰 높이를 줄여 화면 안에서 차이가 보이게 한다(종전 경기는 원작 식 그대로) */
+  faceTop(hp) { return this.orig ? flameFaceY(hp, this.hpCap) : faceY(hp); }
 
   updateRem(a, t, first) {
     if (first || !this.rem) { this.rem = [a.rem[0], a.rem[1]]; this.remRaw = [a.rem[0], a.rem[1]]; return; }
@@ -128,12 +133,14 @@ export class Hud {
       let x = SLOT_CX[seat][slot] - FACE / 2, y = f.y;
       const hp = a.p[f.pid][4];
       if (f.mode === 'on' && hp < 20 && !this.official && (((t % 60) + 60) % 60) >= 31) { x += jit(); y += jit(); }
-      const sx = (f.pid % 7) * FACE, sy = (this.teamIds[seat] ?? 0) * FACE;
+      const og = this.orig?.[f.pid]; // 혼합 로스터(불꽃의 계승): 선수 출신 {team, idx}. 없으면 좌석 팀·pid%7
+      const pf = this.pFaces?.[f.pid] ?? null; // 불꽃의 계승 오리지널 선수: 색을 바꾼 얼굴 한 칸(24x24). 없으면 아틀라스
+      const src = pf ?? I.faces, sx = pf ? 0 : (og ? og.idx : f.pid % 7) * FACE, sy = pf ? 0 : (og ? og.team : this.teamIds[seat] ?? 0) * FACE;
       if (seat === 0) {
         g.save(); g.translate(x + FACE, y); g.scale(-1, 1);
-        g.drawImage(I.faces, sx, sy, FACE, FACE, 0, 0, FACE, FACE);
+        g.drawImage(src, sx, sy, FACE, FACE, 0, 0, FACE, FACE);
         g.restore();
-      } else g.drawImage(I.faces, sx, sy, FACE, FACE, x, y, FACE, FACE);
+      } else g.drawImage(src, sx, sy, FACE, FACE, x, y, FACE, FACE);
     }
     for (const side of this.nameSprites()) for (const n of side) g.drawImage(n.c, n.x, n.y);
     if (I.digits) for (let seat = 0; seat < 2; seat++) {
@@ -179,6 +186,16 @@ function fmDot(g, x, y, on) {
 
 /** 얼굴 상단 y = 28 - floor(hp/4) */
 const faceY = (hp) => 28 - Math.floor(Math.max(0, hp) / 4);
+/**
+ * 불꽃의 계승(혼합 로스터) 얼굴 상단 y. cap = 그 경기의 최대 HP.
+ * cap 이 HP_FACE_MAX(112) 이하면 원작 식 그대로(112 에서 y 0), 넘으면 0~cap 을 y 28~FLAME_TOP 에 고르게 편다(HP 189 도 화면 안, 112 를 넘는 HP 끼리도 높이가 다르다)
+ */
+const FLAME_TOP = 2;
+export function flameFaceY(hp, cap = 0) {
+  const v = Math.max(0, hp);
+  if (!(cap > HP_FACE_MAX)) return faceY(Math.min(v, HP_FACE_MAX));
+  return 28 - Math.floor((Math.min(v, cap) * (28 - FLAME_TOP)) / cap);
+}
 const jit = () => Math.floor(Math.random() * 5) - 2;
 
 /** 해당 내야 슬롯에 서 있는 살아있는 선수 pid (없으면 -1). 교체 투입 선수는 이동(OUTMOVE)을 마친 뒤 등장 */

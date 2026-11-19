@@ -1,0 +1,363 @@
+{
+ "_meta": {
+  "version": 2,
+  "source": "_verify/flame_orig_pilot/orig_pilot_data.json · pilot.py (안아트 시범)",
+  "doc": "docs/PROTOCOL.md §13.8, public/js/screens/flame/skin.js"
+ },
+ "hairMinComp": 8,
+ "uniformSets": [
+  {
+   "id": "U1",
+   "name": "불꽃 주황",
+   "topLo": "b42400",
+   "topHi": "fc6c00",
+   "botLo": "242424",
+   "botHi": "484848",
+   "trimLo": "906c00",
+   "trimHi": "fcd800",
+   "extra": "fcfcfc"
+  },
+  {
+   "id": "U2",
+   "name": "군청·백",
+   "topLo": "002490",
+   "topHi": "246cfc",
+   "botLo": "909090",
+   "botHi": "fcfcfc",
+   "trimLo": "900000",
+   "trimHi": "fc2400",
+   "extra": "002490"
+  },
+  {
+   "id": "U3",
+   "name": "숲 초록",
+   "topLo": "004824",
+   "topHi": "24b448",
+   "botLo": "242448",
+   "botHi": "48486c",
+   "trimLo": "b49000",
+   "trimHi": "fcd800",
+   "extra": "fcfcfc"
+  },
+  {
+   "id": "U4",
+   "name": "보라",
+   "topLo": "48006c",
+   "topHi": "9048fc",
+   "botLo": "240048",
+   "botHi": "6c24b4",
+   "trimLo": "909090",
+   "trimHi": "fcfcfc",
+   "extra": "fcd800"
+  },
+  {
+   "id": "U5",
+   "name": "청록",
+   "topLo": "006c6c",
+   "topHi": "24d8d8",
+   "botLo": "002448",
+   "botHi": "004890",
+   "trimLo": "b42400",
+   "trimHi": "fc6c24",
+   "extra": "fcfcfc"
+  },
+  {
+   "id": "U6",
+   "name": "진홍·백",
+   "topLo": "900024",
+   "topHi": "fc2448",
+   "botLo": "900024",
+   "botHi": "fc2448",
+   "trimLo": "909090",
+   "trimHi": "fcfcfc",
+   "extra": "242424"
+  },
+  {
+   "id": "U7",
+   "name": "흑·금",
+   "topLo": "242424",
+   "topHi": "6c6c6c",
+   "botLo": "242424",
+   "botHi": "484848",
+   "trimLo": "b46c00",
+   "trimHi": "fcd800",
+   "extra": "fc0000"
+  },
+  {
+   "id": "U8",
+   "name": "하늘",
+   "topLo": "4890d8",
+   "topHi": "90d8fc",
+   "botLo": "242490",
+   "botHi": "486cfc",
+   "trimLo": "906c00",
+   "trimHi": "fcb400",
+   "extra": "fcfcfc"
+  },
+  {
+   "id": "U9",
+   "name": "불꽃 주황(원정: 흰 양말·손목)",
+   "topLo": "b42400",
+   "topHi": "fc6c00",
+   "botLo": "242424",
+   "botHi": "484848",
+   "trimLo": "909090",
+   "trimHi": "fcfcfc",
+   "extra": "fcfcfc"
+  }
+ ],
+ "away": [
+  {
+   "vs": 1,
+   "uni": 1,
+   "use": 9
+  }
+ ],
+ "hairSets": [
+  {
+   "id": "H1",
+   "name": "검정",
+   "lo": "242424",
+   "hi": "484848",
+   "mono": "242424"
+  },
+  {
+   "id": "H2",
+   "name": "갈색",
+   "lo": "6c2400",
+   "hi": "b46c24",
+   "mono": "6c2400"
+  },
+  {
+   "id": "H3",
+   "name": "금발",
+   "lo": "906c00",
+   "hi": "fcd848",
+   "mono": "d89000"
+  },
+  {
+   "id": "H4",
+   "name": "적발",
+   "lo": "900000",
+   "hi": "fc4800",
+   "mono": "b42400"
+  }
+ ],
+ "teams": {
+  "1": {
+   "uniform": {
+    "b46c00": "topLo",
+    "fcd800": "topHi"
+   },
+   "hair": {
+    "lo": "6c2400",
+    "hi": "906c00",
+    "blk": "242424"
+   },
+   "protect": [
+    "000000",
+    "902424",
+    "909090",
+    "fc906c",
+    "fcfcfc"
+   ],
+   "faceBg": "fcd800",
+   "hairKind": [
+    "C",
+    "B",
+    "B",
+    "B",
+    "B",
+    "B",
+    "C"
+   ]
+  },
+  "2": {
+   "uniform": {
+    "0000b4": "topLo",
+    "0090fc": "topHi",
+    "0000fc": "botLo",
+    "006cfc": "botHi",
+    "00006c": "trimLo",
+    "6c48d8": "trimHi"
+   },
+   "hair": {
+    "lo": "900000",
+    "hi": "fc4800",
+    "blk": "242424"
+   },
+   "protect": [
+    "000000",
+    "902424",
+    "909090",
+    "fc906c",
+    "fcfcfc"
+   ],
+   "faceBg": "006cfc",
+   "hairKind": [
+    "C",
+    "N",
+    "C",
+    "B",
+    "B",
+    "N",
+    "B"
+   ]
+  },
+  "3": {
+   "uniform": {
+    "480000": "topHi",
+    "484848": "botHi"
+   },
+   "hair": {
+    "lo": "48006c",
+    "hi": "9000fc",
+    "blk": "242424"
+   },
+   "protect": [
+    "000000",
+    "902424",
+    "b4b4b4",
+    "fc906c",
+    "fcfcfc"
+   ],
+   "faceBg": "484848",
+   "hairKind": [
+    "C",
+    "B",
+    "B",
+    "N",
+    "B",
+    "C",
+    "N"
+   ]
+  },
+  "4": {
+   "uniform": {
+    "902400": "topLo",
+    "fc0000": "topHi",
+    "00246c": "botLo",
+    "0048fc": "botHi",
+    "004800": "trimLo",
+    "24b424": "trimHi",
+    "48b4b4": "extra"
+   },
+   "hair": {
+    "lo": "906c00",
+    "hi": "fcb448",
+    "blk": "242424"
+   },
+   "protect": [
+    "000000",
+    "902424",
+    "909090",
+    "fc906c",
+    "fcfcfc"
+   ],
+   "faceBg": "0048fc",
+   "hairKind": [
+    "B",
+    "C",
+    "C",
+    "B",
+    "G",
+    "B",
+    "B"
+   ]
+  },
+  "5": {
+   "uniform": {
+    "900000": "topLo",
+    "fc0000": "topHi",
+    "fc2400": "botHi",
+    "6c9090": "trimLo",
+    "fcfc00": "extra"
+   },
+   "hair": {
+    "lo": "482400",
+    "hi": "906c48",
+    "blk": "242424"
+   },
+   "protect": [
+    "000000",
+    "902424",
+    "909090",
+    "fc906c",
+    "fcfcfc"
+   ],
+   "faceBg": "fc2400",
+   "hairKind": [
+    "C",
+    "N",
+    "B",
+    "K",
+    "B",
+    "C",
+    "N"
+   ]
+  },
+  "6": {
+   "uniform": {
+    "902448": "topLo",
+    "fcb4fc": "topHi",
+    "b44800": "botLo",
+    "fc9000": "botHi",
+    "482448": "trimHi",
+    "240024": "extra"
+   },
+   "hair": {
+    "lo": "244800",
+    "hi": "009048",
+    "blk": "242424"
+   },
+   "protect": [
+    "000000",
+    "909090",
+    "b42424",
+    "fc906c",
+    "fcfcfc"
+   ],
+   "faceBg": "fc9000",
+   "hairKind": [
+    "B",
+    "N",
+    "C",
+    "B",
+    "B",
+    "B",
+    "B"
+   ]
+  },
+  "7": {
+   "uniform": {
+    "0024fc": "topLo",
+    "48d8fc": "topHi",
+    "48486c": "botHi",
+    "006c00": "trimLo",
+    "00d848": "trimHi"
+   },
+   "hair": {
+    "lo": "d86c00",
+    "hi": "fcfc48",
+    "blk": "242424"
+   },
+   "protect": [
+    "000000",
+    "6c2424",
+    "909090",
+    "b46c48",
+    "fcfcfc"
+   ],
+   "faceBg": "48486c",
+   "hairKind": [
+    "C",
+    "N",
+    "B",
+    "B",
+    "B",
+    "B",
+    "B"
+   ]
+  }
+ }
+}

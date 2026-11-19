@@ -1,0 +1,157 @@
+{
+  "_meta": {
+    "version": 1,
+    "doc": "analysis/38_flame_data_schema.md",
+    "notes": [
+      "stageBySource: 효과가 붙은 데이터 종류에 따른 §14.1 계산 단계. equipment=4, artifact=5(conditions.formationTag 가 있으면 6), synergy=7, consumable=8. 9단계(상한·하한)는 rules.json clamps.",
+      "timing: stat = 경기 전 능력치 합산, event = 경기 중 사건 훅, meta = 경기 밖(보상·영입·회복)."
+    ]
+  },
+  "stats": [
+    "s0",
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "r1",
+    "r2",
+    "r3"
+  ],
+  "targets": [
+    "self",
+    "team",
+    "captain",
+    "player"
+  ],
+  "conditionKeys": {
+    "formationTag": "enum:formation_tags",
+    "shotFamily": "enum:shot_families",
+    "special": "boolean",
+    "airborne": "boolean",
+    "afterCatch": "boolean",
+    "afterPass": "boolean",
+    "chargeMin": "integer",
+    "chargeMax": "integer",
+    "hpAtMostPct": "integer",
+    "isCaptain": "boolean",
+    "nodeType": "enum:nodes"
+  },
+  "stageBySource": {
+    "equipment": 4,
+    "artifact": 5,
+    "artifactFormation": 6,
+    "synergy": 7,
+    "consumable": 8
+  },
+  "types": {
+    "stat_bonus": {
+      "timing": "stat",
+      "params": {
+        "stat": "enum:stats",
+        "value": "integer|null",
+        "target": "enum:targets|null"
+      },
+      "conditions": [
+        "formationTag",
+        "hpAtMostPct",
+        "nodeType"
+      ],
+      "engineHook": "s0~s7 불필요(경기 시작 능력치 주입), r1~r3 필요, hpAtMostPct 조건은 경기 중 재계산 필요"
+    },
+    "throw_power_bonus": {
+      "timing": "event",
+      "params": {
+        "value": "integer|null",
+        "pct": "integer"
+      },
+      "conditions": [
+        "special",
+        "shotFamily",
+        "airborne",
+        "afterCatch",
+        "chargeMin",
+        "chargeMax"
+      ],
+      "engineHook": "필요(투구 위력 계산 직후)"
+    },
+    "throw_speed_bonus": {
+      "timing": "event",
+      "params": {
+        "value": "integer|null"
+      },
+      "conditions": [
+        "special",
+        "shotFamily",
+        "afterPass"
+      ],
+      "engineHook": "필요(투구 속도 계산 직후)"
+    },
+    "unlock_shot_family": {
+      "timing": "stat",
+      "params": {
+        "family": "enum:shot_families"
+      },
+      "conditions": [],
+      "engineHook": "필요(필살기 발동 허용 판정)"
+    },
+    "formation_bonus_amplify": {
+      "timing": "stat",
+      "params": {
+        "multiplierPct": "integer|null"
+      },
+      "conditions": [
+        "isCaptain"
+      ],
+      "engineHook": "불필요(6단계 합산값에 배율)"
+    },
+    "synergy_amplify": {
+      "timing": "stat",
+      "params": {
+        "multiplierPct": "integer|null"
+      },
+      "conditions": [],
+      "engineHook": "불필요(7단계 합산값에 배율)"
+    },
+    "survive_lethal": {
+      "timing": "event",
+      "params": {
+        "hpAfter": "integer",
+        "usesPerRun": "integer"
+      },
+      "conditions": [],
+      "engineHook": "필요(피해 적용 직전)"
+    },
+    "reward_extra_choice": {
+      "timing": "meta",
+      "params": {
+        "rewardKind": "string",
+        "rarity": "enum:rarity",
+        "count": "integer|null"
+      },
+      "conditions": [
+        "nodeType"
+      ],
+      "engineHook": "불필요(보상 생성)"
+    },
+    "recruit_extra_candidate": {
+      "timing": "meta",
+      "params": {
+        "count": "integer"
+      },
+      "conditions": [],
+      "engineHook": "불필요(영입 후보 생성)"
+    },
+    "heal_hp": {
+      "timing": "meta",
+      "params": {
+        "value": "integer",
+        "target": "enum:targets"
+      },
+      "conditions": [],
+      "engineHook": "불필요(도전 전용 현재 HP)"
+    }
+  }
+}

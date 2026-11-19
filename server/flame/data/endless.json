@@ -1,0 +1,24 @@
+{
+  "_meta": {
+    "version": 1,
+    "doc": "docs/PROTOCOL.md §13.12·§13.13, analysis/39_flame_decisions.md D24·D26·D27",
+    "notes": [
+      "엔드리스(무한 구간, 39 D24). 이 파일의 값은 전부 [자작 제안·시작값]이다. 기획 원문(analysis/36)의 3구간 12경기는 rules.json run 에 그대로 있고 뜻만 '우승 기준 구간'이 된다.",
+      "enabled 를 false 로 두거나 이 파일을 지우면 종전 동작(구간 3 보스 승리 = 우승으로 도전 종료, 12경기)으로 돌아간다(코드 수정 없음). 환경 변수 FLAME_ENDLESS=0 도 같은 뜻이다(측정 도구용).",
+      "구간 4 이상의 상대·보상 등급·영입 등급 확률은 run_config.json 의 각 표 마지막 줄(구간 3)을 그대로 쓴다. 상대 능력 가산은 하지 않는다(39 D25 = 사용자 승인 대기, 미구현).",
+      "items.max = 장비 보유 상한(인스턴스 수). 가득 찬 상태에서 얻은 장비는 받는 즉시 판매가(items_equipment.json proposed.sellPrice)의 경기 포인트로 바뀐다. 상점 구매는 FLAME_FULL 로 거절한다(값을 치르고 바로 팔리지 않게).",
+      "artifactFallbackPoints = 보스 보상으로 낼 아티팩트가 남지 않았을 때(전부 보유) 대신 주는 경기 포인트.",
+      "rerollPerBoss = fromSegment 구간(1부터) 이상의 보스를 이길 때마다 보상 재선택 횟수 +add. add 를 0 으로 두면 꺼진다.",
+      "recruitShownMax = 한 도전에서 이미 나온 영입 후보 기록의 보관 상한. 넘거나 후보가 모자라면 기록을 비우고 다시 뽑는다.",
+      "bossesKeep = 도전 저장에 남기는 격파 보스 목록의 길이(최근 것만). 저장이 구간 수에 비례해 커지지 않게 하는 값이다.",
+      "ranking.top = 도달 순위표 상위 줄 수(39 D27)."
+    ]
+  },
+  "enabled": true,
+  "items": { "max": 60 },
+  "artifactFallbackPoints": 150,
+  "rerollPerBoss": { "fromSegment": 4, "add": 1 },
+  "recruitShownMax": 400,
+  "bossesKeep": 12,
+  "ranking": { "top": 50 }
+}

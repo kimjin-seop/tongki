@@ -1,0 +1,4748 @@
+{
+ "version": 1,
+ "generated": "2026-11-19",
+ "asset_root": "public",
+ "count": 90,
+ "style": {
+  "grid": "32x32",
+  "outline": "#101018 1px (투명과 맞닿은 도트 전부)",
+  "palette": "아이템당 16색 이하, 채널당 3비트(9비트 색) 스냅",
+  "light": "왼쪽 위",
+  "background": "투명(알파 0/255)",
+  "ui_note": "외곽선이 어두우므로 슬롯 바탕은 #404860 이상 밝기를 권장. 희귀도 테두리는 UI 에서 처리"
+ },
+ "summary": {
+  "pass": 90,
+  "needs_work": 0,
+  "remake": 0
+ },
+ "items": [
+  {
+   "key": "flame.item.H01",
+   "id": "H01",
+   "name": "연습용 머리띠",
+   "path": "assets/flame-legacy/items/headbands/H01_practice_headband.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 6,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "R1",
+    "item_no": 1
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 2,
+    "regenerated": 1,
+    "sheets": [
+     "H",
+     "R1"
+    ],
+    "selected": "R1"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.H02",
+   "id": "H02",
+   "name": "근성 머리띠",
+   "path": "assets/flame-legacy/items/headbands/H02_guts_headband.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 5,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "H",
+    "item_no": 2
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "H"
+    ],
+    "selected": "H"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": "붓글씨 한 글자가 한자 모양(의미 없는 글자꼴)",
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.H03",
+   "id": "H03",
+   "name": "질풍 머리띠",
+   "path": "assets/flame-legacy/items/headbands/H03_gale_headband.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 4,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "H",
+    "item_no": 3
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "H"
+    ],
+    "selected": "H"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.H04",
+   "id": "H04",
+   "name": "도약 머리띠",
+   "path": "assets/flame-legacy/items/headbands/H04_leap_headband.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 6,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "H",
+    "item_no": 4
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "H"
+    ],
+    "selected": "H"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.H05",
+   "id": "H05",
+   "name": "집중 머리띠",
+   "path": "assets/flame-legacy/items/headbands/H05_focus_headband.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 4,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "H",
+    "item_no": 5
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "H"
+    ],
+    "selected": "H"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.H06",
+   "id": "H06",
+   "name": "투혼 머리띠",
+   "path": "assets/flame-legacy/items/headbands/H06_fighting_spirit_headband.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 4,
+   "method": "ai_sheet+pixel_postprocess+hand_pixel_code",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/handpx.py (함수 H06)",
+     "publish_v2.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "H",
+    "item_no": 6
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "H"
+    ],
+    "selected": "H"
+   },
+   "pixel_edit": "흩어진 점 제거, 5px 주기 사선 꼬임 줄로 정리(뒤쪽 띠는 반대 방향·어둡게)",
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json",
+   "revision": {
+    "rev": 2,
+    "date": "2026-11-19",
+    "before": "_backup/flame_icons_before/headbands/H06_fighting_spirit_headband.png",
+    "ai_calls": 0
+   }
+  },
+  {
+   "key": "flame.item.H07",
+   "id": "H07",
+   "name": "승부사의 머리띠",
+   "path": "assets/flame-legacy/items/headbands/H07_clutch_headband.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 6,
+   "method": "ai_sheet+pixel_postprocess+hand_pixel_code",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/handpx.py (함수 H07)",
+     "publish_v2.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "R3",
+    "item_no": 4
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 2,
+    "regenerated": 1,
+    "sheets": [
+     "H",
+     "R3"
+    ],
+    "selected": "R3"
+   },
+   "pixel_edit": "금색 별 문양을 7x7 로 다시 찍고 금테는 별 양옆으로 끊김 없이 정리",
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json",
+   "revision": {
+    "rev": 2,
+    "date": "2026-11-19",
+    "before": "_backup/flame_icons_before/headbands/H07_clutch_headband.png",
+    "ai_calls": 0
+   }
+  },
+  {
+   "key": "flame.item.H08",
+   "id": "H08",
+   "name": "불꽃 머리띠",
+   "path": "assets/flame-legacy/items/headbands/H08_flame_headband.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 6,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "H",
+    "item_no": 8
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "H"
+    ],
+    "selected": "H"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.H09",
+   "id": "H09",
+   "name": "반격의 머리띠",
+   "path": "assets/flame-legacy/items/headbands/H09_counter_headband.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 6,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "H",
+    "item_no": 9
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "H"
+    ],
+    "selected": "H"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.H10",
+   "id": "H10",
+   "name": "전설의 주장 머리띠",
+   "path": "assets/flame-legacy/items/headbands/H10_legendary_captain_headband.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 7,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "H",
+    "item_no": 10
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "H"
+    ],
+    "selected": "H"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.G01",
+   "id": "G01",
+   "name": "연습용 장갑",
+   "path": "assets/flame-legacy/items/gloves/G01_practice_glove.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 3,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "G",
+    "item_no": 1
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "G"
+    ],
+    "selected": "G"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.G02",
+   "id": "G02",
+   "name": "캐치 장갑",
+   "path": "assets/flame-legacy/items/gloves/G02_catch_glove.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 6,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "R1",
+    "item_no": 2
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 2,
+    "regenerated": 1,
+    "sheets": [
+     "G",
+     "R1"
+    ],
+    "selected": "R1"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.G03",
+   "id": "G03",
+   "name": "속구 장갑",
+   "path": "assets/flame-legacy/items/gloves/G03_fastball_glove.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 6,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "G",
+    "item_no": 3
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "G"
+    ],
+    "selected": "G"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.G04",
+   "id": "G04",
+   "name": "패스 장갑",
+   "path": "assets/flame-legacy/items/gloves/G04_pass_glove.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 5,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "R2",
+    "item_no": 6
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 2,
+    "regenerated": 1,
+    "sheets": [
+     "G",
+     "R2"
+    ],
+    "selected": "R2"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.G05",
+   "id": "G05",
+   "name": "강투 장갑",
+   "path": "assets/flame-legacy/items/gloves/G05_power_throw_glove.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 5,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "G",
+    "item_no": 5
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "G"
+    ],
+    "selected": "G"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.G06",
+   "id": "G06",
+   "name": "안정형 장갑",
+   "path": "assets/flame-legacy/items/gloves/G06_stable_glove.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 5,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "G",
+    "item_no": 6
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "G"
+    ],
+    "selected": "G"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.G07",
+   "id": "G07",
+   "name": "반격 장갑",
+   "path": "assets/flame-legacy/items/gloves/G07_counter_glove.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 7,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "R1",
+    "item_no": 3
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 2,
+    "regenerated": 1,
+    "sheets": [
+     "G",
+     "R1"
+    ],
+    "selected": "R1"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.G08",
+   "id": "G08",
+   "name": "점프슛 장갑",
+   "path": "assets/flame-legacy/items/gloves/G08_jumpshot_glove.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 7,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "G",
+    "item_no": 8
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "G"
+    ],
+    "selected": "G"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.G09",
+   "id": "G09",
+   "name": "도끼 장갑",
+   "path": "assets/flame-legacy/items/gloves/G09_axe_glove.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 4,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "G",
+    "item_no": 9
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "G"
+    ],
+    "selected": "G"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.G10",
+   "id": "G10",
+   "name": "전설의 에이스 장갑",
+   "path": "assets/flame-legacy/items/gloves/G10_legendary_ace_glove.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 7,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "G",
+    "item_no": 10
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "G"
+    ],
+    "selected": "G"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.P01",
+   "id": "P01",
+   "name": "연습용 보호대",
+   "path": "assets/flame-legacy/items/protectors/P01_practice_protector.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 8,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "R1",
+    "item_no": 4
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 2,
+    "regenerated": 1,
+    "sheets": [
+     "P",
+     "R1"
+    ],
+    "selected": "R1"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.P02",
+   "id": "P02",
+   "name": "체육부 보호대",
+   "path": "assets/flame-legacy/items/protectors/P02_pe_club_protector.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 4,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "P",
+    "item_no": 2
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "P"
+    ],
+    "selected": "P"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.P03",
+   "id": "P03",
+   "name": "밀림 방지 보호대",
+   "path": "assets/flame-legacy/items/protectors/P03_anti_push_protector.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 7,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "P",
+    "item_no": 3
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "P"
+    ],
+    "selected": "P"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.P04",
+   "id": "P04",
+   "name": "캐치 안정 보호대",
+   "path": "assets/flame-legacy/items/protectors/P04_catch_stable_protector.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 7,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "P",
+    "item_no": 4
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "P"
+    ],
+    "selected": "P"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.P05",
+   "id": "P05",
+   "name": "충격 흡수 보호대",
+   "path": "assets/flame-legacy/items/protectors/P05_shock_absorb_protector.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 9,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "P",
+    "item_no": 5
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "P"
+    ],
+    "selected": "P"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.P06",
+   "id": "P06",
+   "name": "회복 보호대",
+   "path": "assets/flame-legacy/items/protectors/P06_recovery_protector.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 10,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "P",
+    "item_no": 6
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "P"
+    ],
+    "selected": "P"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.P07",
+   "id": "P07",
+   "name": "강철 패드 보호대",
+   "path": "assets/flame-legacy/items/protectors/P07_steel_pad_protector.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 7,
+   "method": "hand_pixel_code",
+   "generator": {
+    "model": null,
+    "image_size": null,
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/handpx.py (함수 P07)",
+     "publish_v2.py"
+    ]
+   },
+   "prompt_ref": null,
+   "reference": [],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "P"
+    ],
+    "selected": "P"
+   },
+   "pixel_edit": "전면 재제작: 붉은 테두리 + 둥근 강철색 패드(가슴 2장·배 3장), 주머니·검은 끈 제거",
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "자체 제작(코드로 직접 찍은 도트), AI 생성물·원작 그림 미포함",
+   "source_data": "server/flame/data/items_equipment.json",
+   "revision": {
+    "rev": 2,
+    "date": "2026-11-19",
+    "before": "_backup/flame_icons_before/protectors/P07_steel_pad_protector.png",
+    "ai_calls": 0
+   }
+  },
+  {
+   "key": "flame.item.P08",
+   "id": "P08",
+   "name": "근성 보호대",
+   "path": "assets/flame-legacy/items/protectors/P08_guts_protector.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 9,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "P",
+    "item_no": 8
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "P"
+    ],
+    "selected": "P"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.P09",
+   "id": "P09",
+   "name": "철벽 보호대",
+   "path": "assets/flame-legacy/items/protectors/P09_ironwall_protector.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 5,
+   "method": "ai_sheet+pixel_postprocess+hand_pixel_code",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/handpx.py (함수 P09)",
+     "publish_v2.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "R2",
+    "item_no": 1
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 3,
+    "regenerated": 2,
+    "sheets": [
+     "P",
+     "R1",
+     "R2"
+    ],
+    "selected": "R2"
+   },
+   "pixel_edit": "청록 -> 보라 계열로 색 교체 + 갈비 윗줄 반사 추가(P05·P06 파랑 계열과 구분)",
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json",
+   "revision": {
+    "rev": 2,
+    "date": "2026-11-19",
+    "before": "_backup/flame_icons_before/protectors/P09_ironwall_protector.png",
+    "ai_calls": 0
+   }
+  },
+  {
+   "key": "flame.item.P10",
+   "id": "P10",
+   "name": "전설의 불굴 보호대",
+   "path": "assets/flame-legacy/items/protectors/P10_legendary_indomitable_protector.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 9,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "P",
+    "item_no": 10
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "P"
+    ],
+    "selected": "P"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.U01",
+   "id": "U01",
+   "name": "기본 체육복",
+   "path": "assets/flame-legacy/items/uniforms/U01_basic_gym_uniform.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 5,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "U",
+    "item_no": 1
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "U"
+    ],
+    "selected": "U"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.U02",
+   "id": "U02",
+   "name": "도약 체육복",
+   "path": "assets/flame-legacy/items/uniforms/U02_leap_gym_uniform.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 7,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "U",
+    "item_no": 2
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "U"
+    ],
+    "selected": "U"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.U03",
+   "id": "U03",
+   "name": "속공 유니폼",
+   "path": "assets/flame-legacy/items/uniforms/U03_fastbreak_uniform.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 7,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "U",
+    "item_no": 3
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "U"
+    ],
+    "selected": "U"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.U04",
+   "id": "U04",
+   "name": "점프 유니폼",
+   "path": "assets/flame-legacy/items/uniforms/U04_jump_uniform.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 8,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "U",
+    "item_no": 4
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "U"
+    ],
+    "selected": "U"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.U05",
+   "id": "U05",
+   "name": "질풍 유니폼",
+   "path": "assets/flame-legacy/items/uniforms/U05_gale_uniform.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 6,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "U",
+    "item_no": 5
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "U"
+    ],
+    "selected": "U"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.U06",
+   "id": "U06",
+   "name": "연계 유니폼",
+   "path": "assets/flame-legacy/items/uniforms/U06_combo_uniform.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 5,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "U",
+    "item_no": 6
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "U"
+    ],
+    "selected": "U"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.U07",
+   "id": "U07",
+   "name": "경량 유니폼",
+   "path": "assets/flame-legacy/items/uniforms/U07_lightweight_uniform.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 9,
+   "method": "ai_sheet+pixel_postprocess+hand_pixel_code",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/handpx.py (함수 U07)",
+     "publish_v2.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "U",
+    "item_no": 7
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "U"
+    ],
+    "selected": "U"
+   },
+   "pixel_edit": "그물 무늬를 2px 간격 규칙 구멍으로 교체, 오른쪽 1/3 한 단 어둡게",
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json",
+   "revision": {
+    "rev": 2,
+    "date": "2026-11-19",
+    "before": "_backup/flame_icons_before/uniforms/U07_lightweight_uniform.png",
+    "ai_calls": 0
+   }
+  },
+  {
+   "key": "flame.item.U08",
+   "id": "U08",
+   "name": "고공 유니폼",
+   "path": "assets/flame-legacy/items/uniforms/U08_highair_uniform.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 5,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "R3",
+    "item_no": 3
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 2,
+    "regenerated": 1,
+    "sheets": [
+     "U",
+     "R3"
+    ],
+    "selected": "R3"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.U09",
+   "id": "U09",
+   "name": "팀워크 유니폼",
+   "path": "assets/flame-legacy/items/uniforms/U09_teamwork_uniform.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 6,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "U",
+    "item_no": 9
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "U"
+    ],
+    "selected": "U"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.U10",
+   "id": "U10",
+   "name": "전설의 질풍 유니폼",
+   "path": "assets/flame-legacy/items/uniforms/U10_legendary_wind_uniform.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 10,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "U",
+    "item_no": 10
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "U"
+    ],
+    "selected": "U"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/items_equipment.json"
+  },
+  {
+   "key": "flame.item.A01",
+   "id": "A01",
+   "name": "불꽃 훈련공",
+   "path": "assets/flame-legacy/items/artifacts/A01_flame_training_ball.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 8,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "R1",
+    "item_no": 6
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 2,
+    "regenerated": 1,
+    "sheets": [
+     "A1",
+     "R1"
+    ],
+    "selected": "R1"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/artifacts.json"
+  },
+  {
+   "key": "flame.item.A02",
+   "id": "A02",
+   "name": "도끼슛 교본",
+   "path": "assets/flame-legacy/items/artifacts/A02_axe_shot_manual.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 7,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "A1",
+    "item_no": 2
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "A1"
+    ],
+    "selected": "A1"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/artifacts.json"
+  },
+  {
+   "key": "flame.item.A03",
+   "id": "A03",
+   "name": "회전 연습공",
+   "path": "assets/flame-legacy/items/artifacts/A03_spin_practice_ball.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 7,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "A1",
+    "item_no": 3
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "A1"
+    ],
+    "selected": "A1"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/artifacts.json"
+  },
+  {
+   "key": "flame.item.A04",
+   "id": "A04",
+   "name": "번개 특훈 테이프",
+   "path": "assets/flame-legacy/items/artifacts/A04_lightning_training_tape.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 5,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "R1",
+    "item_no": 7
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 2,
+    "regenerated": 1,
+    "sheets": [
+     "A1",
+     "R1"
+    ],
+    "selected": "R1"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/artifacts.json"
+  },
+  {
+   "key": "flame.item.A05",
+   "id": "A05",
+   "name": "비밀 슛 비디오",
+   "path": "assets/flame-legacy/items/artifacts/A05_secret_shot_video.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 7,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "A1",
+    "item_no": 5
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "A1"
+    ],
+    "selected": "A1"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/artifacts.json"
+  },
+  {
+   "key": "flame.item.A06",
+   "id": "A06",
+   "name": "폭발 훈련공",
+   "path": "assets/flame-legacy/items/artifacts/A06_blast_training_ball.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 6,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "A1",
+    "item_no": 6
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "A1"
+    ],
+    "selected": "A1"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/artifacts.json"
+  },
+  {
+   "key": "flame.item.A07",
+   "id": "A07",
+   "name": "에이스의 연습구",
+   "path": "assets/flame-legacy/items/artifacts/A07_ace_practice_ball.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 10,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "A1",
+    "item_no": 7
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "A1"
+    ],
+    "selected": "A1"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/artifacts.json"
+  },
+  {
+   "key": "flame.item.A08",
+   "id": "A08",
+   "name": "필살기 특훈 수첩",
+   "path": "assets/flame-legacy/items/artifacts/A08_special_training_notebook.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 7,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "A1",
+    "item_no": 8
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "A1"
+    ],
+    "selected": "A1"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/artifacts.json"
+  },
+  {
+   "key": "flame.item.A09",
+   "id": "A09",
+   "name": "철벽 작전보드",
+   "path": "assets/flame-legacy/items/artifacts/A09_ironwall_tactics_board.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 7,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "A1",
+    "item_no": 9
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "A1"
+    ],
+    "selected": "A1"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/artifacts.json"
+  },
+  {
+   "key": "flame.item.A10",
+   "id": "A10",
+   "name": "질풍의 응원 깃발",
+   "path": "assets/flame-legacy/items/artifacts/A10_gale_cheer_flag.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 9,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "A1",
+    "item_no": 10
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "A1"
+    ],
+    "selected": "A1"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/artifacts.json"
+  },
+  {
+   "key": "flame.item.A11",
+   "id": "A11",
+   "name": "주장 완장",
+   "path": "assets/flame-legacy/items/artifacts/A11_captain_armband.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 8,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "A2",
+    "item_no": 1
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "A2"
+    ],
+    "selected": "A2"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/artifacts.json"
+  },
+  {
+   "key": "flame.item.A12",
+   "id": "A12",
+   "name": "연계 작전노트",
+   "path": "assets/flame-legacy/items/artifacts/A12_combo_tactics_note.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 4,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "R4",
+    "item_no": 2
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 2,
+    "regenerated": 1,
+    "sheets": [
+     "A2",
+     "R4"
+    ],
+    "selected": "R4"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/artifacts.json"
+  },
+  {
+   "key": "flame.item.A13",
+   "id": "A13",
+   "name": "돌격 작전판",
+   "path": "assets/flame-legacy/items/artifacts/A13_charge_tactics_board.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 6,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "A2",
+    "item_no": 3
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "A2"
+    ],
+    "selected": "A2"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/artifacts.json"
+  },
+  {
+   "key": "flame.item.A14",
+   "id": "A14",
+   "name": "수비 특훈 기록부",
+   "path": "assets/flame-legacy/items/artifacts/A14_defense_training_log.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 10,
+   "method": "ai_sheet+pixel_postprocess+hand_pixel_code",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/handpx.py (함수 A14)",
+     "publish_v2.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "A2",
+    "item_no": 4
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "A2"
+    ],
+    "selected": "A2"
+   },
+   "pixel_edit": "뭉개진 끈 매듭 제거 -> 가죽 여밈 끈 + 똑딱 단추",
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/artifacts.json",
+   "revision": {
+    "rev": 2,
+    "date": "2026-11-19",
+    "before": "_backup/flame_icons_before/artifacts/A14_defense_training_log.png",
+    "ai_calls": 0
+   }
+  },
+  {
+   "key": "flame.item.A15",
+   "id": "A15",
+   "name": "고공 작전도",
+   "path": "assets/flame-legacy/items/artifacts/A15_highair_tactics_map.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 8,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "A2",
+    "item_no": 5
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "A2"
+    ],
+    "selected": "A2"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/artifacts.json"
+  },
+  {
+   "key": "flame.item.A16",
+   "id": "A16",
+   "name": "속공 호각",
+   "path": "assets/flame-legacy/items/artifacts/A16_fastbreak_whistle.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 9,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "A2",
+    "item_no": 6
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "A2"
+    ],
+    "selected": "A2"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/artifacts.json"
+  },
+  {
+   "key": "flame.item.A17",
+   "id": "A17",
+   "name": "철벽 팀 배지",
+   "path": "assets/flame-legacy/items/artifacts/A17_ironwall_team_badge.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 6,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "A2",
+    "item_no": 7
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "A2"
+    ],
+    "selected": "A2"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/artifacts.json"
+  },
+  {
+   "key": "flame.item.A18",
+   "id": "A18",
+   "name": "전술 교본",
+   "path": "assets/flame-legacy/items/artifacts/A18_tactics_textbook.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 6,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "A2",
+    "item_no": 8
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "A2"
+    ],
+    "selected": "A2"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/artifacts.json"
+  },
+  {
+   "key": "flame.item.A19",
+   "id": "A19",
+   "name": "전설의 피구공",
+   "path": "assets/flame-legacy/items/artifacts/A19_legendary_dodgeball.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 9,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "A2",
+    "item_no": 9
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "A2"
+    ],
+    "selected": "A2"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/artifacts.json"
+  },
+  {
+   "key": "flame.item.A20",
+   "id": "A20",
+   "name": "우승 트로피",
+   "path": "assets/flame-legacy/items/artifacts/A20_champion_trophy.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 9,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "A2",
+    "item_no": 10
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "A2"
+    ],
+    "selected": "A2"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/artifacts.json"
+  },
+  {
+   "key": "flame.item.A21",
+   "id": "A21",
+   "name": "특훈 출석부",
+   "path": "assets/flame-legacy/items/artifacts/A21_training_attendance_book.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 7,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "R3",
+    "item_no": 2
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 2,
+    "regenerated": 1,
+    "sheets": [
+     "A3",
+     "R3"
+    ],
+    "selected": "R3"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/artifacts.json"
+  },
+  {
+   "key": "flame.item.A22",
+   "id": "A22",
+   "name": "명문 피구부 배지",
+   "path": "assets/flame-legacy/items/artifacts/A22_elite_club_badge.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 9,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "A3",
+    "item_no": 2
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "A3"
+    ],
+    "selected": "A3"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/artifacts.json"
+  },
+  {
+   "key": "flame.item.A23",
+   "id": "A23",
+   "name": "전국대회 경기구",
+   "path": "assets/flame-legacy/items/artifacts/A23_national_match_ball.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 9,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "A3",
+    "item_no": 3
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "A3"
+    ],
+    "selected": "A3"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/artifacts.json"
+  },
+  {
+   "key": "flame.item.A24",
+   "id": "A24",
+   "name": "팀워크 응원 깃발",
+   "path": "assets/flame-legacy/items/artifacts/A24_teamwork_cheer_flag.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 9,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "R2",
+    "item_no": 2
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 3,
+    "regenerated": 2,
+    "sheets": [
+     "A3",
+     "R1",
+     "R2"
+    ],
+    "selected": "R2"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/artifacts.json"
+  },
+  {
+   "key": "flame.item.A25",
+   "id": "A25",
+   "name": "근성의 구호판",
+   "path": "assets/flame-legacy/items/artifacts/A25_guts_slogan_board.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 5,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "A3",
+    "item_no": 5
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "A3"
+    ],
+    "selected": "A3"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": "붓글씨 덩어리가 한자 모양",
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/artifacts.json"
+  },
+  {
+   "key": "flame.item.A26",
+   "id": "A26",
+   "name": "충격 완화 매트",
+   "path": "assets/flame-legacy/items/artifacts/A26_shock_absorb_mat.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 8,
+   "method": "hand_pixel_code",
+   "generator": {
+    "model": null,
+    "image_size": null,
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/handpx.py (함수 A26)",
+     "publish_v2.py"
+    ]
+   },
+   "prompt_ref": null,
+   "reference": [],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "A3"
+    ],
+    "selected": "A3"
+   },
+   "pixel_edit": "전면 재제작: 3단 접이 매트(겹침선 2줄) + 고리형 손잡이",
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "자체 제작(코드로 직접 찍은 도트), AI 생성물·원작 그림 미포함",
+   "source_data": "server/flame/data/artifacts.json",
+   "revision": {
+    "rev": 2,
+    "date": "2026-11-19",
+    "before": "_backup/flame_icons_before/artifacts/A26_shock_absorb_mat.png",
+    "ai_calls": 0
+   }
+  },
+  {
+   "key": "flame.item.A27",
+   "id": "A27",
+   "name": "캐치 특훈 교본",
+   "path": "assets/flame-legacy/items/artifacts/A27_catch_training_manual.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 8,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "A3",
+    "item_no": 7
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "A3"
+    ],
+    "selected": "A3"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/artifacts.json"
+  },
+  {
+   "key": "flame.item.A28",
+   "id": "A28",
+   "name": "비밀 훈련 기록",
+   "path": "assets/flame-legacy/items/artifacts/A28_secret_training_record.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 6,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "A3",
+    "item_no": 8
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "A3"
+    ],
+    "selected": "A3"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": "붉은 도장이 한자 모양",
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/artifacts.json"
+  },
+  {
+   "key": "flame.item.A29",
+   "id": "A29",
+   "name": "우승 후보 명찰",
+   "path": "assets/flame-legacy/items/artifacts/A29_contender_name_tag.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 9,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "R4",
+    "item_no": 3
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 2,
+    "regenerated": 1,
+    "sheets": [
+     "A3",
+     "R4"
+    ],
+    "selected": "R4"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/artifacts.json"
+  },
+  {
+   "key": "flame.item.A30",
+   "id": "A30",
+   "name": "불꽃의 계승 증표",
+   "path": "assets/flame-legacy/items/artifacts/A30_flame_legacy_token.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 8,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "A3",
+    "item_no": 10
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "A3"
+    ],
+    "selected": "A3"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/artifacts.json"
+  },
+  {
+   "key": "flame.item.C01",
+   "id": "C01",
+   "name": "스포츠 드링크",
+   "path": "assets/flame-legacy/items/consumables/C01_sports_drink.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 7,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "C1",
+    "item_no": 1
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "C1"
+    ],
+    "selected": "C1"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/consumables.json"
+  },
+  {
+   "key": "flame.item.C02",
+   "id": "C02",
+   "name": "특제 스포츠 드링크",
+   "path": "assets/flame-legacy/items/consumables/C02_special_sports_drink.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 7,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "C1",
+    "item_no": 2
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "C1"
+    ],
+    "selected": "C1"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/consumables.json"
+  },
+  {
+   "key": "flame.item.C03",
+   "id": "C03",
+   "name": "에너지 주먹밥",
+   "path": "assets/flame-legacy/items/consumables/C03_energy_riceball.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 7,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "C1",
+    "item_no": 3
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "C1"
+    ],
+    "selected": "C1"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/consumables.json"
+  },
+  {
+   "key": "flame.item.C04",
+   "id": "C04",
+   "name": "특훈 도시락",
+   "path": "assets/flame-legacy/items/consumables/C04_training_lunchbox.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 7,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "C1",
+    "item_no": 4
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "C1"
+    ],
+    "selected": "C1"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/consumables.json"
+  },
+  {
+   "key": "flame.item.C05",
+   "id": "C05",
+   "name": "냉찜질 팩",
+   "path": "assets/flame-legacy/items/consumables/C05_ice_pack.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 9,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "C1",
+    "item_no": 5
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "C1"
+    ],
+    "selected": "C1"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/consumables.json"
+  },
+  {
+   "key": "flame.item.C06",
+   "id": "C06",
+   "name": "손목 테이핑",
+   "path": "assets/flame-legacy/items/consumables/C06_wrist_taping.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 6,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "C1",
+    "item_no": 6
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "C1"
+    ],
+    "selected": "C1"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/consumables.json"
+  },
+  {
+   "key": "flame.item.C07",
+   "id": "C07",
+   "name": "발목 테이핑",
+   "path": "assets/flame-legacy/items/consumables/C07_ankle_taping.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 9,
+   "method": "hand_pixel_code",
+   "generator": {
+    "model": null,
+    "image_size": null,
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/handpx.py (함수 C07)",
+     "publish_v2.py"
+    ]
+   },
+   "prompt_ref": null,
+   "reference": [],
+   "attempts": {
+    "generated": 4,
+    "regenerated": 3,
+    "sheets": [
+     "C1",
+     "R1",
+     "R2",
+     "R3"
+    ],
+    "selected": "R3"
+   },
+   "pixel_edit": "전면 재제작: 흰 양말 발목에 감은 살구색 테이프 + 테이프 롤",
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "자체 제작(코드로 직접 찍은 도트), AI 생성물·원작 그림 미포함",
+   "source_data": "server/flame/data/consumables.json",
+   "revision": {
+    "rev": 2,
+    "date": "2026-11-19",
+    "before": "_backup/flame_icons_before/consumables/C07_ankle_taping.png",
+    "ai_calls": 0
+   }
+  },
+  {
+   "key": "flame.item.C08",
+   "id": "C08",
+   "name": "무릎 보호 테이프",
+   "path": "assets/flame-legacy/items/consumables/C08_knee_support_tape.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 9,
+   "method": "hand_pixel_code",
+   "generator": {
+    "model": null,
+    "image_size": null,
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/handpx.py (함수 C08)",
+     "publish_v2.py"
+    ]
+   },
+   "prompt_ref": null,
+   "reference": [],
+   "attempts": {
+    "generated": 3,
+    "regenerated": 2,
+    "sheets": [
+     "C1",
+     "R4",
+     "R5"
+    ],
+    "selected": "R5"
+   },
+   "pixel_edit": "전면 재제작: 배구식 무릎 보호대(타원 쿠션) + 위아래 흰 테이프 + 풀린 끝",
+   "qa": {
+    "verdict": "pass",
+    "reason": "1배에서 볼록한 보호대 + 흰 테이프 띠로 읽힘(굽은 파이프 오독 해소). 무릎 부위라는 점은 이름과 함께 볼 때 확정됨",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "자체 제작(코드로 직접 찍은 도트), AI 생성물·원작 그림 미포함",
+   "source_data": "server/flame/data/consumables.json",
+   "revision": {
+    "rev": 2,
+    "date": "2026-11-19",
+    "before": "_backup/flame_icons_before/consumables/C08_knee_support_tape.png",
+    "ai_calls": 0
+   }
+  },
+  {
+   "key": "flame.item.C09",
+   "id": "C09",
+   "name": "캐치용 미끄럼 방지제",
+   "path": "assets/flame-legacy/items/consumables/C09_catch_antislip_agent.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 8,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "C1",
+    "item_no": 9
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "C1"
+    ],
+    "selected": "C1"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/consumables.json"
+  },
+  {
+   "key": "flame.item.C10",
+   "id": "C10",
+   "name": "충격 흡수 패드",
+   "path": "assets/flame-legacy/items/consumables/C10_shock_absorb_pad.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 10,
+   "method": "hand_pixel_code",
+   "generator": {
+    "model": null,
+    "image_size": null,
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/handpx.py (함수 C10)",
+     "publish_v2.py"
+    ]
+   },
+   "prompt_ref": null,
+   "reference": [],
+   "attempts": {
+    "generated": 3,
+    "regenerated": 2,
+    "sheets": [
+     "C1",
+     "R1",
+     "R2"
+    ],
+    "selected": "R2"
+   },
+   "pixel_edit": "전면 재제작: 청록 누빔 사각 쿠션 + 벨크로 끈 2줄(오른쪽 접착 끝)",
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "자체 제작(코드로 직접 찍은 도트), AI 생성물·원작 그림 미포함",
+   "source_data": "server/flame/data/consumables.json",
+   "revision": {
+    "rev": 2,
+    "date": "2026-11-19",
+    "before": "_backup/flame_icons_before/consumables/C10_shock_absorb_pad.png",
+    "ai_calls": 0
+   }
+  },
+  {
+   "key": "flame.item.C11",
+   "id": "C11",
+   "name": "긴급 치료 키트",
+   "path": "assets/flame-legacy/items/consumables/C11_emergency_med_kit.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 6,
+   "method": "ai_sheet+pixel_postprocess+pixel_edit",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "C2",
+    "item_no": 1
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "C2"
+    ],
+    "selected": "C2"
+   },
+   "pixel_edit": "십자 색 붉은색 -> 초록(#009224)",
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": "적십자 표장 회피를 위해 십자를 초록으로 바꿈",
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/consumables.json"
+  },
+  {
+   "key": "flame.item.C12",
+   "id": "C12",
+   "name": "전술 메모",
+   "path": "assets/flame-legacy/items/consumables/C12_tactics_memo.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 5,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "R4",
+    "item_no": 4
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 2,
+    "regenerated": 1,
+    "sheets": [
+     "C2",
+     "R4"
+    ],
+    "selected": "R4"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/consumables.json"
+  },
+  {
+   "key": "flame.item.C13",
+   "id": "C13",
+   "name": "응원 머플러",
+   "path": "assets/flame-legacy/items/consumables/C13_cheer_muffler.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 5,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "C2",
+    "item_no": 3
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "C2"
+    ],
+    "selected": "C2"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/consumables.json"
+  },
+  {
+   "key": "flame.item.C14",
+   "id": "C14",
+   "name": "특훈 호각",
+   "path": "assets/flame-legacy/items/consumables/C14_training_whistle.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 9,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "C2",
+    "item_no": 4
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "C2"
+    ],
+    "selected": "C2"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/consumables.json"
+  },
+  {
+   "key": "flame.item.C15",
+   "id": "C15",
+   "name": "고무 연습공",
+   "path": "assets/flame-legacy/items/consumables/C15_rubber_practice_ball.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 7,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "C2",
+    "item_no": 5
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "C2"
+    ],
+    "selected": "C2"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/consumables.json"
+  },
+  {
+   "key": "flame.item.C16",
+   "id": "C16",
+   "name": "무게 훈련공",
+   "path": "assets/flame-legacy/items/consumables/C16_weighted_training_ball.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 8,
+   "method": "hand_pixel_code",
+   "generator": {
+    "model": null,
+    "image_size": null,
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/handpx.py (함수 C16)",
+     "publish_v2.py"
+    ]
+   },
+   "prompt_ref": null,
+   "reference": [],
+   "attempts": {
+    "generated": 3,
+    "regenerated": 2,
+    "sheets": [
+     "C2",
+     "R1",
+     "R2"
+    ],
+    "selected": "R2"
+   },
+   "pixel_edit": "전면 재제작: 두 톤 가죽 메디신볼(이음선 6줄 + 꼭지 가죽 조각), 손잡이 없음",
+   "qa": {
+    "verdict": "pass",
+    "reason": "가죽 공 + 이음선으로 읽힘. 무겁다는 속성은 그림만으로는 전달 한계",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "자체 제작(코드로 직접 찍은 도트), AI 생성물·원작 그림 미포함",
+   "source_data": "server/flame/data/consumables.json",
+   "revision": {
+    "rev": 2,
+    "date": "2026-11-19",
+    "before": "_backup/flame_icons_before/consumables/C16_weighted_training_ball.png",
+    "ai_calls": 0
+   }
+  },
+  {
+   "key": "flame.item.C17",
+   "id": "C17",
+   "name": "유연성 훈련 밴드",
+   "path": "assets/flame-legacy/items/consumables/C17_flexibility_band.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 8,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "R1",
+    "item_no": 12
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 2,
+    "regenerated": 1,
+    "sheets": [
+     "C2",
+     "R1"
+    ],
+    "selected": "R1"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/consumables.json"
+  },
+  {
+   "key": "flame.item.C18",
+   "id": "C18",
+   "name": "경기 분석 비디오",
+   "path": "assets/flame-legacy/items/consumables/C18_match_analysis_video.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 4,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "C2",
+    "item_no": 8
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "C2"
+    ],
+    "selected": "C2"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": null,
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/consumables.json"
+  },
+  {
+   "key": "flame.item.C19",
+   "id": "C19",
+   "name": "스카우트 추천서",
+   "path": "assets/flame-legacy/items/consumables/C19_scout_recommendation.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 8,
+   "method": "ai_sheet+pixel_postprocess+pixel_edit",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "C2",
+    "item_no": 9
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "C2"
+    ],
+    "selected": "C2"
+   },
+   "pixel_edit": "봉인 색 붉은색 -> 금색",
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": "흰 바탕 붉은 원이 특정 국기처럼 보여 봉인을 금색으로 바꿈",
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/consumables.json"
+  },
+  {
+   "key": "flame.item.C20",
+   "id": "C20",
+   "name": "우승 기원 부적",
+   "path": "assets/flame-legacy/items/consumables/C20_victory_charm.png",
+   "type": "icon",
+   "size": [
+    32,
+    32
+   ],
+   "alpha": true,
+   "scale": "integer (nearest / image-rendering: pixelated)",
+   "colors": 7,
+   "method": "ai_sheet+pixel_postprocess",
+   "generator": {
+    "model": "gemini-nano-banana-2.1",
+    "image_size": "1K",
+    "seed": null,
+    "scripts": [
+     "_asset_samples/flame_icons_v1/scripts/gen.mjs",
+     "pp.py",
+     "publish.py"
+    ]
+   },
+   "prompt_ref": {
+    "file": "_asset_samples/flame_icons_v1/scripts/style.mjs",
+    "job": "C2",
+    "item_no": 10
+   },
+   "reference": [
+    "_asset_samples/flame_icons_v1/refs/ref_orig_ball.png (원작 공·이펙트 도트 x6)"
+   ],
+   "attempts": {
+    "generated": 1,
+    "regenerated": 0,
+    "sheets": [
+     "C2"
+    ],
+    "selected": "C2"
+   },
+   "pixel_edit": null,
+   "qa": {
+    "verdict": "pass",
+    "reason": "",
+    "silhouette": "ok",
+    "fantasy_look": false,
+    "style_match": "ok"
+   },
+   "verify": "부적의 금색 문양이 한자 모양",
+   "license": "AI 생성물(자체 제작), 원작 그림 미포함. 참조 이미지는 화풍 기준으로만 입력",
+   "source_data": "server/flame/data/consumables.json"
+  }
+ ],
+ "revised": "2026-11-19 rev2: 11종 코드 도트 재작업(C07 C08 C10 C16 P07 P09 H06 H07 U07 A14 A26)"
+}

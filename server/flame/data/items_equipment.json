@@ -1,0 +1,1146 @@
+{
+  "_meta": {
+    "version": 1,
+    "source": "analysis/36_flame_legacy_spec.md §4, §5",
+    "notes": [
+      "name·rarity·specText 는 기획서 표 원문 그대로다. stats 는 무조건 능력치 증감(s0~s7 정수, r1·r2 는 % 포인트, r3 은 단축 프레임), effects 는 조건부·특수 효과.",
+      "proposed 아래 값은 전부 [자작 제안]이다(기획서에 수치 없음). sellPrice 는 등급별 15/30/60/120, sources 는 획득 출처 초안.",
+      "source 는 기획서에 품목별 출처가 없어 null 이다.",
+      "강화(+1~+3)는 stats 의 양수 값에만 적용하고 effects 는 그대로 둔다(§6.1). 규칙은 economy.json upgrade."
+    ]
+  },
+  "items": [
+    {
+      "id": "H01",
+      "name": "연습용 머리띠",
+      "slot": "headband",
+      "rarity": "common",
+      "specText": "캐치 지속 +1",
+      "stats": {
+        "s5": 1
+      },
+      "effects": [],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/headbands/H01_practice_headband.png",
+      "proposed": {
+        "sellPrice": 15,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "H02",
+      "name": "근성 머리띠",
+      "slot": "headband",
+      "rarity": "common",
+      "specText": "HP +8",
+      "stats": {
+        "s0": 8
+      },
+      "effects": [],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/headbands/H02_guts_headband.png",
+      "proposed": {
+        "sellPrice": 15,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "H03",
+      "name": "질풍 머리띠",
+      "slot": "headband",
+      "rarity": "rare",
+      "specText": "이동속도 +1",
+      "stats": {
+        "s2": 1
+      },
+      "effects": [],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/headbands/H03_gale_headband.png",
+      "proposed": {
+        "sellPrice": 30,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "H04",
+      "name": "도약 머리띠",
+      "slot": "headband",
+      "rarity": "rare",
+      "specText": "점프력 +1, 점프슛 위력 +2",
+      "stats": {
+        "s3": 1
+      },
+      "effects": [
+        {
+          "type": "throw_power_bonus",
+          "params": {
+            "value": 2
+          },
+          "conditions": {
+            "airborne": true
+          },
+          "tags": [
+            "offense",
+            "jump"
+          ]
+        }
+      ],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/headbands/H04_leap_headband.png",
+      "proposed": {
+        "sellPrice": 30,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "H05",
+      "name": "집중 머리띠",
+      "slot": "headband",
+      "rarity": "rare",
+      "specText": "캐치 지속 +2",
+      "stats": {
+        "s5": 2
+      },
+      "effects": [],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/headbands/H05_focus_headband.png",
+      "proposed": {
+        "sellPrice": 30,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "H06",
+      "name": "투혼 머리띠",
+      "slot": "headband",
+      "rarity": "rare",
+      "specText": "공격력 +3",
+      "stats": {
+        "s4": 3
+      },
+      "effects": [],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/headbands/H06_fighting_spirit_headband.png",
+      "proposed": {
+        "sellPrice": 30,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "H07",
+      "name": "승부사의 머리띠",
+      "slot": "headband",
+      "rarity": "epic",
+      "specText": "차지 13~15 구간 투구 시 위력 +4",
+      "stats": {},
+      "effects": [
+        {
+          "type": "throw_power_bonus",
+          "params": {
+            "value": 4
+          },
+          "conditions": {
+            "chargeMin": 13,
+            "chargeMax": 15
+          },
+          "tags": [
+            "offense",
+            "charge"
+          ]
+        }
+      ],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/headbands/H07_clutch_headband.png",
+      "proposed": {
+        "sellPrice": 60,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "H08",
+      "name": "불꽃 머리띠",
+      "slot": "headband",
+      "rarity": "epic",
+      "specText": "공격력 +3, 불꽃 계열 필살기 위력 +6",
+      "stats": {
+        "s4": 3
+      },
+      "effects": [
+        {
+          "type": "throw_power_bonus",
+          "params": {
+            "value": 6
+          },
+          "conditions": {
+            "special": true,
+            "shotFamily": "flame"
+          },
+          "tags": [
+            "offense",
+            "special"
+          ]
+        }
+      ],
+      "formationTags": [],
+      "shotTags": [
+        "flame"
+      ],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/headbands/H08_flame_headband.png",
+      "proposed": {
+        "sellPrice": 60,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "H09",
+      "name": "반격의 머리띠",
+      "slot": "headband",
+      "rarity": "epic",
+      "specText": "캐치 성공 후 다음 투구 위력 +6",
+      "stats": {},
+      "effects": [
+        {
+          "type": "throw_power_bonus",
+          "params": {
+            "value": 6
+          },
+          "conditions": {
+            "afterCatch": true
+          },
+          "tags": [
+            "offense",
+            "counter"
+          ]
+        }
+      ],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/headbands/H09_counter_headband.png",
+      "proposed": {
+        "sellPrice": 60,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "H10",
+      "name": "전설의 주장 머리띠",
+      "slot": "headband",
+      "rarity": "legendary",
+      "specText": "캐치 지속 +3, 장착 선수의 패스 속도 +5, 주장 지정 시 포메이션 효과 강화",
+      "stats": {
+        "s5": 3,
+        "s7": 5
+      },
+      "effects": [
+        {
+          "type": "formation_bonus_amplify",
+          "params": {
+            "multiplierPct": null
+          },
+          "conditions": {
+            "isCaptain": true
+          },
+          "tags": [
+            "formation",
+            "captain"
+          ],
+          "proposed": {
+            "multiplierPct": 50
+          }
+        }
+      ],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/headbands/H10_legendary_captain_headband.png",
+      "proposed": {
+        "sellPrice": 120,
+        "sources": [
+          "reward",
+          "shop",
+          "requires:PC02"
+        ]
+      }
+    },
+    {
+      "id": "G01",
+      "name": "연습용 장갑",
+      "slot": "glove",
+      "rarity": "common",
+      "specText": "공격력 +1",
+      "stats": {
+        "s4": 1
+      },
+      "effects": [],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/gloves/G01_practice_glove.png",
+      "proposed": {
+        "sellPrice": 15,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "G02",
+      "name": "캐치 장갑",
+      "slot": "glove",
+      "rarity": "common",
+      "specText": "캐치 지속 +1",
+      "stats": {
+        "s5": 1
+      },
+      "effects": [],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/gloves/G02_catch_glove.png",
+      "proposed": {
+        "sellPrice": 15,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "G03",
+      "name": "속구 장갑",
+      "slot": "glove",
+      "rarity": "rare",
+      "specText": "투구 속도 +3",
+      "stats": {
+        "s6": 3
+      },
+      "effects": [],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/gloves/G03_fastball_glove.png",
+      "proposed": {
+        "sellPrice": 30,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "G04",
+      "name": "패스 장갑",
+      "slot": "glove",
+      "rarity": "rare",
+      "specText": "패스 속도 +3",
+      "stats": {
+        "s7": 3
+      },
+      "effects": [],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/gloves/G04_pass_glove.png",
+      "proposed": {
+        "sellPrice": 30,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "G05",
+      "name": "강투 장갑",
+      "slot": "glove",
+      "rarity": "rare",
+      "specText": "공격력 +3",
+      "stats": {
+        "s4": 3
+      },
+      "effects": [],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/gloves/G05_power_throw_glove.png",
+      "proposed": {
+        "sellPrice": 30,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "G06",
+      "name": "안정형 장갑",
+      "slot": "glove",
+      "rarity": "rare",
+      "specText": "캐치 지속 +2, 캐치 후 밀림 감소 +10%",
+      "stats": {
+        "s5": 2,
+        "r2": 10
+      },
+      "effects": [],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/gloves/G06_stable_glove.png",
+      "proposed": {
+        "sellPrice": 30,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "G07",
+      "name": "반격 장갑",
+      "slot": "glove",
+      "rarity": "epic",
+      "specText": "캐치 후 첫 투구 위력 +7",
+      "stats": {},
+      "effects": [
+        {
+          "type": "throw_power_bonus",
+          "params": {
+            "value": 7
+          },
+          "conditions": {
+            "afterCatch": true
+          },
+          "tags": [
+            "offense",
+            "counter"
+          ]
+        }
+      ],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/gloves/G07_counter_glove.png",
+      "proposed": {
+        "sellPrice": 60,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "G08",
+      "name": "점프슛 장갑",
+      "slot": "glove",
+      "rarity": "epic",
+      "specText": "점프 중 투구 위력 +6",
+      "stats": {},
+      "effects": [
+        {
+          "type": "throw_power_bonus",
+          "params": {
+            "value": 6
+          },
+          "conditions": {
+            "airborne": true
+          },
+          "tags": [
+            "offense",
+            "jump"
+          ]
+        }
+      ],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/gloves/G08_jumpshot_glove.png",
+      "proposed": {
+        "sellPrice": 60,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "G09",
+      "name": "도끼 장갑",
+      "slot": "glove",
+      "rarity": "epic",
+      "specText": "도끼 계열 필살기 위력 +8",
+      "stats": {},
+      "effects": [
+        {
+          "type": "throw_power_bonus",
+          "params": {
+            "value": 8
+          },
+          "conditions": {
+            "special": true,
+            "shotFamily": "axe"
+          },
+          "tags": [
+            "offense",
+            "special"
+          ]
+        }
+      ],
+      "formationTags": [],
+      "shotTags": [
+        "axe"
+      ],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/gloves/G09_axe_glove.png",
+      "proposed": {
+        "sellPrice": 60,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "G10",
+      "name": "전설의 에이스 장갑",
+      "slot": "glove",
+      "rarity": "legendary",
+      "specText": "공격력 +5, 필살기 위력 +6, 투구 속도 +2",
+      "stats": {
+        "s4": 5,
+        "s6": 2
+      },
+      "effects": [
+        {
+          "type": "throw_power_bonus",
+          "params": {
+            "value": 6
+          },
+          "conditions": {
+            "special": true
+          },
+          "tags": [
+            "offense",
+            "special"
+          ]
+        }
+      ],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/gloves/G10_legendary_ace_glove.png",
+      "proposed": {
+        "sellPrice": 120,
+        "sources": [
+          "reward",
+          "shop",
+          "requires:PC02"
+        ]
+      }
+    },
+    {
+      "id": "P01",
+      "name": "연습용 보호대",
+      "slot": "protector",
+      "rarity": "common",
+      "specText": "HP +6",
+      "stats": {
+        "s0": 6
+      },
+      "effects": [],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/protectors/P01_practice_protector.png",
+      "proposed": {
+        "sellPrice": 15,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "P02",
+      "name": "체육부 보호대",
+      "slot": "protector",
+      "rarity": "common",
+      "specText": "방어력 +1",
+      "stats": {
+        "s1": 1
+      },
+      "effects": [],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/protectors/P02_pe_club_protector.png",
+      "proposed": {
+        "sellPrice": 15,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "P03",
+      "name": "밀림 방지 보호대",
+      "slot": "protector",
+      "rarity": "rare",
+      "specText": "넉백 저항 +10%",
+      "stats": {
+        "r1": 10
+      },
+      "effects": [],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/protectors/P03_anti_push_protector.png",
+      "proposed": {
+        "sellPrice": 30,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "P04",
+      "name": "캐치 안정 보호대",
+      "slot": "protector",
+      "rarity": "rare",
+      "specText": "캐치 후 밀림 감소 +15%",
+      "stats": {
+        "r2": 15
+      },
+      "effects": [],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/protectors/P04_catch_stable_protector.png",
+      "proposed": {
+        "sellPrice": 30,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "P05",
+      "name": "충격 흡수 보호대",
+      "slot": "protector",
+      "rarity": "rare",
+      "specText": "넉백 저항 +15%, HP +5",
+      "stats": {
+        "s0": 5,
+        "r1": 15
+      },
+      "effects": [],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/protectors/P05_shock_absorb_protector.png",
+      "proposed": {
+        "sellPrice": 30,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "P06",
+      "name": "회복 보호대",
+      "slot": "protector",
+      "rarity": "rare",
+      "specText": "쓰러짐 회복 6프레임 단축",
+      "stats": {
+        "r3": 6
+      },
+      "effects": [],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/protectors/P06_recovery_protector.png",
+      "proposed": {
+        "sellPrice": 30,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "P07",
+      "name": "강철 패드 보호대",
+      "slot": "protector",
+      "rarity": "epic",
+      "specText": "방어력 +3",
+      "stats": {
+        "s1": 3
+      },
+      "effects": [],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/protectors/P07_steel_pad_protector.png",
+      "proposed": {
+        "sellPrice": 60,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "P08",
+      "name": "근성 보호대",
+      "slot": "protector",
+      "rarity": "epic",
+      "specText": "HP +15, HP 30% 이하에서 방어력 +2",
+      "stats": {
+        "s0": 15
+      },
+      "effects": [
+        {
+          "type": "stat_bonus",
+          "params": {
+            "stat": "s1",
+            "value": 2,
+            "target": "self"
+          },
+          "conditions": {
+            "hpAtMostPct": 30
+          },
+          "tags": [
+            "defense"
+          ]
+        }
+      ],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/protectors/P08_guts_protector.png",
+      "proposed": {
+        "sellPrice": 60,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "P09",
+      "name": "철벽 보호대",
+      "slot": "protector",
+      "rarity": "epic",
+      "specText": "방어력 +3, 넉백 저항 +20%",
+      "stats": {
+        "s1": 3,
+        "r1": 20
+      },
+      "effects": [],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/protectors/P09_ironwall_protector.png",
+      "proposed": {
+        "sellPrice": 60,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "P10",
+      "name": "전설의 불굴 보호대",
+      "slot": "protector",
+      "rarity": "legendary",
+      "specText": "방어력 +3, 도전당 한 번 치명적인 피해를 받고 HP 1로 생존",
+      "stats": {
+        "s1": 3
+      },
+      "effects": [
+        {
+          "type": "survive_lethal",
+          "params": {
+            "hpAfter": 1,
+            "usesPerRun": 1
+          },
+          "conditions": {},
+          "tags": [
+            "survival"
+          ]
+        }
+      ],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/protectors/P10_legendary_indomitable_protector.png",
+      "proposed": {
+        "sellPrice": 120,
+        "sources": [
+          "reward",
+          "shop",
+          "requires:PC02"
+        ]
+      }
+    },
+    {
+      "id": "U01",
+      "name": "기본 체육복",
+      "slot": "uniform",
+      "rarity": "common",
+      "specText": "이동속도 +1",
+      "stats": {
+        "s2": 1
+      },
+      "effects": [],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/uniforms/U01_basic_gym_uniform.png",
+      "proposed": {
+        "sellPrice": 15,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "U02",
+      "name": "도약 체육복",
+      "slot": "uniform",
+      "rarity": "common",
+      "specText": "점프력 +1",
+      "stats": {
+        "s3": 1
+      },
+      "effects": [],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/uniforms/U02_leap_gym_uniform.png",
+      "proposed": {
+        "sellPrice": 15,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "U03",
+      "name": "속공 유니폼",
+      "slot": "uniform",
+      "rarity": "rare",
+      "specText": "이동속도 +1, 패스 속도 +1",
+      "stats": {
+        "s2": 1,
+        "s7": 1
+      },
+      "effects": [],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/uniforms/U03_fastbreak_uniform.png",
+      "proposed": {
+        "sellPrice": 30,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "U04",
+      "name": "점프 유니폼",
+      "slot": "uniform",
+      "rarity": "rare",
+      "specText": "점프력 +2",
+      "stats": {
+        "s3": 2
+      },
+      "effects": [],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/uniforms/U04_jump_uniform.png",
+      "proposed": {
+        "sellPrice": 30,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "U05",
+      "name": "질풍 유니폼",
+      "slot": "uniform",
+      "rarity": "rare",
+      "specText": "이동속도 +2",
+      "stats": {
+        "s2": 2
+      },
+      "effects": [],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/uniforms/U05_gale_uniform.png",
+      "proposed": {
+        "sellPrice": 30,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "U06",
+      "name": "연계 유니폼",
+      "slot": "uniform",
+      "rarity": "rare",
+      "specText": "패스 속도 +4",
+      "stats": {
+        "s7": 4
+      },
+      "effects": [],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/uniforms/U06_combo_uniform.png",
+      "proposed": {
+        "sellPrice": 30,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "U07",
+      "name": "경량 유니폼",
+      "slot": "uniform",
+      "rarity": "epic",
+      "specText": "이동속도 +2, 점프력 +1, 방어력 -1",
+      "stats": {
+        "s1": -1,
+        "s2": 2,
+        "s3": 1
+      },
+      "effects": [],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/uniforms/U07_lightweight_uniform.png",
+      "proposed": {
+        "sellPrice": 60,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "U08",
+      "name": "고공 유니폼",
+      "slot": "uniform",
+      "rarity": "epic",
+      "specText": "점프력 +2, 공중 투구 위력 +4",
+      "stats": {
+        "s3": 2
+      },
+      "effects": [
+        {
+          "type": "throw_power_bonus",
+          "params": {
+            "value": 4
+          },
+          "conditions": {
+            "airborne": true
+          },
+          "tags": [
+            "offense",
+            "jump"
+          ]
+        }
+      ],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/uniforms/U08_highair_uniform.png",
+      "proposed": {
+        "sellPrice": 60,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "U09",
+      "name": "팀워크 유니폼",
+      "slot": "uniform",
+      "rarity": "epic",
+      "specText": "패스 속도 +3, 연계형 포메이션에서 공격력 +2",
+      "stats": {
+        "s7": 3
+      },
+      "effects": [
+        {
+          "type": "stat_bonus",
+          "params": {
+            "stat": "s4",
+            "value": 2,
+            "target": "self"
+          },
+          "conditions": {
+            "formationTag": "combo"
+          },
+          "tags": [
+            "offense",
+            "formation"
+          ]
+        }
+      ],
+      "formationTags": [
+        "combo"
+      ],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/uniforms/U09_teamwork_uniform.png",
+      "proposed": {
+        "sellPrice": 60,
+        "sources": [
+          "reward",
+          "shop"
+        ]
+      }
+    },
+    {
+      "id": "U10",
+      "name": "전설의 질풍 유니폼",
+      "slot": "uniform",
+      "rarity": "legendary",
+      "specText": "이동속도 +2, 점프력 +2, 패스 직후 다음 투구 속도 +4",
+      "stats": {
+        "s2": 2,
+        "s3": 2
+      },
+      "effects": [
+        {
+          "type": "throw_speed_bonus",
+          "params": {
+            "value": 4
+          },
+          "conditions": {
+            "afterPass": true
+          },
+          "tags": [
+            "speed",
+            "pass"
+          ]
+        }
+      ],
+      "formationTags": [],
+      "shotTags": [],
+      "upgradeable": true,
+      "source": null,
+      "icon": "assets/flame-legacy/items/uniforms/U10_legendary_wind_uniform.png",
+      "proposed": {
+        "sellPrice": 120,
+        "sources": [
+          "reward",
+          "shop",
+          "requires:PC02"
+        ]
+      }
+    }
+  ]
+}

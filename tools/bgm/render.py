@@ -8,6 +8,9 @@
 - 음량: 효과음 렌더(analysis/data/rom_audio.json 의 sfx_gain_db)와 같은 이득을 모든 곡에 적용 = 원작 칩 출력의 BGM:효과음 비율 유지.
 수치 검증(청취 불필요): ① 1·2회차 스펙트로그램 상관(지연 0)과 0.5초 어긋난 대조군 ② 음 변화량 교차상관이 최대인 지연(=오디오에서 잰 루프 길이 오차, ms) ③ 이음매 앞뒤 0.5초 스펙트로그램 상관
 사용: python tools/bgm/render.py [병렬수] [id_hex ...]
+비교 렌더(제품 파일·manifest 를 건드리지 않는다, analysis/35_bgm_port_plan.md §9):
+  BGM_OUT_DIR=bgm_lpf   출력 폴더(public/assets/rom/ 아래). 지정하면 결과를 곡 항목의 render 가 아니라 render_<폴더이름> 에 적는다
+  BGM_LPF_A=0.4         44.1kHz 출력에 1차 저역 통과 y[n] = a*y[n-1] + (1-a)*x[n] 를 건다(기준 에뮬 BizHawk GPGX 의 값은 0x6666/0x10000)
 """
 import importlib.util
 import json
@@ -25,7 +28,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 _s = importlib.util.spec_from_file_location('z80snd', os.path.join(ROOT, 'analysis', 'scripts', 'z80snd.py'))
 Z = importlib.util.module_from_spec(_s); _s.loader.exec_module(Z)
 CACHE = os.path.join(ROOT, 'public', 'assets', 'rom', '_cache')
-OUT_BGM = os.path.join(ROOT, 'public', 'assets', 'rom', 'bgm')
+OUT_NAME = os.environ.get('BGM_OUT_DIR', 'bgm')
+OUT_BGM = os.path.join(ROOT, 'public', 'assets', 'rom', OUT_NAME)
+LPF_A = float(os.environ['BGM_LPF_A']) if os.environ.get('BGM_LPF_A') else None
 META = os.path.join(ROOT, 'analysis', 'data', 'bgm_loops.json')
 SFX_GAIN_DB = json.load(open(os.path.join(ROOT, 'analysis', 'data', 'rom_audio.json'), encoding='utf-8'))['sfx_gain_db']
 SR = 44100
@@ -98,6 +103,10 @@ def render(cid):
     x = resample_poly(x[m0:], GME_DOWN, GME_UP, axis=0)[int(LEAD * sr):]
     r = {'rendered_sec': round(len(x) / sr, 3), 'expected_sec': round(t_end_T / Z.Z_CLK, 3), 'marker_onset_ms': round(1000 * m0 / sr, 2),
          'time_scale_fix': '%d/%d' % (GME_DOWN, GME_UP)}
+    if LPF_A is not None:
+        from scipy.signal import lfilter
+        x = lfilter([1 - LPF_A], [1, -LPF_A], x, axis=0)
+        r['lpf_a'] = LPF_A
     m = x.mean(axis=1)
     if info['kind'] == 'loop':
         S = info['loop_start_sec']; P = info['loop_end_sec'] - info['loop_start_sec']
@@ -146,7 +155,7 @@ def render(cid):
     subprocess.run(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-i', ogg, chk], check=True, timeout=600)
     z, _ = readwav(chk)
     k = min(len(z), len(y))
-    r.update(ogg='rom/bgm/%s.ogg' % tag, mp3='rom/bgm/%s.mp3' % tag, ogg_bytes=os.path.getsize(ogg), mp3_bytes=os.path.getsize(mp3),
+    r.update(ogg='rom/%s/%s.ogg' % (OUT_NAME, tag), mp3='rom/%s/%s.mp3' % (OUT_NAME, tag), ogg_bytes=os.path.getsize(ogg), mp3_bytes=os.path.getsize(mp3),
              ogg_decoded_sec=round(len(z) / sr, 3), ogg_vs_wav_corr=round(corr(z[:k].mean(axis=1), y[:k].mean(axis=1)), 4))
     os.remove(wav); os.remove(chk)
     r = {k: (float(v) if isinstance(v, np.floating) else v) for k, v in r.items()}
@@ -163,5 +172,5 @@ if __name__ == '__main__':
     meta = json.load(open(META, encoding='utf-8'))
     for tag, r in res:
         if r and tag in meta['songs']:
-            meta['songs'][tag]['render'] = r
+            meta['songs'][tag]['render' if OUT_NAME == 'bgm' else 'render_' + OUT_NAME] = r
     json.dump(meta, open(META, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)

@@ -61,6 +61,7 @@ export const SCREEN_BGM = {
   lobby: () => ['bgm.menu'], // 모드 메뉴 0x8C
   tutorial: () => ['bgm.menu'], // 튜토리얼 고르기: 로비 곡 유지
   league: () => ['bgm.menu'],
+  flame: () => ['bgm.menu'], // 불꽃의 계승 메뉴·도전 화면: 로비 곡 유지
   ranking: () => ['bgm.menu'], // 순위표: 로비 곡 유지 // 리그 화면들: 리그 곡은 후속(analysis/33 A), 로비 곡 유지
   room: () => ['bgm.menu'], // 팀 선택: 새 곡 명령 없음(0x8C 유지)
   prematch: () => ['bgm.vs'], // 라인업(VS)·편성 0x8B

@@ -1,0 +1,285 @@
+{
+  "_meta": {
+    "version": 1,
+    "source": "analysis/36_flame_legacy_spec.md §8.3, §8.4",
+    "notes": [
+      "SY01~SY03 = §8.3 강화 예시 3종, SX01~SX04 = §8.4 조합 예시 4종. specEffects 는 원문 문구.",
+      "[확인 필요] §8.3 의 수치 효과는 조건 아티팩트 두 개의 효과 합과 같다(duplicatesArtifact 로 표시). 추가로 한 번 더 주는 보너스인지, 두 아티팩트를 낀 결과를 설명한 것인지 원문으로 확정할 수 없다. proposed.applyDuplicates=false 는 \"중복 표시된 효과는 다시 더하지 않는다\"는 [자작 제안]이다(§7.3 주의 \"중복 보정 금지\" 근거).",
+      "SX01~SX04 는 원문에 수치가 없어 value=null, proposed.value 가 [자작 제안]이다."
+    ],
+    "proposed": {
+      "applyDuplicates": false
+    }
+  },
+  "synergies": [
+    {
+      "id": "SY01",
+      "name": "공격형 포메이션",
+      "specSection": "§8.3",
+      "requires": {
+        "formationTag": "attack",
+        "artifacts": [
+          "A01",
+          "A13"
+        ]
+      },
+      "specEffects": [
+        "공격력 +3",
+        "불꽃 계열 필살기 위력 +10%",
+        "공격 중심의 팀 빌드 완성"
+      ],
+      "effects": [
+        {
+          "type": "stat_bonus",
+          "params": {
+            "stat": "s4",
+            "value": 3,
+            "target": "team"
+          },
+          "conditions": {},
+          "tags": [
+            "offense"
+          ],
+          "duplicatesArtifact": "A13"
+        },
+        {
+          "type": "throw_power_bonus",
+          "params": {
+            "pct": 10
+          },
+          "conditions": {
+            "special": true,
+            "shotFamily": "flame"
+          },
+          "tags": [
+            "offense",
+            "special"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SY02",
+      "name": "수비형 포메이션",
+      "specSection": "§8.3",
+      "requires": {
+        "formationTag": "defense",
+        "artifacts": [
+          "A09",
+          "A17"
+        ]
+      },
+      "specEffects": [
+        "방어력 +2",
+        "넉백 저항 +15%",
+        "캐치 이후 반격을 중심으로 운영"
+      ],
+      "effects": [
+        {
+          "type": "stat_bonus",
+          "params": {
+            "stat": "s1",
+            "value": 2,
+            "target": "team"
+          },
+          "conditions": {},
+          "tags": [
+            "defense"
+          ],
+          "duplicatesArtifact": "A09"
+        },
+        {
+          "type": "stat_bonus",
+          "params": {
+            "stat": "r1",
+            "value": 15,
+            "target": "team"
+          },
+          "conditions": {},
+          "tags": [
+            "defense"
+          ],
+          "duplicatesArtifact": "A17"
+        }
+      ]
+    },
+    {
+      "id": "SY03",
+      "name": "속공형 포메이션",
+      "specSection": "§8.3",
+      "requires": {
+        "formationTag": "fast",
+        "artifacts": [
+          "A16",
+          "A10"
+        ]
+      },
+      "specEffects": [
+        "이동속도 +1",
+        "투구 속도 +2",
+        "빠른 패스와 공격 전환에 유리"
+      ],
+      "effects": [
+        {
+          "type": "stat_bonus",
+          "params": {
+            "stat": "s2",
+            "value": 1,
+            "target": "team"
+          },
+          "conditions": {},
+          "tags": [
+            "speed"
+          ],
+          "duplicatesArtifact": "A10"
+        },
+        {
+          "type": "stat_bonus",
+          "params": {
+            "stat": "s6",
+            "value": 2,
+            "target": "team"
+          },
+          "conditions": {},
+          "tags": [
+            "speed"
+          ],
+          "duplicatesArtifact": "A16"
+        }
+      ]
+    },
+    {
+      "id": "SX01",
+      "name": "불꽃 필살기 강화",
+      "specSection": "§8.4",
+      "requires": {
+        "formationTag": null,
+        "artifacts": [
+          "A01",
+          "A13"
+        ]
+      },
+      "specEffects": [
+        "불꽃 필살기 강화"
+      ],
+      "effects": [
+        {
+          "type": "throw_power_bonus",
+          "params": {
+            "value": null
+          },
+          "conditions": {
+            "special": true,
+            "shotFamily": "flame"
+          },
+          "tags": [
+            "offense",
+            "special"
+          ],
+          "proposed": {
+            "value": 4
+          }
+        }
+      ]
+    },
+    {
+      "id": "SX02",
+      "name": "캐치 후 반격 강화",
+      "specSection": "§8.4",
+      "requires": {
+        "formationTag": null,
+        "artifacts": [
+          "A09",
+          "A27"
+        ]
+      },
+      "specEffects": [
+        "캐치 후 반격 강화"
+      ],
+      "effects": [
+        {
+          "type": "throw_power_bonus",
+          "params": {
+            "value": null
+          },
+          "conditions": {
+            "afterCatch": true
+          },
+          "tags": [
+            "offense",
+            "counter"
+          ],
+          "proposed": {
+            "value": 4
+          }
+        }
+      ]
+    },
+    {
+      "id": "SX03",
+      "name": "패스 후 첫 투구 속도 강화",
+      "specSection": "§8.4",
+      "requires": {
+        "formationTag": null,
+        "artifacts": [
+          "A16",
+          "A24"
+        ]
+      },
+      "specEffects": [
+        "패스 후 첫 투구 속도 강화"
+      ],
+      "effects": [
+        {
+          "type": "throw_speed_bonus",
+          "params": {
+            "value": null
+          },
+          "conditions": {
+            "afterPass": true
+          },
+          "tags": [
+            "speed",
+            "pass"
+          ],
+          "proposed": {
+            "value": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "SX04",
+      "name": "주장 중심 패스 연계 강화",
+      "specSection": "§8.4",
+      "requires": {
+        "formationTag": null,
+        "artifacts": [
+          "A11",
+          "A12"
+        ]
+      },
+      "specEffects": [
+        "주장 중심 패스 연계 강화"
+      ],
+      "effects": [
+        {
+          "type": "stat_bonus",
+          "params": {
+            "stat": "s7",
+            "value": null,
+            "target": "captain"
+          },
+          "conditions": {},
+          "tags": [
+            "pass",
+            "captain"
+          ],
+          "proposed": {
+            "value": 3
+          }
+        }
+      ]
+    }
+  ]
+}

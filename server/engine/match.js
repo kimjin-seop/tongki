@@ -5,6 +5,7 @@ import { Rng } from './rng.js';
 import { aiInput } from './ai.js';
 import { ONE, BIT, ST, BM, FM, slotGroup } from './consts.js';
 import { initSpecial, stepSpecial } from './special.js';
+import { initFlame, flActiveId, flCanSpecial, flKnock, flSlide, flWalk, flGive, flPass, flThrowSpd, flThrowPow, flHitDmg, flameResult } from './flame.js';
 
 export { ONE, BIT, ST, BM, FM, slotGroup };
 const SLOT_OF_IDX = [0, 1, 2, 3, 4, 7, 10]; // 선수 idx -> 시작 슬롯 [확인 0x4C0E 표, 외야 상/하/후방 1명씩]
@@ -74,6 +75,9 @@ export class Match {
       this.stageInfo = row; this.stage = { friction: row.friction, bounceShift: row.bounceShift };
     }
     this.tr = null; // 특훈 진행기 상태(initTraining)
+    // 불꽃의 계승(flame.js, analysis/37·39): flame 옵션을 줄 때만 this.fl 이 생기고 그 좌석 선수에 p.fl 이 붙는다. 주지 않으면 아래의 모든 flame 분기(p.fl / this.fl 검사)가 건너뛴다(일반 경기·차분 하네스 불변)
+    if (o.flame && TR) throw new Error('flame 과 training 은 함께 쓸 수 없다');
+    this.fl = o.flame ? initFlame(o.data, o.flame, this.R) : null;
     this.fmOn = !TR && !!(this.R.formation?.enabled && o.data.formations);
     this.fm = null; this.fmLast = -1; this.sPrev = [0, 0]; this.sEdge = [0, 0];
     this.f = 0;
@@ -103,11 +107,13 @@ export class Match {
     this.players = [];
     this.sides = [];
     for (let s = 0; s < 2; s++) {
-      const teamId = TR ? TR.teams[s] : o.teams[s];
+      const fl = this.fl && this.fl.seat === s ? this.fl : null;
+      const teamId = TR ? TR.teams[s] : fl ? fl.team : o.teams[s];
       const team = o.data.teams[teamId];
       if (!team) throw new Error('unknown team ' + teamId);
       this.sides.push({ seat: s, team: team.id, teamData: team, remaining: 7, ctrl: -1, aim: 0, bits: 0, fmLeft: this.fmOn ? this.R.formation.uses : 0, fmCnt: 0, fmPend: false, zone: 0, zp: 0 }); // zone/zp = 공 구역 현재/직전 값(원작 사이드 $5D/$5C)
-      for (let i = 0; i < 7; i++) this.players.push(this.makePlayer(s, i, team.players[i]));
+      if (fl) this.sides[s].fmT = fl.fmTeam ?? team.id; // 포메이션 패턴의 기준 팀(fmOf)
+      for (let i = 0; i < 7; i++) this.players.push(fl ? this.makeFlamePlayer(s, i, fl.roster[i]) : this.makePlayer(s, i, team.players[i]));
     }
     const RF = this.R.start.ref;
     this.ball = {
@@ -267,6 +273,16 @@ export class Match {
       cb: null, t44: null, recv: null, aiNoHit: false, aiCatchTm: 0, // cb=컴퓨터형 두뇌 상태(서브·타이머·대기점·plan), t44=강제 회수(타입 0x44), recv=패스 수신 대기(타입 0x30)
     };
   }
+
+  /** flame 좌석 선수: 능력치는 복사본(r.stat), 시작 HP 는 도전 전용 현재 HP, 출신 팀·번호(ot/oi)는 히트박스·손 위치 표의 기준 */
+  makeFlamePlayer(seat, idx, r) {
+    const p = this.makePlayer(seat, idx, r.stat);
+    p.hp = r.hp; p.fl = r; p.ot = r.from.team; p.oi = r.from.idx; p.flCatch = 0; p.flPassSpd = 0;
+    return p;
+  }
+
+  /** 경기 뒤 flame 좌석의 최종 HP 등(flame 옵션이 없으면 null) */
+  flameResult() { return this.fl ? flameResult(this) : null; }
 
   slotPos(seat, slot) {
     const s = this.data.court.slots[slot];
@@ -609,7 +625,7 @@ export class Match {
       // 점프볼 점프(타입 0x88)의 히트박스(9)는 착지 뒤 타입 초기화 프레임까지 그대로 남는다: 애니(= $4)를 바꾸는 것은 그 다음 프레임의 핸들러다 [실측 ball_launch_tap 트레이스 p7 hb: f13·f14 = 9, f15 에 hb9 로 피격]
       if (!keepHb) {
         // 히트박스 번호는 애니 프레임이 정한다: 몸통 클래스(0/1/2)별로 서기 계열 1/4/6, 점프 8/9/10, 웅크림·줍기 3/5/7. 공중 차지·공중 투구 동작 애니는 서기 계열 상자 [확인: 원작 트레이스 전 시나리오의 (클래스, 애니) -> $4 집계]
-        const H = this.R.hitboxIdx, C = H.byClass, cls = C ? this.data.rom?.bodyClass?.[this.sides[p.seat].team]?.[p.idx] ?? 0 : 0;
+        const H = this.R.hitboxIdx, C = H.byClass, cls = C ? this.data.rom?.bodyClass?.[p.ot ?? this.sides[p.seat].team]?.[p.oi ?? p.idx] ?? 0 : 0;
         const pick = (k) => (C ? C[k][cls] : H[k] ?? H.stand);
         p.hb = s0 === ST.CROUCH || s0 === ST.PICKUP ? pick('crouch') : (s0 === ST.JUMP || (air0 && s0 !== ST.HIT)) && !(C && act0) ? pick('jump') : pick('stand');
       }
@@ -655,12 +671,12 @@ export class Match {
         p.x += p.vx; p.y += p.vy; p.z += p.vz;
         this.bounceCourtRom(p);
         // 착지(0x94BE)는 타입만 0x40 으로 바꾼다. 쓰러짐 타이머 60 은 다음 프레임의 초기화(0x94E6)가 넣는다 -> 착지 프레임의 타이머($18)는 맞기 전 값 그대로 [실측 atk_p4 f218 p3: 19 -> f219 59]
-        if (p.z < 0) { p.z = 0; p.vz = 0; p.st = ST.DOWN; p.tm = p.tmLeft ?? p.tm; p.tmNew = R.hit.downFrames; }
+        if (p.z < 0) { p.z = 0; p.vz = 0; p.st = ST.DOWN; p.tm = p.tmLeft ?? p.tm; p.tmNew = p.fl ? p.fl.down : R.hit.downFrames; } // flame R3: 쓰러짐 단축(하한 36)
         return;
       }
       p.x += p.vx; p.y += p.vy; p.z += p.vz; p.vz -= g;
       this.clampInCourt(p);
-      if (p.z <= 0 && p.vz < 0) { p.z = 0; p.vz = 0; p.st = ST.DOWN; p.tm = R.hit.downFrames; }
+      if (p.z <= 0 && p.vz < 0) { p.z = 0; p.vz = 0; p.st = ST.DOWN; p.tm = p.fl ? p.fl.down : R.hit.downFrames; }
       return;
     }
     if (p.st === ST.DOWN) {
@@ -973,7 +989,7 @@ export class Match {
   }
 
   /** 사람 조작 걷기 속도(16.16): 1.0 + (s2<<12) - 2*마찰($E22C) [확인 ROM 0x8272. 실측 s2=16·마찰 0x2000 -> 1.75 px/f] */
-  walkSpeed(p) { return ONE + (p.stat.spd << 12) - 2 * this.stage.friction; }
+  walkSpeed(p) { const w = ONE + (p.stat.spd << 12) - 2 * this.stage.friction; return p.fl ? flWalk(this.fl, w, this.R.move.dashMax) : w; } // flame: 걷기도 대시 상한(3.0)으로 자른다(D14)
 
   /** 방향 입력 -> [dx,dy] (-1/0/1). 외야는 한 축만(상·하 띠=좌우, 후방=상하) [확인 0x82A4/0x82D6] */
   dirOf(p, bits) {
@@ -1053,6 +1069,7 @@ export class Match {
     if (this.tr) return this.data.training.specialId; // 특훈의 필살기 ID 는 22 고정 [판독만 ROM 0xB810, 확인 tr_full]
     if (typeof this.forceSpecial === 'number') return this.forceSpecial;
     if (keepId !== null) return keepId; // 받아치기 필살: 받아치기 창($40)이 열려 있으면 잡은 공의 ID($14)를 그대로 쓴다 [직역 ROM 0xB7EC -> 0xB84E, 확인 원작 실행 analysis/data/34_counter_special_oracle: 자기 표 ID 28 인 선수가 ID 22 로 받아침]
+    if (p.fl) return flActiveId(this.fl, p); // flame: 팀·선수 표 대신 주 슬롯의 해금된 ID(없으면 null = 일반 슛)
     const d = S.row[this.sides[p.seat].team]?.[p.idx];
     if (d === undefined) return null;
     return d < 0 ? S.pool[this.rng.int(S.pool.length)] : d;
@@ -1068,6 +1085,7 @@ export class Match {
     if (this.trNoSpecial(p)) return false; // 캐치 특훈의 내 투구는 필살이 되지 않는다 [판독만 ROM 0x8C24]
     if (this.forceSpecial !== false) return true;
     if (this.official) return false; // こうしき: 차지 값과 상관없이 일반 슛(타입 0x14). 차지의 위력·속력 가산은 그대로다. 원작 순서 = 강제 발동($E694) 다음 [직역 ROM 0x8BFA, 확인 poke analysis/29 §3-5]
+    if (p.fl && !flCanSpecial(this.fl, p, counter)) return false; // flame 잠금: こうしき 처럼 차지의 위력·속력 가산은 남는 일반 슛이 된다
     // 받아치기 필살 [직역 ROM 0x8C08]: 필살 공($76=1)을 잡고 받아치기 창이 열린 동안 던지면 차지와 무관하게 필살 슛.
     // [확인 원작 실행 analysis/data/34_counter_special_oracle] 창 안 지상 투구 = 필살, ID·위력·속력 승계, 창이 끝난 뒤는 일반, 점프하면 창 해제, 밀리는 중에는 투구 불가
     // [판독만] こうしき 비적용·외야 슬롯 제외·검사 순서: こうしき($E680)·외야 슬롯 검사 다음, 차지 판정(0x8CF0) 앞. $76 은 창이 0 이 되는 프레임에 지워지므로(0xA8B8 -> 0xA3E6/0xA408) '창이 열려 있음'과 같다
@@ -1115,6 +1133,7 @@ export class Match {
       b.vz = Math.round(((zt - toPx(b.z)) / tf) * ONE);
       b.kind = spId + 1; b.sp = initSpecial(b, spId);
     }
+    if (p.fl && !fm) { p.flPassSpd = 0; b.power = flThrowPow(this, p, b.power, { air, ch: charge <= T.maxCharge ? charge : 0, spId, counter: false }); } // flame 조건부 위력(포메이션 엔드 어택 제외). 이 비직역 경로는 속도 가산 없음
     p.hasBall = false; p.charging = false; p.hold = 0; p.dashFlag = false;
     if (!air && !(T.rom && this.data.rom)) { p.st = ST.THROW; p.tm = T.recoverFrames; }
     this.emit('throw', fm ? { p: p.pid, tgt: b.tgt, pw: b.power, ch: charge, fm: 1 } : { p: p.pid, tgt: b.tgt, pw: b.power, ch: charge });
@@ -1135,6 +1154,8 @@ export class Match {
     let power = pow + (air ? pow >> 2 : 0) + (dash ? pow >> 2 : 0) + ch;
     let spd = ((p.stat.thr << 4) + (air ? 0x100 : 0) + (dash ? 0x100 : 0) + (ch << 4)) & 0xffff;
     if (b.ctr > 0) { power = b.cpow; spd = b.cspd; }
+    const flCtr = b.ctr > 0; // flame 훅용(받아치기 공인가). 아래에서 b.ctr 을 지우기 전에 읽는다
+    if (p.fl) spd = flThrowSpd(this, p, spd, flCtr); // flame: 패스 직후 투구 속도
     const ctrId = b.ctr > 0 && b.f76 && typeof b.cid === 'number' ? b.cid : null; // 받아치기 필살(공 $76): 창이 열린 채 던지는 필살 공의 ID. 아래에서 b.ctr 을 지우기 전에 읽는다
     // 공 $42(던질 때의 공 $3E, 0x71C4). 창이 닫혀 있으면 $3E = 던진 선수의 차지($18). 창이 열려 있으면 보유 공 핸들러(0xA2B6 -> 0xA3E6)가 매 프레임 $3E 를 덮는다: 잡은 공이 필살 공($76)이면 15 고정, 일반 공이면 잡은 공의 $42 그대로
     // [직역 ROM 0xA3E6/0x71C4, 확인 원작 실행 analysis/data/34_counter_special_oracle/charge_*.txt: 차지 13 필살을 받아친 공 $42=15, 차지 12 일반 공을 받아친 공 $42=12]
@@ -1142,7 +1163,7 @@ export class Match {
     if (this.trWeak(p)) { power = pow >> this.data.training.weakPowerShift; spd = (p.stat.thr << 4) & 0xffff; } // 캐치 특훈의 내 투구·필살 슛 특훈의 연습 상대 투구: 위력 1/4, 속력은 구속/16 만 [판독만 ROM 0x8A08/0x7D6E, 속력 5.5 는 확인]
     const fl = (v) => Math.floor(v / ONE);
     const left = fl(p.x) >= fl(t.x), back = fl(p.y) >= fl(t.y); // 0x78A0: 방향 비트0(좌우 반전)·비트1(뒤 애니 0x08)
-    const cls = RT.bodyClass[this.sides[p.seat].team]?.[p.idx] ?? 0, h = T.rom.hand[back ? 'b' : 'a'][cls];
+    const cls = RT.bodyClass[p.ot ?? this.sides[p.seat].team]?.[p.oi ?? p.idx] ?? 0, h = T.rom.hand[back ? 'b' : 'a'][cls];
     // 발사(0x71BC)는 공 위치를 다시 계산하지 않는다: 직전 프레임의 공 핸들러가 놓은 보유 위치(투구 애니 손 위치) 그대로 떠난다. 지상에서는 아래 식과 같고, 공중에서는 선수가 그 사이 움직인 만큼 다르다 [실측 atk_seed3 f180]
     const held = p.windRel && b.mode === BM.HELD && b.holder === p.pid && !!RT.hand;
     const bx = held ? fl(b.x) : fl(p.x) + (left ? -h[0] : h[0]), by = held ? fl(b.y) : fl(p.y) + T.rom.handDy, bz = held ? fl(b.z) : fl(p.z) + h[1];
@@ -1164,6 +1185,7 @@ export class Match {
       if (pw !== undefined && pw !== 255) b.power = pw;
       b.kind = spId + 1; b.sp = initSpecial(b, spId);
     }
+    if (p.fl) b.power = flThrowPow(this, p, b.power, { air, ch, spId, counter: flCtr }); // flame 조건부 위력: 캐치 후 첫 투구·차지 13~15·공중·필살/계열 가산
     p.hasBall = false; p.charging = false; p.hold = 0; p.dashFlag = false; p.gsp = false;
     b.c42 = c42; // 컴퓨터의 받아치기 판단(0xD566)이 본다
     this.trThrow(p, spId !== null, ch);
@@ -1360,6 +1382,7 @@ export class Match {
     b.mode = BM.PASS; b.holder = -1; b.thrower = p.pid; b.tgt = best.pid; b.power = R.pass.power; b.kind = 0; b.sp = null; b.id = ++this.throwId;
     b.vx = b.vy = b.vz = 0; b.passSpeed = speed;
     p.hasBall = false; p.charging = false; p.hold = 0;
+    if (this.fl) flPass(this, p);
     b.rom = false; b.steer = 0; b.ang = null; b.ctr = 0;
     if (p.z <= 0 && !(R.throw.rom && this.data.rom)) { p.st = ST.PASS; p.tm = R.throw.passRecoverFrames; }
     this.emit('pass', { p: p.pid, tgt: best.pid });
@@ -1381,6 +1404,7 @@ export class Match {
     b.mode = BM.PASS; b.romPass = true; b.holder = -1; b.thrower = p.pid; b.tgt = t.pid; b.power = R.pass.power; b.kind = 0; b.sp = null; b.id = ++this.throwId;
     b.rom = false; b.steer = 0; b.ctr = 0; b.still = 0;
     b.passAir = p.z > 0 || p.vz !== 0; b.passDash = !!p.dashFlag; // 공 $3 bit2/bit3 = 패서의 공중·대시 플래그(0x7226)
+    if (this.fl) flPass(this, p); // flame: 패스 직후 투구 속도 보너스를 공에 싣는다
     p.hasBall = false; p.charging = false; p.hold = 0; p.dashFlag = false;
     if (this.usable(t) && t.st !== ST.HIT && t.st !== ST.DOWN && t.st !== ST.FOUL && t.st !== ST.OUTMOVE) { // 0x72F4: $1E=0 인 대상만 타입 0x30
       t.recv = { sub: 0, fresh: true, air: false }; t.t44 = null;
@@ -1392,6 +1416,7 @@ export class Match {
   giveBall(q, how) {
     const b = this.ball;
     for (const o of this.players) o.hasBall = false;
+    if (this.fl) flGive(this, q, how);
     if (this.R.throw.rom?.aim && this.data.rom) this.sides[q.seat].aim = 0; // 획득 때 조준 구역($E21C) 0 [직역 ROM 0x73F4/0x7482]
     // 공 $3C·선수 $6D [직역 ROM 0x73CA~0x73E2]: 캐치·줍기로 잡은 선수가 직전에 맞은 선수와 다른 편이면 그 선수의 유예 표시를 끈다(같은 편이면 그대로 = こうしき 세이프). 패스 수신(0x746C)은 $3C 만 바꾼다
     if (how !== 'recv') { const h = this.players[b.lastHit]; if (h && h.seat !== q.seat) h.grace = false; }
@@ -1444,7 +1469,7 @@ export class Match {
    * 한계: 애니 프레임 카운터($10/$11)는 이식하지 않아 여러 프레임짜리 애니(걷기 4프레임의 높이 ±1 등)는 0번 프레임 값을 쓴다
    */
   handOff(h) {
-    const HT = this.data.rom.hand, cls = this.data.rom.bodyClass[this.sides[h.seat].team]?.[h.idx] ?? 0, bk = h.back ? 1 : 0;
+    const HT = this.data.rom.hand, cls = this.data.rom.bodyClass[h.ot ?? this.sides[h.seat].team]?.[h.oi ?? h.idx] ?? 0, bk = h.back ? 1 : 0;
     const air = h.z > 0 || h.vz !== 0;
     let a;
     // 투구·패스 동작을 시작한 프레임(서브 초기화 전)은 애니가 아직 직전 것이다 [실측 out_fetch_back f73, atk_seed6 f185]
@@ -1855,13 +1880,14 @@ export class Match {
         const dir = sgn(b.vx) || -q.face;
         this.emit('catch', sk ? { p: q.pid, by: b.thrower, kind: sk } : { p: q.pid, by: b.thrower });
         this.trCatch(q);
+        if (q.fl) q.flCatch = 1; // flame: 캐치 후 첫 투구 위력 보너스 대기(투구·필살 공을 캐치 자세로 잡은 것만)
         const pw = b.power, ang = b.ang, spd8 = b.spd8;
         this.giveBall(q);
         if (sk) b.b6f = this.f; // 필살 공을 잡은 프레임: 이 프레임의 뒤 번호 수동 내야는 아직 투구 공 표시(공 $3 bit6)를 본다(ai.js passiveRom) [실측 ctr_special f64]
         if (ang && this.data.rom && R.catch.rom) {
           // [직역 ROM 0x7400~0x7448] 지상에서 투구(필살기 포함)를 잡으면 뒤로 밀린다: 속력 (min(위력,60)+8)/16 px/f 에서 시작해 마찰만큼 감속, 방향 = 공이 날아온 각도.
           // 공에는 받아치기 창 60프레임(0x8CDC): 그 안에 지상에서 던지면 잡은 공의 위력·속력 그대로
-          if (!(q.z > 0 || q.vz !== 0)) { q.slideV = (Math.min(pw, R.catch.rom.slideCap) + R.catch.rom.slideBase) << 4; q.slideA = ang; q.vx = 0; q.vy = 0; q.slideMir = q.face < 0; q.slideRun = false; }
+          if (!(q.z > 0 || q.vz !== 0)) { q.slideV = (Math.min(pw, R.catch.rom.slideCap) + R.catch.rom.slideBase) << 4; if (q.fl) q.slideV = flSlide(q, q.slideV); q.slideA = ang; q.vx = 0; q.vy = 0; q.slideMir = q.face < 0; q.slideRun = false; }
           b.ctr = this.tr ? 0 : R.catch.rom.counterFrames; b.cpow = pw; b.cspd = spd8; // 특훈은 받아치기 창(글로우)이 없다 [판독만 ROM 0xA3E6]
           b.cid = sk ? sk - 1 : null; // 잡은 필살 공의 ID(공 $14). 창 안에 던지면 같은 ID 의 필살 슛(romThrow, 0x8C08)
         } else if (sk) this.slideCatcher(q, dir, pw);
@@ -1880,13 +1906,14 @@ export class Match {
     const L = this.R.special, a = this.stage.friction;
     const d = px(Math.min(power, L.catchSlideCap) + L.catchSlideBase);
     const v = Math.round(a * (-0.5 + Math.sqrt(0.25 + (2 * d) / a)));
-    q.vx = dir * v; q.vy = 0; q.slide = 1;
+    q.vx = dir * (q.fl ? flSlide(q, v) : v); q.vy = 0; q.slide = 1;
   }
 
   hitPlayer(q) {
     const R = this.R, b = this.ball;
     b.lastHit = q.pid; q.grace = true; // 공 $3C = 맞은 선수, 선수 $6D = 1(유예 표시) [직역 ROM 0x84AC/0x850E: 규칙과 무관하게 쓰고, こうしき 의 쓰러짐 종료만 읽는다]
-    const dmg = this.official ? 0 : q.slot < 4 ? Math.max(0, b.power - q.stat.def) : 0; // こうしき 는 데미지 0 [직역 ROM 0x853E, 확인 HP 불변] // 외야(슬롯>=4)는 맞아도 HP 가 줄지 않는다 [직역 ROM 0x84B8]
+    let dmg = this.official ? 0 : q.slot < 4 ? Math.max(0, b.power - q.stat.def) : 0; // こうしき 는 데미지 0 [직역 ROM 0x853E, 확인 HP 불변] // 외야(슬롯>=4)는 맞아도 HP 가 줄지 않는다 [직역 ROM 0x84B8]
+    if (q.fl) { if (dmg > 0) dmg = flHitDmg(this, q, b.power, dmg); q.flCatch = 0; q.flPassSpd = 0; } // flame: HP 30% 이하 방어·치사 생존. 맞으면 대기 중인 투구 보너스는 사라진다
     const hp0 = q.hp;
     q.hp = Math.max(0, q.hp - dmg);
     if (hp0 > 0 && q.hp === 0 && !this.tr) this.refOut(q); // HP 0 순간 심판 호출(인원 감소와 별개 시점) [확인 f250]
@@ -1909,6 +1936,7 @@ export class Match {
       q.vx = Math.trunc(b.vx / R.hit.knockVxDiv); q.vy = Math.trunc(b.vy / R.hit.knockVxDiv); q.vz = R.hit.knockVz; q.z = Math.max(q.z, 1);
       b.vx = Math.trunc(-b.vx / 2); b.vy = Math.trunc(-b.vy / 2);
     }
+    if (q.fl) { q.vx = flKnock(q, q.vx); q.vy = flKnock(q, q.vy); } // flame R1: 수평 넉백만 줄인다(vz 4.0·공의 튕김은 줄이기 전 값 그대로)
     b.mode = BM.LOOSE; b.holder = -1; b.vz = R.hit.ballBounceVz; b.still = 0; b.rom = false; b.steer = 0; b.romPass = false;
     q.t44 = null; q.recv = null;
     this.hitSwitch(q);
@@ -2048,6 +2076,8 @@ export class Match {
 
   // ================= 포메이션 어택 (analysis/14_formation_cutin.md) =================
   fmTeam(teamId) { return this.data.formations?.teams.find((t) => t.team === teamId) ?? null; }
+  /** 좌석의 포메이션 표. flame 좌석은 고른 패턴(sides.fmT), 그 밖은 좌석 팀(종전과 같다) */
+  fmOf(seat) { const s = this.sides[seat]; return this.fmTeam(s.fmT ?? s.team); }
 
   /** 대기·패스 중 카메라 x 고정값(좌석별). 그 외 null */
   fmCam() { return this.fm && (this.fm.st === FM.HOLD || this.fm.st === FM.PASS) ? this.R.formation.cam[this.fm.seat] : null; }
@@ -2061,7 +2091,7 @@ export class Match {
   fmCanStart(seat) {
     const F = this.R.formation, s = this.sides[seat], b = this.ball;
     if (!this.fmOn || this.phase !== 'play' || this.result || this.tip.on || this.fm) return false;
-    if (s.fmLeft <= 0 || s.remaining < F.minRemaining || !this.fmTeam(s.team)) return false;
+    if (s.fmLeft <= 0 || s.remaining < F.minRemaining || !this.fmOf(seat)) return false;
     if (b.mode !== BM.HELD || b.holder < 0) return false;
     const h = this.players[b.holder];
     if (h.seat !== seat || h.charging || h.z > 0 || h.vz > 0 || !(h.st === ST.IDLE || h.st === ST.DASH || h.st === ST.BRAKE)) return false;
@@ -2069,12 +2099,12 @@ export class Match {
   }
 
   fmTarget(seat, slot) {
-    const t = this.fmTeam(this.sides[seat].team), g = this.data.formations.slot_to_group[slot];
+    const t = this.fmOf(seat), g = this.data.formations.slot_to_group[slot];
     return (seat === 0 ? t.pos_by_group : t.pos_by_group_mirror)[g];
   }
 
   fmStart(seat) {
-    const s = this.sides[seat], t = this.fmTeam(s.team);
+    const s = this.sides[seat], t = this.fmOf(seat);
     s.fmLeft--; s.fmCnt = 0; s.fmPend = false;
     this.fm = { seat, team: s.team, name: t.name_idx, st: FM.GATHER, t: 0, passes: 0, holder: this.ball.holder, thrower: -1, fly: false, wait: 0, cpuOk: 0 };
     for (const p of this.players) {
@@ -2113,7 +2143,7 @@ export class Match {
 
   /** 순환표의 다음 수신자: 현재 슬롯의 그룹 -> 다음 슬롯 번호 -> 그 슬롯(없으면 같은 그룹)의 생존자. 없으면 표를 따라 건너뜀 */
   fmNextReceiver(from) {
-    const F = this.data.formations, t = this.fmTeam(this.fm.team);
+    const F = this.data.formations, t = this.fmOf(this.fm.seat);
     const mates = this.players.filter((q) => q.seat === from.seat && q !== from && !q.dead && this.usable(q));
     let slot = from.slot;
     for (let i = 0; i < 7; i++) {
@@ -2171,7 +2201,7 @@ export class Match {
         const h = this.players[b.holder], s = this.sides[h.seat];
         s.fmPend = false;
         // 직역 두뇌(rules.cpu.rom)에서는 컴퓨터 발동 판정(0xD948)을 ai.js attackRom 이 plan 0 결정 때 한다(난수 순서 유지)
-        if (!(this.R.cpu.rom && this.data.rom) && !this.humans[h.seat] && this.fmTeam(s.team) && ++s.fmCnt >= this.fmTeam(s.team).cpu_threshold) { s.fmCnt = 0; s.fmPend = true; }
+        if (!(this.R.cpu.rom && this.data.rom) && !this.humans[h.seat] && this.fmOf(h.seat) && ++s.fmCnt >= this.fmOf(h.seat).cpu_threshold) { s.fmCnt = 0; s.fmPend = true; }
       }
       for (const s of this.sides) {
         if (s.fmPend && b.mode === BM.HELD && this.players[b.holder].seat === s.seat && this.fmCanStart(s.seat)) {
@@ -2252,6 +2282,18 @@ export class Match {
     return life > 0 && age >= life ? null : [bn.k, age, life];
   }
 
+  /** flame 좌석의 game_start 팀 정보(PROTOCOL §12.2): 능력치 = 주입된 최종값, role = 라인업 자리 기준, from = 출신(스프라이트·얼굴·말풍선), hp0 = 시작 현재 HP, sp = 슬롯, spOn = 지금 발동되는 ID */
+  flameTeamInfo(s) {
+    const ROLE = ['infield', 'infield', 'infield', 'infield', 'outfield_top', 'outfield_bottom', 'outfield_back'];
+    return {
+      id: s.team, name: s.teamData.name, flame: true,
+      players: this.fl.roster.map((r, i) => {
+        const pl = r.stat;
+        return { idx: i, role: ROLE[i], hp: pl.hp, def: pl.def, spd: pl.spd, s3: pl.s3, pow: pl.pow, s5: pl.s5, thr: pl.thr, pass: pl.pass, from: { team: r.from.team, idx: r.from.idx }, hp0: r.hp, r1: r.r1, r2: r.r2, down: r.down, sp: r.sp.slice(), spOn: flActiveId(this.fl, { fl: r }) };
+      }),
+    };
+  }
+
   /** game_start 용 정적 정보 */
   info() {
     const R = this.R;
@@ -2259,10 +2301,11 @@ export class Match {
       seed: this.seed, tickRate: R.tickRate, snapEvery: R.snapEvery,
       ...(this.tr ? { training: { kind: this.tr.kind, step: this.tr.step, balls: this.data.training[this.tr.kind].balls, pass: this.data.training[this.tr.kind].pass, steps: this.data.training[this.tr.kind].steps.length, ...(this.tr.kind === 'special' ? { gauge: { max: R.throw.maxCharge, ok: [R.special.minCharge, R.special.maxCharge], hold: this.data.training.special.gaugeHold } } : {}) } } : {}),
       stage: { id: this.stageInfo.id, key: this.stageInfo.key, file: this.stageInfo.file, json: this.stageInfo.json, romStage: this.stageInfo.romStage },
-      teams: this.sides.map((s) => ({
+      teams: this.sides.map((s) => (this.fl && this.fl.seat === s.seat ? this.flameTeamInfo(s) : {
         id: s.team, name: s.teamData.name,
         players: s.teamData.players.map((pl) => ({ idx: pl.idx, role: pl.role, hp: pl.hp, def: pl.def, spd: pl.spd, s3: pl.s3, pow: pl.pow, s5: pl.s5, thr: pl.thr, pass: pl.pass })),
       })),
+      ...(this.fl ? { flame: { seat: this.fl.seat, fm: this.fl.fm, allow: [...this.fl.allow].sort((a, c) => a - c) } } : {}), // flame 일 때만(일반 경기 game_start 에는 키가 없다)
       court: { ...R.court, slots: this.data.court.slots.map((s) => ({ slot: s.slot, a: s.a, b: s.b })) },
       rules: {
         limitFrames: this.limitFrames, mode: this.ruleMode, readyFrames: this.readyFrames, start: R.start, maxCharge: R.throw.maxCharge,
@@ -2271,7 +2314,7 @@ export class Match {
         formation: this.fmOn ? {
           enabled: true, uses: R.formation.uses, startBit: BIT.S, holdFrames: R.formation.holdFrames, passSpeed: R.formation.passSpeed,
           passInterval: R.formation.passInterval, maxPasses: R.formation.maxPasses, cam: R.formation.cam,
-          names: this.sides.map((x) => this.fmTeam(x.team)?.name_idx ?? -1),
+          names: this.sides.map((x) => this.fmOf(x.seat)?.name_idx ?? -1),
         } : { enabled: false },
       },
     };

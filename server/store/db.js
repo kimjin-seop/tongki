@@ -50,6 +50,13 @@ export const MIGRATIONS = [
    CREATE INDEX rank_games_a ON rank_games(a_key, at);
    CREATE INDEX rank_games_b ON rank_games(b_key, at);
    CREATE TABLE meta (k TEXT PRIMARY KEY, v TEXT NOT NULL);`,
+  // v2: 불꽃의 계승(PROTOCOL §13.6). 영구 저장·도전 저장을 JSON 한 덩어리로(형식 버전 = ver, server/flame/save.js SAVE_VERSION). 기존 표는 건드리지 않는다
+  `CREATE TABLE flame_profiles (
+     key TEXT PRIMARY KEY, nick TEXT NOT NULL, data TEXT NOT NULL, ver INTEGER NOT NULL, updated_at INTEGER NOT NULL
+   );
+   CREATE TABLE flame_runs (
+     key TEXT PRIMARY KEY, nick TEXT NOT NULL, data TEXT NOT NULL, ver INTEGER NOT NULL, updated_at INTEGER NOT NULL
+   );`,
 ];
 
 /** @param {string} file DB 파일 경로 또는 ':memory:' */

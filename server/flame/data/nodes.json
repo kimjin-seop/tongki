@@ -1,0 +1,193 @@
+{
+  "_meta": {
+    "version": 1,
+    "source": "analysis/36_flame_legacy_spec.md §3.3, §11.2",
+    "notes": [
+      "types 8종과 specText 는 기획서 그대로다. segmentExample 은 §3.3 의 진행 예시를 그대로 옮긴 것이다.",
+      "[확인 필요] §3.3 예시는 구간당 경기가 3번(일반·강팀·보스)이라 3구간이면 9경기다. §3.1 의 총 12경기와 맞지 않는다. proposed.segmentTemplate 은 구간당 4경기로 맞춘 [자작 제안]이다.",
+      "trainingOptions 11종은 §11.2 원문이다. 증가량은 기획서에 없어 value=null."
+    ]
+  },
+  "types": [
+    {
+      "id": "normal",
+      "name": "일반 경기",
+      "specText": "표준 보상",
+      "isMatch": true
+    },
+    {
+      "id": "strong",
+      "name": "강팀 경기",
+      "specText": "높은 난이도와 높은 보상",
+      "isMatch": true
+    },
+    {
+      "id": "boss",
+      "name": "보스 경기",
+      "specText": "구간 최종 상대",
+      "isMatch": true
+    },
+    {
+      "id": "shop",
+      "name": "장비 상점",
+      "specText": "장비 및 소모품 구매",
+      "isMatch": false
+    },
+    {
+      "id": "training",
+      "name": "특훈장",
+      "specText": "선수 강화",
+      "isMatch": false
+    },
+    {
+      "id": "rest",
+      "name": "휴식실",
+      "specText": "HP 회복",
+      "isMatch": false
+    },
+    {
+      "id": "recruit",
+      "name": "선수 영입",
+      "specText": "신규 선수 선택",
+      "isMatch": false
+    },
+    {
+      "id": "event",
+      "name": "특별 이벤트",
+      "specText": "무작위 보상 또는 위험 선택",
+      "isMatch": false
+    }
+  ],
+  "segmentExample": [
+    {
+      "node": "normal"
+    },
+    {
+      "step": "rewardPick"
+    },
+    {
+      "anyOf": [
+        "shop",
+        "training"
+      ]
+    },
+    {
+      "node": "strong"
+    },
+    {
+      "anyOf": [
+        "rest",
+        "recruit"
+      ]
+    },
+    {
+      "node": "boss"
+    }
+  ],
+  "trainingOptions": [
+    {
+      "id": "T01",
+      "name": "체력 훈련",
+      "stat": "s0",
+      "value": null
+    },
+    {
+      "id": "T02",
+      "name": "수비 훈련",
+      "stat": "s1",
+      "value": null
+    },
+    {
+      "id": "T03",
+      "name": "달리기 훈련",
+      "stat": "s2",
+      "value": null
+    },
+    {
+      "id": "T04",
+      "name": "점프 훈련",
+      "stat": "s3",
+      "value": null
+    },
+    {
+      "id": "T05",
+      "name": "투구 훈련",
+      "stat": "s4",
+      "value": null
+    },
+    {
+      "id": "T06",
+      "name": "캐치 훈련",
+      "stat": "s5",
+      "value": null
+    },
+    {
+      "id": "T07",
+      "name": "속구 훈련",
+      "stat": "s6",
+      "value": null
+    },
+    {
+      "id": "T08",
+      "name": "패스 훈련",
+      "stat": "s7",
+      "value": null
+    },
+    {
+      "id": "T09",
+      "name": "균형 훈련",
+      "stat": "r1",
+      "value": null
+    },
+    {
+      "id": "T10",
+      "name": "안정 훈련",
+      "stat": "r2",
+      "value": null
+    },
+    {
+      "id": "T11",
+      "name": "회복 훈련",
+      "stat": "r3",
+      "value": null
+    }
+  ],
+  "proposed": {
+    "segmentTemplate": [
+      {
+        "node": "normal"
+      },
+      {
+        "anyOf": [
+          "shop",
+          "training"
+        ]
+      },
+      {
+        "node": "normal"
+      },
+      {
+        "anyOf": [
+          "rest",
+          "recruit",
+          "event"
+        ]
+      },
+      {
+        "node": "strong"
+      },
+      {
+        "anyOf": [
+          "shop",
+          "training",
+          "rest"
+        ]
+      },
+      {
+        "node": "boss"
+      }
+    ],
+    "matchesPerSegment": 4,
+    "restHealPct": 30
+  }
+}

@@ -461,7 +461,7 @@ function attackRom(m, p, cb) {
     // 포메이션 판정 [직역 ROM 0xD948]: 사이드 카운터($62)+1 이 팀 문턱 이상이면 0 으로 되돌리고, 남은 인원 >= 4·남은 횟수 != 0 이면 난수&0xFF <= 0x80 이고 팀 7명이 모두 쓸 수 있을 때 발동
     if (!m.fm) {
       S.fmCnt = ((S.fmCnt | 0) + 1) & 0xff;
-      if (!((FM_THR[S.team] ?? 255) > S.fmCnt)) {
+      if (!((FM_THR[S.fmT ?? S.team] ?? 255) > S.fmCnt)) { // S.fmT = flame 좌석이 고른 포메이션 패턴의 기준 팀(flame 옵션이 없으면 없다 = 종전과 같다)
         S.fmCnt = 0;
         if (S.remaining >= 4 && S.fmLeft > 0 && (m.rng.next() & 0xff) <= 0x80 && m.players.every((q) => q.seat !== p.seat || q.removed || freeP(m, q))) {
           if (m.fmCanStart(p.seat)) { m.fmStart(p.seat); return 0; } // 포메이션 진행 자체는 엔진 기존 구현(analysis/14)
@@ -594,7 +594,7 @@ function attackRom(m, p, cb) {
     if (ox < 0xd0 || ox > 0x130) return cpuJump(p, [vx, 0]);
     p.vx = 0; p.vy = 0; p.aiKeepV = [vx, 0]; // [판독만] 여기부터 지상 대시 투구 분기
     // [판독만] 0xCC44: 팀 번호 0x17 의 선수 0 은 지상 투구에 차지 15 를 넣는다(0x8CF0 창 = 필살기)
-    if (S.team === 0x17 && p.idx === 0) { p.gsp = true; return startThrow(15); }
+    if ((p.ot ?? S.team) === 0x17 && (p.oi ?? p.idx) === 0) { p.gsp = true; return startThrow(15); } // p.ot/p.oi = flame 혼합 로스터의 출신 팀·번호(없으면 좌석 팀·번호 = 종전과 같다)
     return startThrow();
   }
   // 서브 0

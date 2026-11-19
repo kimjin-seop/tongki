@@ -1,0 +1,188 @@
+{
+  "_meta": {
+    "version": 2,
+    "source": "analysis/36_flame_legacy_spec.md §8.2",
+    "notes": [
+      "mapping = 그 태그에 속하는 기존 포메이션 패턴 번호(server/data/formations.json 의 name_idx 0~14) 목록. D7 로 37 §2.11 제안안을 채택했다(analysis/39_flame_decisions.md).",
+      "[근거 약함] 원작 포메이션에는 전술 태그·능력치 효과가 없다. 배정은 이름·모양만 참고한 자작이다. 특히 고공형은 엔드 어택이 언제나 점프 투구라 구분 근거가 약하다. 바꾸려면 이 표만 고친다.",
+      "existingFormations 는 기존 데이터에서 읽은 포메이션 이름 15종과 그 포메이션을 쓰는 팀 번호다(참고용).",
+      "엔진은 Match 옵션 flame.fm(패턴 번호)으로 패턴을 고른다. 태그 보너스는 경기 전 능력치 계산(서버)에서 더한다."
+    ]
+  },
+  "tags": [
+    {
+      "id": "attack",
+      "name": "공격형",
+      "mapping": [
+        1,
+        7,
+        11
+      ],
+      "memo": "D7 채택(analysis/39_flame_decisions.md). 37 §2.11 제안안, 원작 근거 약함(이름·모양만 참고)"
+    },
+    {
+      "id": "defense",
+      "name": "수비형",
+      "mapping": [
+        5,
+        9,
+        10
+      ],
+      "memo": "D7 채택(analysis/39_flame_decisions.md). 37 §2.11 제안안, 원작 근거 약함(이름·모양만 참고)"
+    },
+    {
+      "id": "fast",
+      "name": "속공형",
+      "mapping": [
+        8,
+        14
+      ],
+      "memo": "D7 채택(analysis/39_flame_decisions.md). 37 §2.11 제안안, 원작 근거 약함(이름·모양만 참고)"
+    },
+    {
+      "id": "combo",
+      "name": "연계형",
+      "mapping": [
+        0,
+        4,
+        13
+      ],
+      "memo": "D7 채택(analysis/39_flame_decisions.md). 37 §2.11 제안안, 원작 근거 약함(이름·모양만 참고)"
+    },
+    {
+      "id": "highair",
+      "name": "고공형",
+      "mapping": [
+        2,
+        6
+      ],
+      "memo": "D7 채택(analysis/39_flame_decisions.md). 37 §2.11 제안안, 원작 근거 약함(이름·모양만 참고)"
+    },
+    {
+      "id": "balanced",
+      "name": "균형형",
+      "mapping": [
+        3,
+        12
+      ],
+      "memo": "D7 채택(analysis/39_flame_decisions.md). 37 §2.11 제안안, 원작 근거 약함(이름·모양만 참고)"
+    }
+  ],
+  "existingFormations": [
+    {
+      "name_idx": 0,
+      "name_ja": "五芒星",
+      "teams": [
+        1
+      ]
+    },
+    {
+      "name_idx": 1,
+      "name_ja": "V字",
+      "teams": [
+        3
+      ]
+    },
+    {
+      "name_idx": 2,
+      "name_ja": "十勝岳",
+      "teams": [
+        5
+      ]
+    },
+    {
+      "name_idx": 3,
+      "name_ja": "大文字",
+      "teams": [
+        6
+      ]
+    },
+    {
+      "name_idx": 4,
+      "name_ja": "琉球アタック",
+      "teams": [
+        7
+      ]
+    },
+    {
+      "name_idx": 5,
+      "name_ja": "虎牢関",
+      "teams": [
+        10,
+        17
+      ]
+    },
+    {
+      "name_idx": 6,
+      "name_ja": "山の手",
+      "teams": [
+        4
+      ]
+    },
+    {
+      "name_idx": 7,
+      "name_ja": "エンドアタック",
+      "teams": [
+        0,
+        22,
+        24
+      ]
+    },
+    {
+      "name_idx": 8,
+      "name_ja": "ミックスパス",
+      "teams": [
+        2
+      ]
+    },
+    {
+      "name_idx": 9,
+      "name_ja": "モスクワン",
+      "teams": [
+        11,
+        18
+      ]
+    },
+    {
+      "name_idx": 10,
+      "name_ja": "パルテノン",
+      "teams": [
+        12,
+        19
+      ]
+    },
+    {
+      "name_idx": 11,
+      "name_ja": "サンドイッチ",
+      "teams": [
+        13,
+        20
+      ]
+    },
+    {
+      "name_idx": 12,
+      "name_ja": "モアイゴッド",
+      "teams": [
+        9,
+        16
+      ]
+    },
+    {
+      "name_idx": 13,
+      "name_ja": "ファラオアタック",
+      "teams": [
+        14,
+        21
+      ]
+    },
+    {
+      "name_idx": 14,
+      "name_ja": "スタークラッシュ",
+      "teams": [
+        8,
+        15,
+        23
+      ]
+    }
+  ]
+}

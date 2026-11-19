@@ -1,0 +1,517 @@
+{
+  "_meta": {
+    "version": 1,
+    "source": "analysis/36_flame_legacy_spec.md §9",
+    "notes": [
+      "kind: heal(경기 사이 즉시 회복) | nextMatch(다음 경기 임시 강화, 경기 종료 시 제거) | utility(C18·C19: 경기가 아니라 다음 보상·다음 영입에 걸리는 효과). utility 는 지시의 heal|nextMatch 에 들어가지 않아 따로 둔 값이다.",
+      "duration: instant | nextMatch | nextBossMatch | nextReward | nextRecruit.",
+      "stackMax 3 = 종류당 최대 보유(§9.1), 전체 보유 상한 5 는 rules.json.",
+      "[확인 필요] C03~C10·C16·C17 은 원문에 대상(선수 1명/팀 전체)이 없다. params.target=null, proposed.target=\"player\"(선수 1명)가 [자작 제안]이다. 근거: C13~C15·C20 만 \"팀 전체\"라고 적혀 있다.",
+      "C04 와 C16 은 원문 효과가 같다(다음 경기 공격력 +3). 그대로 옮겼다."
+    ]
+  },
+  "items": [
+    {
+      "id": "C01",
+      "name": "스포츠 드링크",
+      "kind": "heal",
+      "duration": "instant",
+      "specText": "선수 1명의 HP 20 회복",
+      "effects": [
+        {
+          "type": "heal_hp",
+          "params": {
+            "value": 20,
+            "target": "player"
+          },
+          "conditions": {},
+          "tags": [
+            "heal"
+          ]
+        }
+      ],
+      "stackMax": 3,
+      "icon": "assets/flame-legacy/items/consumables/C01_sports_drink.png"
+    },
+    {
+      "id": "C02",
+      "name": "특제 스포츠 드링크",
+      "kind": "heal",
+      "duration": "instant",
+      "specText": "선수 1명의 HP 40 회복",
+      "effects": [
+        {
+          "type": "heal_hp",
+          "params": {
+            "value": 40,
+            "target": "player"
+          },
+          "conditions": {},
+          "tags": [
+            "heal"
+          ]
+        }
+      ],
+      "stackMax": 3,
+      "icon": "assets/flame-legacy/items/consumables/C02_special_sports_drink.png"
+    },
+    {
+      "id": "C03",
+      "name": "에너지 주먹밥",
+      "kind": "nextMatch",
+      "duration": "nextMatch",
+      "specText": "다음 경기 최대 HP +10",
+      "effects": [
+        {
+          "type": "stat_bonus",
+          "params": {
+            "stat": "s0",
+            "value": 10,
+            "target": null
+          },
+          "conditions": {},
+          "tags": [
+            "buff"
+          ],
+          "proposed": {
+            "target": "player"
+          }
+        }
+      ],
+      "stackMax": 3,
+      "icon": "assets/flame-legacy/items/consumables/C03_energy_riceball.png"
+    },
+    {
+      "id": "C04",
+      "name": "특훈 도시락",
+      "kind": "nextMatch",
+      "duration": "nextMatch",
+      "specText": "다음 경기 공격력 +3",
+      "effects": [
+        {
+          "type": "stat_bonus",
+          "params": {
+            "stat": "s4",
+            "value": 3,
+            "target": null
+          },
+          "conditions": {},
+          "tags": [
+            "buff"
+          ],
+          "proposed": {
+            "target": "player"
+          }
+        }
+      ],
+      "stackMax": 3,
+      "icon": "assets/flame-legacy/items/consumables/C04_training_lunchbox.png"
+    },
+    {
+      "id": "C05",
+      "name": "냉찜질 팩",
+      "kind": "nextMatch",
+      "duration": "nextMatch",
+      "specText": "다음 경기 쓰러짐 회복 8프레임 단축",
+      "effects": [
+        {
+          "type": "stat_bonus",
+          "params": {
+            "stat": "r3",
+            "value": 8,
+            "target": null
+          },
+          "conditions": {},
+          "tags": [
+            "buff"
+          ],
+          "proposed": {
+            "target": "player"
+          }
+        }
+      ],
+      "stackMax": 3,
+      "icon": "assets/flame-legacy/items/consumables/C05_ice_pack.png"
+    },
+    {
+      "id": "C06",
+      "name": "손목 테이핑",
+      "kind": "nextMatch",
+      "duration": "nextMatch",
+      "specText": "다음 경기 투구 속도 +3",
+      "effects": [
+        {
+          "type": "stat_bonus",
+          "params": {
+            "stat": "s6",
+            "value": 3,
+            "target": null
+          },
+          "conditions": {},
+          "tags": [
+            "buff"
+          ],
+          "proposed": {
+            "target": "player"
+          }
+        }
+      ],
+      "stackMax": 3,
+      "icon": "assets/flame-legacy/items/consumables/C06_wrist_taping.png"
+    },
+    {
+      "id": "C07",
+      "name": "발목 테이핑",
+      "kind": "nextMatch",
+      "duration": "nextMatch",
+      "specText": "다음 경기 이동속도 +1",
+      "effects": [
+        {
+          "type": "stat_bonus",
+          "params": {
+            "stat": "s2",
+            "value": 1,
+            "target": null
+          },
+          "conditions": {},
+          "tags": [
+            "buff"
+          ],
+          "proposed": {
+            "target": "player"
+          }
+        }
+      ],
+      "stackMax": 3,
+      "icon": "assets/flame-legacy/items/consumables/C07_ankle_taping.png"
+    },
+    {
+      "id": "C08",
+      "name": "무릎 보호 테이프",
+      "kind": "nextMatch",
+      "duration": "nextMatch",
+      "specText": "다음 경기 점프력 +2",
+      "effects": [
+        {
+          "type": "stat_bonus",
+          "params": {
+            "stat": "s3",
+            "value": 2,
+            "target": null
+          },
+          "conditions": {},
+          "tags": [
+            "buff"
+          ],
+          "proposed": {
+            "target": "player"
+          }
+        }
+      ],
+      "stackMax": 3,
+      "icon": "assets/flame-legacy/items/consumables/C08_knee_support_tape.png"
+    },
+    {
+      "id": "C09",
+      "name": "캐치용 미끄럼 방지제",
+      "kind": "nextMatch",
+      "duration": "nextMatch",
+      "specText": "다음 경기 캐치 지속 +2",
+      "effects": [
+        {
+          "type": "stat_bonus",
+          "params": {
+            "stat": "s5",
+            "value": 2,
+            "target": null
+          },
+          "conditions": {},
+          "tags": [
+            "buff"
+          ],
+          "proposed": {
+            "target": "player"
+          }
+        }
+      ],
+      "stackMax": 3,
+      "icon": "assets/flame-legacy/items/consumables/C09_catch_antislip_agent.png"
+    },
+    {
+      "id": "C10",
+      "name": "충격 흡수 패드",
+      "kind": "nextMatch",
+      "duration": "nextMatch",
+      "specText": "다음 경기 넉백 저항 +15%",
+      "effects": [
+        {
+          "type": "stat_bonus",
+          "params": {
+            "stat": "r1",
+            "value": 15,
+            "target": null
+          },
+          "conditions": {},
+          "tags": [
+            "buff"
+          ],
+          "proposed": {
+            "target": "player"
+          }
+        }
+      ],
+      "stackMax": 3,
+      "icon": "assets/flame-legacy/items/consumables/C10_shock_absorb_pad.png"
+    },
+    {
+      "id": "C11",
+      "name": "긴급 치료 키트",
+      "kind": "heal",
+      "duration": "instant",
+      "specText": "선수 1명의 HP 60 회복",
+      "effects": [
+        {
+          "type": "heal_hp",
+          "params": {
+            "value": 60,
+            "target": "player"
+          },
+          "conditions": {},
+          "tags": [
+            "heal"
+          ]
+        }
+      ],
+      "stackMax": 3,
+      "icon": "assets/flame-legacy/items/consumables/C11_emergency_med_kit.png"
+    },
+    {
+      "id": "C12",
+      "name": "전술 메모",
+      "kind": "nextMatch",
+      "duration": "nextMatch",
+      "specText": "다음 경기 현재 포메이션 보너스 강화",
+      "effects": [
+        {
+          "type": "formation_bonus_amplify",
+          "params": {
+            "multiplierPct": null
+          },
+          "conditions": {},
+          "tags": [
+            "formation"
+          ],
+          "proposed": {
+            "multiplierPct": 50
+          }
+        }
+      ],
+      "stackMax": 3,
+      "icon": "assets/flame-legacy/items/consumables/C12_tactics_memo.png"
+    },
+    {
+      "id": "C13",
+      "name": "응원 머플러",
+      "kind": "nextMatch",
+      "duration": "nextMatch",
+      "specText": "다음 경기 팀 전체 HP +5",
+      "effects": [
+        {
+          "type": "stat_bonus",
+          "params": {
+            "stat": "s0",
+            "value": 5,
+            "target": "team"
+          },
+          "conditions": {},
+          "tags": [
+            "buff"
+          ]
+        }
+      ],
+      "stackMax": 3,
+      "icon": "assets/flame-legacy/items/consumables/C13_cheer_muffler.png"
+    },
+    {
+      "id": "C14",
+      "name": "특훈 호각",
+      "kind": "nextMatch",
+      "duration": "nextMatch",
+      "specText": "다음 경기 팀 전체 패스 속도 +2",
+      "effects": [
+        {
+          "type": "stat_bonus",
+          "params": {
+            "stat": "s7",
+            "value": 2,
+            "target": "team"
+          },
+          "conditions": {},
+          "tags": [
+            "buff"
+          ]
+        }
+      ],
+      "stackMax": 3,
+      "icon": "assets/flame-legacy/items/consumables/C14_training_whistle.png"
+    },
+    {
+      "id": "C15",
+      "name": "고무 연습공",
+      "kind": "nextMatch",
+      "duration": "nextMatch",
+      "specText": "다음 경기 팀 전체 투구 속도 +2",
+      "effects": [
+        {
+          "type": "stat_bonus",
+          "params": {
+            "stat": "s6",
+            "value": 2,
+            "target": "team"
+          },
+          "conditions": {},
+          "tags": [
+            "buff"
+          ]
+        }
+      ],
+      "stackMax": 3,
+      "icon": "assets/flame-legacy/items/consumables/C15_rubber_practice_ball.png"
+    },
+    {
+      "id": "C16",
+      "name": "무게 훈련공",
+      "kind": "nextMatch",
+      "duration": "nextMatch",
+      "specText": "다음 경기 공격력 +3",
+      "effects": [
+        {
+          "type": "stat_bonus",
+          "params": {
+            "stat": "s4",
+            "value": 3,
+            "target": null
+          },
+          "conditions": {},
+          "tags": [
+            "buff"
+          ],
+          "proposed": {
+            "target": "player"
+          }
+        }
+      ],
+      "stackMax": 3,
+      "icon": "assets/flame-legacy/items/consumables/C16_weighted_training_ball.png"
+    },
+    {
+      "id": "C17",
+      "name": "유연성 훈련 밴드",
+      "kind": "nextMatch",
+      "duration": "nextMatch",
+      "specText": "다음 경기 점프력 +1, 이동속도 +1",
+      "effects": [
+        {
+          "type": "stat_bonus",
+          "params": {
+            "stat": "s3",
+            "value": 1,
+            "target": null
+          },
+          "conditions": {},
+          "tags": [
+            "buff"
+          ],
+          "proposed": {
+            "target": "player"
+          }
+        },
+        {
+          "type": "stat_bonus",
+          "params": {
+            "stat": "s2",
+            "value": 1,
+            "target": null
+          },
+          "conditions": {},
+          "tags": [
+            "buff"
+          ],
+          "proposed": {
+            "target": "player"
+          }
+        }
+      ],
+      "stackMax": 3,
+      "icon": "assets/flame-legacy/items/consumables/C17_flexibility_band.png"
+    },
+    {
+      "id": "C18",
+      "name": "경기 분석 비디오",
+      "kind": "utility",
+      "duration": "nextReward",
+      "specText": "다음 보상에서 장비 선택지 1개 추가",
+      "effects": [
+        {
+          "type": "reward_extra_choice",
+          "params": {
+            "rewardKind": "equipment",
+            "count": 1
+          },
+          "conditions": {},
+          "tags": [
+            "reward"
+          ]
+        }
+      ],
+      "stackMax": 3,
+      "icon": "assets/flame-legacy/items/consumables/C18_match_analysis_video.png"
+    },
+    {
+      "id": "C19",
+      "name": "스카우트 추천서",
+      "kind": "utility",
+      "duration": "nextRecruit",
+      "specText": "다음 선수 영입 시 후보 1명 추가",
+      "effects": [
+        {
+          "type": "recruit_extra_candidate",
+          "params": {
+            "count": 1
+          },
+          "conditions": {},
+          "tags": [
+            "reward"
+          ]
+        }
+      ],
+      "stackMax": 3,
+      "icon": "assets/flame-legacy/items/consumables/C19_scout_recommendation.png"
+    },
+    {
+      "id": "C20",
+      "name": "우승 기원 부적",
+      "kind": "nextMatch",
+      "duration": "nextBossMatch",
+      "specText": "다음 보스 경기에서 팀 전체 방어력 +2",
+      "effects": [
+        {
+          "type": "stat_bonus",
+          "params": {
+            "stat": "s1",
+            "value": 2,
+            "target": "team"
+          },
+          "conditions": {
+            "nodeType": "boss"
+          },
+          "tags": [
+            "buff"
+          ]
+        }
+      ],
+      "stackMax": 3,
+      "icon": "assets/flame-legacy/items/consumables/C20_victory_charm.png"
+    }
+  ]
+}

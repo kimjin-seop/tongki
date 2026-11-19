@@ -2,7 +2,9 @@
 // 위: 팀 패널(라벨+엠블럼+팀 이름+약칭) / 선수 패널(얼굴+이름+능력치 6줄) / EXIT, 아래: 코트 모형 위 선수 얼굴 7개.
 // 커서를 얼굴에 맞추면 그 선수의 능력치가 보인다. 교대(포지션 변경)는 서버가 선수 순서를 받지 않아 아직 없다.
 // 논리 해상도 398x224, 원작 320x224 를 가운데(+39)에 놓고 양옆은 배경을 거울로 이어 붙인다(경기 화면과 같은 방식).
-// 사용: app.go('prematch', { team, label: 'COM'|'1P'|'2P', onExit })  (onExit 생략 시 대기실/로비로)
+// 사용: app.go('prematch', { team, label: 'COM'|'1P'|'2P', onExit, roster?, stats? })  (onExit 생략 시 대기실/로비로)
+// roster = 혼합 로스터(불꽃의 계승) 7명의 출신 [{team, idx}]: 얼굴·이름을 출신으로 그린다. stats = 선수별 능력치 6종 [[체력, 방어, 스피드, 점프, 슛, 캐치] x7](서버가 계산한 최종값). 없으면 종전대로 팀 원본
+//   칸에 name(문자열)·face(24x24 그림, hud.faces 와 같은 방향)가 있으면 그것을 먼저 쓴다(오리지널 선수). head = {name, abbr, emblem?(24x16 그림)}: 팀 패널을 팀 id 대신 이것으로(오리지널 팀)
 import { h, fitScale, isTyping } from '../util.js';
 import { has, image, json } from '../game/assets.js';
 import { teamName, teamPlayers } from '../names.js';
@@ -14,12 +16,19 @@ const DIRS = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRig
 
 /** 능력치 → 막대 칸 수(원작 루틴 0xEC2E: 큰 칸 = 2칸, 나머지 >= d/2 면 작은 칸 1) */
 export const barBlocks = (v, d) => 2 * Math.floor(v / d) + (v % d >= d >> 1 ? 1 : 0);
+/** 선수 창 안쪽 오른쪽 끝(원작 320 좌표, fm_bg 의 창 테두리가 x=213 에서 시작). 막대는 여기까지만 그린다: 원작 팀은 최대 16칸이라 닿지 않고, 불꽃의 계승처럼 능력치가 커진 선수만 잘린다 */
+const BAR_RIGHT = 213;
 
 export function mount(root, app, data = {}) {
   const team = Number.isInteger(data.team) ? data.team : 1;
   const label = data.label || 'COM';
   const mirror = label === '1P'; // 1P 화면은 코트·얼굴 x 를 반전(296-x). 2P 는 COM 과 같은 쪽 [추정]
   const cancel = () => (data.onCancel || exit)();
+  const roster = Array.isArray(data.roster) && data.roster.length === 7 && data.roster.every((o) => Number.isInteger(o?.team) && Number.isInteger(o?.idx)) ? data.roster : null;
+  const origin = (i) => (roster ? [roster[i].team, roster[i].idx] : [team, i]);
+  const statsOf = (i) => (Array.isArray(data.stats?.[i]) ? data.stats[i] : D.teams[String(origin(i)[0])]?.[origin(i)[1]]);
+  const nameOf = (i) => { if (typeof roster?.[i]?.name === 'string' && roster[i].name) return roster[i].name; const [t, k] = origin(i); const nm = teamPlayers(t)[k]; return nm && /[가-힣]/.test(nm) ? nm : `${k + 1}번`; };
+  const head = typeof data.head?.name === 'string' && data.head.name ? data.head : null;
   const exit = data.onExit || (() => app.go(app.room ? 'room' : 'lobby'));
   const canvas = h('canvas', { width: W, height: H, 'aria-label': '편성 화면',
     style: { display: 'block', imageRendering: 'pixelated', background: '#000' } });
@@ -58,7 +67,8 @@ export function mount(root, app, data = {}) {
   /** 얼굴 24x24. hud.faces 아틀라스는 좌우반전 그림이라 다시 뒤집어 원작 방향으로 그린다 */
   function face(i, x, y) {
     g.save(); g.translate(OX + x + 24, y); g.scale(-1, 1);
-    g.drawImage(imgs.faces, i * 24, team * 24, 24, 24, 0, 0, 24, 24);
+    const [ot, oi] = origin(i), own = roster?.[i]?.face ?? null;
+    if (own) g.drawImage(own, 0, 0, 24, 24, 0, 0, 24, 24); else g.drawImage(imgs.faces, oi * 24, ot * 24, 24, 24, 0, 0, 24, 24);
     g.restore();
   }
   const facePos = () => D.faces[mirror ? 'p1' : 'com'];
@@ -81,9 +91,10 @@ export function mount(root, app, data = {}) {
     }
     // 팀 패널
     glyphs(label, P.label[0], P.label[1]);
-    g.drawImage(imgs.emb, emblemOf(team) * 24, 0, 24, 16, OX + P.emblem[0], P.emblem[1], 24, 16);
-    put(teamName(team, `팀 ${team + 1}`), P.teamName[0], P.teamName[1], 8, '#fcfcfc', 68);
-    glyphs(abbrOf(team), P.abbr[0], P.abbr[1]);
+    if (head?.emblem) g.drawImage(head.emblem, 0, 0, 24, 16, OX + P.emblem[0], P.emblem[1], 24, 16); else g.drawImage(imgs.emb, emblemOf(team) * 24, 0, 24, 16, OX + P.emblem[0], P.emblem[1], 24, 16);
+    put(head ? head.name : teamName(team, `팀 ${team + 1}`), P.teamName[0], P.teamName[1], 8, '#fcfcfc', 68);
+    const ab = head ? String(head.abbr ?? '') : abbrOf(team);
+    if (/^[\x20-\x5f]*$/.test(ab.toUpperCase())) glyphs(ab, P.abbr[0], P.abbr[1]); else put(ab, P.abbr[0], P.abbr[1], 8, '#fcfcfc', 68); // 원작 8x8 글리프는 영문·숫자뿐: 한글 약칭은 도트 글자로
     // 능력치 라벨 + 점선(원작: 라벨 끝부터 4px 간격 2px 점)
     const B = D.bar;
     D.ko.stats.forEach((lb, k) => {
@@ -102,13 +113,17 @@ export function mount(root, app, data = {}) {
     fp.forEach(([x, y], i) => face(i, x, y));
     // 선수 패널(커서가 얼굴 위일 때)
     if (typeof sel === 'number') {
-      const st = D.teams[String(team)]?.[sel];
+      const st = statsOf(sel);
       face(sel, D.faces.hover[0], D.faces.hover[1]);
-      const nm = teamPlayers(team)[sel];
-      put(nm && /[가-힣]/.test(nm) ? nm : `${sel + 1}번`, P.playerName[0], P.playerName[1], 8, '#fcfcfc', 66);
+      put(nameOf(sel), P.playerName[0], P.playerName[1], 8, '#fcfcfc', 66);
       if (st) st.forEach((v, k) => {
-        const n = barBlocks(v, B.divisors[k]);
+        const full = barBlocks(v, B.divisors[k]), cap = Math.floor((BAR_RIGHT - B.x) / B.blockW), n = Math.min(full, cap);
         for (let b = 0; b < n; b++) g.drawImage(imgs.bar, OX + B.x + b * B.blockW, B.y0 + k * B.pitch);
+        if (full > cap) { // 칸을 넘는 값: 막대는 창 폭까지, 값은 막대 오른쪽 끝에 숫자로
+          const t = text(String(v), 8, '#fcfc00'), x = BAR_RIGHT - t.width - 1;
+          g.fillStyle = '#002400'; g.fillRect(OX + x - 1, B.y0 + k * B.pitch, BAR_RIGHT - x + 1, B.pitch);
+          g.drawImage(t, OX + x, B.y0 + k * B.pitch - 1);
+        }
       });
     }
     // 커서: 얼굴 = 40x40 plain 프레임(select.cursor 7행 = plain_move), EXIT = 팔각 프레임
@@ -140,9 +155,8 @@ export function mount(root, app, data = {}) {
 
   function announce() {
     if (typeof sel !== 'number') { live.textContent = 'EXIT'; return; }
-    const st = D.teams[String(team)]?.[sel];
-    const nm = teamPlayers(team)[sel];
-    live.textContent = `${nm && /[가-힣]/.test(nm) ? nm : `${sel + 1}번`}: ` + (st ? st.map((v, k) => `${D.ko.stats[k]} ${barBlocks(v, D.bar.divisors[k])}`).join(', ') : '');
+    const st = statsOf(sel);
+    live.textContent = `${nameOf(sel)}: ` + (st ? st.map((v, k) => `${D.ko.stats[k]} ${barBlocks(v, D.bar.divisors[k])}`).join(', ') : '');
   }
   function select(k, sound = true) {
     if (k === sel) return;
@@ -200,7 +214,7 @@ export function mount(root, app, data = {}) {
     timer = setInterval(() => { tick++; if (tick % 6 === 0) draw(); }, 1000 / 60);
   }).catch((e) => { console.warn('prematch', e); exit(); });
 
-  return { onError() { cancel(); }, unmount() { alive = false; clearInterval(timer); removeEventListener('keydown', onKey); removeEventListener('resize', fit); } };
+  return { flame: !!roster, onError() { cancel(); }, unmount() { alive = false; clearInterval(timer); removeEventListener('keydown', onKey); removeEventListener('resize', fit); } };
 }
 
 /** 에셋이 모두 있을 때만 쓸 수 있음(없으면 호출 측이 건너뜀) */

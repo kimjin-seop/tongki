@@ -11,6 +11,9 @@ export async function loadNames() {
 /** 선수 표시 이름 배열(idx 0~6). 없으면 빈 배열 */
 export const teamPlayers = (id) => teams.find((t) => t.id === id)?.players ?? [];
 
+/** 선수 한 명의 표시 이름(출신 팀·번호 기준: 혼합 로스터에서도 같은 선수는 같은 이름). 한글 이름이 없으면 'N번' */
+export const playerName = (team, idx) => { const n = teamPlayers(team)[idx]; return n && /[가-힣]/.test(n) ? n : `${idx + 1}번`; };
+
 export const teamName =(id, fallback = '') => teams.find((t) => t.id === id)?.name ?? fallback;
 
 /** 팀 목록용 이름: 이름이 겹치는 팀(0·22 태동)을 구분하는 label, 없으면 name */

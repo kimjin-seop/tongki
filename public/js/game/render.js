@@ -331,7 +331,7 @@ export class Renderer {
 
   /** 이번에 그린 선수 프레임의 머리(최상단 불투명 행) y, 발 기준 상대값(음수). 시트 칸별로 1회 계산·캐시, 실패 시 null */
   headTop(it) {
-    const img = this.sheets[it.pid < 7 ? 0 : 1];
+    const img = this.pSheets?.[it.pid] ?? this.sheets[it.pid < 7 ? 0 : 1]; // pSheets/orig = 혼합 로스터(불꽃의 계승)의 선수별 출신 시트·번호. 없으면 좌석 팀 시트·pid%7
     if (!img || it.col == null || typeof document === 'undefined') return null;
     this.topCache ??= new WeakMap();
     let e = this.topCache.get(img);
@@ -347,7 +347,7 @@ export class Renderer {
       this.topCache.set(img, e);
     }
     if (!e.px) return null;
-    const cell = this.cell, row = (it.pid % 7) * 2 + (it.left ? 1 : 0), k = row * 1000 + it.col;
+    const cell = this.cell, row = (this.pRow?.[it.pid] ?? this.orig?.[it.pid]?.idx ?? it.pid % 7) * 2 + (it.left ? 1 : 0), k = row * 1000 + it.col; // pRow = 선수별 띠 시트(불꽃의 계승 색 치환)의 행
     if (!e.tops.has(k)) {
       let top = null;
       const x0 = it.col * cell, y0 = row * cell;
@@ -367,9 +367,9 @@ export class Renderer {
     const [x, y, z] = pos;
     const col = it.col, left = it.left;
     const sx = Math.round(x - cam), sy = Math.round(y / 2 - z + Y0);
-    const img = this.sheets[seat];
+    const img = this.pSheets?.[pid] ?? this.sheets[seat];
     if (img) {
-      const row = idx * 2 + (left ? 1 : 0);
+      const row = (this.pRow?.[pid] ?? this.orig?.[pid]?.idx ?? idx) * 2 + (left ? 1 : 0);
       g.drawImage(img, col * this.cell, row * this.cell, this.cell, this.cell, sx - this.origin[0], sy - this.origin[1], this.cell, this.cell);
       // 필살기 발동 직후 투구 선수 반짝임(스프라이트 위에 같은 그림을 더해 밝게, 2틱 간격 점멸)
       if (this.cue?.pid === pid && tick < this.cue.until && (Math.floor(tick) >> 1) & 1) {

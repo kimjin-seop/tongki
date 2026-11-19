@@ -1,0 +1,171 @@
+{
+  "_meta": {
+    "version": 1,
+    "source": "analysis/36_flame_legacy_spec.md §2, §3.1, §4, §7, §9.1, §12.8, §14",
+    "notes": [
+      "전부 기획서 수치 그대로다. 이 파일에는 [자작 제안]이 없다.",
+      "r1·r2 는 % 포인트 정수(10 = 10%), r3 은 단축 프레임 정수로 통일한다(§14.2 \"비율 수치는 일관된 단위\")."
+    ]
+  },
+  "modeId": "flame_legacy",
+  "team": {
+    "players": 7,
+    "equipmentSlotsPerPlayer": 4,
+    "teamEquipmentSlots": 28,
+    "artifactSlots": 3,
+    "specialSlotsPerPlayer": 2
+  },
+  "equipmentSlots": [
+    "headband",
+    "glove",
+    "protector",
+    "uniform"
+  ],
+  "run": {
+    "segments": 3,
+    "matches": 12,
+    "bossPerSegment": 1,
+    "bosses": 3,
+    "loseEndsRun": true
+  },
+  "nodeTypes": [
+    "normal",
+    "strong",
+    "boss",
+    "shop",
+    "training",
+    "rest",
+    "recruit",
+    "event"
+  ],
+  "rarity": {
+    "order": [
+      "common",
+      "rare",
+      "epic",
+      "legendary"
+    ],
+    "names": {
+      "common": "일반",
+      "rare": "희귀",
+      "epic": "영웅",
+      "legendary": "전설"
+    },
+    "colors": {
+      "common": "회색",
+      "rare": "파랑",
+      "epic": "보라",
+      "legendary": "금색"
+    },
+    "dropRatePct": {
+      "common": 55,
+      "rare": 30,
+      "epic": 12,
+      "legendary": 3
+    }
+  },
+  "reward": {
+    "equipmentChoices": 3,
+    "pick": 1
+  },
+  "consumables": {
+    "inventoryMax": 5,
+    "stackMaxPerKind": 3
+  },
+  "stats": {
+    "base": {
+      "s0": "HP",
+      "s1": "방어력",
+      "s2": "이동속도",
+      "s3": "점프력",
+      "s4": "공격력",
+      "s5": "캐치 지속",
+      "s6": "투구 속도",
+      "s7": "패스 속도"
+    },
+    "extended": {
+      "r1": {
+        "name": "넉백 저항",
+        "unit": "pct",
+        "base": 0,
+        "cap": 60
+      },
+      "r2": {
+        "name": "캐치 후 밀림 감소",
+        "unit": "pct",
+        "base": 0,
+        "cap": 60
+      },
+      "r3": {
+        "name": "쓰러짐 회복 단축",
+        "unit": "frames",
+        "base": 0,
+        "cap": 24
+      }
+    }
+  },
+  "clamps": {
+    "r1MaxPct": 60,
+    "r2MaxPct": 60,
+    "r3MaxShortenFrames": 24,
+    "downFramesBase": 60,
+    "downFramesMin": 36,
+    "moveSpeedCapPxPerFrame": 3
+  },
+  "original": {
+    "knockbackDivisor": 16,
+    "hitVerticalSpeed": 4,
+    "ballHoldLimitSec": 20,
+    "chargeBonusMax": 15,
+    "specialChargeMin": 13,
+    "specialChargeMax": 15,
+    "specialKinds": 32
+  },
+  "calcOrder": [
+    {
+      "step": 1,
+      "id": "base",
+      "name": "선수 기본 능력치"
+    },
+    {
+      "step": 2,
+      "id": "permanent",
+      "name": "영구 성장 보너스"
+    },
+    {
+      "step": 3,
+      "id": "training",
+      "name": "도전 중 특훈 보너스"
+    },
+    {
+      "step": 4,
+      "id": "equipment",
+      "name": "선수별 장비 보너스"
+    },
+    {
+      "step": 5,
+      "id": "artifact",
+      "name": "팀 공용 아티팩트 보너스"
+    },
+    {
+      "step": 6,
+      "id": "formation",
+      "name": "현재 포메이션 보너스"
+    },
+    {
+      "step": 7,
+      "id": "synergy",
+      "name": "아티팩트 조합 시너지"
+    },
+    {
+      "step": 8,
+      "id": "consumable",
+      "name": "소모품 임시 효과"
+    },
+    {
+      "step": 9,
+      "id": "clamp",
+      "name": "최종 상한 및 하한 처리"
+    }
+  ]
+}

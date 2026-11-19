@@ -136,21 +136,16 @@ input[type=text]:focus-visible, input[type=password]:focus-visible { outline: 3p
 .lobby-r { display: flex; flex-direction: column; gap: var(--gap); min-height: 0; padding-top: 2vh; }
 @media (min-width: 761px) and (min-height: 561px) { .lobby-r .nick-line { margin-bottom: 5vh; } .lobby-l { padding-top: 2vh; } }
 .lobby .title-logo { justify-content: center; margin: 0; contain: inline-size; overflow: clip; } /* 크기·투명 여백 크롭은 lobby.js fitLogo. contain: 로고가 열 폭을 넓히지 않게, clip: 잘라낸 투명 여백이 가로 스크롤을 만들지 않게 */
-.lobby-menu { display: grid; gap: calc(var(--gap) * 1.4); padding: 2px; }
+.lobby-menu { display: grid; grid-template-columns: minmax(0, 1fr); gap: calc(var(--gap) * 1.4); padding: 2px; }
 .lobby-menu .btn { width: 100%; }
 .story-entry { display: flex; align-items: center; gap: .6em; min-height: max(52px, 3rem); }
 .story-entry-t { flex: 1; font: 1.05rem var(--ui); }
 .story-entry-n { color: var(--c-yel); font-size: .85rem; }
-.cpu-box { padding: .5rem .8rem .8rem; display: grid; gap: .6rem; }
-.cpu-box-t { font: 1rem var(--ui); color: var(--c-white); }
+/* 컴퓨터 대결 줄: 큰 버튼(시작) + 난이도 1·2·3 */
 .cpu-row { display: flex; gap: var(--gap); align-items: stretch; }
-.cpu-row .lv { width: auto; min-width: max(44px, 2.4rem); text-align: center; padding: 0; color: var(--c-grey); }
+.cpu-row .lv { width: auto; flex: none; min-width: max(44px, 2.4rem); text-align: center; padding: 0; color: var(--c-grey); }
 .cpu-row .lv[aria-pressed=true] { color: var(--c-yel); }
-.cpu-row .go { flex: 1; text-align: center; }
-.tut-entry { display: flex; align-items: center; gap: .6em; min-height: max(48px, 2.8rem); }
-.tut-entry-t { flex: 1; }
-/* 튜토리얼·리그: 한 줄 두 칸(로비 세로 길이 유지) */
-.mini-row { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--gap) * 1.4); }
+.cpu-row .go { flex: 1; width: auto; min-width: 0; }
 .tag.new { --bc: var(--c-red); color: var(--c-white); background: #6a0000; }
 .nick-line { text-align: right; font: 1rem var(--ui); color: var(--c-white); min-height: 1.4em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nick-line .snd { margin-left: 12px; vertical-align: middle; }
@@ -471,7 +466,6 @@ body[data-title-enter] .title-follow { animation: title-follow .32s ease-out .14
 @media (min-width: 1500px) and (min-height: 950px) {
   .lobby .title-logo img { width: 635px; height: 310px; }
 }
-.replay-intro { margin-top: .5rem; align-self: flex-start; }
 
 /* ---- 규칙 창(원작 ルール / しあいじかん): 가운데 창 하나, 줄마다 값 버튼. 고른 값 = 노랑, 고를 수 없는 값 = 회색 ---- */
 .rules { align-items: center; justify-content: center; }
@@ -500,13 +494,12 @@ body[data-title-enter] .title-follow { animation: title-follow .32s ease-out .14
 .tr-quit-n { font: .8rem var(--ui); color: var(--c-yel); }
 .tr-quit-b { display: flex; gap: var(--gap); }
 .tr-quit-b .btn { min-width: 5.5em; text-align: center; }
-/* 낮은 가로 화면(모바일 가로): 튜토리얼 버튼이 로고 자리를 줄이지 않게 스토리 버튼 옆에 둔다 */
+/* 낮은 가로 화면(모바일 가로): 큰 메뉴 4줄 + 작은 메뉴 1줄을 44px 줄·좁은 간격으로 쌓아 메뉴 높이를 종전(약 230px)만큼만 쓴다(로고 자리가 줄지 않게) */
 @media (max-height: 560px) and (min-width: 761px) {
-  .lobby-menu { grid-template-columns: 1.4fr 1fr; }
-  .lobby-menu > * { grid-column: 1 / -1; }
-  .lobby-menu > .story-entry { grid-column: 1; grid-row: 1; }
-  .lobby-menu > .mini-row { grid-column: 2; grid-row: 1; }
-  .lobby-menu > .mini-row .tut-entry { min-height: 44px; }
+  .lobby-l { gap: 4px; }
+  .lobby-menu { gap: 2px; }
+  .lobby-menu .story-entry { min-height: 44px; }
+  .lobby-menu .lobby-foot { margin-top: 2px; }
 }
 
 /* ---- 리그(PROTOCOL §10): 규칙 창 틀(.rules-win)·팀 격자(.tcell) 재사용 ---- */
@@ -600,10 +593,11 @@ body[data-title-enter] .title-follow { animation: title-follow .32s ease-out .14
 .auth-tabs .btn { min-height: 44px; text-align: center; font-size: .9rem; }
 .nick-card [hidden] { display: none; }
 .nick-card input[readonly] { color: var(--c-grey); }
-.lobby-foot { display: flex; flex-wrap: wrap; gap: var(--gap); align-items: center; margin-top: .5rem; }
-.lobby-foot .replay-intro { margin-top: 0; }
-.lobby-menu .lobby-foot .btn { width: auto; flex: 1 1 auto; text-align: center; }
-.lobby-foot .acct-btn { min-height: 44px; flex: 0 1 auto; }
+/* 로비 작은 메뉴 한 줄: 튜토리얼·오프닝 다시보기·(손님) 가입·로그아웃 — 같은 폭. 좁으면 글자를 낱말 단위로 두 줄 */
+.lobby-foot { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: var(--gap); margin-top: .5rem; }
+.lobby-menu .lobby-foot .btn { width: auto; min-width: 0; padding: 0 .2em; text-align: center; white-space: normal; word-break: keep-all; line-height: 1.15; }
+.lobby-foot .tut-entry { display: flex; flex-wrap: wrap; align-items: center; align-content: center; justify-content: center; gap: .1em .4em; }
+.lobby-foot .tag.new { min-height: 1.4em; padding: 0 .4em; font-size: .6rem; }
 .rl-mk { display: flex; gap: var(--gap); align-items: stretch; }
 .rank-opt { min-height: max(44px, 2.4rem); text-align: center; }
 .rl-tabs { display: flex; align-items: center; gap: var(--gap); padding: 0 2px .35rem; }

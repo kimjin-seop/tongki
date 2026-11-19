@@ -248,7 +248,8 @@ test('손님 닉네임 선점 방지: 접속 중이 아닌 손님 닉네임으�
 });
 
 test('가입 경합: 해시 계산 중 같은 닉네임 손님 hello -> 손님 세션 종료·가입 연결은 재로그인 안내(토큰 미발급)', async () => {
-  const app = createServer({ store: new MemoryResultStore(), limits: LIM, log: () => {} });
+  // 전용 메모리 DB: 아래 auth_tokens 전체 0건 단언은 빈 DB 가 전제다(DB_PATH 환경 변수로 파일 DB 를 주면 앞선 시험의 토큰 행이 섞인다)
+  const app = createServer({ store: new MemoryResultStore(), dbPath: ':memory:', limits: LIM, log: () => {} });
   const port = await app.listen(0);
   const a = client(port), g = client(port);
   await Promise.all([a.open, g.open]);

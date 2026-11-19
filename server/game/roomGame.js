@@ -29,6 +29,7 @@ export class RoomGame {
       specialChance256: [0, 1].map((i) => (o.seats[i].cpu ? o.seats[i].special256 : undefined)),
       limitFrames: o.rules?.limitFrames, ruleMode: o.rules?.mode, // 규칙 창 값(없으면 rules.json 기본)
       ...(this.training ? { training: { kind: this.training.kind } } : {}),
+      ...(o.flame ? { flame: o.flame } : {}), // 불꽃의 계승(PROTOCOL §12): 엔진 flame 옵션 그대로. 주지 않으면 종전 경로
     });
     this.input = [{ cur: 0, latch: 0 }, { cur: 0, latch: 0 }];
     this.paused = [false, false];
@@ -46,7 +47,9 @@ export class RoomGame {
   }
 
   startPayload(seat, resumed) {
-    return { t: 'game_start', matchId: this.matchId, resumed, you: seat, ...(this.campaign ? { campaign: { k: this.campaign.k } } : {}), ...(this.league ? { league: { ...this.league } } : {}), ...this.match.info() };
+    return { t: 'game_start', matchId: this.matchId, resumed, you: seat, ...(this.campaign ? { campaign: { k: this.campaign.k } } : {}), ...(this.league ? { league: { ...this.league } } : {}), ...this.match.info(),
+      ...(this.o.flameCast ? { flameCast: { seat: this.match.fl?.seat ?? 0, ...this.o.flameCast } } : {}), // 불꽃의 계승 표시용 정의(팀명·선수 이름·skin, PROTOCOL §12.2). 엔진을 거치지 않는다. flame 경기가 아니면 키가 없다
+    };
   }
 
   begin() {
@@ -135,8 +138,9 @@ export class RoomGame {
     const res = {
       t: 'game_end', matchId: this.matchId, winner, winnerNick: winner >= 0 ? seats[winner].nick : null,
       reason, rem, ticks: this.match.f,
+      ...(this.match.fl ? { flame: this.match.flameResult() } : {}), // flame 경기만: 라인업 순서의 최종 HP·최대 HP·치사 생존 사용(도전 상태 저장용)
     };
-    if (this.training) { this.o.onEnd(res); return; } // 특훈은 저장·보상이 없다(analysis/29 §1-7): 결과 레코드를 쓰지 않는다
+    if (this.training || this.o.noRecord) { this.o.onEnd(res); return; } // 특훈은 저장·보상이 없다(analysis/29 §1-7): 결과 레코드를 쓰지 않는다. noRecord = 불꽃의 계승 연습 경기(PROTOCOL §13.15)도 같다
     // 랭크 방(PROTOCOL §11): 레코드를 쓰기 전에 레이팅을 반영해 ranked·ratingDelta 를 함께 남긴다. wentGo = GO 이후 종료인지(이전이면 무효)
     let rankRec = null;
     if (this.o.onRanked) {

@@ -1,0 +1,243 @@
+{
+  "_meta": {
+    "version": 1,
+    "source": "analysis/36_flame_legacy_spec.md §10.3",
+    "notes": [
+      "A(기본 훈련)는 단계·효과·비용이 기획서 표 그대로다.",
+      "B(출발 준비)는 기획서에 최대 단계와 효과 문구만 있다. costs=null, perLevel=null 이고 proposed 가 [자작 제안]이다.",
+      "C(콘텐츠 해금)는 기획서에 항목 이름만 있다. cost=null. 개별 해금 대상 목록은 후속 단계에서 정한다."
+    ]
+  },
+  "training": [
+    {
+      "id": "PA01",
+      "name": "기초 체력 훈련",
+      "maxLevel": 3,
+      "specText": "시작 선수 HP 단계별 +2",
+      "effect": {
+        "stat": "s0",
+        "perLevel": 2,
+        "target": "starters"
+      },
+      "costs": [
+        100,
+        200,
+        350
+      ]
+    },
+    {
+      "id": "PA02",
+      "name": "기본 수비 훈련",
+      "maxLevel": 2,
+      "specText": "시작 선수 방어력 단계별 +1",
+      "effect": {
+        "stat": "s1",
+        "perLevel": 1,
+        "target": "starters"
+      },
+      "costs": [
+        250,
+        500
+      ]
+    },
+    {
+      "id": "PA03",
+      "name": "투구 훈련",
+      "maxLevel": 2,
+      "specText": "시작 선수 공격력 단계별 +1",
+      "effect": {
+        "stat": "s4",
+        "perLevel": 1,
+        "target": "starters"
+      },
+      "costs": [
+        250,
+        500
+      ]
+    },
+    {
+      "id": "PA04",
+      "name": "캐치 훈련",
+      "maxLevel": 2,
+      "specText": "시작 선수 캐치 지속 단계별 +1",
+      "effect": {
+        "stat": "s5",
+        "perLevel": 1,
+        "target": "starters"
+      },
+      "costs": [
+        200,
+        400
+      ]
+    }
+  ],
+  "preparation": [
+    {
+      "id": "PB01",
+      "name": "초기 지원금",
+      "maxLevel": 3,
+      "specText": "시작 경기 포인트 증가",
+      "effect": {
+        "key": "startMatchPoints",
+        "perLevel": null
+      },
+      "costs": null,
+      "proposed": {
+        "perLevel": 30,
+        "costs": [
+          100,
+          200,
+          350
+        ]
+      }
+    },
+    {
+      "id": "PB02",
+      "name": "장비 보급",
+      "maxLevel": 2,
+      "specText": "시작 장비 선택지 추가",
+      "effect": {
+        "key": "startEquipmentChoices",
+        "perLevel": null
+      },
+      "costs": null,
+      "proposed": {
+        "perLevel": 1,
+        "costs": [
+          200,
+          400
+        ]
+      }
+    },
+    {
+      "id": "PB03",
+      "name": "전술 연구",
+      "maxLevel": 2,
+      "specText": "시작 아티팩트 후보 선택권 제공",
+      "effect": {
+        "key": "startArtifactChoices",
+        "perLevel": null
+      },
+      "costs": null,
+      "proposed": {
+        "perLevel": 1,
+        "costs": [
+          300,
+          600
+        ]
+      }
+    },
+    {
+      "id": "PB04",
+      "name": "스카우트 인맥",
+      "maxLevel": 3,
+      "specText": "선수 영입 후보 증가",
+      "effect": {
+        "key": "recruitCandidates",
+        "perLevel": null
+      },
+      "costs": null,
+      "proposed": {
+        "perLevel": 1,
+        "costs": [
+          150,
+          300,
+          500
+        ]
+      }
+    },
+    {
+      "id": "PB05",
+      "name": "상점 확장",
+      "maxLevel": 3,
+      "specText": "상점 상품 선택지 증가",
+      "effect": {
+        "key": "shopSlots",
+        "perLevel": null
+      },
+      "costs": null,
+      "proposed": {
+        "perLevel": 1,
+        "costs": [
+          150,
+          300,
+          500
+        ]
+      }
+    },
+    {
+      "id": "PB06",
+      "name": "특훈 효율",
+      "maxLevel": 2,
+      "specText": "장비 강화 비용 감소",
+      "effect": {
+        "key": "upgradeCostDiscountPct",
+        "perLevel": null
+      },
+      "costs": null,
+      "proposed": {
+        "perLevel": 10,
+        "costs": [
+          250,
+          500
+        ]
+      }
+    },
+    {
+      "id": "PB07",
+      "name": "보상 분석",
+      "maxLevel": 2,
+      "specText": "경기 보상 재선택 횟수 증가",
+      "effect": {
+        "key": "rewardRerolls",
+        "perLevel": null
+      },
+      "costs": null,
+      "proposed": {
+        "perLevel": 1,
+        "costs": [
+          200,
+          400
+        ]
+      }
+    }
+  ],
+  "content": [
+    {
+      "id": "PC01",
+      "name": "신규 선수 해금",
+      "unlock": "player",
+      "cost": null
+    },
+    {
+      "id": "PC02",
+      "name": "전설 장비 설계도 해금",
+      "unlock": "legendaryEquipment",
+      "cost": null
+    },
+    {
+      "id": "PC03",
+      "name": "신규 아티팩트 해금",
+      "unlock": "artifact",
+      "cost": null
+    },
+    {
+      "id": "PC04",
+      "name": "새로운 경기 이벤트 해금",
+      "unlock": "event",
+      "cost": null
+    },
+    {
+      "id": "PC05",
+      "name": "새로운 상대 팀 해금",
+      "unlock": "opponentTeam",
+      "cost": null
+    },
+    {
+      "id": "PC06",
+      "name": "고난도 도전 해금",
+      "unlock": "difficulty",
+      "cost": null
+    }
+  ]
+}

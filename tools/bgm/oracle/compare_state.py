@@ -10,6 +10,8 @@
  공개 에뮬 덤프는 프레임 끝(곡 틱 경계가 아님)이라, 프레임 f 의 상태가 우리 틱 k 의 상태와 같거나(exact)
  틱 k 와 k+1 사이(각 바이트가 둘 중 하나, between)인 k 를 순서대로 찾는다.
 사용: python -I tools/bgm/oracle/compare_state.py [곡 hex=8c] [우리 쪽 실행 초=58]
+ 덤프 파일: tools/ext_emu/work/bgm/z80_XX.bin(곡 지정판 bgm_oracle_song.lua, $1C0A 직접 기록)이 있으면 그것, 없으면 z80_1c00.bin(0x8C 시범).
+ 1회 곡(kind once)은 끝 틱까지만 회귀·판정한다(끝난 뒤에는 상태가 멈춰 프레임-틱 대응이 뜻이 없다).
 """
 import importlib.util
 import json
@@ -32,6 +34,12 @@ MD_FRAME_SEC = 3420 * 262 / 53693175          # NTSC 메가드라이브 1프레�
 
 def ours(cid, sec):
     """자작 Z80 실행: 곡 틱(타이머 A 처리 직전)마다 RAM 저장. 반환 (틱별 RAM 배열, 틱 시각 초)"""
+    # 장시간 실행 덤프(tools/bgm/long_run.py)가 있고 충분히 길면 그것을 쓴다(같은 실행 방법: 부팅 10프레임 뒤 곡 명령)
+    lp = os.path.join(WORK, 'long', 'snaps_%02x.npy' % cid)
+    if os.path.exists(lp):
+        T = np.load(os.path.join(WORK, 'long', 'ticks_%02x.npy' % cid)) / Z.Z_CLK
+        if T[-1] >= sec - 1:
+            return np.load(lp), T
     cache = os.path.join(WORK, 'ours_%02x_%d.pkl' % (cid, sec))
     if os.path.exists(cache):
         return pickle.load(open(cache, 'rb'))
@@ -58,7 +66,10 @@ def main():
     cid = int(sys.argv[1], 16) if len(sys.argv) > 1 else 0x8C
     sec = int(sys.argv[2]) if len(sys.argv) > 2 else 58
     O, T = ours(cid, sec)
-    raw = open(os.path.join(WORK, 'z80_1c00.bin'), 'rb').read()
+    dump = os.path.join(WORK, 'z80_%02x.bin' % cid)
+    if not os.path.exists(dump):
+        dump = os.path.join(WORK, 'z80_1c00.bin')
+    raw = open(dump, 'rb').read()
     B = np.frombuffer(raw, np.uint8).reshape(-1, HI - LO)
     # 우리 쪽에서 한 번이라도 재생 중이던 트랙 = 이 곡의 트랙
     act = [b for b in SLOTS if (O[:, b - LO] & 0x80).any()]
@@ -103,18 +114,27 @@ def main():
         for k in range(8, 40):
             if (KB[f] == KO[k]).all():
                 w = walk(f, k, 60)
-                if sum(1 for x in w if x[2] == 'exact') >= 50:
+                # 트랙이 많은 곡은 틱 처리 도중에 찍히는 프레임이 늘어 exact 비율이 낮다(0x96: 78%) -> exact 30 이상이고 exact+between 50 이상이면 정렬로 본다
+                if sum(1 for x in w if x[2] == 'exact') >= 30 and sum(1 for x in w if x[2] != 'miss') >= 50:
                     start = (f, k); break
         if start:
             break
     if not start:
         print('정렬 실패: 공개 에뮬 덤프에서 이 곡의 진행 상태를 찾지 못함'); sys.exit(2)
     w = walk(*start)
+    info = json.load(open(os.path.join(ROOT, 'analysis', 'data', 'bgm_loops.json'), encoding='utf-8'))['songs']['%02x' % cid]
+    end_tick = info.get('end_tick') if info.get('kind') == 'once' else None
+    if end_tick is not None:
+        # 1회 곡: 끝 틱 뒤는 버린다
+        w = [x for x in w if x[1] is None or x[1] <= end_tick]
+        while w and w[-1][1] is None:
+            w.pop()
+        last_f = min(x[0] for x in w if x[1] == max(y[1] for y in w if y[1] is not None))
+        w = [x for x in w if x[0] <= last_f]
     fs = np.array([x[0] for x in w if x[1] is not None]); ks = np.array([x[1] for x in w if x[1] is not None])
     kinds = [x[2] for x in w]
     slope, icpt = np.polyfit(fs, ks, 1)
     resid = ks - (slope * fs + icpt)
-    info = json.load(open(os.path.join(ROOT, 'analysis', 'data', 'bgm_loops.json'), encoding='utf-8'))['songs']['%02x' % cid]
     S, P = info.get('loop_start_tick'), info.get('loop_ticks')
     tick_sec = info['tick_sec_last']   # 곡의 타이머 A 값에서 나온 1틱 길이 = (1024 - 값) * 144 / 7,670,453 초
     # 참고: 맞은 프레임에서 트랙 구조체 전체(0x30 바이트)와 작업 영역 전체가 같은 비율, 다른 번지
@@ -160,11 +180,15 @@ def main():
         'exact': kinds.count('exact'), 'between_two_ticks': kinds.count('between'), 'miss': kinds.count('miss'),
         'miss_frames': [x[0] for x in w if x[2] == 'miss'][:40],
         'ours_tick_range': [int(ks.min()), int(ks.max())],
+        'dump': os.path.basename(dump), 'kind': info.get('kind'), 'end_tick': end_tick,
         'loop': {'start_tick': S, 'ticks': P, 'passes_covered': round((int(ks.max()) - S) / P, 2) if P else None},
         'ticks_per_frame_measured': round(float(slope), 6),
         'ticks_per_frame_expected': round(MD_FRAME_SEC / tick_sec, 6),
         'tempo_ratio_measured_over_expected': round(float(slope) / (MD_FRAME_SEC / tick_sec), 6),
         'tick_residual_max': round(float(np.abs(resid).max()), 3),
+        # 250프레임 구간별 잔차 평균의 범위: 틱이 한 개라도 밀리면(한쪽이 틱을 더 세면) 이 값이 그만큼 벌어진다
+        'tick_residual_segment_mean_range': [round(float(min(resid[a:a + 250].mean() for a in range(0, len(resid), 250))), 3),
+                                             round(float(max(resid[a:a + 250].mean() for a in range(0, len(resid), 250))), 3)],
         'full_track_struct_equal_ratio_at_exact': round(float(eq_slot.all(axis=1).mean()), 4),
         'track_struct_offsets_differing': bad_off,
         'work_ram_equal_ratio_at_exact': round(float(eq_all.all(axis=1).mean()), 4),

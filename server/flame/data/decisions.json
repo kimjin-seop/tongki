@@ -1,0 +1,87 @@
+{
+  "_meta": {
+    "version": 1,
+    "doc": "analysis/39_flame_decisions.md",
+    "notes": [
+      "사용자 지시(결정 질문 없이 권장안으로 진행)로 확정한 결정 D1~D14 의 상수. 근거는 문서에 있다. 되돌리려면 이 값만 바꾼다.",
+      "engine 블록의 값은 server/engine/flame.js FLAME_DEFAULTS 와 같아야 한다(호출자가 Match 옵션 flame.caps 로 넘긴다). 상한 수치(r1·r2·r3·쓰러짐 하한)는 rules.json clamps 가 원본이다.",
+      "[2026-11-19 D17, 사용자 결정] roster.startOriginal = 시작 팀으로 쓸 오리지널 팀 id(original_team.json 의 id). 이 키가 있으면 새 도전은 그 7명으로 시작한다(D4 의 태동 시작을 대체). 키를 지우면 종전대로 startTeam·startPlayers(태동 7명)로 시작한다. startTeam·startPlayers 는 되돌리기용으로 남겨 둔다."
+    ]
+  },
+  "special": {
+    "slotsPerPlayer": 2,
+    "slotRule": "primary",
+    "equipAnyPlayer": true,
+    "excludedShotIds": [
+      0,
+      16,
+      30,
+      32,
+      38,
+      46,
+      47
+    ]
+  },
+  "roster": {
+    "mixedTeams": true,
+    "uniform": "origin",
+    "startOriginal": "bulssi",
+    "startTeam": 0,
+    "startPlayers": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "captainSlot": 0
+  },
+  "hp": {
+    "floorAfterMatch": 1,
+    "teamMaxHpBonusAlsoHealsCurrent": true
+  },
+  "matchEnd": {
+    "forfeit": "lose",
+    "graceTimeout": "lose",
+    "serverRestart": "rematch",
+    "drawCap": "lose",
+    "drawCapMinutes": 15
+  },
+  "formation": {
+    "tagMapping": "formation_tags.json",
+    "evidence": "weak"
+  },
+  "run": {
+    "matchesPerSegment": 4,
+    "segmentNodes": "nodes.json proposed.segmentTemplate"
+  },
+  "synergy": {
+    "applyDuplicates": false,
+    "bonusOnlyNewEffects": true
+  },
+  "upgrade": {
+    "rounding": "economy.json upgrade.rounding",
+    "minBonusWhenPositive": 0,
+    "costMode": "perStep",
+    "totalCost": 460
+  },
+  "balance": {
+    "undecidedNumbers": "임밸런 초안 후속(37 §7)"
+  },
+  "moveSpeed": {
+    "dashCapPxPerFrame": 3,
+    "walkFormula": "original",
+    "walkCap": true,
+    "cpuMoveFormula": "original"
+  },
+  "engine": {
+    "walkCap": true,
+    "lowHpPct": 30,
+    "hpFloor": 1,
+    "slotRule": "primary",
+    "lockCounter": true,
+    "counterBonus": false
+  }
+}

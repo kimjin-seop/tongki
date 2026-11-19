@@ -11,6 +11,7 @@ import { Lobby } from './lobby/lobby.js';
 import { JsonlResultStore } from './store/results.js';
 import { SqliteProgressStore } from './store/progress.js';
 import { SqliteLeagueStore } from './store/league.js';
+import { SqliteFlameStore } from './store/flame.js';
 import { openDb, sqliteAvailable, SQLITE_MISSING } from './store/db.js';
 import { importJson } from './store/migrate.js';
 
@@ -39,9 +40,10 @@ export function createServer(opts = {}) {
   }
   const progress = opts.progress ?? new SqliteProgressStore(db);
   const leagues = opts.leagues ?? new SqliteLeagueStore(db);
+  const flame = opts.flame ?? new SqliteFlameStore(db); // 불꽃의 계승 영구·도전 저장(PROTOCOL §13.6)
   const limits = loadLimits(process.env, opts.limits);
   const requireAccount = opts.requireAccount ?? process.env.REQUIRE_ACCOUNT === '1';
-  const lobby = new Lobby({ data, store, progress, leagues, db, requireAccount, leagueRand: opts.leagueRand, build: pkg.version, graceMs: opts.graceMs, limits, seed: opts.seed, log: opts.log });
+  const lobby = new Lobby({ data, store, progress, leagues, flame, flameSeed: opts.flameSeed, db, requireAccount, leagueRand: opts.leagueRand, build: pkg.version, graceMs: opts.graceMs, limits, seed: opts.seed, log: opts.log });
   const publicDir = path.join(root, 'public');
 
   const server = http.createServer(async (req, res) => {

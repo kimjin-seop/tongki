@@ -27,6 +27,7 @@ export class ShoutFx {
   /** @param {{teamIds:[number,number]}} o game_start.teams 의 id */
   constructor(o) {
     this.teamIds = o.teamIds;
+    this.orig = o.orig ?? null; // 혼합 로스터(불꽃의 계승): pid -> 출신 {team, idx}. 없으면 좌석 팀·pid%7
     this.data = null; // special_shouts.json (로드 전·실패 시 전부 기본 문구)
     this.cur = null; // {pid, id, start, text}
     this.cache = new Map();
@@ -37,8 +38,11 @@ export class ShoutFx {
 
   /** 선수(pid = seat*7 + idx)가 필살 id 를 던질 때의 문구 */
   textFor(pid, id) {
-    const e = this.data?.byPlayer?.[`${this.teamIds[(pid / 7) | 0]}:${pid % 7}`];
-    const s = e?.shouts?.[id] ?? e?.shout ?? this.data?.byId?.[id] ?? this.data?.default?.shout;
+    const og = this.orig?.[pid];
+    // og.cast = 불꽃의 계승 오리지널 선수(몸만 빌린 다른 인물): 몸 주인의 선수 고정 문구(byPlayer)를 쓰지 않고 슛 ID 이름(byId)만
+    const e = og?.cast ? null : this.data?.byPlayer?.[og ? `${og.team}:${og.idx}` : `${this.teamIds[(pid / 7) | 0]}:${pid % 7}`];
+    // 혼합 로스터에서는 아무 슛이나 장착할 수 있어(D3) 선수 고정 문구(e.shout)보다 슛 ID 이름(byId)이 먼저다
+    const s = og ? e?.shouts?.[id] ?? this.data?.byId?.[id] ?? e?.shout ?? this.data?.default?.shout : e?.shouts?.[id] ?? e?.shout ?? this.data?.byId?.[id] ?? this.data?.default?.shout;
     return typeof s === 'string' && s ? s : DEFAULT;
   }
 

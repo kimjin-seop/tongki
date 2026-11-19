@@ -2,7 +2,10 @@
 // (analysis/11_team_select.md §4, analysis/28 §2-1·§10): 검은 바탕에 좌우 창 2개, 창 머리에 라벨(1P/2P/COM)·엠블럼·팀 이름·약칭,
 // 그 아래 선수 7명 얼굴 + 이름, 가운데 VS. 좌표는 원작 320x224 캡처 실측(창 x 8/168 폭 144, 얼굴 (24|184, 40+24i), 이름 x 56|216).
 // 원작과 다른 점: 글자는 한글(Galmuri 도트 글꼴), 논리 398 폭 가운데(+39)에 놓고 양옆은 원작 바탕색(검정) 그대로.
-// 사용: app.go('lineup', { teams: [왼쪽 팀, 오른쪽 팀], labels: ['1P', 'COM'], onExit, onCancel })
+// 사용: app.go('lineup', { teams: [왼쪽 팀, 오른쪽 팀], labels: ['1P', 'COM'], onExit, onCancel, rosters?: [[{team, idx} x7] | null, …] })
+// rosters[s] = 혼합 로스터(불꽃의 계승): 그 창의 7명 얼굴·이름을 좌석 팀이 아니라 선수 출신 {team, idx} 로 그린다(없으면 종전대로 팀·번호).
+//   칸에 name(문자열)·face(24x24 그림, hud.faces 와 같은 방향)가 있으면 그것을 먼저 쓴다(오리지널 선수)
+// heads[s] = {name, abbr, emblem?(24x16 그림)}: 그 창 머리의 팀 이름·약칭·엠블럼을 팀 id 대신 이것으로(오리지널 팀). 없으면 종전
 import { h, fitScale, isTyping } from '../util.js';
 import { has, image } from '../game/assets.js';
 import { teamName, teamPlayers } from '../names.js';
@@ -20,8 +23,12 @@ export function mount(root, app, data = {}) {
   const exit = data.onExit || (() => app.go(app.room ? 'room' : 'lobby'));
   const cancel = () => (data.onCancel || exit)();
   const nameOf = (t, i) => { const n = teamPlayers(t)[i]; return n && /[가-힣]/.test(n) ? n : `${i + 1}번`; };
+  const rosters = [0, 1].map((s) => (Array.isArray(data.rosters?.[s]) && data.rosters[s].length === 7 ? data.rosters[s] : null));
+  const origin = (s, t, i) => { const o = rosters[s]?.[i]; return Number.isInteger(o?.team) && Number.isInteger(o?.idx) ? [o.team, o.idx] : [t, i]; };
+  const heads = [0, 1].map((s) => (typeof data.heads?.[s]?.name === 'string' && data.heads[s].name ? data.heads[s] : null));
+  const headName = (s) => heads[s]?.name ?? teamName(teams[s], s ? '오른쪽 팀' : '왼쪽 팀');
   const canvas = h('canvas', { width: W, height: H, role: 'img',
-    'aria-label': `${teamName(teams[0], '왼쪽 팀')} 대 ${teamName(teams[1], '오른쪽 팀')} 선수 명단`,
+    'aria-label': `${headName(0)} 대 ${headName(1)} 선수 명단`,
     style: { display: 'block', imageRendering: 'pixelated', background: '#000' } });
   const wrap = h('div.screen.lineup', { style: { alignItems: 'center', justifyContent: 'center', padding: '0', background: '#000' } }, canvas);
   root.append(wrap);
@@ -55,9 +62,9 @@ export function mount(root, app, data = {}) {
     g.drawImage(pixText(str, small ? 8 : px, '#fcfcfc', maxW), OX + x, y - 1 + (small ? 2 : 0));
   }
   /** 얼굴 24x24. hud.faces 아틀라스는 좌우반전 그림이라 다시 뒤집어 원작 방향으로 */
-  function face(team, i, x, y) {
+  function face(team, i, x, y, own = null) {
     g.save(); g.translate(OX + x + 24, y); g.scale(-1, 1);
-    g.drawImage(imgs.faces, i * 24, team * 24, 24, 24, 0, 0, 24, 24);
+    if (own) g.drawImage(own, 0, 0, 24, 24, 0, 0, 24, 24); else g.drawImage(imgs.faces, i * 24, team * 24, 24, 24, 0, 0, 24, 24);
     g.restore();
   }
 
@@ -73,12 +80,15 @@ export function mount(root, app, data = {}) {
       // 6~7글자 팀 이름(78~90px)이 그 자리(66px)에 안 들어가 창 테두리에 닿는다. 그래서 라벨을 엠블럼 위로 올려(편성 화면과 같은 배치) 이름 칸을 91px 로 넓힌다
       const lb = String(labels[s]);
       glyphs(lb, x + 25 - lb.length * 4, 8);
-      g.drawImage(imgs.emb, emblemOf(t) * 24, 0, 24, 16, OX + x + 13, 17, 24, 16);
-      put(teamName(t, `팀 ${t + 1}`), x + 42, 9, 12, 90);
-      glyphs(abbrOf(t), x + 42, 24);
+      const hd = heads[s];
+      if (hd?.emblem) g.drawImage(hd.emblem, 0, 0, 24, 16, OX + x + 13, 17, 24, 16); else g.drawImage(imgs.emb, emblemOf(t) * 24, 0, 24, 16, OX + x + 13, 17, 24, 16);
+      put(hd ? hd.name : teamName(t, `팀 ${t + 1}`), x + 42, 9, 12, 90);
+      const ab = hd ? String(hd.abbr ?? '') : abbrOf(t);
+      if (/^[\x20-\x5f]*$/.test(ab.toUpperCase())) glyphs(ab, x + 42, 24); else put(ab, x + 42, 24, 8, 90); // 원작 8x8 글리프는 영문·숫자뿐: 한글 약칭은 도트 글자로
       for (let i = 0; i < 7; i++) {
-        face(t, i, x + 16, 40 + 24 * i);
-        put(nameOf(t, i), x + 48, 46 + 24 * i, 12, 84);
+        const [ot, oi] = origin(s, t, i), o = rosters[s]?.[i];
+        face(ot, oi, x + 16, 40 + 24 * i, o?.face ?? null);
+        put(typeof o?.name === 'string' && o.name ? o.name : nameOf(ot, oi), x + 48, 46 + 24 * i, 12, 84);
       }
     });
     glyphs('VS', 152, 104, 2);
@@ -100,7 +110,7 @@ export function mount(root, app, data = {}) {
     draw();
   }).catch((e) => { console.warn('lineup', e); if (alive) exit(); });
 
-  return { onError() { cancel(); }, unmount() { alive = false; removeEventListener('keydown', onKey); removeEventListener('resize', fit); } };
+  return { flame: rosters.some(Boolean), onError() { cancel(); }, unmount() { alive = false; removeEventListener('keydown', onKey); removeEventListener('resize', fit); } };
 }
 
 /** 에셋이 모두 있을 때만 쓸 수 있음(없으면 호출 측이 건너뜀) */

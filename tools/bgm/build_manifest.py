@@ -15,6 +15,11 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 MAN = os.path.join(ROOT, 'public', 'assets', 'manifest.json')
 META = os.path.join(ROOT, 'analysis', 'data', 'bgm_loops.json')
 MIN_CORR, MAX_LAG_MS = 0.9, 2.0
+# 수치 조건과 별개로 결정이 날 때까지 켜지 않는 곡(곡 hex -> 사유). 결정되면 여기서 지우고 렌더를 public/assets/rom/bgm/ 에 둔 뒤 다시 실행한다.
+HOLD = {
+    '85': '보류: 루프 확정(전체 주기 33408틱 529.340초 = 11바퀴, 공개 에뮬 대조 통과). 전체 주기 파일이 9.9MB·디코딩 약 198MB 라 켜지 않음. '
+          '후보 rom/bgm_cand/85.ogg(전체 주기), rom/bgm_cand_lap/85.ogg(한 바퀴 루프). analysis/35_bgm_port_plan.md §8',
+}
 ROMF = open(os.path.join(ROOT, 'rom', 'danpei.gen'), 'rb').read()
 T50D2 = list(ROMF[0x50D2:0x50D2 + 16])   # 스토리 외: 인덱스 $E682 = ROM 스테이지
 T50F2 = list(ROMF[0x50F2:0x50F2 + 15])   # 스토리: 인덱스 $E688 = 경기 번호(0~14)
@@ -39,6 +44,9 @@ for k, v in enumerate(T50F2):
 def judge(s):
     """곡 1개 → (통과 여부, 사유)"""
     r = s.get('render')
+    tag = s['id'][2:].lower()
+    if tag in HOLD:
+        return False, HOLD[tag]
     if s['kind'] == 'unknown':
         return False, '루프 미확정(%s)' % s.get('_note', '')
     if not r:

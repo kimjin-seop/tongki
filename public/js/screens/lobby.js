@@ -1,4 +1,5 @@
-// 로비(시안 A): 왼쪽 로고 + 스토리 모드 / 컴퓨터와 대결(난이도 1·2·3) / 튜토리얼·리그(한 줄), 오른쪽 방 목록 창(방 만들기 + 행을 눌러 입장, 서버 푸시로 실시간).
+// 로비(시안 A): 왼쪽 로고 + 큰 메뉴 4줄(스토리 모드 / 전국 리그 / 불꽃의 계승 / 컴퓨터 대결 + 난이도 1·2·3) + 작은 메뉴 한 줄(튜토리얼·오프닝 다시보기·가입·로그아웃),
+// 오른쪽 방 목록 창(방 만들기 + 행을 눌러 입장, 서버 푸시로 실시간).
 // 방 코드 입력 입장은 화면에서 뺐다(프로토콜 join_room{code} 는 그대로: 행을 누르면 그 방의 code 로 보낸다).
 // 튜토리얼 = 종전 특훈 2종(training_start). 고르는 화면은 screens/tutorial.js
 import { h, clear } from '../util.js';
@@ -29,20 +30,25 @@ export function mount(root, app) {
     h('button.btn.small', { type: 'button', 'data-f': k, 'aria-pressed': String(filter === k), onclick: () => { filter = k; for (const b of tabs.children) b.setAttribute('aria-pressed', String(b.dataset.f === filter)); update(); } }, label)));
   const story = h('button.btn.primary.story-entry', { type: 'button', onclick: () => app.go('story', { mode: 'list' }) },
     h('span.story-entry-t', '스토리 모드'), h('span.story-entry-n', '15경기'));
+  const league = h('button.btn.story-entry.league-entry', { type: 'button', onclick: () => app.go('league') }, h('span.story-entry-t', '전국 리그'));
+  // 불꽃의 계승(로그라이트 도전, PROTOCOL §13)
+  const flame = h('button.btn.story-entry.flame-entry', { type: 'button', onclick: () => app.go('flame') },
+    h('span.story-entry-t', '불꽃의 계승'), h('span.story-entry-n', '도전'));
   root.append(h('div.screen.lobby',
     h('div.lobby-l',
       titleLogo(), // 타이틀 로고(인트로가 끝나면 이 자리로 이동)
       h('div.lobby-menu.title-follow',
         story,
-        h('div.pbox.cpu-box', { role: 'group', 'aria-label': '컴퓨터와 대결' },
-          h('div.cpu-box-t', '컴퓨터와 대결'),
-          h('div.cpu-row', lvBtns, h('button.btn.go', { type: 'button', onclick: () => net.send('create_room', { vsCpu: true, cpuLevel: lvl }) }, '대결 시작'))),
-        h('div.mini-row',
-          h('button.btn.tut-entry', { type: 'button', onclick: () => app.go('tutorial') },
-            h('span.tut-entry-t', '튜토리얼'), tutorialNew() ? h('span.tag.new', '신규') : null),
-          h('button.btn.tut-entry.league-entry', { type: 'button', onclick: () => app.go('league') }, h('span.tut-entry-t', '리그'))),
-        // 아래 구석: 오프닝 다시보기 · (손님이면) 가입 = 지금 닉네임을 계정으로(진행 승계) · 로그아웃
+        league,
+        flame,
+        // 컴퓨터 대결: 큰 버튼 = 고른 난이도로 바로 시작, 오른쪽 1·2·3 = 난이도
+        h('div.cpu-box.cpu-row', { role: 'group', 'aria-label': '컴퓨터 대결' },
+          h('button.btn.story-entry.go', { type: 'button', onclick: () => net.send('create_room', { vsCpu: true, cpuLevel: lvl }) }, h('span.story-entry-t', '컴퓨터 대결')),
+          lvBtns),
+        // 작은 메뉴 한 줄: 튜토리얼 · 오프닝 다시보기 · (손님이면) 가입 = 지금 닉네임을 계정으로(진행 승계) · 로그아웃
         h('div.lobby-foot',
+          h('button.btn.small.tut-entry', { type: 'button', onclick: () => app.go('tutorial') },
+            h('span.tut-entry-t', '튜토리얼'), tutorialNew() ? h('span.tag.new', '신규') : null),
           h('button.btn.small.replay-intro', { type: 'button', onclick: () => { if (!app.intro?.active) app.intro = startIntro({ app, onEnd: () => { app.intro = null; } }); } }, '오프닝 다시보기'),
           acct ? null : h('button.btn.small.acct-btn', { type: 'button', 'data-k': 'signup', onclick: () => app.go('nick', { upgrade: true }) }, '가입'),
           h('button.btn.small.acct-btn', { type: 'button', 'data-k': 'logout', onclick: () => net.send('logout') }, '로그아웃')))),

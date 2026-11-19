@@ -17,6 +17,7 @@ import { ShoutFx, shoutOn, setShoutOn } from '../game/shout.js';
 import { FmName } from '../game/formation.js';
 import { teamName } from '../names.js';
 import { toast } from '../ui.js';
+import * as Skin from './flame/skin.js';
 
 const STAGE_FILE_RE = /^rom\/bg\/stage_\d{2}$/, STAGE_JSON_RE = /^rom\/bg\/stage_\d{2}\.json$/, STAGE_KEY_RE = /^bg\.stage\.\d{2}$/;
 
@@ -48,11 +49,19 @@ async function loadStage(st, renderer) {
   }
 }
 
+/** 그 경기의 최대 HP(game_start.teams[].players[].hp 가운데 가장 큰 값). 칸이 없으면 0 */
+const hpCapOf = (start) => Math.max(0, ...(start.teams ?? []).flatMap((t) => (t?.players ?? []).map((p) => (Number.isFinite(p?.hp) ? p.hp : 0))));
+
 export function mount(root, app, { start }) {
   const campaign = start.campaign && Number.isInteger(start.campaign.k) ? start.campaign : null;
   const training = start.training?.kind ? start.training : null; // 특훈(혼자 하기, PROTOCOL §9): {kind, step, balls, pass, steps, gauge?}
   const league = start.league && Number.isInteger(start.league.i) ? start.league : null; // 리그 사람 경기(PROTOCOL §10): 끝나면 방이 없어지고 리그 메뉴로
+  const flame = start.flame && Number.isInteger(start.flame.seat) ? start.flame : null; // 불꽃의 계승 경기(PROTOCOL §12.2·§13): 끝나면 방이 없어지고 도전 화면으로
   const trSpecial = training?.kind === 'special'; // 필살 슛 특훈(§9.5): 공중 차지 필살, 차지 게이지 HUD
+  const practice = !!flame && start.flameCast?.practice === true; // 불꽃의 계승 연습 경기(PROTOCOL §13.15): 결과가 도전에 반영되지 않는다. 화면에 작은 「연습」 표시
+  // 불꽃의 계승: 내 팀에 지금 발동되는 필살기(teams[seat].players[i].spOn)가 하나도 없으면 조작 안내의 필살기 줄을 숨긴다(아티팩트 장착 전). 칸이 없는 서버면 해금 목록(flame.allow)으로 본다
+  const flPlayers = flame ? start.teams?.[flame.seat]?.players ?? [] : [];
+  const noSpecial = !!flame && (flPlayers.some((p) => p && 'spOn' in p) ? !flPlayers.some((p) => Number.isInteger(p?.spOn)) : Array.isArray(flame.allow) && !flame.allow.length);
   const you = start.you;
   const canvas = h('canvas.game-canvas', { width: W, height: H, 'aria-label': '경기 화면' });
   // 닉네임·팀 이름은 캔버스 HUD 에 도트 글자로 그린다(hud.js). DOM 이름은 화면 읽기 전용(보이지 않음), 서든데스 글자는 DOM
@@ -64,7 +73,7 @@ export function mount(root, app, { start }) {
   const keyJump = h('b', 'D'), keyThrow = h('b', 'S');
   const keys = h('div.keys-guide', { hidden: true }, h('div', '점프볼: ', keyJump, ' 점프 중 ', keyThrow));
   const floats = h('div.floats');
-  const stage = h('div.stage', canvas, floats, keys, banner, overlay);
+  const stage = h('div.stage', canvas, floats, practice ? h('div.fl-practice-m', '연습') : null, keys, banner, overlay);
   const bar = h('div.game-bar', nameL, timer, nameR);
   const quit = h('button.btn.small', { type: 'button', onclick: onQuit }, training ? '그만두기' : '기권');
   // 특훈 그만두기 확인 창(Esc·그만두기 버튼). 서버 일시정지가 없어(PROTOCOL §9.1) 창이 떠 있어도 경기는 흐른다:
@@ -112,7 +121,7 @@ export function mount(root, app, { start }) {
       ? [...row(['←↑↓→'], '이동'), ...row(['A'], '줍기·던지기·웅크림'), ...row(['S'], '캐치·던지기'), ...row(['D'], '점프'),
         ...(trSpecial ? row(['D', 'S'], '길게 → 필살기') : []), ...row(['Esc'], '그만두기')]
       : [...row(['←↑↓→'], '이동'), ...row(['A'], '줍기·패스·웅크림'), ...row(['S'], '캐치·던지기·차지'),
-        ...row(['D'], '점프'), ...row(['D', 'S'], '길게 → 필살기'), ...row(['F'], '포메이션')]),
+        ...row(['D'], '점프'), ...(noSpecial ? [] : row(['D', 'S'], '길게 → 필살기')), ...row(['F'], '포메이션')]),
     h('span.ck.dim', h('b', 'H')), h('span.dim', '숨김'));
   let guideOff = false;
   try { guideOff = localStorage.getItem(GUIDE_KEY) === '0'; } catch { /* 저장소 불가: 기본 표시 */ }
@@ -152,7 +161,12 @@ export function mount(root, app, { start }) {
 
   const seats = app.room?.slots ?? [];
   const nickOf = (s) => (isCpuSeat(app.room, s) ? '컴퓨터' : seats[s]?.nick ?? '');
-  const tName = (s) => teamName(start.teams[s].id, start.teams[s].name);
+  // 불꽃의 계승 오리지널 팀(PROTOCOL §12.2 game_start.flameCast = {seat, team|null, players[7]}): 표시용 정의. 없으면(일반 경기·종전 도전) 전부 종전 경로
+  const cast = flame && start.flameCast && Array.isArray(start.flameCast.players) ? start.flameCast : null;
+  const castSeat = cast ? (cast.seat === 0 || cast.seat === 1 ? cast.seat : flame.seat) : -1;
+  const castTeam = cast?.team && typeof cast.team.name === 'string' && cast.team.name ? cast.team : null;
+  const castAt = (seat, i) => { const p = seat === castSeat ? cast.players[i] : null; return p && typeof p === 'object' ? p : null; };
+  const tName = (s) => (s === castSeat && castTeam ? castTeam.name : teamName(start.teams[s].id, start.teams[s].name));
   nameL.textContent = `${nickOf(0)} · ${tName(0)}`; nameR.textContent = `${tName(1)} · ${nickOf(1)}`;
 
   // ---- 크기: 창에 꽉 차게(util.fitScale: 정수배가 거의 꽉 차면 정수배, 아니면 비정수 최근접 이웃) ----
@@ -194,17 +208,27 @@ export function mount(root, app, { start }) {
 
   // ---- 에셋 (키로만 참조) ----
   const layout = entry(`spr.team.${pad2(start.teams[0].id)}`);
+  // 불꽃의 계승 혼합 로스터(PROTOCOL §12.2): game_start.teams[seat].players[i].from = {team, idx} 가 하나라도 있으면 pid -> 출신 표를 만든다. 없으면 null(종전대로 좌석 팀·pid%7)
+  // 오리지널 선수 칸(flameCast.players[i])은 from 대신 빌린 몸 skin.team·skin.idx 로 시트·행·얼굴을 찾고(cast = 말풍선이 선수 고정 문구를 건너뛴다), skin 은 색 세트용으로 같이 둔다
+  const orig = start.teams.some((t) => t.players?.some((p) => p.from)) ? start.teams.flatMap((t, seat) => Array.from({ length: 7 }, (_, i) => {
+    const from = t.players?.[i]?.from ?? { team: t.id, idx: i }, cp = castAt(seat, i), sk = cp ? Skin.validSkin(cp.skin) : null;
+    return cp ? { team: sk ? sk.team : from.team, idx: sk ? sk.idx : from.idx, cast: true, skin: sk } : from;
+  })) : null;
   // 특훈 HUD: 얼굴 4칸·인원 숫자 대신 `캐치 NN구 / 남은 NN구`, 필살 슛 특훈은 `필살 슛 NN구` + 차지 게이지(game/training.js)
   const hud = training ? new TrainHud({ kind: training.kind, steps: training.steps ?? 3, balls: training.balls ?? 10, pass: training.pass ?? 6, oppPid: (1 - you) * 7, gauge: training.gauge }) : new Hud({
     teamIds: start.teams.map((t) => t.id), timed: (start.rules?.limitFrames ?? 0) > 0,
     resumed: !!start.resumed, remDelay: start.rules?.swapFrames ?? 0, names: [0, 1].map((s) => [nickOf(s), tName(s)]),
     you: you === 1 ? 1 : 0, fmUses: start.rules?.formation?.enabled ? start.rules.formation.uses ?? 3 : 0,
     official: start.rules?.mode === 'official', // こうしき: 얼굴 맨 위 고정(hud.js)
+    orig, pFaces: orig ? new Array(14).fill(null) : null, // 색을 바꾼 얼굴(오리지널 선수 pid 만). 없으면 아틀라스
+    hpCap: orig ? hpCapOf(start) : 0, // 혼합 로스터: 이 경기의 최대 HP(112 를 넘으면 얼굴 높이를 그 값에 맞춰 줄인다, hud.js flameFaceY)
   });
   const renderer = new Renderer(canvas, {
     sheets: [null, null], anims: null, bodyClass: [[], []], cell: layout.cell, origin: layout.origin, you, hud,
     cpuSeats: [isCpuSeat(app.room, 0), isCpuSeat(app.room, 1)], banRules: start.rules?.start?.banners,
-    fmName: new FmName(), impact: new ImpactFx(), shout: new ShoutFx({ teamIds: start.teams.map((t) => t.id) }),
+    fmName: new FmName(), impact: new ImpactFx(), shout: new ShoutFx({ teamIds: start.teams.map((t) => t.id), orig }),
+    orig, pSheets: orig ? new Array(14).fill(null) : null,
+    pRow: orig ? new Array(14).fill(null) : null, // 선수별 띠 시트(색 치환)를 쓰는 pid 의 행 번호(0). null = 시트의 선수 번호 행
   });
   // 로딩 완료(성공·실패 모두) 전에는 렌더러가 검은 화면만 그린다. 실패한 에셋은 렌더러 폴백
   const loads = [];
@@ -215,7 +239,9 @@ export function mount(root, app, { start }) {
   }
   track(Promise.all([json('anim.body'), json('data.sprite.teams')]).then(([anims, steams]) => {
     renderer.animIndex = buildAnimIndex(anims);
-    renderer.bodyClass = start.teams.map((t) => (steams[t.id]?.players ?? []).map((p) => p.body_class));
+    renderer.bodyClass = orig
+      ? [0, 1].map((s) => Array.from({ length: 7 }, (_, i) => steams[orig[s * 7 + i].team]?.players?.[orig[s * 7 + i].idx]?.body_class))
+      : start.teams.map((t) => (steams[t.id]?.players ?? []).map((p) => p.body_class));
   }));
   // 스테이지 배경(원경·근경·시차표)과 공 시트. 실패하면 stage_00 → 단색 배경/원 공으로 폴백
   track(loadStage(start.stage, renderer));
@@ -235,6 +261,15 @@ export function mount(root, app, { start }) {
   }
   if (has('data.sprite.banners')) track(json('data.sprite.banners').then((d) => { renderer.banData = d; }));
   start.teams.forEach((t, seat) => track(image(`spr.team.${pad2(t.id)}`).then((img) => { renderer.sheets[seat] = img; })));
+  // 혼합 로스터: 출신 팀 시트를 팀마다 한 번 받아 그 팀 출신 선수(pid)에 건다. 실패한 칸은 좌석 팀 시트로 폴백(render.js)
+  if (orig) for (const tid of new Set(orig.map((o) => o.team))) track(image(`spr.team.${pad2(tid)}`).then((img) => { orig.forEach((o, pid) => { if (o.team === tid && renderer.pRow[pid] === null) renderer.pSheets[pid] = img; }); }));
+  // 오리지널 선수: 유니폼·머리 색을 바꾼 선수별 띠(2행)와 HUD 얼굴. 만들지 못한 칸은 위의 원본 시트·얼굴 그대로(flame/skin.js)
+  if (orig) orig.forEach((o, pid) => {
+    if (!o.skin || !Skin.tinted(o.skin)) return;
+    // 상대 유니폼과 겹치는 세트는 그 경기에서만 원정 세트로(orig_skin.json away, 없으면 그대로). 얼굴 칸은 양말·손목 색이 없어 그대로 둔다
+    track(Skin.awaySkin(o.skin, start.teams[pid < 7 ? 1 : 0]?.id).then((sk) => Skin.strip(sk)).then((c) => { if (c) { renderer.pSheets[pid] = c; renderer.pRow[pid] = 0; } }));
+    if (hud.pFaces) track(Skin.faceCanvas(o.skin).then((c) => { if (c) hud.pFaces[pid] = c; }));
+  });
   Promise.all(loads).then(() => { renderer.ready = true; });
 
   // ---- 상태 ----
@@ -297,17 +332,21 @@ export function mount(root, app, { start }) {
         break;
       }
       case 'out': if (!refOutSeen) floatText(pos(e.p), '아웃!'); break; // ref_out 없는 구버전 서버
+      case 'fl_survive': { // 불꽃의 계승: 치사 피해를 HP 1 로 버팀(PROTOCOL §12.3)
+        const q = pos(e.p); floatText(q, '버텼다!', 'survive'); if (q) renderer.flash(q[0], q[1], q[2], 'catch', s.f);
+        break;
+      }
       default:
     }
   }
 
   /** 선수 머리 위에 잠깐 떠올랐다 사라지는 글자 (DOM, 화면 해상도) */
-  function floatText(q, text) {
+  function floatText(q, text, cls = '') {
     const k = +stage.style.getPropertyValue('--k') || 1;
     const cam = renderer.cam ?? 0;
     const x = q ? Math.max(24, Math.min(W - 24, q[0] - cam)) : W / 2;
     const y = q ? Math.max(40, q[1] / 2 - q[2] + 96 - 40) : 48;
-    const el = h('div.float-txt', { style: { left: x * k + 'px', top: y * k + 'px' } }, text);
+    const el = h('div.float-txt' + (cls ? '.' + cls : ''), { style: { left: x * k + 'px', top: y * k + 'px' } }, text);
     floats.append(el);
     setTimeout(() => el.remove(), 1000);
   }
@@ -351,11 +390,14 @@ export function mount(root, app, { start }) {
     btn = h('button.btn.primary', { type: 'button', onclick: back }, backLabel);
     keys.hidden = true;
     overlay.className = 'overlay result';
+    titleEl = h('div.result-title' + (m.winner === you ? '.win' : ''), title);
+    if (practice) setFlameLine('연습 경기'); // 연습 경기: 승패만(보상·코인 줄 없음). 서버 판정(flame_result.won)이 오면 제목을 그것으로 맞춘다
+    if (practiceWon !== null) setPracticeTitle();
     overlay.replaceChildren(h('div.pwin.result-card',
-      h('div.result-title' + (m.winner === you ? '.win' : ''), title),
+      titleEl,
       h('div.result-rule', END_RULE[m.reason] ?? END_REASON[m.reason] ?? m.reason),
       h('div.muted.tabular', `남은 인원 ${m.rem[0]} : ${m.rem[1]}`),
-      rankLine, btn));
+      rankLine, flameLine, btn));
     overlay.hidden = false;
     setTimeout(() => btn.focus(), 30);
     armBack(BACK_MS);
@@ -375,7 +417,7 @@ export function mount(root, app, { start }) {
   }
   // 결과 화면 자동 복귀: 10초 카운트다운(버튼에 표시), 버튼을 누르면 즉시
   const BACK_MS = 10000;
-  const backLabel = training ? '튜토리얼로' : campaign ? '스토리로' : league ? '리그로' : '대기실로';
+  const backLabel = training ? '튜토리얼로' : campaign ? '스토리로' : league ? '리그로' : flame ? '도전으로' : '대기실로';
   let btn = null, backAt = 0, backTick = 0;
   function armBack(ms) {
     clearTimeout(backTimer); clearInterval(backTick);
@@ -390,6 +432,7 @@ export function mount(root, app, { start }) {
     if (training) app.go('tutorial');
     else if (campaign) app.go('story', { mode: 'list' });
     else if (league) app.go('league', { mode: 'menu' });
+    else if (flame) app.go('flame', { mode: 'auto' });
     else if (app.room) app.go('room');
   }
 
@@ -397,6 +440,15 @@ export function mount(root, app, { start }) {
   // 내가 기권해 곧 로비로 넘어가면(카드가 남지 않는다) 같은 줄을 토스트로
   const rankLine = h('div.result-rank.tabular', { hidden: true });
   let leaving = false;
+  // 불꽃의 계승: game_end 뒤에 오는 flame_result(재경기)·flame_end(도전 종료·우승)를 결과 카드 버튼 위 한 줄로
+  const flameLine = h('div.result-flame', { hidden: true });
+  const setFlameLine = (t) => { flameLine.textContent = t; flameLine.hidden = !t; };
+  // 연습 경기 결과(flame_result{practice, won}): 결과 카드 제목 = 서버가 본 승패. 무승부(game_end.winner -1)는 won 이 false 로 와도 '무승부' 그대로 둔다
+  let titleEl = null, practiceWon = null;
+  const setPracticeTitle = () => {
+    if (!titleEl || (!practiceWon && ended?.winner === -1)) return;
+    titleEl.textContent = practiceWon ? '승리!' : '패배'; titleEl.classList.toggle('win', practiceWon);
+  };
   function onRankingResult(r) {
     if (![r?.before, r?.after, r?.delta].every(Number.isFinite)) return;
     const d = r.delta > 0 ? `+${r.delta}` : r.delta < 0 ? `−${-r.delta}` : '±0';
@@ -434,8 +486,18 @@ export function mount(root, app, { start }) {
     on_game_end: onGameEnd,
     on_training_end: onTrainingEnd,
     on_ranking_result: onRankingResult,
-    holdLobby: () => trainDone || (!!league && !!ended), // 완료·결과 카드가 떠 있으면 room_left 가 화면을 넘기지 않는다(main.js)
-    renderer, campaign, training, league,
+    on_flame_result(m) {
+      if (m.practice === true || m.outcome === 'practice') { // 연습 경기(PROTOCOL §13.15): 승패만 보이고 지도로 돌아간다(보상·코인·도전 종료 줄 없음)
+        practiceWon = m.won === true; setFlameLine('연습 경기'); setPracticeTitle();
+        return;
+      }
+      if (m.outcome === 'rematch') setFlameLine(m.saveFailed ? '저장 실패 · 재경기' : '재경기'); // saveFailed = 결과 저장 실패(사유는 서버 error 토스트, PROTOCOL §13.2)
+      else if (m.champion === true) setFlameLine('우승!'); // 엔드리스(§13.12): 우승해도 flame_end 는 오지 않고 도전이 이어진다
+      if (m.artifactPoints > 0) toast(`아티팩트 대신 경기 포인트 +${m.artifactPoints}`, 'ok', 4200); // 아티팩트 고갈
+    },
+    on_flame_end(m) { setFlameLine(m.summary?.result === 'champion' ? '우승' : '도전 종료'); },
+    holdLobby: () => trainDone || ((!!league || !!flame) && !!ended), // 완료·결과 카드가 떠 있으면 room_left 가 화면을 넘기지 않는다(main.js)
+    renderer, campaign, training, league, flame,
     onRoom(room) {
       roomWaiting = room.status === 'waiting';
       if (ended && roomWaiting && !backAt && btn) armBack(BACK_MS);

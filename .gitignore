@@ -25,3 +25,6 @@ srv_sp.pid
 # 사용자 결정(2026-11-18): ROM 파생 자산은 공개 저장소에 포함, 캐시·임시·원작 ROM 파일은 제외
 public/assets/rom/_cache/
 public/assets/rom/_tmp/
+public/assets/rom/bgm_lpf/
+public/assets/rom/bgm_cand/
+public/assets/rom/bgm_cand_lap/
