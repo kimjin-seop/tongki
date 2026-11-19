@@ -5,10 +5,40 @@
     "notes": [
       "사용자 지시(결정 질문 없이 권장안으로 진행)로 확정한 결정 D1~D14 의 상수. 근거는 문서에 있다. 되돌리려면 이 값만 바꾼다.",
       "engine 블록의 값은 server/engine/flame.js FLAME_DEFAULTS 와 같아야 한다(호출자가 Match 옵션 flame.caps 로 넘긴다). 상한 수치(r1·r2·r3·쓰러짐 하한)는 rules.json clamps 가 원본이다.",
-      "[2026-11-19 D17, 사용자 결정] roster.startOriginal = 시작 팀으로 쓸 오리지널 팀 id(original_team.json 의 id). 이 키가 있으면 새 도전은 그 7명으로 시작한다(D4 의 태동 시작을 대체). 키를 지우면 종전대로 startTeam·startPlayers(태동 7명)로 시작한다. startTeam·startPlayers 는 되돌리기용으로 남겨 둔다."
+      "[2026-11-19 D17, 사용자 결정] roster.startOriginal = 시작 팀으로 쓸 오리지널 팀 id(original_team.json 의 id). 이 키가 있으면 새 도전은 그 7명으로 시작한다(D4 의 태동 시작을 대체). 키를 지우면 종전대로 startTeam·startPlayers(태동 7명)로 시작한다. startTeam·startPlayers 는 되돌리기용으로 남겨 둔다.",
+      "[2026-11-19 D38, 사용자 결정] special.model = 필살기 부여 구조. 'granted' = 선수 자체에는 필살기가 없고 낀 아티팩트가 부여한 슛만 나간다(원작 선수 = 로스터 칸에 orig·clone 표시가 없는 칸만 자기 고유 슛을 기본 보유). 'legacy' 로 바꾸거나 키를 지우면 종전(원래 필살기 + 아티팩트 해금)으로 돌아간다. 대표 슛은 shot_families.json families[].grantShotId.",
+      "[2026-11-19 D39~D44, 사용자 결정 + 문기획 개정판] grade = 필살슛·포메이션 아이템 등급제. model 'v1' = 켜짐, 'off'(또는 키 삭제) = 꺼짐(등급 아이템이 새로 나오지 않고 등급 가산·위력 상한·포메이션 아이템 규칙이 전부 꺼진다 = D38 까지의 동작. 이미 가진 등급 아이템은 그대로 읽히고 슛만 부여한다). 아이템은 카탈로그가 규칙으로 만든다(SP<슛 ID>-<등급> 47x4=188, FM<패턴>-<등급> 15x4=60. 손으로 쓰지 않는다). 수치는 전부 [시작값 — 임밸런 확정 대기]: spPow = 필살 위력 가산, spPowCap = 필살 최종 위력 상한(표값 + 이 값), formation.stat = 포메이션 아이템 등급별 팀 능력치 가산(6단계), formation.tagPct = 태그 조건 보너스 배율 %, formation.ampCapPct = 포메이션 강화 배율 합 상한(% 포인트), drop = 출처별 등급 가중치(각 줄 합 100. boss 는 구간별 줄, 표보다 뒤 구간은 마지막 줄), drop.bossKinds = 보스 3지선다 유형, drop.shopKinds = 상점 아티팩트 칸의 유형 가중치[자작], drop.firstWinChoices = 첫 승리 보상 칸 수[자작], price = 상점가·자동 판매가[자작], equipmentLetters = 장비 등급 표기(데이터 키는 그대로).",
+      "[2026-11-19 D45~D48, 정검수 리뷰 반영 + 사용자 결정 「S 등급은 엄청 빠르고 세야 함」] 위력 상한 구조를 바꿨다. 등급 가산(spPow)은 상한 밖에서 언제나 전액 붙는다. spOtherCap = 등급 가산을 뺀 그 밖의 필살 가산(장비 옵션·아티팩트·시너지 + 필살 투구에 늘 붙는 차지·공중 가산) 합의 상한(캐치 직후가 아닌 평소 필살 기준). spPowCap = 전체 안전 상한으로 뜻이 넓어졌다(표값 + 이 값. 캐치 직후 가산까지 더한 최종 위력이 넘지 않게 캐치 가산만 줄인다 — 평소 필살은 깎지 않는다). 조건: spPow 최댓값 + spOtherCap <= spPowCap. drop.escalateMax = 뽑힌 등급으로 받을 것이 없을 때 올려 찾을 수 있는 가장 높은 등급(그 출처의 가중치가 0 보다 큰 등급만 거친다. 이보다 높은 등급은 직접 뽑혔을 때만 나온다. 키를 지우면 가중치 조건만 남는다). drop.emptyAsTeam = 낼 것이 없는 필살슛·포메이션 칸을 팀 강화 한 칸으로 대신한다(false = 그 칸을 뺀다). 수치는 전부 [시작값 — 임밸런 확정 대기].",
+      "[2026-11-19 D51, 팀장 결정(analysis/40 §20.4 안 (나))] grade.formation.stat.s7 C 0 -> 1(포메이션 C 아이템 단독의 「빈 보상」 해소: 팀 패스 속도 +1), B 1 -> 2(C 와 같아지지 않게 한 칸). A 2 · S 4 와 s6·s4 는 그대로(§20.4 에서 잰 A·S 효과를 바꾸지 않는다). 등급 순서는 s7+s6+s4 합 1/2/4/8 로 선다. 되돌리기: s7 C 0 · B 1.",
+      "[2026-11-19 D52, 사용자 지시 「S등급으로 맞출때쯤이면 엄청나게 빠르고 쎄야됨」「같은 슛이라도 등급에 따라 속도나 파워가 달라야함」 + 팀장 결정] grade.spSpd = 등급별 필살 투구 속도 가산(투구 속도 s6 단위: +4 = +0.25px/f). 주 슬롯 슛을 주는 낀 등급 아이템의 등급 값을 그 선수의 엔진 fx.spSpd 로 넘긴다(고유 슛 단독·계열 아티팩트 = 0, 받아치기 공 = 승계 속도 그대로). 값은 0 이상 64 이하의 정수, 낮은 등급부터 줄지 않게. 키를 지우면 전 등급 0(종전 동작). [시작값 — 사람 체감으로 임밸런 조정]",
+      "[2026-11-19 D58~D63, 사용자 지시 「아티팩트는 그냥 빼」「각각 선수마다 필살기가 적용되는 구조」, analysis/44] artifact.model = 팀 공용 아티팩트 스위치. 'off' = 아티팩트 3칸·A01~A30·시너지를 쓰지 않는다. 필살슛 아이템(SP<슛>-<등급>)은 선수마다 1칸(roster[i].spItem)에 끼고 그 선수에게만 슛·등급 가산이 붙는다, 포메이션 아이템(FM<패턴>-<등급>)은 팀 1칸(run.fmItem). 'team' = 종전(3칸 공용 아티팩트, D58 이전 동작). artifact.off = off 일 때만 쓰는 보상 유형(bossKinds = 보스 3지선다 유형, shopKinds = 상점 칸 유형 가중치, 낼 것이 없는 칸은 뺀다). refundPoints = 옛 도전 저장에 있던 손으로 쓴 아티팩트(A01~A30) 1개당 돌려주는 경기 포인트(읽을 때 한 번). hiddenPerm = off 일 때 영구 성장 상점에서 숨기고 이미 산 단계를 코인으로 한 번 돌려주는 항목. [시작값 — 임밸런 재측정 대기]"
     ]
   },
+  "artifact": {
+    "model": "off",
+    "refundPoints": 80,
+    "hiddenPerm": [
+      "PC03"
+    ],
+    "off": {
+      "bossKinds": [
+        "shot",
+        "shot",
+        "formation"
+      ],
+      "shopKinds": {
+        "shot": 60,
+        "formation": 40
+      },
+      "startGrade": "firstWin",
+      "eventGrade": "shop",
+      "permText": {
+        "PB03": "시작 필살기 아이템(C 등급) 후보 선택권 제공"
+      }
+    }
+  },
   "special": {
+    "model": "granted",
     "slotsPerPlayer": 2,
     "slotRule": "primary",
     "equipAnyPlayer": true,
@@ -21,6 +51,125 @@
       46,
       47
     ]
+  },
+  "grade": {
+    "model": "v1",
+    "grades": [
+      "C",
+      "B",
+      "A",
+      "S"
+    ],
+    "spPow": {
+      "C": 0,
+      "B": 8,
+      "A": 18,
+      "S": 35
+    },
+    "spPowCap": 60,
+    "spOtherCap": 20,
+    "spSpd": {
+      "C": 0,
+      "B": 4,
+      "A": 10,
+      "S": 24
+    },
+    "formation": {
+      "stat": {
+        "s7": {
+          "C": 1,
+          "B": 2,
+          "A": 2,
+          "S": 4
+        },
+        "s6": {
+          "C": 0,
+          "B": 0,
+          "A": 1,
+          "S": 2
+        },
+        "s4": {
+          "C": 0,
+          "B": 0,
+          "A": 1,
+          "S": 2
+        }
+      },
+      "tagPct": {
+        "C": 50,
+        "B": 100,
+        "A": 150,
+        "S": 200
+      },
+      "ampCapPct": 150
+    },
+    "drop": {
+      "boss": [
+        {
+          "C": 62,
+          "B": 30,
+          "A": 7.8,
+          "S": 0.2
+        },
+        {
+          "C": 52,
+          "B": 33,
+          "A": 14.5,
+          "S": 0.5
+        },
+        {
+          "C": 42,
+          "B": 36,
+          "A": 21,
+          "S": 1
+        }
+      ],
+      "shop": {
+        "C": 60,
+        "B": 32,
+        "A": 8,
+        "S": 0
+      },
+      "firstWin": {
+        "C": 100,
+        "B": 0,
+        "A": 0,
+        "S": 0
+      },
+      "bossKinds": [
+        "shot",
+        "formation",
+        "team"
+      ],
+      "shopKinds": {
+        "shot": 50,
+        "formation": 30,
+        "team": 20
+      },
+      "firstWinChoices": 3,
+      "escalateMax": "A",
+      "emptyAsTeam": true
+    },
+    "price": {
+      "shop": {
+        "C": 180,
+        "B": 280,
+        "A": 420,
+        "S": 600
+      },
+      "sell": {
+        "C": 40,
+        "B": 80,
+        "A": 160,
+        "S": 320
+      }
+    },
+    "equipmentLetters": {
+      "common": "C",
+      "rare": "B",
+      "epic": "A",
+      "legendary": "S"
+    }
   },
   "roster": {
     "mixedTeams": true,

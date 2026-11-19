@@ -5,21 +5,14 @@ import { h } from '../util.js';
 import { net } from '../net.js';
 import { arrowNav } from '../pix.js';
 
-const SEEN_KEY = 'dd.tutSeen'; // 튜토리얼을 한 번이라도 시작했는가(이 브라우저 기준. 서버에는 특훈 기록이 없다)
 const STEPS = [['catch', '공 받기'], ['special', '필살기']];
-
-/** 로비 '튜토리얼' 버튼의 '신규' 표시 여부 */
-export function isNew() {
-  try { return !localStorage.getItem(SEEN_KEY); } catch { return false; }
-}
 
 export function mount(root, app) {
   const back = () => app.go('lobby');
   const start = (kind) => {
-    try { localStorage.setItem(SEEN_KEY, '1'); } catch { /* 저장 불가: 표시만 남는다 */ }
     net.send('training_start', { kind }); // 서버가 닫아 둔 종류는 TRAINING_UNAVAILABLE 토스트
   };
-  const btns = STEPS.map(([kind, label], i) => h('button.btn.tut-step', { type: 'button', 'data-kind': kind, onclick: () => start(kind) },
+  const btns = STEPS.map(([kind, label], i) => h('button.ritem.tut-step', { type: 'button', 'data-kind': kind, onclick: () => start(kind) },
     h('b.tut-no', String(i + 1)), h('span', label)));
   root.append(h('div.screen.rules',
     h('section.pwin.rules-win', { 'aria-label': '튜토리얼' },

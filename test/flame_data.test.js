@@ -29,4 +29,11 @@ test('flame_legacy 데이터 마스터: 기획과 다른 수치는 검출된다'
   const r = validate({ root: tmp });
   assert.equal(r.ok, false);
   assert.ok(r.errors.some((m) => m.startsWith('H02:')));
+  // 리뷰 L1·L2: 음수 cpuLevelAdd, 한 선택지에 같은 능력치 trainRandom 2개도 잡는다
+  const cfgFile = path.join(tmp, 'server/flame/data/run_config.json'), cfg = JSON.parse(readFileSync(cfgFile, 'utf8'));
+  cfg.difficulty[1].cpuLevelAdd = { normal: -1 };
+  cfg.events[0].choices[0].ops.push({ op: 'trainRandom', stat: 's4', value: 2 }, { op: 'trainRandom', stat: 's4', value: 2 });
+  writeFileSync(cfgFile, JSON.stringify(cfg));
+  const r2 = validate({ root: tmp }).errors;
+  assert.ok(r2.some((m) => m.includes('cpuLevelAdd')) && r2.some((m) => m.includes('trainRandom')));
 });

@@ -3,7 +3,8 @@
 // 엔진 flame 옵션(roster·allow·caps)은 저장된 도전 상태에서 run.js matchOptions 가 조립한다. 클라이언트가 보낸 수치는 쓰지 않는다(번호·ID 만 받는다).
 import { SAVE_VERSION, PROFILE_VERSION, FlameError, sanitizeProfile, sanitizeRun } from './save.js';
 import { loadCatalog, checkAgainstEngine, cloneRecruitOn, practiceCfg, recruitRoomHealPct, afterWinHealPct, POOL_GRADES } from './catalog.js';
-import { teamOfRun } from './stats.js';
+import { teamOfRun, grantShotOf } from './stats.js';
+import { TEAM_SLOTS, versusTeamCfg, versusOptions, teamSummary } from './teams.js';
 import * as Items from './items.js';
 import * as Nodes from './nodes.js';
 import * as Run from './run.js';
@@ -22,9 +23,19 @@ export function catalogMsg(cat) {
   const R = cat.raw, M = cat.cfg.training.maxPerStat;
   return {
     t: 'flame_catalog', ver: cat.ver,
-    equipment: R.items_equipment.items, artifacts: R.artifacts.items, consumables: R.consumables.items, synergies: R.synergies.synergies,
+    // artifacts = 손으로 쓴 30종 + 규칙으로 만든 등급 아이템 248종(SP<슛>-<등급>·FM<패턴>-<등급>, D39). 등급 아이템의 칸: kind 'shot'|'formation', grant{shot}|{formation}, grade 'C'|'B'|'A'|'S'(이름·설명은 임시 문구 — 화면이 grant 로 슛·포메이션 이름을 붙인다)
+    // artifact = 팀 공용 아티팩트 스위치(D58~D63, §13.26). model 'off' = 공용 3칸·A01~A30·시너지를 쓰지 않는다(필살슛 아이템은 선수마다 roster[i].spItem 1칸 = flame_sp_item, 포메이션 아이템은 팀 1칸 run.fmItem = flame_fm_item),
+    //   'team' = 종전(flame_artifact 3칸). hiddenPerm = off 에서 영구 성장 상점에 내지 않는 항목, permText = off 에서 바뀐 영구 성장 설명(flame_state.profile.permList[].text 와 같다), refundPoints = 옛 도전의 A 번호 1개당 환급 포인트
+    artifact: { model: cat.artifact.model, slots: cat.artifact.model === 'team' ? cat.rules.team.artifactSlots : 0, refundPoints: cat.artifact.refundPoints, hiddenPerm: cat.artifact.model === 'team' ? [] : cat.artifact.hiddenPerm.slice(), permText: cat.artifact.model === 'team' ? {} : { ...(cat.artifact.off?.permText ?? {}) } },
+    equipment: R.items_equipment.items, artifacts: [...cat.artifacts.values()], consumables: R.consumables.items, synergies: R.synergies.synergies,
     formationTags: R.formation_tags.tags, shotFamilies: R.shot_families.families.map((f) => ({ id: f.id, name: f.name, unlockedBy: f.unlockedBy, shotIds: f.shotIds, unlockIds: cat.unlockIds[f.id] })),
-    rarity: cat.rules.rarity, slots: cat.slots, stats: cat.rules.stats, clamps: cat.rules.clamps, nodeTypes: R.nodes.types,
+    rarity: { ...cat.rules.rarity, letters: cat.grade.letters }, slots: cat.slots, stats: cat.rules.stats, clamps: cat.rules.clamps, nodeTypes: R.nodes.types,
+    // 필살기 부여 구조(D38, §13.21, 표시용). model = 'granted'(선수에게 필살기가 없고 아티팩트가 부여한다. 원작 선수만 고유 슛 보유) | 'legacy'(종전: 원래 필살기 + 아티팩트 해금),
+    // artifactShots = {아티팩트 id: 대표 슛 ID}(끼면 필살기 없는 선수의 빈 주 슬롯에 들어가는 슛. 필살기 아티팩트만 싣는다), slotRule = 발동 슬롯 규칙(D1)
+    special: { model: cat.special.model, slotRule: cat.decisions.special.slotRule, artifactShots: Object.fromEntries([...cat.artifacts.keys()].map((a) => [a, grantShotOf(cat, a)]).filter(([, g]) => g !== null)) },
+    // 등급제(D39~D44, §13.22, 표시용). model 'v1' = 켜짐 | 'off' = 꺼짐(등급 아이템이 새로 나오지 않고 가산·상한·포메이션 아이템 규칙이 꺼진다). spPow = 등급별 필살 위력 가산(상한 밖, 전액), spOtherCap = 등급 가산을 뺀 그 밖의 필살 가산 합의 상한(null = 없음), spPowCap = 전체 안전 상한(표값 + 이 값, 캐치 직후 포함. D45), spSpd = 등급별 필살 투구 속도 가산(s6 단위 +4 = +0.25px/f, D52),
+    // formation = {default: 기본 포메이션 패턴, stat: 등급별 팀 능력치 가산, tagPct: 태그 조건 보너스 배율 %, ampCapPct: 포메이션 강화 배율 합 상한}, drop = 출처별 등급 가중치·유형, price = 상점가·자동 판매가, equipmentLetters = 장비 등급 표기(rarity.letters 와 같다)
+    grade: { model: cat.grade.model, grades: cat.grade.grades.slice(), spPow: cat.grade.spPow, spPowCap: cat.grade.spPowCap, spOtherCap: cat.grade.spOtherCap, spSpd: cat.grade.spSpd, formation: { default: cat.cfg.formation.default, ...cat.grade.formation }, drop: cat.grade.drop, price: cat.grade.price, equipmentLetters: cat.grade.letters },
     // maxPerStat = 특훈 누적 상한(D31, 선수·능력치별 roster[i].train[stat] 의 한도). 없는 능력치는 상한 없음, 키가 없으면 null(종전 동작)
     training: { options: cat.training, cost: cat.cfg.training.cost, picksPerVisit: cat.cfg.training.picksPerVisit, maxPerStat: M ? { ...M } : null },
     rest: cat.cfg.rest.options, afterWinHealPct: afterWinHealPct(cat), // 승리 뒤 전원 회복 %(D15). 꺼져 있으면 0
@@ -34,6 +45,10 @@ export function catalogMsg(cat) {
     difficulty: cat.cfg.difficulty, roles: cat.cfg.roles, achievements: cat.cfg.achievements,
     // 연습 경기 요약(D28, 표시용). enabled = run_config.json practice 가 켜져 있는가(키가 없으면 false = 종전 동작), cpuLevel = 연습 상대 레벨(꺼져 있으면 null)
     practice: (() => { const P = practiceCfg(cat); return { enabled: !!P, cpuLevel: P ? P.cpuLevel : null }; })(),
+    // 키운 팀 슬롯 요약(D33·D35, §13.20, 표시용). enabled = run_config.json versusTeam 이 켜져 있는가(꺼져 있으면 슬롯을 저장하지 않고 컴퓨터 대전에서 고를 수 없다),
+    // slots = set_team{team:'flame:<슬롯>'} 에 쓰는 슬롯 이름, ruleMode = 그 팀을 쓸 수 있는 규칙, surviveUsesPerMatch = 대전 한 경기의 치사 생존(P10) 횟수(팀 합계)
+    // humans = 사람끼리 방에서 방장이 규칙 「불꽃 팀」(rules.flameTeams)을 켤 수 있는가(D53). false 면 컴퓨터 대전 방만(1차)
+    versusTeam: (() => { const V = versusTeamCfg(cat); return V ? { enabled: true, slots: TEAM_SLOTS.slice(), ruleMode: VERSUS_RULE_MODE, surviveUsesPerMatch: V.surviveUses, humans: V.humans } : { enabled: false, slots: [], humans: false }; })(),
     // 엔드리스 요약(D24, 표시용). enabled = 무한 구간인가(꺼져 있으면 종전: 구간 championSegments 의 보스 승리에서 끝난다), championSegments = 우승 기준 구간 수,
     // itemMax = 장비 보유 상한(넘으면 받는 즉시 판매가만큼 포인트), artifactFallbackPoints = 아티팩트 고갈 때 보스 보상 대체 포인트, rerollFrom·rerollAdd = 그 구간 이상의 보스 격파마다 재선택 +n, rankTop = 순위표 줄 수
     endless: (() => {
@@ -55,6 +70,29 @@ export function catalogMsg(cat) {
       return O ? { id: O.id, name: O.name, short: O.short, intro: O.intro, protagonist: O.protagonist, start: O.start, protagonistLocked: O.locked, skinSets: { ...O.skinSets }, players: O.players.map((p) => ({ id: p.id, name: p.name, role: p.role, tagline: p.tagline, base: { ...p.base }, skin: { ...p.skin } })) } : null;
     })(),
   };
+}
+
+/** 키운 팀을 쓸 수 있는 규칙(D34): 체력제만. こうしき + flame 훅 조합은 측정한 적이 없다(analysis/43 §5) */
+export const VERSUS_RULE_MODE = 'knockout';
+const TEAM_REF = /^flame:([a-z]+)$/;
+/** set_team 의 team 값이 불꽃 팀 슬롯 참조('flame:recent' | 'flame:best')면 슬롯 이름, 아니면 null */
+export const flameTeamSlot = (v) => { const m = typeof v === 'string' ? TEAM_REF.exec(v) : null; return m && TEAM_SLOTS.includes(m[1]) ? m[1] : null; };
+
+/**
+ * 컴퓨터 대전 방의 불꽃 팀(D34, PROTOCOL §13.20): 그 세션의 영구 저장에서 슬롯을 읽어 엔진 flame 옵션·표시용 cast·요약을 조립한다. **읽기 전용이다**(저장·순위표·도전 상태를 건드리지 않는다).
+ * 팀 선택(set_team)과 경기 시작(startGame) 두 곳에서 부른다 -> 경기는 언제나 시작 시점의 저장값과 지금 데이터로 다시 계산한 능력치로 열린다(클라이언트가 보낸 것은 슬롯 이름뿐이다).
+ * 거절: FLAME_UNAVAILABLE(모드·기능 꺼짐), FLAME_SAVE_NEWER(더 새 형식의 영구 저장), FLAME_TEAM_NONE(슬롯 없음·읽지 못한 저장·쓸 수 없는 슬롯)
+ * @returns {{slot:string, flame:object, cast:object, bodyTeams:number[], summary:object}}
+ */
+export function versusTeamOf(lobby, s, slot, fail, seat = 0) { // seat = 그 사람이 앉은 좌석(엔진 flame 옵션의 seat, D53)
+  const cat = lobby.flameCat ?? fail('FLAME_UNAVAILABLE'), cfg = versusTeamCfg(cat) ?? fail('FLAME_UNAVAILABLE');
+  if (!TEAM_SLOTS.includes(slot)) fail('TEAM_INVALID');
+  const rp = lobby.flame.getProfile(s.key);
+  if ((rp?.v ?? 0) > PROFILE_VERSION) fail('FLAME_SAVE_NEWER');
+  // 가입 경합으로 남은 손님 세션은 그 계정 키의 팀을 쓰지 못한다(계정 키에 쓰지 않는 세션이 읽지도 않게)
+  const t = rp && rp.unparsable !== true && !lobby.guestOfAccount(s) ? sanitizeProfile(cat, rp).teams?.[slot] : null;
+  const o = versusOptions(cat, lobby.o.data, t, cfg, seat) ?? fail('FLAME_TEAM_NONE');
+  return { slot, ...o, summary: teamSummary(cat, t) };
 }
 
 /** 저장한 뒤 도달 순위표의 그 계정 줄을 맞춘다(§13.13). 순위표 오류가 요청을 실패시키지 않게 삼킨다 */
@@ -186,12 +224,16 @@ export function makeFlameHandlers(fail) {
     flame_auto_equip(s, m) { act(this, s, (c) => { Items.autoEquip(c.cat, c.run, m.p ?? null); }); },
     flame_upgrade(s, m) { act(this, s, (c) => { if (!Nodes.canUpgradeHere(c.cat, c.run)) throw new FlameError('FLAME_NOT_HERE'); Items.upgrade(c.cat, c.run, c.profile.perm, m.inst); }); },
     flame_sell(s, m) { act(this, s, (c) => { if (!c.cat.cfg.sell.anywhere && c.run.node?.type !== 'shop') throw new FlameError('FLAME_NOT_HERE'); Items.sell(c.cat, c.run, m.inst); }); },
-    flame_artifact(s, m) { act(this, s, (c) => Items.setArtifact(c.cat, c.run, m.slot, m.id)); },
+    flame_artifact(s, m) { act(this, s, (c) => Items.setArtifact(c.cat, c.run, m.slot, m.id, c.data)); },
+    // 선수별 필살기 아이템(off, §13.26): p = 선수 번호, id = 보유한 필살슛 아이템(SP<슛>-<등급>) | null(빼기). 다른 선수가 낀 아이템 FLAME_EQUIPPED, team 모델·잘못된 값 FLAME_INVALID
+    flame_sp_item(s, m) { act(this, s, (c) => Items.setSpItem(c.cat, c.data, c.run, m.p, m.id ?? null)); },
+    // 팀 포메이션 아이템(off, §13.26): id = 보유한 포메이션 아이템(FM<패턴>-<등급>) | null(빼기 = 기본 포메이션). team 모델·잘못된 값 FLAME_INVALID
+    flame_fm_item(s, m) { act(this, s, (c) => Items.setFmItem(c.cat, c.run, m.id ?? null)); },
     flame_special(s, m) { act(this, s, (c) => Items.setSpecial(c.cat, c.data, c.run, m.p, m.sp)); },
     flame_formation(s, m) { act(this, s, (c) => Run.setFormation(c.cat, c.data, c.run, m.fm)); },
     flame_lineup(s, m) { act(this, s, (c) => Run.setLineup(c.run, m.order)); },
     flame_use(s, m) { act(this, s, (c) => Items.useConsumable(c.cat, c.run, m.c, m.p, teamOfRun(c.cat, c.data, c.run, c.profile.perm).players.map((p) => p.final.s0))); },
-    flame_buy(s, m) { act(this, s, (c) => Nodes.buy(c.cat, c.run, m.i)); },
+    flame_buy(s, m) { act(this, s, (c) => { const note = Nodes.buy(c.cat, c.run, m.i); return note ? { note } : undefined; }); }, // note.upgraded = 낮은 등급 자동 판매(§13.22)
     flame_train(s, m) { act(this, s, (c) => Nodes.train(c.cat, c.run, m.p, m.opt)); },
     flame_perm(s, m) { act(this, s, (c) => { Run.buyPerm(c.cat, c.profile, m.id); }, { needRun: false }); },
     // 도달 순위표(§13.13). top = 1~상한(생략 = 상한). me = 계정이면 내 줄, 손님이면 null. 방 안에서도 볼 수 있다(읽기 전용)

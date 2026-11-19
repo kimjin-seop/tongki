@@ -90,11 +90,11 @@ test('flame 클론 영입: 교체 자리에 클론이 들어가 자기 능력치
   const ch = visit(cat, run, profile, 0, 'r0'), i = ch.findIndex((c) => c.clone), def = cat.pool.byId.get(ch[i].clone);
   run.seg = 0; run.node = { id: 'r0', type: 'recruit' };
   const v0 = Run.viewOf(cat, data, run, profile).run.pending[0].choices[i], mapBefore = JSON.stringify(run.map);
-  assert.deepEqual([v0.kind, v0.id, v0.name, v0.role, v0.grade, v0.sp, v0.stat.s0, v0.skin, [v0.team, v0.idx]], ['clone', def.id, def.name, def.role, def.grade, def.sp, def.stat.hp, { ...def.body, ...{ uni: def.skin.uni, hair: def.skin.hair } }, [def.body.team, def.body.idx]]);
+  assert.deepEqual([v0.kind, v0.id, v0.name, v0.role, v0.grade, v0.sp, v0.stat.s0, v0.skin, [v0.team, v0.idx]], ['clone', def.id, def.name, def.role, def.grade, null, def.stat.hp, { ...def.body, ...{ uni: def.skin.uni, hair: def.skin.hair } }, [def.body.team, def.body.idx]]);
   run.layer = 0; // advance 가 층을 넘긴다(시험용 가짜 노드)
   Run.choose(cat, data, run, profile, i, 6);
   const r = run.roster[6];
-  assert.deepEqual([r.clone, r.from, r.sp, r.recruited, r.hp, run.seen.players.at(-1), JSON.stringify(run.map)], [def.id, def.body, [def.sp, null], true, def.stat.hp, `c:${def.id}`, mapBefore]);
+  assert.deepEqual([r.clone, r.from, r.sp, r.recruited, r.hp, run.seen.players.at(-1), JSON.stringify(run.map)], [def.id, def.body, [null, null], true, def.stat.hp, `c:${def.id}`, mapBefore]); // D38: 클론은 필살기 없이 들어온다(풀의 sp 칸은 쓰지 않는다)
   const view = Run.viewOf(cat, data, run, profile), pl = view.team.players[6], cast = view.run.cast.players[6];
   assert.deepEqual([pl.base.s0, pl.base.s4, pl.final.s1], [def.stat.hp, def.stat.pow, def.stat.def]); // 영구 성장 A 는 영입 선수에 붙지 않는다(B5)
   assert.deepEqual([cast.kind, cast.name, cast.grade, cast.locked, view.run.cast.players[0].kind, view.run.recruitShown], ['clone', def.name, def.grade, false, 'starter', undefined]);

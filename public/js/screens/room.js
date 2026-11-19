@@ -5,13 +5,19 @@
 import { h, clear } from '../util.js';
 import { net } from '../net.js';
 import { toast } from '../ui.js';
-import { ERR } from '../i18n.js';
+import { ERR, ERR_CODE } from '../i18n.js';
 import { available as prematchOk } from './prematch.js';
 import { available as lineupOk } from './lineup.js';
 import { rulesText } from './rules.js';
 import { emblem, roster, glyphs, abbrOf, shortName, GRID_MAIN, arrowNav } from '../pix.js';
+import * as F from './flame/store.js';
+import { rankName, keepEmblem, keepGlyph } from './flame/ui.js';
 
 const PAGE_SPECIAL = [15, 16, 17, 18, 19, 20, 21, 22, 23, 24]; // 스토리 전용 팀(목록 유지)
+// 불꽃 팀 칸(PROTOCOL §13.20): 불꽃의 계승에서 키운 팀 슬롯. 칸의 id = set_team 에 보내는 값 그대로('flame:recent' | 'flame:best'), 원작 팀 칸은 숫자
+const FL_LABEL = { recent: '최근', best: '최고' };
+const isFl = (id) => typeof id === 'string';
+const cellId = (el) => { const v = el?.dataset?.team; return v == null ? null : v.startsWith('flame:') ? v : +v; };
 const RANK_MAX_TEAM = 21; // 랭크 방은 SPECIAL(15~21)까지, 22~24 는 서버가 TEAM_INVALID(PROTOCOL §11.2)
 
 export function mount(root, app) {
@@ -21,6 +27,28 @@ export function mount(root, app) {
   const teamOk = (id) => app.teams.some((t) => t.id === id);
   const teamText = (id) => { const t = app.teams.find((x) => x.id === id); return t ? t.label ?? t.name : id != null ? `팀 ${id + 1}` : ''; };
   const myIdx = () => app.room?.slots?.findIndex((s) => s && s.nick === app.nick) ?? -1;
+
+  // ---------------- 불꽃 팀(PROTOCOL §13.20) ----------------
+  // 칸이 보이는 조건: (컴퓨터 대전 방의 방장 | 방장이 「불꽃 팀」을 허용한 사람끼리 일반 방(§13.25)의 두 사람) + 랭크 아님 + flame_catalog.versusTeam.enabled(사람끼리는 .humans 도)
+  //   + 그 슬롯의 요약(flame_state.profile.teams)이 있음. 공식 규칙이면 흐리게(누르면 사유 토스트)
+  const flWanted = () => !!app.room && !app.room.ranked && (!!app.room.vsCpu || app.room.rules?.flameTeams === true);
+  const flCat = () => (app.flame && F.ensureCatalog(app.flame.catalogVer) ? F.catalog() : null);
+  const flVs = () => (flWanted() ? flCat()?.versusTeam ?? null : null);
+  const flCells = () => { const V = flVs(); return V?.enabled && (app.room.vsCpu ? myIdx() === 0 : V.humans === true) ? (V.slots ?? []).filter((k) => FL_LABEL[k] && app.flame.profile?.teams?.[k]).map((k) => 'flame:' + k) : []; };
+  /** 규칙 창의 「불꽃 팀」 토글을 보일까(방장 · 사람끼리 일반 방 · 카탈로그 versusTeam.humans): 지금 값, 아니면 undefined(줄 없음) */
+  const flToggle = () => { const r = app.room; return r && !r.vsCpu && !r.ranked && flCat()?.versusTeam?.humans === true ? r.rules?.flameTeams === true : undefined; };
+  const flRuleOk = () => (app.room?.rules?.mode ?? 'knockout') === (F.catalog()?.versusTeam?.ruleMode ?? 'knockout');
+  const flSum = (id) => app.flame?.profile?.teams?.[id.slice(6)] ?? null;
+  /** 좌석이 고른 것: 불꽃 팀이면 'flame:<슬롯>', 아니면 팀 번호 */
+  const selOf = (s) => (s?.flameTeam?.slot ? 'flame:' + s.flameTeam.slot : s?.team);
+  const flCore = (t) => (Array.isArray(t?.core) ? t.core : []).slice(0, 3).map(rankName).filter(Boolean);
+  /** 핵심 3명 + 구간·승수 */
+  const flBody = (t, core = true) => h('div.flt', core ? h('div.flt-core', flCore(t).map((n) => h('b', n))) : null,
+    h('div.flt-rec.tabular', `구간 ${t.seg} · ${t.wins}승`));
+  if (app.room && !app.room.ranked && !app.flame) net.send('flame_get'); // 방 안에서도 받을 수 있다(슬롯 유무·규칙 창 토글용 카탈로그). 응답 = flame_state(main.js -> onFlameState)
+  // 카탈로그 미리 받기: 규칙 창을 처음 열 때 「불꽃 팀」 줄이 빠지지 않게(캐시 ver 비교·중복 요청 방지는 ensureCatalog)
+  const flPrefetch = () => { if (app.room && !app.room.ranked && app.flame) F.ensureCatalog(app.flame.catalogVer); };
+  flPrefetch();
 
   // 랭크 방(PROTOCOL §11.2): 좌석마다 레이팅. 서버가 좌석에 rating(정수)·placement 를 주면 그 값이 우선,
   // 없으면(구 서버) 순위표(ranking_list) 값으로 보완 — 내 줄(me)은 언제나, 상대는 상위 50명 안에 있을 때만. 상대가 바뀔 때만 다시 묻는다(분당 상한 공유)
@@ -42,14 +70,16 @@ export function mount(root, app) {
     return row ? String(row.rating) : null;
   }
 
-  // 준비 완료였는데 서버가 풀었을 때(규칙 변경·내 팀 변경) 한 번 알린다. 내가 누른 준비 취소·경기 종료는 알리지 않는다
+  // 준비 완료였는데 서버가 풀었을 때(규칙 변경·내 팀 변경·방장의 불꽃 팀 변경) 한 번 알린다. 내가 누른 준비 취소·경기 종료는 알리지 않는다
   let prev = null;
   function noteReady() {
-    const r = app.room, m = r?.slots?.[myIdx()];
-    const now = m && !m.host ? { ready: m.ready, rules: `${r.rules?.mode}/${r.rules?.time}`, team: m.team } : null;
+    const r = app.room, i = myIdx(), m = r?.slots?.[i], o = r?.slots?.[1 - i];
+    const now = m && !m.host ? { ready: m.ready, rules: `${r.rules?.mode}/${r.rules?.time}/${r.rules?.flameTeams === true}`, team: selOf(m), myFt: !!m.flameTeam,
+      opp: o?.flameTeam ? JSON.stringify(o.flameTeam) : null } : null; // opp = 방장의 불꽃 팀 선택(슬롯·요약). 바뀌면 서버가 내 준비를 푼다(§13.25 D53 (6))
     if (prev?.ready && now && !now.ready && r.status === 'waiting') {
-      if (prev.rules !== now.rules) toast(ERR.READY_RESET_RULES, 'warn');
+      if (prev.rules !== now.rules) { if (!(prev.myFt && !now.myFt)) toast(ERR.READY_RESET_RULES, 'warn'); } // 허용을 꺼 내 불꽃 팀이 풀린 경우는 서버 토스트(FLAME_TEAM_CLEARED)만
       else if (prev.team !== now.team) toast(ERR.READY_RESET_TEAM, 'warn');
+      else if (prev.opp !== now.opp) toast(ERR.READY_RESET_OPP, 'warn');
     }
     prev = now;
   }
@@ -58,7 +88,12 @@ export function mount(root, app) {
     const r = app.room; if (!r) return;
     noteReady();
     askRatings();
-    if (selecting && myIdx() >= 0 && r.status === 'waiting') { if (root.querySelector('.tsel')) marks(); else paintSelect(); } else { selecting = false; paintRoom(); }
+    if (selecting && myIdx() >= 0 && r.status === 'waiting') {
+      // 방장이 「불꽃 팀」 허용을 바꾸면 격자 칸(최근·최고)이 생기거나 사라진다: 칸 목록이 달라졌을 때만 격자를 다시 그린다
+      const shown = [...root.querySelectorAll('.tcell')].map((el) => el.dataset.team).join(), want = pageTeams(page).join();
+      if (!root.querySelector('.tsel')) paintSelect();
+      else if (shown !== want) { if (!pageTeams(page).includes(cur)) cur = pageTeams(page)[0] ?? 0; paintSelect(false); } else marks();
+    } else { selecting = false; paintRoom(); }
   }
 
   // ---------------- 대기실 ----------------
@@ -76,12 +111,16 @@ export function mount(root, app) {
       const rdy = !cpu && !s.host && s.ready;
       const tag = cpu ? h('span.tag.cpu', `난이도 ${cpuLevel(r, s)}`)
         : s.host ? h('span.tag.host', '방장') : h('span.tag.rdy' + (rdy ? '.on' : ''), rdy ? '준비 완료' : '준비 중');
-      const team = s?.team;
+      const team = s?.team, ft = s?.flameTeam ?? null; // ft = 고른 불꽃 팀 요약(그때 team 은 주장 칸의 몸 출처 팀)
       const rate = r.ranked && s ? ratingOf(s) : null;
       return h('section.seat.s' + i + (i === me ? '.me' : '') + (rdy ? '.is-ready' : ''), { 'aria-label': `${i ? '오른쪽' : '왼쪽'} 좌석` },
         h('div.seat-top', lab, h('span.seat-nick', cpu ? '컴퓨터' : s.nick), s && !s.connected && !cpu ? h('span.tag.off', '연결 끊김') : null,
           rate ? h('span.tag.rate.tabular', { title: '레이팅' }, rate) : null, tag),
-        team != null ? [
+        ft ? [
+          h('div.seat-team.fl', keepEmblem(), keepGlyph(ft.slot), h('span.tn', flCore(ft).join(' · ') || '불꽃 팀'),
+            i === me ? h('button.chg', { type: 'button', 'data-cmd': 'chg', onclick: openSelect }, '변경 ▶') : null),
+          flBody(ft, false),
+        ] : team != null ? [
           h('div.seat-team', emblem(team), h('span.tn', teamText(team)),
             i === me ? h('button.chg', { type: 'button', 'data-cmd': 'chg', onclick: openSelect }, '변경 ▶') : null),
           roster(team, i === 0),
@@ -116,14 +155,17 @@ export function mount(root, app) {
   function openRules() {
     const r = app.room; if (!r) return;
     app.go('rules', { rules: r.rules, onCancel: () => app.go('room'),
-      onDone: (v) => { if (v.mode !== r.rules?.mode || v.time !== r.rules?.time) net.send('set_rules', { rules: v }); app.go('room'); } });
+      flameTeams: flToggle(), // 사람끼리 일반 방: 「불꽃 팀」 허용(§13.25). 끄면 고른 사람의 선택이 풀리고 서버가 그 사람에게 토스트(FLAME_TEAM_CLEARED)
+      flameTeamsLate: flToggle, // 창이 열린 뒤 상태·카탈로그가 도착하면 규칙 창이 다시 묻는다(줄을 그때 끼운다)
+      onDone: (v) => { if (v.mode !== r.rules?.mode || v.time !== r.rules?.time || ('flameTeams' in v && v.flameTeams !== (r.rules?.flameTeams === true))) net.send('set_rules', { rules: v }); app.go('room'); } });
   }
 
   // 시작 직전 경기 전 화면(원작: 라인업 VS -> 편성 1P -> 편성 COM). 서버 변경 없이 클라이언트에서 끼운다. 마지막 화면에서 start 전송
   function startFlow() {
     const r = app.room, me = myIdx();
     const mine = r?.slots?.[me]?.team, theirs = r?.slots?.[1 - me]?.team;
-    if (me < 0 || mine == null || theirs == null) { net.send('start'); return; }
+    // 불꽃 팀: 경기 전 화면(라인업·편성)은 원작 팀 번호로 그려 내 팀과 맞지 않고, 상대 팀도 시작 때 다시 뽑힐 수 있다 -> 건너뛴다
+    if (me < 0 || mine == null || theirs == null || r.slots[me].flameTeam) { net.send('start'); return; }
     const lab = (i) => (isCpuSeat(r, i) ? 'COM' : i ? '2P' : '1P');
     const back = () => app.go('room');
     const steps = [];
@@ -140,30 +182,35 @@ export function mount(root, app) {
   function openSelect() {
     const me = myIdx(); if (me < 0) return;
     selecting = true;
-    cur = app.room.slots[me]?.team ?? 0;
-    page = PAGE_SPECIAL.includes(cur) ? 1 : 0;
+    cur = selOf(app.room.slots[me]) ?? 0;
+    if (isFl(cur) && !flCells().includes(cur)) cur = app.room.slots[me]?.team ?? 0; // 슬롯 요약을 아직 받지 못했다: 원작 팀 칸에서 시작
+    page = PAGE_SPECIAL.includes(cur) || isFl(cur) ? 1 : 0;
     paintSelect(true);
   }
   function closeSelect() { selecting = false; paintRoom(); root.querySelector('[data-cmd="team"]')?.focus(); }
   function confirm(team) {
     const s = app.room?.slots?.[myIdx()];
-    if (s && s.team !== team) net.send('set_team', { team });
+    if (isFl(team) && !flRuleOk()) { toast(ERR_CODE.FLAME_TEAM_RULES, 'warn'); return; }
+    if (s && selOf(s) !== team) net.send('set_team', { team });
     closeSelect();
   }
-  const pageTeams = (p) => (p ? PAGE_SPECIAL : GRID_MAIN).filter((id) => teamOk(id) && !(app.room?.ranked && id > RANK_MAX_TEAM));
+  // 불꽃 팀 칸은 SPECIAL 쪽 끝(셋째 줄)에 붙는다
+  const pageTeams = (p) => [...(p ? PAGE_SPECIAL : GRID_MAIN).filter((id) => teamOk(id) && !(app.room?.ranked && id > RANK_MAX_TEAM)), ...(p ? flCells() : [])];
 
   function paintSelect(focusCur = false) {
     const list = pageTeams(page);
     const fe = document.activeElement;
-    const focusedTeam = focusCur ? cur : (fe?.dataset?.team != null ? +fe.dataset.team : null);
+    const focusedTeam = focusCur ? cur : cellId(fe);
     const focusHead = !focusCur && fe?.closest?.('.tsel-head') ? fe.textContent : null;
     clear(root);
-    const cells = list.map((id) => h('button.tcell', { type: 'button', 'data-team': id, 'aria-label': teamText(id),
+    const flOff = !flRuleOk();
+    const cells = list.map((id) => h('button.tcell' + (isFl(id) ? '.fl' + (flOff ? '.off' : '') : ''), { type: 'button', 'data-team': id,
+      'aria-label': isFl(id) ? `불꽃 팀 ${FL_LABEL[id.slice(6)]}` : teamText(id), 'aria-disabled': isFl(id) && flOff ? 'true' : null,
       // 마우스·터치: 첫 누름 = 커서 이동, 커서가 있던 칸을 다시 누름 = 결정. 키보드 포커스 이동도 커서를 옮긴다
       onpointerdown: () => { pdCur = cur; },
       onfocus: () => { if (cur !== id) move(id); },
       onclick: () => { const prev = pdCur ?? cur; pdCur = null; if (prev === id) confirm(id); else move(id); } },
-      h('span.cl.c0'), h('span.cl.c1'), emblem(id), h('span.ab', glyphs(abbrOf(id))), h('span.nm', shortName(id, teamText(id)))));
+      h('span.cl.c0'), h('span.cl.c1'), isFl(id) ? [keepEmblem(), h('span.nm', keepGlyph(id.slice(6)), FL_LABEL[id.slice(6)])] : [emblem(id), h('span.ab', glyphs(abbrOf(id))), h('span.nm', shortName(id, teamText(id)))]));
     root.append(h('div.screen.tsel',
       h('header.tsel-head', h('h1.pix-title', '팀 선택'),
         h('div.tpage', { role: 'group', 'aria-label': '팀 목록' },
@@ -182,14 +229,15 @@ export function mount(root, app) {
   /** 커서 표시(1P/2P/COM 라벨·테두리)와 오른쪽 팀 창만 다시 그린다(격자 버튼은 유지 → 클릭·포커스가 끊기지 않게) */
   function marks() {
     const r = app.room, me = myIdx(), other = 1 - me;
-    const oTeam = r.slots[other]?.team;
+    // 상대가 고른 불꽃 팀은 상대 계정의 슬롯이라 내 격자의 같은 이름 칸(내 슬롯)과 다르다: 격자에 상대 커서를 두지 않는다(오른쪽 팀 창에만 요약)
+    const oTeam = r.slots[other]?.flameTeam ? 'x:other' : selOf(r.slots[other]), mySel = selOf(r.slots[me]);
     const cpu = [isCpuSeat(r, 0), isCpuSeat(r, 1)];
     for (const el of root.querySelectorAll('.tcell')) {
-      const id = +el.dataset.team;
+      const id = cellId(el);
       const at = [me === 0 ? cur === id : oTeam === id, me === 1 ? cur === id : oTeam === id];
       el.classList.toggle('at0', at[0]); el.classList.toggle('at1', at[1]);
       el.classList.toggle('mine', cur === id); el.classList.toggle('s1', cur === id && me === 1);
-      el.setAttribute('aria-pressed', String(r.slots[me]?.team === id));
+      el.setAttribute('aria-pressed', String(mySel === id));
       const [c0, c1] = el.querySelectorAll('.cl');
       c0.textContent = at[0] ? (cpu[0] ? 'COM' : '1P') : '';
       c1.textContent = at[1] ? (cpu[1] ? 'COM' : '2P') : '';
@@ -202,14 +250,20 @@ export function mount(root, app) {
     const r = app.room, me = myIdx();
     const s = r.slots[i];
     const cpu = isCpuSeat(r, i);
-    const t = i === me ? cur : s?.team;
+    const t = i === me ? cur : selOf(s);
     const lab = h('b.pl.' + (cpu ? 'com' : i ? 'p2' : 'p1'), cpu ? 'COM' : i ? '2P' : '1P');
     if (t == null) return h('section.pwin.tinfo', h('div.tinfo-top', lab, h('span.tn.muted', '빈 자리')));
     let st;
     if (i === me) {
-      st = s?.team === cur ? h('div.tinfo-st.done', '결정 완료')
+      st = selOf(s) === cur ? h('div.tinfo-st.done', '결정 완료')
         : h('div.tinfo-st', '고르는 중', h('button.btn.small.primary', { type: 'button', onclick: () => confirm(cur) }, '결정'));
     } else st = h('div.tinfo-st.done', cpu ? '컴퓨터' : '결정 완료');
+    if (isFl(t)) { // 불꽃 팀: 선수 얼굴 대신 핵심 3명·구간·승수
+      const theirs = s?.flameTeam?.slot === t.slice(6) ? s.flameTeam : null; // 상대 좌석 = 그 사람 슬롯 요약(room_state), 내 좌석 = 내 요약
+      const ft = i === me ? flSum(t) ?? theirs : theirs, nm = `불꽃 팀 · ${FL_LABEL[t.slice(6)] ?? ''}`;
+      return h('section.pwin.tinfo.s' + i, { 'aria-label': `${i ? '2P' : '1P'} ${nm}` },
+        h('div.tinfo-top', lab, keepEmblem(), h('span.tn', keepGlyph(t.slice(6)), ' ', FL_LABEL[t.slice(6)] ?? '')), ft ? flBody(ft) : null, st); // 이름 = 기호 + 「최근/최고」(보관 팀 엠블럼이 불꽃 팀임을 보인다, 좁은 화면 말줄임 방지)
+    }
     return h('section.pwin.tinfo.s' + i, { 'aria-label': `${cpu ? 'COM' : i ? '2P' : '1P'} ${teamText(t)}` },
       h('div.tinfo-top', lab, emblem(t), h('span.tn', teamText(t))), roster(t, i === 0), st);
   }
@@ -255,7 +309,10 @@ export function mount(root, app) {
   }
 
   update();
-  return { update, onRankingList: () => { if (!selecting && app.room?.ranked) paintRoom(); }, unmount: () => setNav(null) };
+  // 슬롯 요약·카탈로그가 뒤늦게 오면 팀 선택 화면의 불꽃 팀 칸을 다시 맞춘다. 슬롯이 없다는 거절이면 요약을 새로 받는다(칸이 사라진다)
+  const onFlame = () => { if (selecting && root.querySelector('.tsel')) { if (!pageTeams(page).includes(cur)) cur = pageTeams(page)[0] ?? 0; paintSelect(false); } };
+  return { update, onRankingList: () => { if (!selecting && app.room?.ranked) paintRoom(); }, onFlameState: () => { flPrefetch(); onFlame(); }, onFlameCatalog: onFlame,
+    onError: (m) => { if (m?.code === 'FLAME_TEAM_NONE' && flWanted()) net.send('flame_get'); }, unmount: () => setNav(null) };
 }
 
 /** 컴퓨터 대전 좌석 판정 (PROTOCOL 4: room.vsCpu / slot.cpu) */

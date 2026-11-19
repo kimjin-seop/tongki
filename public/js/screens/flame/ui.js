@@ -1,7 +1,7 @@
 // 불꽃의 계승 화면 공용 부품: 아이템 아이콘(희귀도 테두리는 아이콘 바깥 CSS), 선수 얼굴·이름·스프라이트, 능력치 표, HP 막대, 게임패드 → 포커스 이동.
 import { h } from '../../util.js';
 import { toast } from '../../ui.js';
-import { has, image } from '../../game/assets.js';
+import { has, image, entry } from '../../game/assets.js';
 import { face, emblem } from '../../pix.js';
 import { playerName, teamName } from '../../names.js';
 import * as F from './store.js';
@@ -13,15 +13,36 @@ import * as Skin from './skin.js';
  */
 export function icon(def, o = {}) {
   const url = F.iconUrl(def);
-  const cls = def?.rarity ? `.r-${def.rarity}` : def?.category ? '.k-art' : '.k-cons';
+  const gr = o.grade !== undefined ? o.grade : F.grantOf(def)?.grade ?? null; // 등급 아이템(§13.22): 계열 아티팩트 그림 + 등급 딱지(o.grade 로 덮어쓸 수 있다. null = 딱지 없음)
+  const cls = def?.rarity ? `.r-${def.rarity}` : def?.category ? '.k-art' + (gr ? `.g-${gr}` : '') : '.k-cons';
   return h('span.fl-ic' + cls + (o.dim ? '.dim' : '') + (o.big ? '.big' : ''), { 'aria-hidden': 'true' },
-    url ? h('img', { src: url, alt: '', width: 32, height: 32, draggable: false, loading: 'lazy' }) : null,
+    // 미발견(dim) = 그림 대신 같은 모양의 불투명 단색 실루엣(CSS mask, 필터·반투명 없음)
+    url && o.dim ? h('i.fl-ic-sil', { style: { '--src': `url("${url}")` } }) : url ? h('img', { src: url, alt: '', width: 32, height: 32, draggable: false, loading: 'lazy' }) : null,
+    gr ? h('b.fl-ic-g.fl-gr.g-' + gr, gr) : null,
     o.lv ? h('b.fl-ic-lv', `+${o.lv}`) : null, o.n > 1 ? h('b.fl-ic-n', String(o.n)) : null);
 }
+/** 등급 딱지 C/B/A/S(색 = flame.css 등급 토큰, S 는 강조 테두리) */
+export const gradeTag = (g) => (F.GRADES.includes(g) ? h('b.fl-gr.g-' + g, { 'aria-label': `${g} 등급` }, g) : null);
+/** 장비 등급 표기: 글자 표(flame_catalog.rarity.letters)가 있으면 등급 딱지 C/B/A/S, 없으면 종전 이름 */
+export const rarTag = (r) => (F.rarityLetter(r) ? gradeTag(F.rarityLetter(r)) : h('span.fl-rar.r-' + r, F.rarityName(r)));
+/** 아티팩트 분류 줄: 등급 아이템 = 등급 딱지 + 유형(필살슛·포메이션), 등급제의 팀 강화 = 유형, 종전 = 분류 이름 */
+export const artKindTag = (d) => { const k = F.artKind(d); return k ? [gradeTag(F.grantOf(d)?.grade), h('span.fl-kind.k-' + k, F.KIND_KO[k])] : F.CAT_KO[d?.category] ?? ''; };
 /** 없는 필살기의 습득 조건(카탈로그의 계열·아티팩트 정의에서) 토스트 한 줄 */
 export function learnTip(id) {
   const who = F.josa(F.shotName(id), '은/는'), arts = F.shotGivers(id).map((a) => a.name).filter(Boolean);
+  if (F.artOff()) { toast(`${who} 필살기 아이템이 있어야 쓸 수 있습니다`, 'info'); return; } // off(§13.26): 아티팩트가 없다
   toast(arts.length ? `${who} 아티팩트 ${arts.map((n) => `「${n}」`).join(' 또는 ')} 장착 시 사용 가능` : `${who} 아티팩트가 있어야 쓸 수 있습니다`, 'info');
+}
+/** 지도 노드 아이콘(안아트 16x16 8종, manifest ui.icon.node.*): 원본 크기 그대로 쓰는 2x(32px)·3x(48px) 파일을 CSS 변수 --img-nd-{종류}·--img-nd3-{종류} 로(flame.css .fl-node-g). 키가 없으면 CSS 폴백 경로 */
+export function nodeIcons() {
+  const st = document.documentElement.style;
+  for (const t of Object.keys(F.NODE_SHORT)) {
+    const k = 'ui.icon.node.' + t;
+    if (!has(k)) continue;
+    const v = entry(k).variants ?? {};
+    if (v['2x']) st.setProperty('--img-nd-' + t, `url("/assets/${v['2x'].path}")`);
+    if (v['3x']) st.setProperty('--img-nd3-' + t, `url("/assets/${v['3x'].path}")`);
+  }
 }
 /** 빈 슬롯 칸 */
 export const emptyIcon = (label = '') => h('span.fl-ic.vac', { 'aria-hidden': 'true' }, label);
@@ -98,11 +119,11 @@ export function hpOf(run, team, i) {
   if (m && m.bonus > 0 && Number.isFinite(m.hp) && Number.isFinite(m.max)) return { hp: m.hp, max: m.max, up: true };
   return { hp: run.roster[i].hp, max: team.players[i].final.s0, up: false };
 }
-/** HP 막대(현재/최대). 30% 이하 빨강. up = 출전 HP(소모품으로 늘어난 값) */
+/** HP 눈금 게이지(레트로 .rgauge 10칸, 남은 HP 가 있으면 1칸 이상) + 숫자(현재/최대). 30% 이하 = .low. up = 출전 HP(소모품으로 늘어난 값) */
 export function hpBar(hp, max, up = false) {
-  const r = max > 0 ? Math.max(0, Math.min(1, hp / max)) : 0;
+  const r = max > 0 ? Math.max(0, Math.min(1, hp / max)) : 0, v = hp > 0 ? Math.max(1, Math.round(r * 10)) : 0;
   return h('span.fl-hp' + (r <= 0.3 ? '.low' : '') + (up ? '.up' : ''), { role: 'img', 'aria-label': `HP ${hp}/${max}` },
-    h('i', { style: { width: `${Math.round(r * 100)}%` } }), h('b.tabular', `${hp}/${max}`));
+    h('i.rgauge', { style: { '--n': '10', '--v': String(v) } }), h('b.tabular', `${hp}/${max}`));
 }
 
 /** 선수 스프라이트(출신 팀 시트 80x80 칸, 서 있는 자세 = 24열, 오른쪽 보기 = 선수 번호 x 2행). 시트가 없으면 얼굴만 */
@@ -187,3 +208,19 @@ export function padNav() {
   if (typeof navigator.getGamepads === 'function') raf = requestAnimationFrame(tick);
   return () => cancelAnimationFrame(raf);
 }
+
+// ---------------- 보관 팀(키운 팀 슬롯 recent·best, PROTOCOL §13.20·§13.25): 안아트 keep 아이콘 세트(app.css .kp-*) ----------------
+export const KEEP_SLOTS = ['recent', 'best'];
+export const KEEP_LABEL = { recent: '최근', best: '최고' };
+/** 불씨 엠블럼 + 오른쪽 아래 보관 배지판(8x8 을 (17,9) 에 겹침) */
+export const keepEmblem = () => h('span.emb.fl-emb-o.kp-emb', { 'aria-hidden': 'true' });
+/** 슬롯 딱지 40x15(글자 = 최근 흰 / 최고 노랑) */
+export const keepTag = (slot) => h('span.kp-tag.' + slot, KEEP_LABEL[slot] ?? '');
+/** 좁은 칸용 8x8 기호(시계 / 별) */
+export const keepGlyph = (slot) => h('i.kp-g.' + slot, { 'aria-hidden': 'true' });
+/** NEW 배지 */
+export const keepNew = () => h('span.kp-new', 'NEW');
+/** 보관 표식 16x16 */
+export const keepMark = () => h('i.kp-mark', { 'aria-hidden': 'true' });
+/** 요약 한 줄: 「구간 N · N승」 */
+export const keepRec = (t) => `구간 ${t.seg} · ${t.wins}승`;

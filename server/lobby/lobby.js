@@ -5,8 +5,9 @@ import { MemoryProgressStore } from '../store/progress.js';
 import { MemoryLeagueStore } from '../store/league.js';
 import { makeLeagueHandlers, leagueEnd } from '../league/handlers.js';
 import { MemoryFlameStore } from '../store/flame.js';
-import { makeFlameHandlers, flameEnd, initFlameCatalog } from '../flame/handlers.js';
+import { makeFlameHandlers, flameEnd, initFlameCatalog, flameTeamSlot, versusTeamOf, VERSUS_RULE_MODE } from '../flame/handlers.js';
 import { FlameRanking } from '../flame/ranking.js';
+import { versusTeamCfg } from '../flame/teams.js';
 import { mono, loadLimits } from '../net/limits.js';
 import { openDb } from '../store/db.js';
 import { AccountStore, LoginGuard, passwordOk } from '../store/accounts.js';
@@ -402,7 +403,8 @@ export class Lobby {
       ...(room.ranked ? { ranked: true } : {}),
       rules: { ...room.rules },
       start: st.ok ? { ok: true } : { ok: false, code: st.code, msg: ERR[st.code] },
-      slots: room.seats.map((m, i) => (!m && i === 1 && room.vsCpu ? { seat: 1, nick: CPU_NICK, ready: true, team: room.cpuTeam, host: false, connected: true, cpu: true } : m ? { seat: i, nick: m.s.nick, ready: m.ready, team: m.team, host: i === 0, connected: !!m.s.conn, ...(room.ranked ? this.seatRating(m.s) : {}) } : null)),
+      slots: room.seats.map((m, i) => (!m && i === 1 && room.vsCpu ? { seat: 1, nick: CPU_NICK, ready: true, team: room.cpuTeam, host: false, connected: true, cpu: true } : m ? { seat: i, nick: m.s.nick, ready: m.ready, team: m.team, host: i === 0, connected: !!m.s.conn, ...(room.ranked ? this.seatRating(m.s) : {}),
+        ...(m.flameTeam ? { flameTeam: { slot: m.flameTeam.slot, ...m.flameTeam.summary } } : {}) } : null)), // flameTeam = 고른 불꽃 팀 슬롯 요약(PROTOCOL §13.20. 그때 team 은 주장 칸의 몸 출처 팀이다)
     };
   }
 
@@ -431,6 +433,27 @@ export class Lobby {
     const t = randomInt(n - 1);
     return t >= exclude ? t + 1 : t;
   }
+
+  /** 컴퓨터 대전 상대 팀(불꽃 팀을 골랐을 때, D36): 내 로스터 7칸의 몸 출처 팀 전부를 뺀 무작위. 남는 팀이 없으면(데이터상 없다) 종전 규칙으로 */
+  pickCpuTeamExcept(teams) {
+    const pool = this.o.data.teams.map((t, i) => i).filter((i) => !teams.includes(i));
+    return pool.length ? pool[randomInt(pool.length)] : this.pickCpuTeam(teams[0] ?? 0);
+  }
+
+  /**
+   * 불꽃 팀을 쓸 수 있는 방인가(D34·D53): 일반 컴퓨터 대전 방, 또는 방장이 규칙 「불꽃 팀」(rules.flameTeams)을 켠 사람끼리 방. 체력제 규칙만. 아니면 토스트용 코드로 거절한다.
+   * 스토리·튜토리얼·리그·불꽃의 계승 도전 방은 종전대로 NOT_IN_CAMPAIGN_ROOM, 랭크·허용하지 않은 사람끼리 방은 FLAME_TEAM_ROOM, こうしき 규칙은 FLAME_TEAM_RULES
+   */
+  flameTeamGate(room) {
+    if (room.campaign || room.training || room.league || room.flame) fail('NOT_IN_CAMPAIGN_ROOM');
+    if (room.ranked || !(room.vsCpu || this.flameTeamsOn(room))) fail('FLAME_TEAM_ROOM');
+    if (room.rules.mode !== VERSUS_RULE_MODE) fail('FLAME_TEAM_RULES');
+  }
+
+  /** 데이터 스위치(run_config.json versusTeam.humans, D53): 사람끼리 방에서 규칙 「불꽃 팀」을 켤 수 있는가. 꺼져 있으면 1차 동작(규칙 키를 받지 않고 버린다) */
+  flameHumansOn() { return !!(this.flameCat && versusTeamCfg(this.flameCat)?.humans); }
+  /** 이 방(사람끼리 일반 방)에서 「불꽃 팀」 규칙이 지금 켜져 있는가 */
+  flameTeamsOn(room) { return room.rules.flameTeams === true && !room.vsCpu && !room.ranked && !room.campaign && this.flameHumansOn(); }
 
   makeRoom(code, vsCpu = false, cpuLevel = 2, campaign = null, rules = this.defaultRules()) {
     const room = {
@@ -511,6 +534,14 @@ export class Lobby {
           if (this.rooms.has(code)) fail('ROOM_CODE_TAKEN');
         } else code = this.newCode();
         let rules = m.rules === undefined ? this.defaultRules() : this.parseRules(m.rules, this.defaultRules());
+        // 규칙 「불꽃 팀」(D53): 사람끼리 일반 방에서만 받는다. 랭크 방은 켤 수 없고, 공식 규칙과는 함께 켤 수 없다. 데이터 스위치가 꺼져 있거나 컴퓨터 대전 방이면 키를 버린다(1차와 같다)
+        const ft = m.rules?.flameTeams;
+        if (ft !== undefined && typeof ft !== 'boolean') fail('RULES_INVALID');
+        if (ft === true && ranked) fail('RANKED_RULES_FIXED');
+        if (ft === true && !vsCpu && this.flameHumansOn()) {
+          if (rules.mode !== VERSUS_RULE_MODE) fail('FLAME_TEAM_RULES');
+          rules = { ...rules, flameTeams: true };
+        }
         if (ranked) {
           if (m.rules !== undefined && (rules.mode !== RANK.rules.mode || rules.time !== RANK.rules.time)) fail('RANKED_RULES_FIXED');
           rules = { ...RANK.rules };
@@ -548,10 +579,25 @@ export class Lobby {
         const room = this.roomOf(s) ?? fail('NOT_IN_ROOM');
         if (room.game) fail('IN_GAME');
         if (room.campaign || room.training || room.league || room.flame) fail('NOT_IN_CAMPAIGN_ROOM');
+        const mem = room.seats[room.seatOf(s)];
+        // 불꽃 팀 슬롯(PROTOCOL §13.20): team = 'flame:recent' | 'flame:best'. 컴퓨터 대전 방의 방장만. 좌석 팀 번호는 주장 칸의 몸 출처 팀으로 두고(표시 fallback), 능력치는 경기 시작 때 서버가 다시 조립한다
+        if (typeof m.team === 'string') {
+          const slot = flameTeamSlot(m.team) ?? fail('TEAM_INVALID');
+          this.flameTeamGate(room);
+          this.flameRate(s); // 영구 저장을 읽는 요청이라 flame_* 와 같은 빈도 창에 넣는다
+          const seat = room.seatOf(s), v = versusTeamOf(this, s, slot, fail, seat);
+          const changed = mem.flameTeam?.slot !== slot || mem.flameTeam?.summary?.at !== v.summary.at;
+          mem.flameTeam = { slot, summary: v.summary }; mem.team = v.flame.roster[0].from.team; mem.ready = false;
+          if (room.vsCpu && v.bodyTeams.includes(room.cpuTeam)) room.cpuTeam = this.pickCpuTeamExcept(v.bodyTeams);
+          if (!room.vsCpu && changed && seat === 0 && room.seats[1]) room.seats[1].ready = false; // 사람끼리 방(D53 (6)): 방장이 불꽃 팀 선택을 바꾸면 상대 준비 해제(상대가 바꾸면 그 사람 준비는 위에서 풀린다)
+          this.broadcastRoom(room);
+          return;
+        }
         if (!isInt(m.team, 0, this.o.data.teams.length - 1)) fail('TEAM_INVALID');
         if (room.ranked && m.team > RANK.maxTeam) fail('TEAM_INVALID'); // 랭크: SPECIAL(15~21)까지, 22~24 금지
-        const mem = room.seats[room.seatOf(s)];
         if (mem.team !== m.team) { mem.team = m.team; mem.ready = false; }
+        if (mem.flameTeam && !room.vsCpu) { mem.ready = false; if (room.seatOf(s) === 0 && room.seats[1]) room.seats[1].ready = false; } // 사람끼리 방(D53 (6)): 불꽃 팀에서 원작 팀으로 바꿔도 선택이 바뀐 것이다
+        delete mem.flameTeam; // 원작 팀을 고르면 불꽃 팀 선택은 풀린다
         if (room.vsCpu && !room.campaign && room.cpuTeam === mem.team) room.cpuTeam = this.pickCpuTeam(mem.team);
         this.broadcastRoom(room);
       },
@@ -563,10 +609,19 @@ export class Lobby {
         if (room.league || room.flame) fail('NOT_IN_CAMPAIGN_ROOM'); // 리그 규칙은 league_config 로만, flame 경기 규칙은 서버 데이터(run_config.json)
         if (room.ranked) fail('RANKED_RULES_FIXED');
         const r = this.parseRules(m.rules, room.rules, !!room.campaign);
-        if (r.mode !== room.rules.mode || r.time !== room.rules.time) {
+        // 규칙 「불꽃 팀」(D53): 요청에 없으면 지금 값. 사람끼리 일반 방 + 데이터 스위치가 켜져 있을 때만 켜진다(그 밖은 키를 버린다 = 1차와 같다)
+        const ftReq = m.rules.flameTeams;
+        if (ftReq !== undefined && typeof ftReq !== 'boolean') fail('RULES_INVALID');
+        const wasFt = room.rules.flameTeams === true, ft = (ftReq ?? wasFt) && !room.vsCpu && !room.campaign && this.flameHumansOn();
+        if (r.mode !== VERSUS_RULE_MODE && (ft || (room.vsCpu && room.seats.some((mm) => mm?.flameTeam)))) fail('FLAME_TEAM_RULES'); // 불꽃 팀을 고른 컴퓨터 대전 방·불꽃 팀 허용 방은 체력제만(D34·D53). 먼저 원작 팀으로 바꾸거나 허용을 끈다
+        if (ft) r.flameTeams = true;
+        if (r.mode !== room.rules.mode || r.time !== room.rules.time || ft !== wasFt) {
           room.rules = r;
           if (room.seats[1]) room.seats[1].ready = false;
+          this.markListDirty(); // 로비 방 목록 행의 규칙 요약(모드·시간·불꽃 팀)도 갱신
         }
+        // 허용을 끄면(D53): 불꽃 팀을 고른 사람의 선택을 풀고(좌석 팀 번호는 주장 칸 몸 출처 팀 그대로) 준비를 해제한 뒤 그 사람에게 토스트 1회
+        if (wasFt && !ft) for (const mm of room.seats) if (mm?.flameTeam) { delete mm.flameTeam; mm.ready = false; this.toast(mm.s, 'FLAME_TEAM_CLEARED'); }
         this.broadcastRoom(room);
       },
       transfer_host(s) {
@@ -708,7 +763,20 @@ export class Lobby {
     if (ch) seats[0].team = ch.teamMine;
     // 일반 컴퓨터 대전만: 내 팀과 같은 상대는 다른 팀으로 바꾼다. flame 방은 바꾸지 않는다 - 상대는 지도 노드가 정한 팀이고(결과 기록 done[].opp 와 같아야 한다),
     // 좌석 0 팀은 주장 칸 선수의 몸 출처(roster[0].from.team)일 뿐이라 클론을 주장에 두면 상대 팀과 같을 수 있다(엔진은 같은 팀끼리도 받는다)
-    if (room.vsCpu && !ch && !room.flame && seats[0] && room.cpuTeam === seats[0].team) room.cpuTeam = this.pickCpuTeam(seats[0].team);
+    // 키운 팀 대전(PROTOCOL §13.20): 좌석 0 이 불꽃 팀 슬롯을 골랐으면 지금 저장값으로 엔진 flame 옵션을 다시 조립한다(거절이면 경기를 만들지 않고 오류로 돌려보낸다). 도전 방(room.flame)이 아니라 일반 컴퓨터 대전 방이다
+    // 빈도(리뷰 L3): start 는 영구 저장을 한 번 읽지만 flame 빈도 창에 넣지 않았다 — 연결당 일반 메시지 제한(초당 240)이 걸리고, 성공하면 경기 중(IN_GAME)이라 반복되지 않는다
+    // 사람끼리 방의 불꽃 팀(D53): 좌석마다 그 사람의 지금 저장값으로 엔진 flame 옵션을 다시 조립한다(클라이언트가 보낸 것은 슬롯 이름뿐). 경기 옵션은 여기서 RoomGame 에 고정된다(재접속은 같은 값을 다시 보낸다).
+    // 고를 때 본 슬롯 요약(at)과 지금 저장이 다르면(다른 접속에서 도전을 끝내 슬롯이 바뀜) 시작을 거절하고 새 요약을 방송한다(상대가 바뀐 팀을 보고 다시 준비하게 상대 준비도 푼다)
+    const pvp = !room.vsCpu && room.seats.some((m) => m?.flameTeam);
+    const fvs = pvp ? (this.flameTeamGate(room), room.seats.map((m, i) => (m?.flameTeam ? versusTeamOf(this, m.s, m.flameTeam.slot, fail, i) : null))) : null;
+    if (fvs) {
+      const moved = fvs.some((v, i) => v && v.summary.at !== room.seats[i].flameTeam.summary?.at);
+      for (const [i, v] of fvs.entries()) if (v) { const m = room.seats[i]; m.flameTeam.summary = v.summary; seats[i].team = m.team = v.flame.roster[0].from.team; }
+      if (moved) { if (room.seats[1]) room.seats[1].ready = false; this.broadcastRoom(room); fail('FLAME_TEAM_CHANGED'); }
+    }
+    const mem0 = room.seats[0], fv = !pvp && mem0?.flameTeam ? (this.flameTeamGate(room), versusTeamOf(this, mem0.s, mem0.flameTeam.slot, fail)) : null;
+    if (fv) { mem0.flameTeam.summary = fv.summary; seats[0].team = mem0.team = fv.flame.roster[0].from.team; if (fv.bodyTeams.includes(room.cpuTeam)) room.cpuTeam = this.pickCpuTeamExcept(fv.bodyTeams); } // 상대 = 내 로스터의 몸 출처 팀이 아닌 팀(D36)
+    if (room.vsCpu && !ch && !room.flame && !fv && seats[0] && room.cpuTeam === seats[0].team) room.cpuTeam = this.pickCpuTeam(seats[0].team);
     if (room.vsCpu) seats[1] = { nick: CPU_NICK, team: room.cpuTeam, cpu: true, level: room.cpuLevel, ...(ch ? { special256: ch.specialChance256 } : {}) };
     for (const m of room.seats) if (m) m.ready = false;
     if (room.ranked) room.rankPlayers = room.seats.map((m) => ({ key: m.s.key, nick: m.s.nick })); // 시작 시점 두 사람(종료 때 좌석이 비어도)
@@ -721,6 +789,10 @@ export class Lobby {
       ...(room.ranked ? { onRanked: (r) => this.rankedResult(room, r) } : {}),
       ...(room.flame?.practice ? { noRecord: true } : {}), // 연습 경기(PROTOCOL §13.15): 결과 레코드를 남기지 않는다
       ...(room.flame ? { flame: room.flame.opts, flameCast: room.flame.cast ?? null } : {}), // 엔진 flame 옵션(저장된 도전 상태에서 서버가 조립한 값, PROTOCOL §12.1·§13) + 표시용 정의(game_start.flameCast, 엔진에는 넘기지 않는다)
+      // 키운 팀 대전(§13.20): 같은 엔진 옵션 경로지만 도전 경기가 아니다 -> game_start 에는 flame 대신 flameVs 가 실리고(roomGame.js), 결과 레코드를 남기지 않으며, 끝나면 일반 방처럼 대기실로 돌아간다(flameEnd 를 타지 않는다)
+      ...(fv ? { flame: fv.flame, flameCast: { ...fv.cast, versus: true, slot: fv.slot }, flameVersus: fv.slot, noRecord: true } : {}),
+      // 사람끼리 방(D53): 엔진 flame 옵션을 좌석별 배열로(고른 좌석만), 표시용 cast 도 좌석별. 결과 레코드는 남기고(불꽃 팀 표시 칸 players[i].flameTeam) 영구 저장·도전·순위에는 아무것도 쓰지 않는다
+      ...(fvs ? { flame: fvs.filter(Boolean).map((v) => v.flame), flameCast: { versus: true, seats: fvs.map((v) => (v ? { ...v.cast, slot: v.slot } : null)) }, flamePvp: fvs.map((v) => (v ? { slot: v.slot, at: v.summary.at } : null)) } : {}),
     });
     room.game.begin();
     this.broadcastRoom(room);

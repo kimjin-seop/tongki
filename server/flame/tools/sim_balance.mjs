@@ -5,6 +5,10 @@
 //   node server/flame/tools/sim_balance.mjs cond --builds=base,rare4 --opps=seg1n,seg1s --n=30 [--bot=2] [--seat=0] [--data=<데이터 폴더>] [--json=<경로>]
 //   node server/flame/tools/sim_balance.mjs run  --n=30 [--bot=2] [--perm=none|mid|full] [--diff=0] [--recruit=off|safe|always|visit] [--recruit-hp=60] [--recruit-margin=3] [--data=<폴더>] [--json=<경로>] [--seed0=1]
 //   node server/flame/tools/sim_balance.mjs list            (빌드·상대 묶음 이름과 빌드별 최종 능력치)
+// --policy=tool|player [정책·자작, analysis/40 §20.1·§20.9 박백엔 1]: 봇의 등급 아이템(필살슛·포메이션) 정책. tool(기본) = 종전 봇 그대로(출력·JSON 이 종전과 같다).
+//   player = analysis/data/40_flame_grade/sim_grade.mjs 의 정책을 옮긴 것: 낄 것 = 실효 위력(표값 + 등급 가산)이 가장 큰 필살슛 1 + 포메이션 1 + 팀 강화 1(포메이션 C·B 는 맞는 태그 아티팩트가 없으면 팀 강화보다 뒤),
+//   받는 것·상점에서 사는 것 = 「지금 것보다 나아지는」 칸만. 모든 선수의 주 슬롯 = 그 슛. 낀 포메이션 아이템의 패턴으로 run.fm 을 맞춘다(등급제가 꺼져 있으면 tool 과 같다).
+// --perm=full 은 영구 성장 A·B 를 데이터의 maxLevel 로 채운다(39 D50 표가 바뀌어도 따라간다). C 는 PC01 2 · PC02 1 · PC03 2 · PC04 1(종전과 같다).
 // 엔드리스(무한 구간, 39 D24)가 켜져 있으면 run 은 구간 3 뒤에도 이어 돌고(우승 = 종료 요약 championed), 구간별 도달·통과·종료 분포 표가 붙는다(analysis/40 §15):
 //   [--max-seg=12] [--max-nodes=N] [--endless-bot=late|all|off] [--xopp=P --xopp-from=4 --xopp-stats=hp,def,pow,s5 (실험용 상대 가산, 서버·엔진 미구현)]
 //   종전 측정(12경기 종료)은 환경 변수 FLAME_ENDLESS=0 을 붙이면 출력·JSON 이 그대로 나온다(2026-11-19 5조건 × 40판 대조: 0/4/10/0/5, JSON 바이트 동일).
@@ -20,8 +24,8 @@
 import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { Match, loadData } from '../../engine/index.js';
-import { loadCatalog, startLineup, ENGINE_STAT, STAT_KEYS, cloneOf, originalOf, isLockedPlayer, recruitView } from '../catalog.js';
-import { computeTeam, toEngine, allowOf, roleOf } from '../stats.js';
+import { loadCatalog, startLineup, ENGINE_STAT, STAT_KEYS, cloneOf, originalOf, isLockedPlayer, recruitView, teamArtifactsOn } from '../catalog.js';
+import { computeTeam, toEngine, allowOf, roleOf, initialSpecials, specialsOf } from '../stats.js';
 import { baseSpecial } from '../items.js';
 import * as Items from '../items.js';
 import * as Nodes from '../nodes.js';
@@ -44,6 +48,8 @@ const XBOSS = +flag('xboss-heal', 0), TRAIN = flag('train', 'T05,T02').split(','
 //   spread = 고르게: 같은 순서로 돌되 지금 내야(라인업 0~3)에서 그 능력치 누적이 가장 적은 선수에게 찍는다.
 // --train-pri=default|pref|first [정책·자작]: 특훈장을 고르는 순위. default = 종전(휴식 > 상점 > 특훈). pref = 휴식 > 특훈 > 상점. first = 특훈이 맨 앞(포인트가 회당 비용 이상일 때) = "특훈장에 가는 사람" 대용.
 const TRAIN_MODE = flag('train-mode', 'captain'), TRAIN_PRI = flag('train-pri', 'default');
+const POLICY = flag('policy', 'tool');
+if (!['tool', 'player'].includes(POLICY)) throw new Error('--policy 는 tool|player');
 if (!['captain', 'focus', 'spread'].includes(TRAIN_MODE) || !['default', 'pref', 'first'].includes(TRAIN_PRI)) throw new Error('--train-mode 는 captain|focus|spread, --train-pri 는 default|pref|first');
 const TRAIN_ON = TRAIN_MODE !== 'captain' || TRAIN_PRI !== 'default';
 const RECRUIT = flag('recruit', 'off');
@@ -52,7 +58,10 @@ if (!['off', 'safe', 'always', 'visit'].includes(RECRUIT)) throw new Error('--re
 // 기본값이 곧 주 지표(safe)의 정의다. 종전 초안(42 §7.2)은 80 / 3 이었다: --recruit-hp=80 으로 다시 잴 수 있다.
 const RECRUIT_HP_DEFAULT = 60, RECRUIT_MARGIN_DEFAULT = 3;
 const RECRUIT_HP = +flag('recruit-hp', RECRUIT_HP_DEFAULT), RECRUIT_MARGIN = +flag('recruit-margin', RECRUIT_MARGIN_DEFAULT);
-const data = loadData(), cat = loadCatalog(DATA ? { dir: path.resolve(DATA) } : {});
+// --artifact=off|team: 팀 공용 아티팩트 스위치(decisions.json artifact.model, D58)를 바꿔 잰다(데이터 파일은 그대로). 생략 = 파일 값(기본 off)
+const ART = flag('artifact', null);
+if (ART !== null && !['off', 'team'].includes(ART)) throw new Error('--artifact 는 off|team');
+const data = loadData(), cat = loadCatalog({ ...(DATA ? { dir: path.resolve(DATA) } : {}), ...(ART ? { patch: (raw) => { raw.decisions.artifact = { ...(raw.decisions.artifact ?? {}), model: ART }; } } : {}) });
 // ---------- 엔드리스(무한 구간, analysis/39 D24) 측정 옵션. 엔드리스가 꺼져 있으면(FLAME_ENDLESS=0 · endless.json enabled:false · 파일 없음) 아래 옵션은 전부 쓰이지 않고 출력·JSON 이 종전과 같다(analysis/40 §15.1 대조) ----------
 // --max-seg=N(기본 12): 구간 N 의 보스를 이기면 그 도전을 "상한 도달"로 세고 멈춘다(끝이 없는 도전을 끊는 측정 상한. 서버 규칙이 아니다). --max-nodes = 판당 노드 안전 상한(기본 max-seg × 25 + 80).
 // --endless-bot=late|all|off [정책·자작]: 봇의 포인트 사용 규칙(남는 장비 판매 + 낀 장비 강화). late(기본) = 구간 4 부터만 -> 1~12번째 경기는 엔드리스를 끈 측정과 판별로 같다. all = 처음부터. off = 종전 봇 그대로(팔지도 강화하지도 않는다 -> 장비 상한에 닿는 시점을 재는 용도).
@@ -142,15 +151,22 @@ function ctxOf(b) {
     (b.eq?.[i] ?? []).forEach((id, k) => { if (id) { items.push({ inst, id, lv: b.lv ?? 0 }); equip[SLOT[k]] = inst++; } });
     return { from, ...(orig ? { orig } : {}), train: { ...(b.train ?? {}), ...(i === 0 ? b.train0 ?? {} : {}) }, equip, recruited: false };
   });
-  return { roster, items, artifacts: b.arts ?? [], fm: b.fm ?? cat.cfg.formation.default, perm: b.perm ?? {}, buffs: [] };
+  // off(D58): 빌드의 arts 중 필살슛 아이템은 라인업 앞 선수부터 한 명에 하나씩 끼고(roster[i].spItem), 첫 포메이션 아이템이 팀 칸(fmItem)이다
+  const arts = b.arts ?? [], fmItem = teamArtifactsOn(cat) ? null : arts.find((a) => cat.artifacts.get(a)?.grant?.formation !== undefined) ?? null;
+  if (!teamArtifactsOn(cat)) { let k = 0; for (const a of arts) if (cat.artifacts.get(a)?.grant?.shot !== undefined && roster[k]) roster[k++].spItem = a; }
+  return { roster, items, artifacts: arts, fmItem, fm: b.fm ?? cat.cfg.formation.default, perm: b.perm ?? {}, buffs: [] };
 }
 function flameOf(b, seat = 0) {
-  const ctx = ctxOf(b), team = computeTeam(cat, data, ctx);
+  // 필살기 슬롯은 서버와 같은 경로로 만든다(정검수 M2): 새로 드는 선수의 시작값(initialSpecials: 불씨·클론 = 낀 아이템의 대표 슛 | 없음, 원작 선수 = 고유 슛) -> 선수별 발동 가능 집합으로 정리(specialsOf).
+  // 빌드가 슛을 지정하면(b.sp) 그 값을 넣되 같은 정리를 거친다(부여되지 않은 슛은 비워진다). 종전에는 원작 필살기를 그대로 넣어 부여 구조(D38)·등급제(D39~)와 어긋났다
+  const ctx = ctxOf(b);
+  for (const r of ctx.roster) r.sp = b.sp !== undefined && b.sp !== null ? [b.sp, null] : initialSpecials(cat, data, r, ctx.artifacts);
+  const team = computeTeam(cat, data, ctx), sps = specialsOf(cat, data, ctx.roster, ctx.artifacts);
   const roster = ctx.roster.map((r, i) => {
-    const e = toEngine(team.players[i]), own = baseSpecial(cat, data, r.from);
-    return { from: { ...r.from }, stat: e.stat, ext: e.ext, sp: [b.sp ?? own, null], fx: e.fx };
+    const e = toEngine(team.players[i]);
+    return { from: { ...r.from }, stat: e.stat, ext: e.ext, sp: sps[i], fx: e.fx };
   });
-  return { team, opts: { seat, roster, allow: team.allow, families: cat.families, fm: ctx.fm, caps: { ...cat.engineCaps } } };
+  return { team, opts: { seat, roster, allow: team.allow, families: cat.families, fm: team.fm, caps: { ...cat.engineCaps } } }; // team.fm = 실제로 쓰이는 패턴(등급제: 포메이션 아이템이 없으면 기본 포메이션)
 }
 
 // ---------- 상대 묶음 ----------
@@ -244,16 +260,73 @@ function runCond() {
 const PERMS = {
   none: {},
   mid: { PA01: 2, PA02: 1, PA03: 1, PA04: 1, PB01: 2, PB02: 1, PB03: 1, PB05: 1, PB07: 1 },
-  full: { PA01: 3, PA02: 2, PA03: 2, PA04: 2, PB01: 3, PB02: 2, PB03: 2, PB04: 3, PB05: 3, PB06: 2, PB07: 2, PC01: 2, PC02: 1, PC03: 2, PC04: 1 },
+  // 풀강화: A·B 는 데이터의 maxLevel(39 D50 표: PA01 4 · PA02~04 1 · PB01 6 · PB06 4 …), C 는 종전과 같은 4항목
+  full: { ...Object.fromEntries([...cat.perm.values()].filter((u) => u.group !== 'C').map((u) => [u.id, u.maxLevel])), PC01: 2, PC02: 1, PC03: 2, PC04: 1 },
 };
 const soft = (fn) => { try { fn(); return true; } catch (e) { if (e instanceof FlameError) return false; throw e; } };
 // 아티팩트 선호 순서 [정책, 자작]: 필살기 해금 -> 위력 -> 팀 능력치
 const ART_PREF = ['A01', 'A05', 'A04', 'A06', 'A03', 'A02', 'A07', 'A13', 'A19', 'A08', 'A22', 'A20', 'A27', 'A23', 'A26', 'A25', 'A30', 'A18', 'A11', 'A21', 'A24', 'A29', 'A28', 'A09', 'A14', 'A17', 'A16', 'A10', 'A12', 'A15'];
-const artRank = (id) => { const i = ART_PREF.indexOf(id); return i < 0 ? 99 : i; };
+// 등급 아이템(D39) [정책, 자작 — 임밸런이 조정]: 필살슛 아이템 > 포메이션 아이템 > 손으로 쓴 아티팩트, 같은 종류 안에서는 높은 등급 먼저
+const artRank = (id) => { const d = cat.artifacts.get(id); if (d?.grant) return (d.kind === 'shot' ? -20 : -10) - cat.grade.grades.indexOf(d.grade); const i = ART_PREF.indexOf(id); return i < 0 ? 99 : i; };
 const itemScore = (id) => { const d = cat.items.get(id); return cat.rarityRank[d.rarity] * 10 + (d.stats.s4 ?? 0) * 2 + (d.stats.s1 ?? 0) * 2 + (d.stats.s0 ?? 0) / 4 + d.effects.length * 2; };
 
-/** 아티팩트 3칸을 선호 순서로 채우고, 해금된 필살기 중 위력이 가장 큰 것을 필살기가 잠긴 선수의 주 슬롯에 넣는다(D3) */
+// ---------- 등급 아이템 정책 player [정책·자작, analysis/40 §20.1 — sim_grade.mjs 에서 옮김]. --policy=tool(기본)이면 아래는 쓰이지 않는다 ----------
+const PLAYER_ON = () => POLICY === 'player' && cat.grade?.on;
+const GI = (g) => cat.grade.grades.indexOf(g), PW = data.specials.power, FMV = [5, 20, 45, 70];
+const effOfItem = (id) => { const d = cat.artifacts.get(id); return d?.grant?.shot !== undefined ? PW[d.grant.shot] + cat.grade.spPow[d.grade] : -1; };
+const bestShotItem = (owned) => owned.filter((a) => effOfItem(a) >= 0).sort((a, b) => effOfItem(b) - effOfItem(a))[0] ?? null;
+const tagArts = (owned, tag) => owned.some((a) => { const d = cat.artifacts.get(a); return !d.grant && d.formationTag === tag; });
+/** 칸의 값(클수록 좋다. 0 이하 = 필요 없음). equip = 낄 때의 순위(받을 때는 「지금 것보다 나아지는가」) */
+function artScore(run, id, equip = false) {
+  const d = cat.artifacts.get(id), owned = run.artifactsOwned;
+  if (d?.grant?.shot !== undefined) { const b = bestShotItem(owned.filter((a) => a !== id)); const gain = effOfItem(id) - (b ? effOfItem(b) : 0); return gain > 0 ? 100 + gain : -1; }
+  if (d?.grant?.formation !== undefined) {
+    const tagBonus = tagArts(owned, cat.tagOfFm.get(d.grant.formation)) ? 30 : 0;
+    if (equip) return FMV[GI(d.grade)] + tagBonus;
+    const best = Math.max(-1, ...owned.map((a) => { const o = cat.artifacts.get(a); return o?.grant?.formation !== undefined ? GI(o.grade) : -1; }));
+    return GI(d.grade) > best ? FMV[GI(d.grade)] + tagBonus : -1;
+  }
+  const i = ART_PREF.indexOf(id); return i < 0 ? 1 : 60 - i;
+}
+const ownOf = (r) => specialsOf(cat, data, [{ ...r, sp: [null, null] }], [])[0][0]; // 원작 선수의 고유 슛(불씨·클론은 null)
+function arrangePlayer(run) {
+  const owned = run.artifactsOwned.slice(), n = cat.rules.team.artifactSlots, shot = bestShotItem(owned);
+  const fms = owned.filter((a) => cat.artifacts.get(a)?.grant?.formation !== undefined).sort((a, b) => artScore(run, b, true) - artScore(run, a, true));
+  const rest = [...(fms[0] ? [fms[0]] : []), ...owned.filter((a) => !cat.artifacts.get(a)?.grant)].sort((a, b) => artScore(run, b, true) - artScore(run, a, true));
+  const eq = [...(shot ? [shot] : []), ...rest].slice(0, n);
+  run.artifacts = [...eq, null, null, null].slice(0, n);
+  const fmItem = eq.find((a) => cat.artifacts.get(a)?.grant?.formation !== undefined);
+  run.fm = fmItem ? cat.artifacts.get(fmItem).grant.formation : cat.cfg.formation.default;
+  const allow = allowOf(cat, eq), add = (id) => { const it = eq.find((a) => cat.artifacts.get(a)?.grant?.shot === id); return it ? cat.grade.spPow[cat.artifacts.get(it).grade] : 0; };
+  const best = allow.slice().sort((a, b) => PW[b] + add(b) - PW[a] - add(a))[0];
+  for (const r of run.roster) {
+    const own = ownOf(r), cur = r.sp[0], curOk = cur !== null && (allow.includes(cur) || cur === own), curEff = curOk ? PW[cur] + add(cur) : -1;
+    if (best !== undefined && PW[best] + add(best) > curEff) r.sp = [best, null];
+    else if (!curOk) r.sp = [own, null];
+  }
+  Items.autoEquip(cat, run);
+}
+/**
+ * off(D58) 봇 배치 [정책·자작 — 임밸런이 조정]: 포메이션 아이템 = 가장 높은 등급(같으면 먼저 얻은 것) 1칸.
+ * 필살슛 아이템 = 위력(표값 + 등급 가산)이 큰 것부터, 아직 아이템이 없는 선수 중 지금 주 슬롯 위력이 가장 낮은 선수(같으면 라인업 앞)에게 하나씩 — 그 선수의 고유 슛보다 셀 때만
+ */
+function arrangeOff(run) {
+  const pw = data.specials.power, G = (a) => cat.grade.grades.indexOf(cat.artifacts.get(a).grade);
+  const fms = run.artifactsOwned.filter((a) => cat.artifacts.get(a)?.grant?.formation !== undefined).sort((a, b) => G(b) - G(a));
+  Items.setFmItem(cat, run, fms[0] ?? null);
+  for (let i = 0; i < run.roster.length; i++) Items.setSpItem(cat, data, run, i, null);
+  const eff = (a) => pw[cat.artifacts.get(a).grant.shot] + cat.grade.spPow[cat.artifacts.get(a).grade];
+  const shots = run.artifactsOwned.filter((a) => cat.artifacts.get(a)?.grant?.shot !== undefined).sort((a, b) => eff(b) - eff(a));
+  for (const a of shots) {
+    const k = run.roster.map((r, i) => [r.sp[0] === null ? -1 : pw[r.sp[0]], i]).filter(([, i]) => !run.roster[i].spItem).sort((x, y) => x[0] - y[0] || x[1] - y[1])[0];
+    if (k && eff(a) > k[0]) Items.setSpItem(cat, data, run, k[1], a);
+  }
+  Items.autoEquip(cat, run);
+}
+/** 아티팩트 3칸을 선호 순서로 채우고, 해금된 필살기 중 위력이 가장 큰 것을 필살기가 잠긴 선수의 주 슬롯에 넣는다(D3). off(D58)는 arrangeOff */
 function arrange(run) {
+  if (!teamArtifactsOn(cat)) return arrangeOff(run);
+  if (PLAYER_ON()) return arrangePlayer(run);
   const owned = run.artifactsOwned.slice().sort((a, b) => artRank(a) - artRank(b)).slice(0, cat.rules.team.artifactSlots);
   run.artifacts = [...owned, null, null, null].slice(0, cat.rules.team.artifactSlots);
   const allow = allowOf(cat, owned), pw = data.specials.power;
@@ -291,7 +364,12 @@ function resolve(run, profile) {
   while (run.pending.length) {
     const p = run.pending[0], maxHp = Run.viewOf(cat, data, run, profile).team.players.map((x) => x.final.s0);
     if (p.kind === 'equipment') { const i = p.choices.map((id, k) => [itemScore(id), k]).sort((a, b) => b[0] - a[0])[0]?.[1] ?? -1; const note = Run.choose(cat, data, run, profile, i); if (EST && note?.full) { EST.fullSold++; EST.fullPts += note.sold; } }
-    else if (p.kind === 'artifact') { const i = p.choices.map((id, k) => [artRank(id), k]).sort((a, b) => a[0] - b[0])[0]?.[1] ?? -1; Run.choose(cat, data, run, profile, i); }
+    else if (p.kind === 'artifact') {
+      let i;
+      if (PLAYER_ON()) { const sc = p.choices.map((id, k) => [artScore(run, id), k]).sort((a, b) => b[0] - a[0])[0]; i = sc && sc[0] > 0 ? sc[1] : -1; }
+      else i = p.choices.map((id, k) => [artRank(id), k]).sort((a, b) => a[0] - b[0])[0]?.[1] ?? -1;
+      Run.choose(cat, data, run, profile, i);
+    }
     else if (p.kind === 'recruit') {
       const pick = RECRUIT === 'off' || RECRUIT === 'visit' ? null : recruitPick(run, profile, p); // visit = 진단용: 영입실에는 always 처럼 가되 영입하지 않는다(휴식·이벤트를 포기한 값만 잰다)
       if (REC) { REC.visits++; if (p.choices.some((c) => c.rare)) REC.sawRare = true; if (pick) REC.recs.push({ seg: run.seg, grade: pick.grade, id: pick.id, role: pick.role, out: pick.out, score: pick.score, tgt: pick.tgt }); }
@@ -380,6 +458,7 @@ function visit(run, profile) {
     for (const { g, i } of order) {
       if (g.kind === 'consumable' && !(cat.consumables.get(g.id).kind === 'heal' && hurt)) continue;
       if (g.kind === 'equipment' && cat.rarityRank[cat.items.get(g.id).rarity] < 1) continue;
+      if (g.kind === 'artifact' && PLAYER_ON() && artScore(run, g.id) < 20) continue; // player: 지금 것보다 나아지지 않는 칸은 사지 않는다
       soft(() => Nodes.buy(cat, run, i));
     }
     arrange(run);
@@ -470,7 +549,7 @@ function segTable(runs) {
 function runRuns() {
   const permName = flag('perm', 'none'), perm = PERMS[permName] ?? JSON.parse(permName), diff = +flag('diff', 0), seed0 = +flag('seed0', 1), runs = [];
   if (diff > 0 && !unlockedOf(cat, perm).difficulty.includes(diff)) perm.PC06 = 1;
-  console.log(`run n=${N} bot=${BOT} perm=${permName} diff=${diff} data=${DATA ?? 'server/flame/data'} ver=${cat.ver}${XHEAL ? ` xheal=${XHEAL}%(실험용, 서버 미구현)` : ''}${XBOSS ? ` xboss-heal=+${XBOSS}%(실험용, 서버 미구현)` : ''}${TRAIN.join() === 'T05,T02' ? '' : ` train=${TRAIN.join()}`}${TRAIN_ON ? ` train-mode=${TRAIN_MODE} train-pri=${TRAIN_PRI}` : ''}${RECRUIT === 'off' ? '' : ` recruit=${RECRUIT}${RECRUIT === 'safe' ? ` hp>=${RECRUIT_HP}%` : ''}${RECRUIT === 'visit' ? '' : ` margin=${RECRUIT_MARGIN}`}`}`);
+  console.log(`run n=${N} bot=${BOT} perm=${permName} diff=${diff} data=${DATA ?? 'server/flame/data'} ver=${cat.ver}${XHEAL ? ` xheal=${XHEAL}%(실험용, 서버 미구현)` : ''}${XBOSS ? ` xboss-heal=+${XBOSS}%(실험용, 서버 미구현)` : ''}${TRAIN.join() === 'T05,T02' ? '' : ` train=${TRAIN.join()}`}${TRAIN_ON ? ` train-mode=${TRAIN_MODE} train-pri=${TRAIN_PRI}` : ''}${POLICY === 'tool' ? '' : ` policy=${POLICY}`}${RECRUIT === 'off' ? '' : ` recruit=${RECRUIT}${RECRUIT === 'safe' ? ` hp>=${RECRUIT_HP}%` : ''}${RECRUIT === 'visit' ? '' : ` margin=${RECRUIT_MARGIN}`}`}`);
   for (let i = 0; i < N; i++) runs.push(playRun(seed0 * 1000 + i * 17 + 5, perm, diff));
   const E = !!cat.endless, clears = runs.filter((r) => r.championed).length, [lo, hi] = wilson(clears, N); // 우승 = 구간 3 보스 격파(엔드리스에서는 도전이 이어진다, 39 D24)
   if (E) console.log(`엔드리스: 측정 상한 구간 ${MAXSEG} | 봇 포인트 규칙 ${EBOT}${XOPP > 0 ? ` | xopp=+${XOPP}%/구간(구간 ${XOPP_FROM}부터, ${XOPP_STATS.join('·')}) (실험용, 서버·엔진 미구현)` : ''}${XOPP_BASE ? ` | xopp-base=${XOPP_BASE}%(전 구간, 숙련 조작 대용 가정, 실험용)` : ''}`);

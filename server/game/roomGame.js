@@ -47,8 +47,16 @@ export class RoomGame {
   }
 
   startPayload(seat, resumed) {
-    return { t: 'game_start', matchId: this.matchId, resumed, you: seat, ...(this.campaign ? { campaign: { k: this.campaign.k } } : {}), ...(this.league ? { league: { ...this.league } } : {}), ...this.match.info(),
-      ...(this.o.flameCast ? { flameCast: { seat: this.match.fl?.seat ?? 0, ...this.o.flameCast } } : {}), // 불꽃의 계승 표시용 정의(팀명·선수 이름·skin, PROTOCOL §12.2). 엔진을 거치지 않는다. flame 경기가 아니면 키가 없다
+    const info = this.match.info();
+    // 키운 팀 대전(PROTOCOL §13.20): 엔진이 싣는 flame{seat, fm, allow} 를 flameVs 로 옮겨 싣는다. game_start.flame 은 '불꽃의 계승 도전 경기' 표시로 쓰이므로(끝나면 방이 없어지고 도전 화면으로) 이 경기에는 그 키가 없어야 한다
+    if (this.o.flameVersus && info.flame) { info.flameVs = { ...info.flame, mode: 'versus', slot: this.o.flameVersus }; delete info.flame; }
+    // 사람끼리 방(PROTOCOL §13.25, analysis/39 D53): 좌석별 flameVs{mode, seats:[{seat, fm, allow, slot} | null, …]}. 한 좌석만 골랐어도 같은 모양이다
+    if (this.o.flamePvp && info.flame) {
+      const by = info.flame.seats ?? [0, 1].map((s) => (info.flame.seat === s ? info.flame : null));
+      info.flameVs = { mode: 'versus', seats: by.map((x, s) => (x ? { ...x, slot: this.o.flamePvp[s].slot } : null)) }; delete info.flame;
+    }
+    return { t: 'game_start', matchId: this.matchId, resumed, you: seat, ...(this.campaign ? { campaign: { k: this.campaign.k } } : {}), ...(this.league ? { league: { ...this.league } } : {}), ...info,
+      ...(this.o.flameCast ? { flameCast: this.o.flamePvp ? this.o.flameCast : { seat: this.match.fl?.seat ?? 0, ...this.o.flameCast } } : {}), // 불꽃의 계승 표시용 정의(팀명·선수 이름·skin, PROTOCOL §12.2). 엔진을 거치지 않는다. flame 경기가 아니면 키가 없다. 사람끼리 방은 {versus, seats:[cast | null, …]}
     };
   }
 
@@ -121,6 +129,12 @@ export class RoomGame {
     this.o.send(0, str); this.o.send(1, str);
   }
 
+  /** 사람끼리 방(D53): 좌석별 flame 결과 [좌석 0 | null, 좌석 1 | null](엔진은 두 좌석이면 배열, 한 좌석이면 그 좌석 객체를 돌려준다) */
+  pvpResult() {
+    const r = this.match.flameResult();
+    return Array.isArray(r) ? r : [0, 1].map((s) => (r && r.seat === s ? r : null));
+  }
+
   /** 외부 종료(기권/오류) */
   abort(winner, reason) {
     if (this.done) return;
@@ -138,9 +152,9 @@ export class RoomGame {
     const res = {
       t: 'game_end', matchId: this.matchId, winner, winnerNick: winner >= 0 ? seats[winner].nick : null,
       reason, rem, ticks: this.match.f,
-      ...(this.match.fl ? { flame: this.match.flameResult() } : {}), // flame 경기만: 라인업 순서의 최종 HP·최대 HP·치사 생존 사용(도전 상태 저장용)
+      ...(this.match.fl ? { [this.o.flameVersus || this.o.flamePvp ? 'flameVs' : 'flame']: this.o.flamePvp ? { seats: this.pvpResult() } : this.match.flameResult() } : {}), // flame 경기만: 라인업 순서의 최종 HP·최대 HP·치사 생존 사용(도전 상태 저장용). 키운 팀 대전(§13.20)은 flameVs 키로 싣는다(표시용, 어디에도 저장하지 않는다)
     };
-    if (this.training || this.o.noRecord) { this.o.onEnd(res); return; } // 특훈은 저장·보상이 없다(analysis/29 §1-7): 결과 레코드를 쓰지 않는다. noRecord = 불꽃의 계승 연습 경기(PROTOCOL §13.15)도 같다
+    if (this.training || this.o.noRecord) { this.o.onEnd(res); return; } // 특훈은 저장·보상이 없다(analysis/29 §1-7): 결과 레코드를 쓰지 않는다. noRecord = 불꽃의 계승 연습 경기(PROTOCOL §13.15)·키운 팀 대전(§13.20)도 같다
     // 랭크 방(PROTOCOL §11): 레코드를 쓰기 전에 레이팅을 반영해 ranked·ratingDelta 를 함께 남긴다. wentGo = GO 이후 종료인지(이전이면 무효)
     let rankRec = null;
     if (this.o.onRanked) {
@@ -149,7 +163,7 @@ export class RoomGame {
     try {
       this.o.store.append({
         matchId: this.matchId, roomCode: this.o.roomCode, startedAt: new Date(this.startedAt).toISOString(), endedAt: new Date(endedAt).toISOString(),
-        players: seats.map((s, i) => (s.cpu ? { seat: i, nickname: s.nick, team: s.team, cpu: true, cpuLevel: s.level } : { seat: i, nickname: s.nick, team: s.team })),
+        players: seats.map((s, i) => (s.cpu ? { seat: i, nickname: s.nick, team: s.team, cpu: true, cpuLevel: s.level } : { seat: i, nickname: s.nick, team: s.team, ...(this.o.flamePvp?.[i] ? { flameTeam: { ...this.o.flamePvp[i] } } : {}) })), // flameTeam = 사람끼리 방에서 고른 불꽃 팀 {slot, at}(D53. 서버만 쓰는 파일, 화면에 나가지 않는다)
         ...(this.cpuSeat >= 0 ? { vsCpu: true, cpuLevel: seats[this.cpuSeat].level } : {}),
         ...(this.campaign ? { campaign: { k: this.campaign.k, stage: this.match.stageInfo.id } } : {}),
         ...(this.league ? { league: { ...this.league, stage: this.match.stageInfo.id } } : {}),

@@ -4,13 +4,14 @@
 // 서버 권위: 지도는 지도 시드(run.seed), 보상·상점·영입·이벤트는 도전 비밀값(run.secret, 128비트, 저장만 하고 보내지 않는다)으로 서버가 만들고 클라이언트는 번호만 고른다. 엔진 flame 옵션(roster·allow·caps)은 저장된 도전 상태에서만 조립한다(클라이언트 입력 없음).
 import { randomBytes, randomUUID } from 'node:crypto';
 import { SAVE_VERSION, ferr, unlockedOf } from './save.js';
-import { pv, roundHalfUp, startLineup, displayCast, recruitView, originalOf, cloneOf, practiceCfg, recruitRoomHealPct, codexCast, afterWinHealPct } from './catalog.js';
-import { teamOfRun, clampHp, toEngine, upgradedStats, upgradePreview } from './stats.js';
+import { pv, roundHalfUp, startLineup, displayCast, recruitView, originalOf, cloneOf, practiceCfg, recruitRoomHealPct, codexCast, afterWinHealPct, gradeOn, teamArtifactsOn } from './catalog.js';
+import { teamOfRun, clampHp, toEngine, upgradedStats, upgradePreview, initialSpecials, specialsOf, formationOf, teamWornOf } from './stats.js';
 import { genSegment, enterSegment, candidates, findNode, isMatch } from './map.js';
 import { secretFromSeed } from './rng.js';
 import { equipChoices, artifactChoices, consumableChoices, rewardSize } from './rewards.js';
-import { addItem, addArtifact, addConsumable, canHold, baseSpecial, expireBuffs, wearerOf, upgradeCost } from './items.js';
+import { addItem, addArtifact, addConsumable, canHold, expireBuffs, wearerOf, upgradeCost, staleArtifact, pruneArtifactChoices } from './items.js';
 import { openNode, chooseRest, chooseRecruit, chooseEvent } from './nodes.js';
+import { TEAM_SLOTS, versusTeamCfg, snapshotOf, teamSummary } from './teams.js';
 
 export const NORMAL_END = ['annihilation', 'timeup', 'sudden_death'];
 export const newSeed = () => randomBytes(4).readUInt32LE(0);
@@ -33,13 +34,14 @@ export function settleHp(cat, data, run, perm) { clampHp(run, teamOfRun(cat, dat
  * 새 도전. 시작 7명 = 오리지널 팀(D17, decisions.json roster.startOriginal + original_team.json) — 그 키가 없으면 종전대로 태동(D4).
  * 오리지널 선수의 칸에는 orig(선수 id)가 붙고 도전에는 origTeam(팀 id)이 붙는다. from 은 능력치·히트박스·기본 필살기의 출처(original_team.json base)라 계산 경로는 종전과 같다.
  * 시작 보상 = 장비 선택(+ 장비 보급 PB02), 전술 연구(PB03)가 있으면 아티팩트 선택
+ * 필살기 슬롯(D38 부여 구조): 불씨 7명은 [null, null](필살기 없음)로 시작한다. 종전(legacy)·태동 시작(원작 선수)은 [원작 필살기, null]
  */
 export function newRun(cat, data, profile, o = {}) {
   const C = cat.cfg, unlocked = unlockedOf(cat, profile.perm), diff = o.diff ?? 0;
   if (!unlocked.difficulty.includes(diff)) ferr('FLAME_LOCKED');
   const now = o.now ?? Date.now(), start = startLineup(cat);
   const roster = start.players.map(({ from, orig }) => (
-    { from, ...(orig ? { orig } : {}), hp: 0, train: {}, equip: Object.fromEntries(cat.slots.map((s) => [s, null])), sp: [baseSpecial(cat, data, from), null], recruited: false }
+    { from, ...(orig ? { orig } : {}), hp: 0, train: {}, equip: Object.fromEntries(cat.slots.map((s) => [s, null])), sp: initialSpecials(cat, data, { from, orig }), recruited: false }
   ));
   const seed = (o.seed ?? newSeed()) >>> 0;
   const secret = o.secret ?? (o.seed === undefined ? newSecret() : secretFromSeed(seed)); // 시드를 지정한 도전(시험·시뮬)은 보상도 재현되게 시드에서 파생. 실제 도전은 무작위
@@ -48,7 +50,7 @@ export function newRun(cat, data, profile, o = {}) {
     ...(start.team ? { origTeam: start.team } : {}), // 오리지널 팀으로 시작한 도전만(D17). 없으면 종전(태동) 도전
     seg: 0, layer: 0, map: [genSegment(cat, data, seed, 0, { roster, diff, oppUnlocked: unlocked.opponents })], node: null, match: null, done: [], // map[0] = 현재 구간(다음 구간은 들어갈 때 만든다, map.js)
     wins: { normal: 0, strong: 0, boss: 0 },
-    roster, items: [], nextInst: 1, artifactsOwned: [], artifacts: Array(cat.rules.team.artifactSlots).fill(null), consumables: {}, buffs: [],
+    roster, items: [], nextInst: 1, artifactsOwned: [], artifacts: Array(cat.rules.team.artifactSlots).fill(null), fmItem: null, consumables: {}, buffs: [], // fmItem = 팀 포메이션 아이템 칸(off, D58. team 에서는 쓰지 않는다)
     extraReward: 0, extraRecruit: 0,
     points: cat.matchPoints.start + permVal(cat, profile.perm, 'PB01'), fm: C.formation.default,
     rerolls: C.reward.rerollsBase + permVal(cat, profile.perm, 'PB07'), rollN: 0,
@@ -62,8 +64,8 @@ export function newRun(cat, data, profile, o = {}) {
   if (eq.length) run.pending.push({ kind: 'equipment', src: 'start', nodeType: 'start', choices: eq, n: 0 });
   const aLv = permLv(cat, profile.perm, 'PB03');
   if (aLv > 0) {
-    const ar = artifactChoices(cat, run, unlocked, C.reward.startArtifactChoicesBase + aLv * C.reward.startArtifactChoicesPerLevel, ['start', 0]);
-    if (ar.length) run.pending.push({ kind: 'artifact', src: 'start', choices: ar, n: 0 });
+    const ar = artifactChoices(cat, run, unlocked, C.reward.startArtifactChoicesBase + aLv * C.reward.startArtifactChoicesPerLevel, ['start', 0], 'start'); // off(D61): 시작 필살기 아이템 후보(team 은 종전 팀 강화)
+    if (ar.length) run.pending.push({ kind: 'artifact', src: 'start', nodeType: 'start', choices: ar, n: 0 });
   }
   return run;
 }
@@ -125,8 +127,28 @@ export function rankRecordOf(profile, segments = 0) {
  */
 function recordBest(cat, run, profile, now) {
   const reached = run.seg + 1, wins = winsOf(run), cur = rankRecordOf(profile, cat.rules.run.segments); // cur 는 best.seg·best.wins 를 고치기 전에 읽는다(엔드리스 이전 기록과 비교)
-  if (!cur || reached > cur.seg || (reached === cur.seg && wins > cur.wins)) profile.best.rank = { seg: reached, wins, at: now, team: coreNames(cat, run), diff: run.diff };
+  if (!cur || reached > cur.seg || (reached === cur.seg && wins > cur.wins)) profile.best.rank = { seg: reached, wins, at: now, team: coreNames(cat, run), diff: run.diff, run: run.id }; // run = 이 기록을 세운 도전의 id(키운 팀 「최고」 슬롯 판정용, saveTeams)
   profile.best.seg = Math.max(profile.best.seg, reached); profile.best.wins = Math.max(profile.best.wins, wins);
+}
+
+/**
+ * 키운 팀 슬롯 저장(D33, teams.js): 경기를 1판 이상 치른 도전이 끝날 때 그 시점의 팀을 「최근」에 덮어쓰고, 이 도전이 순위 기록(best.rank)을 가진 도전이면 「최고」에도 쓴다.
+ * 「이 도전이 기록을 가졌는가」 = 정산의 recordBest 뒤에 best.rank.run 이 이 도전의 id 다(recordBest 가 기록을 바꿀 때 적는다. 도전 중 보스 승리로 세운 기록도 같은 id 로 남는다).
+ *   구간·승수가 같은 동률 도전은 recordBest 가 기록을 바꾸지 않으므로 최고 슬롯도 그대로다(리뷰 L1: 시각 비교는 flame_new 가 새 도전을 먼저 만들고 옛 도전을 정산해 동률 도전을 잘못 잡았다).
+ *   run 칸이 없는 기록(이 칸이 생기기 전의 저장)은 「이 도전의 기록이 아님」으로 본다 -> 그런 기록은 다시 넘어설 때부터 최고 슬롯이 채워진다
+ * run_config.json versusTeam 이 꺼져 있으면 아무것도 하지 않는다(종전 동작. 이미 있는 슬롯은 그대로 둔다)
+ * @returns {{recent:boolean, best:boolean}} 이번 정산에서 갱신된 슬롯(flame_end.summary.teams, 표시용)
+ */
+function saveTeams(cat, run, profile, now) {
+  const none = { recent: false, best: false };
+  if (!versusTeamCfg(cat)) return none;
+  const seg = run.seg + 1, wins = winsOf(run);
+  let snap = null;
+  try { snap = snapshotOf(cat, run, profile, { seg, wins, now }); } catch (e) { console.error('[flame] 키운 팀 슬롯을 만들지 못했습니다(정산은 그대로 진행):', e?.message ?? e); } // 부가 기능의 오류가 코인 정산을 막지 않게
+  if (!snap) return none;
+  const holds = typeof run.id === 'string' && profile.best.rank?.run === run.id;
+  profile.teams = { ...(profile.teams ?? {}), recent: snap, ...(holds ? { best: structuredClone(snap) } : {}) };
+  return { recent: true, best: holds };
 }
 
 /** 업적 판정. live = 도전 중(구간 3 우승 순간): 아직 정산되지 않은 이번 도전의 승수·도전 1회를 더해서 본다(정산 때와 같은 값이 된다) */
@@ -156,7 +178,8 @@ export function settle(cat, run, profile, result, defeatOuts = 0, now = Date.now
   profile.coins += coins.total; profile.earned += coins.total;
   T.wins += wins; T.boss += run.wins.boss;
   const reached = run.seg + 1; // 도달 구간(1부터). 종전 우승 = 마지막 구간에서 끝난다(구간을 넘기지 않는다)
-  if (counted) { T.runs++; recordBest(cat, run, profile, now); }
+  let teams = { recent: false, best: false }; // 이번 정산에서 갱신된 키운 팀 슬롯(경기 없는 도전 = 둘 다 false)
+  if (counted) { T.runs++; recordBest(cat, run, profile, now); teams = saveTeams(cat, run, profile, now); }
   if (result === 'champion') {
     if (!run.champ) profile.best.clears++; // 엔드리스로 이미 우승이 반영된 도전(run.champ)을 엔드리스를 끈 뒤 이어 우승해도 우승 횟수는 한 번만
     profile.firstClear = true;
@@ -167,7 +190,7 @@ export function settle(cat, run, profile, result, defeatOuts = 0, now = Date.now
   return {
     result, counted, endless: !!cat.endless, championed: result === 'champion' || !!run.champ, // championed = 이번 도전에서 우승(구간 3 보스 격파)을 했는가
     runId: run.id, diff: run.diff, seg: reached, defeatOuts: outs, wins: { ...run.wins }, matches: wins, bosses: run.stat.bosses.slice(),
-    bestRarity: run.items.length ? cat.rarities[run.stat.bestRarity] : null, formations: run.stat.fms.slice(), coins, achievements: newAch,
+    bestRarity: run.items.length ? cat.rarities[run.stat.bestRarity] : null, formations: run.stat.fms.slice(), coins, achievements: newAch, teams, // teams = {recent, best}: 이번 정산에서 키운 팀 슬롯이 갱신됐는가(PROTOCOL §13.20, 저장 형식과 무관한 응답 칸)
     lost: { items: run.items.length, artifacts: run.artifactsOwned.length, consumables: Object.values(run.consumables).reduce((s, n) => s + n, 0), points: run.points, recruited: run.roster.filter((r) => r.recruited).length },
   };
 }
@@ -230,7 +253,9 @@ export function leaveNode(run) {
 
 /**
  * 맨 앞 선택(pending)을 푼다. i = 번호(-1 = 받지 않음), p = 대상 선수(영입 교체 자리·집중 치료).
- * equipment/artifact = 1개 획득, recruit = 교체, rest·event = 효과 적용 뒤 다음 층으로
+ * equipment/artifact = 1개 획득, recruit = 교체, rest·event = 효과 적용 뒤 다음 층으로.
+ * 자동 무효(D48, 정검수 L3): 아티팩트를 얻은 뒤에는 남은 아티팩트 선택에서 받을 수 없게 된 칸(이미 가진 등급 이하)을 빼고, 빈 선택은 통째로 뺀다.
+ *   그래도 받을 수 없는 칸을 골랐으면(변경 전 저장 등) 거절하지 않고 그 칸만 무효로 한다: note {voided:true, id}, 남은 칸이 있으면 그 선택은 그대로 남아 다시 고른다
  */
 export function choose(cat, data, run, profile, i, p) {
   const pend = run.pending[0] ?? ferr('FLAME_INVALID');
@@ -241,7 +266,8 @@ export function choose(cat, data, run, profile, i, p) {
     if (i >= 0) {
       const id = pend.choices[i] ?? ferr('FLAME_INVALID');
       if (pend.kind === 'equipment') { const got = addItem(cat, run, id); if (got.sold !== undefined) note = { full: true, id, sold: got.sold }; } // 장비 보유 상한(D24): 받는 즉시 판매가만큼 포인트로
-      else addArtifact(cat, run, id);
+      else if (staleArtifact(cat, run, id)) { pruneArtifactChoices(cat, run); settleHp(cat, data, run, profile.perm); return { voided: true, id }; }
+      else { const sold = addArtifact(cat, run, id); if (sold) note = { upgraded: true, id, sold: sold.id, points: sold.points }; } // 등급 아이템(D39): 더 높은 등급을 얻어 낮은 등급이 자동 판매됐다
     }
   } else {
     if (i === -1 && pend.kind !== 'recruit') ferr('FLAME_INVALID');
@@ -253,6 +279,7 @@ export function choose(cat, data, run, profile, i, p) {
     advance(run);
   }
   run.pending.shift();
+  pruneArtifactChoices(cat, run);
   settleHp(cat, data, run, profile.perm);
   return note;
 }
@@ -262,8 +289,9 @@ export function reroll(cat, run, profile) {
   const pend = run.pending[0];
   if (!pend || !['equipment', 'artifact'].includes(pend.kind)) ferr('FLAME_INVALID');
   if (!(run.rerolls > 0)) ferr('FLAME_MAX');
-  const unlocked = unlockedOf(cat, profile.perm), n = pend.choices.length, key = [pend.src, pend.n + 1];
-  const next = pend.kind === 'equipment' ? equipChoices(cat, run, unlocked, n, pend.nodeType, key, { epic: pend.epic ?? 0 }) : artifactChoices(cat, run, unlocked, n, key);
+  const unlocked = unlockedOf(cat, profile.perm), n = pend.g === 'firstWin' ? cat.grade.drop.firstWinChoices : pend.choices.length, key = [pend.src, pend.n + 1]; // 첫 승리 보상은 자동 무효로 칸이 줄었어도 정해진 칸 수로 다시 뽑는다
+  const gsrc = pend.g === 'firstWin' ? 'firstWin' : pend.nodeType === 'boss' ? 'boss' : pend.nodeType === 'start' ? 'start' : null; // 등급제(D40): 처음 뽑을 때와 같은 출처·유형으로 다시 뽑는다
+  const next = pend.kind === 'equipment' ? equipChoices(cat, run, unlocked, n, pend.nodeType, key, { epic: pend.epic ?? 0 }) : artifactChoices(cat, run, unlocked, n, key, gsrc);
   if (!next.length) ferr('FLAME_NO_EFFECT');
   run.rerolls--; pend.n++; pend.choices = next;
 }
@@ -271,18 +299,19 @@ export function reroll(cat, run, profile) {
 /**
  * 경기 시작 값 조립(엔진 flame 옵션 PROTOCOL §12.1 + 방 설정). 전부 저장된 도전 상태와 서버 데이터에서만 만든다.
  * D13: 다음 경기 최대 HP 소모품(C13 팀 +5, C03 선수 +10)은 그 경기에 한해 최대 HP 와 현재 HP 를 같이 올린다(경기 뒤 처리는 applyMatchResult). D5: HP 0 선수는 1 로 출전(엔진 hpFloor)
+ * D38(부여 구조): allow = 낀 아티팩트가 부여한 슛 + 로스터 원작 선수의 고유 슛(team.allow). 슬롯은 선수별 발동 가능 집합으로 한 번 더 걸러 넘긴다(specialsOf) -> 엔진의 allow 는 팀 공용이지만 남의 고유 슛은 나가지 않는다
  */
 export function matchOptions(cat, data, run, profile, node) {
-  const team = teamOfRun(cat, data, run, profile.perm, node.type);
+  const team = teamOfRun(cat, data, run, profile.perm, node.type), sps = specialsOf(cat, data, run.roster, run.artifacts);
   const bonus = buffHpBonus(cat, data, run, profile.perm, node.type); // 소모품으로 늘어난 최대 HP 만큼 현재 HP 도
   const roster = run.roster.map((r, i) => {
     const pl = team.players[i], e = toEngine(pl);
-    return { from: { ...r.from }, stat: e.stat, hp: Math.min(pl.final.s0, Math.max(0, r.hp) + bonus[i]), ext: e.ext, sp: r.sp.slice(), fx: e.fx };
+    return { from: { ...r.from }, stat: e.stat, hp: Math.min(pl.final.s0, Math.max(0, r.hp) + bonus[i]), ext: e.ext, sp: sps[i], fx: e.fx };
   });
   return {
     node: node.id, type: node.type, cpuTeam: node.opp.team, cpuLevel: node.opp.cpuLevel, stage: node.opp.stage,
     rules: { mode: cat.cfg.match.ruleMode, time: cat.cfg.match.timeMin },
-    flame: { seat: 0, roster, allow: team.allow, families: cat.families, fm: run.fm, caps: { ...cat.engineCaps } },
+    flame: { seat: 0, roster, allow: team.allow, families: cat.families, fm: team.fm, caps: { ...cat.engineCaps } }, // team.fm = 실제로 쓰이는 패턴(등급제 D42: 아이템이 주지 않는 패턴이면 기본 포메이션. 꺼져 있으면 run.fm 그대로)
     cast: displayCast(cat, run), // 화면 표시용(game_start.flameCast). 엔진에는 넘기지 않는다
   };
 }
@@ -385,17 +414,26 @@ export function applyMatchResult(cat, data, run, profile, res, now = Date.now())
   const eq = equipChoices(cat, run, unlocked, sz.n, node.type, [node.id, 0], { epic: sz.epic });
   if (eq.length) run.pending.push({ kind: 'equipment', src: node.id, nodeType: node.type, choices: eq, n: 0, epic: sz.epic });
   if (node.type === 'boss') {
-    const ar = artifactChoices(cat, run, unlocked, R.bossArtifactChoices, [node.id, 0]);
-    if (ar.length) run.pending.push({ kind: 'artifact', src: node.id, choices: ar, n: 0 });
+    const ar = artifactChoices(cat, run, unlocked, R.bossArtifactChoices, [node.id, 0], 'boss'); // 등급제(D40): 「필살슛·포메이션·팀 강화」 유형 고정
+    if (ar.length) run.pending.push({ kind: 'artifact', src: node.id, nodeType: node.type, choices: ar, n: 0 }); // nodeType = 장비 보상 칸과 같은 표시용 칸(화면이 보스 뒤 회복 % 를 가정 없이 판별, B70). 뽑기에는 쓰지 않는다
     else if (E && E.artifactFallbackPoints > 0) { run.points += E.artifactFallbackPoints; out.artifactPoints = E.artifactFallbackPoints; } // 아티팩트 고갈(D24): 경기 포인트로 대신
+  }
+  // 첫 승리 보상(등급제 D40): 이 도전의 첫 승리에 필살슛 아이템(가장 낮은 등급) 택 1. 보스 승리에는 위의 보스 보상이 있어 주지 않는다. 꺼져 있으면 없다(종전 동작)
+  if (gradeOn(cat) && node.type !== 'boss' && winsOf(run) === 1) {
+    const fw = artifactChoices(cat, run, unlocked, cat.grade.drop.firstWinChoices, [node.id, 0], 'firstWin');
+    if (fw.length) run.pending.push({ kind: 'artifact', src: node.id, nodeType: node.type, choices: fw, n: 0, g: 'firstWin' });
   }
   if (node.type === 'strong') for (const id of consumableChoices(cat, run, cat.consumables.size, [node.id]).filter((c) => canHold(cat, run, c)).slice(0, R.strongConsumables)) addConsumable(cat, run, id);
   return out;
 }
 
+/** off(D63) 에서 영구 성장 상점에 내지 않는 항목인가(decisions.json artifact.hiddenPerm) */
+export const permHidden = (cat, id) => !teamArtifactsOn(cat) && cat.artifact.hiddenPerm.includes(id);
+
 /** 영구 성장 구매(17항목: A 4·B 7·C 6). 다음 단계 비용을 불꽃코인으로 지불. 도전 중에도 살 수 있다(시작 보상·시작 포인트류는 다음 도전부터) */
 export function buyPerm(cat, profile, id, now = Date.now()) {
   const u = cat.perm.get(id) ?? ferr('FLAME_INVALID'), lv = profile.perm[id] ?? 0;
+  if (permHidden(cat, id)) ferr('FLAME_LOCKED'); // off(D63): 신규 아티팩트 해금(PC03)은 팔지 않는다
   if (lv >= u.maxLevel) ferr('FLAME_MAX');
   const cost = u.costs[lv];
   if (profile.coins < cost) ferr('FLAME_NO_FUNDS');
@@ -408,6 +446,8 @@ export function buyPerm(cat, profile, id, now = Date.now()) {
 /** 포메이션 변경(패턴 0~14). selectable = 'roster' 면 로스터 출신 팀의 패턴만 */
 export function setFormation(cat, data, run, fm) {
   if (!cat.tagOfFm.has(fm)) ferr('FLAME_INVALID');
+  // 등급제(D42): 기본 포메이션과 낀 포메이션 아이템의 패턴만 고를 수 있다(그 밖은 FLAME_LOCKED). 꺼져 있으면 아래 종전 규칙
+  if (gradeOn(cat)) { if (formationOf(cat, fm, teamWornOf(cat, run)).fm !== fm) ferr('FLAME_LOCKED'); run.fm = fm; return; } // off(D58): 팀 포메이션 아이템 칸(run.fmItem)
   if (cat.cfg.formation.selectable === 'roster' && fm !== cat.cfg.formation.default) {
     const mine = new Set(run.roster.map((r) => data.formations.teams.find((t) => t.team === r.from.team)?.name_idx));
     if (!mine.has(fm)) ferr('FLAME_LOCKED');
@@ -429,8 +469,12 @@ export function viewOf(cat, data, run, profile) {
     coins: profile.coins, earned: profile.earned, perm: { ...profile.perm }, spent: profile.spent.slice(-20), unlocked: unlockedOf(cat, profile.perm),
     codex: profile.codex, best: profile.best, totals: profile.totals, achievements: profile.achievements, firstClear: profile.firstClear,
     practiceUsed: profile.practiceUsed === true, // 연습 경기를 이미 썼는가(D28)
+    // 키운 팀 슬롯 요약(D33, §13.20): {recent, best} 각각 {seg, wins, diff, at, core[3], team, captain} | null. 재료·능력치는 보내지 않는다(컴퓨터 대전에서 고르면 서버가 다시 계산한다)
+    teams: Object.fromEntries(TEAM_SLOTS.map((k) => [k, teamSummary(cat, profile.teams?.[k])])),
     codexCast: codexCast(cat, profile.codex.players), // 도감의 클론 키('c:<id>')에 붙일 표시용 정의(§13.16). 도감에 적힌 클론만 싣는다
-    permList: [...cat.perm.values()].map((u) => ({ id: u.id, name: u.name, group: u.group, lv: profile.perm[u.id] ?? 0, maxLevel: u.maxLevel, costs: u.costs, next: (profile.perm[u.id] ?? 0) < u.maxLevel ? u.costs[profile.perm[u.id] ?? 0] : null })),
+    // off(D63): hiddenPerm(PC03)은 싣지 않고, permText 가 있는 항목(PB03)은 text 에 바뀐 설명을 싣는다
+    permList: [...cat.perm.values()].filter((u) => !permHidden(cat, u.id)).map((u) => ({ id: u.id, name: u.name, group: u.group, lv: profile.perm[u.id] ?? 0, maxLevel: u.maxLevel, costs: u.costs, next: (profile.perm[u.id] ?? 0) < u.maxLevel ? u.costs[profile.perm[u.id] ?? 0] : null,
+      ...(!teamArtifactsOn(cat) && cat.artifact.off.permText[u.id] ? { text: cat.artifact.off.permText[u.id] } : {}) })),
   };
   if (!run) return { profile: P, run: null, team: null };
   const { seed, secret, rollN, seen, recruitShown, roomHeal, ...rest } = run; // eslint-disable-line no-unused-vars

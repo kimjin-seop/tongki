@@ -42,6 +42,17 @@ test('flame 보스 뒤 회복(D30): 구간 보스를 이기면 afterBossHealPct,
   assert.deepEqual([catalogMsg(C).afterBossHealPct, catalogMsg(C).afterWinHealPct, catalogMsg(noKey).afterBossHealPct], [50, 30, 30]);
 });
 
+test('flame 보스 승리 보상: 아티팩트 선택 칸에도 nodeType(장비 보상 칸과 같은 값)이 실리고 저장 왕복 뒤에도 남는다', () => {
+  const profile = freshProfile(), run = Run.newRun(cat, data, profile, { seed: 7 });
+  run.pending = []; run.layer = run.map[0].layers.length - 1;
+  const node = candidates(run)[0];
+  Run.enterNode(cat, data, run, profile, node.id);
+  Run.applyMatchResult(cat, data, run, profile, { winner: 0, reason: 'annihilation', flame: { hp: run.roster.map(() => 10), surviveUsed: [] } });
+  const view = (r) => Run.viewOf(cat, data, r, profile).run.pending.map((p) => [p.kind, p.src, p.nodeType]);
+  assert.deepEqual(view(run), [['equipment', node.id, 'boss'], ['artifact', node.id, 'boss']]);
+  assert.deepEqual(view(sanitizeRun(cat, data, JSON.parse(JSON.stringify(run)))), view(run));
+});
+
 test('flame 특훈 누적 상한(D31): 상한을 넘는 특훈은 FLAME_TRAIN_CAP(포인트·횟수 그대로), 이미 넘은 구 저장은 읽기만 하고 깎지 않는다, 이벤트 trainRandom 은 받을 수 있는 선수에게, 키가 없으면 종전', () => {
   const opt = cat.training.find((t) => t.stat === 's4'), cap = 3 * opt.value;
   const C = catWith('training', (t) => ({ ...t, maxPerStat: { s4: cap } })), noKey = catWith('training', (t) => { delete t.maxPerStat; return t; });
@@ -82,6 +93,7 @@ test('flame 난이도 레벨 가산(D32): cpuLevelAdd 가 숫자면 모든 경�
   assert.deepEqual(levels({ normal: 1, boss: 1 }), want({ normal: 1, boss: 1 }));
   assert.notDeepEqual(levels(1), levels({ normal: 1, boss: 1 })); // 강팀만 가산이 빠진다
   assert.deepEqual(levels(0), want({}));
+  assert.ok(Object.values(levels(-9)).every((l) => l === 1)); // 리뷰 L1: 음수 가산이 들어와도 레벨 하한 1(저장 검사 cpuLevel >= 1 에 걸리지 않게)
 });
 
 function client(port) {

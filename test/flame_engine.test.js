@@ -158,6 +158,29 @@ test('flame 조건부 투구: 캐치 후 첫 투구 위력 +N 은 한 번만, �
   assert.equal(m.ball.spd8, (p1.stat.thr << 4) + (4 << 4));
 });
 
+test('flame 필살 속도(D52): fx.spSpd 는 필살 투구에서만 속력 +N(s6 단위)과 초기 속도(V0)를 늘리고, 일반 투구·받아치기 공은 그대로', () => {
+  const shot = (spSpd, allow) => {
+    const m = flameMatch({ roster: roster(0, (i) => (i === 0 ? { sp: [22, null], fx: { spSpd } } : {})), allow });
+    const ev = jumpThrow(m, 14);
+    return { sp: ev.some((e) => e.k === 'special'), spd8: m.ball.spd8, v0: m.ball.sp?.v0 ?? null, b: m.ball };
+  };
+  const a = shot(0, [22]), c = shot(24, [22]);
+  assert.ok(a.sp && c.sp);
+  assert.equal(c.spd8, a.spd8 + (24 << 4)); // S +24 = +1.5px/f
+  assert.ok(Math.abs(c.v0[0]) > Math.abs(a.v0[0]) && c.v0.every(Number.isFinite));
+  const n0 = shot(0, []), n1 = shot(24, []); // 잠금 = 일반 슛: 가산 없음
+  assert.ok(!n0.sp && !n1.sp);
+  assert.deepEqual([n1.spd8, n1.b.vx, n1.b.vy, n1.b.vz], [n0.spd8, n0.b.vx, n0.b.vy, n0.b.vz]);
+  // 받아치기 필살(창 안 지상 투구): 잡은 공의 속력 그대로
+  const m = flameMatch({ roster: roster(0, (i) => (i === 0 ? { sp: [22, null], fx: { spSpd: 24 } } : {})), allow: [22] });
+  toLive(m);
+  m.giveBall(m.players[0]); m.sides[0].ctrl = 0;
+  Object.assign(m.ball, { ctr: 30, f76: true, cid: 22, cpow: 75, cspd: 1888, c42: 15 });
+  const ev = []; m.tick([BIT.B, 0]); ev.push(...m.drainEvents());
+  for (let i = 0; i < 20 && !ev.some((e) => e.k === 'throw'); i++) { m.tick([0, 0]); ev.push(...m.drainEvents()); }
+  assert.deepEqual([ev.find((e) => e.k === 'special')?.id, m.ball.spd8], [22, 1888]);
+});
+
 test('flame 혼합 로스터: 여러 팀 선수 7명 + 포메이션 패턴 지정으로 컴퓨터 대 컴퓨터 한 판이 끝까지 진행되고, 전역 캐시 능력치는 오염되지 않는다', () => {
   const before = JSON.stringify(data.teams);
   const from = [[0, 0], [1, 1], [3, 0], [15, 0], [9, 2], [2, 0], [16, 0]];

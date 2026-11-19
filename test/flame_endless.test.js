@@ -165,7 +165,7 @@ test('순위표·카탈로그 로비 연결: flame_ranking_get -> flame_ranking{
   assert.deepEqual([msg.endless.enabled, msg.endless.championSegments, msg.endless.itemMax, catalogMsg({ ...cat, endless: null }).endless], [true, 3, 60, { enabled: false, championSegments: 3 }]);
   const profile = freshProfile(), run = Run.newRun(cat, data, profile, { seed: 41 }), def = cat.pool.players[0];
   run.roster[6] = { ...run.roster[6], from: { ...def.body }, clone: def.id, sp: [null, null], recruited: true }; delete run.roster[6].orig;
-  assert.equal(Run.viewOf(cat, data, run, profile).run.cast.players[6].sp, def.sp); // 슬롯에서 뺀 뒤에도 원래 필살기를 알 수 있다
+  assert.equal(Run.viewOf(cat, data, run, profile).run.cast.players[6].sp, null); // D38 부여 구조: 클론에게는 원래 필살기가 없다(종전 legacy 에서는 풀의 sp)
   const app = createServer({ store: new MemoryResultStore(), dbPath: ':memory:', importJson: false, log: () => {} }), port = await app.listen(0);
   try {
     const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`), got = [];

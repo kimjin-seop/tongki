@@ -3,7 +3,7 @@
 import { h } from '../../util.js';
 import { toast } from '../../ui.js';
 import * as F from './store.js';
-import { icon, emptyIcon, pface, pname, pteam, isClone, ownShotOf, tname, emblem, origEmblem, sprite, hpBar, head, chip, btn, learnTip } from './ui.js';
+import { icon, emptyIcon, pface, pname, pteam, isClone, ownShotOf, tname, emblem, origEmblem, sprite, hpBar, head, chip, btn, learnTip, gradeTag, rarTag, artKindTag } from './ui.js';
 
 const isMatch = (t) => t === 'normal' || t === 'strong' || t === 'boss';
 const pointChip = (run) => chip('경기 포인트', String(run.points), '.pt');
@@ -26,13 +26,13 @@ export function extraSpec(def) {
 }
 /** 관리 화면 버튼. 팀 관리 = 빈 슬롯에 낄 수 있는 미장착 장비 수, 아티팩트 = 빈 슬롯에 넣을 수 있는 보유 아티팩트 수를 숫자 점으로 */
 function manageBtn(ctx, s, label) {
-  const n = s === 'team' ? F.idle(ctx.run()).equip : s === 'artifact' ? F.idle(ctx.run()).art : 0;
+  const n = s === 'team' ? F.idle(ctx.run()).equip : s === 'artifact' ? F.idle(ctx.run()).art : s === 'formation' ? F.idle(ctx.run()).fm : 0; // fm = off(§13.26) 빈 포메이션 칸에 낄 아이템
   return btn(n > 0 ? [label, h('b.fl-badge.tabular', { 'aria-hidden': 'true' }, String(n))] : label, 'open-' + s, () => ctx.open(s), '.center',
     n > 0 ? { 'aria-label': `${label} 미장착 ${n}` } : {});
 }
 /** 도전 중 공통 명령(팀·장비·아티팩트·포메이션·소모품) */
 const manage = (ctx, list = ['team', 'inv', 'artifact', 'formation', 'items']) => {
-  const L = { team: '팀 관리', inv: '장비 관리', artifact: '아티팩트', formation: '포메이션', items: '소모품' };
+  const L = { team: '팀 관리', inv: '장비 관리', artifact: F.artOff() ? '필살기' : '아티팩트', formation: '포메이션', items: '소모품' }; // off(§13.26): 「아티팩트」 = 선수별 필살기 아이템 칸
   return list.map((s) => manageBtn(ctx, s, L[s]));
 };
 
@@ -105,14 +105,18 @@ export function map(ctx) {
     if (!cand.has(n.id)) return;
     if (isMatch(n.type)) ctx.startMatch(n); else ctx.send('flame_node', { id: n.id });
   };
+  // 갈 수 있는 앞쪽 칸(지금 후보에서 next 로 이어지는 칸): 이 구간의 남은 칸 중 여기 없는 칸 = 잠김(지나온 길에서 갈라져 못 가는 칸, 회색)
+  const reach = new Set(run.candidates);
+  for (const l of layers) for (const n of l) if (reach.has(n.id)) for (const to of n.next ?? []) reach.add(to);
   const nodeBtn = (n, li) => {
     const d = done.get(n.id), on = cand.has(n.id);
     const past = seg < run.seg || (seg === run.seg && li < run.layer);
-    const stt = d ? 'done' : on ? 'cand' : past ? 'skip' : 'todo';
+    const stt = d ? 'done' : on ? 'cand' : past ? 'skip' : seg === run.seg && run.candidates.length && !reach.has(n.id) ? 'lock' : 'todo';
     return h(`button.fl-node.t-${n.type}.${stt}`, { type: 'button', 'data-k': 'n-' + n.id, 'data-id': n.id, disabled: !on, // 고를 수 없는 노드는 방향키 포커스가 건너뛴다(pix.js arrowNav = button:not(:disabled))
       'aria-label': `${F.nodeName(n.type)}${n.opp ? ' ' + tname(n.opp.team) : ''}${d ? ' 완료' : on ? '' : ' 선택 불가'}`, onclick: () => pick(n) },
-      h('span.fl-node-t', F.NODE_SHORT[n.type] ?? n.type),
-      n.opp ? [emblem(n.opp.team), h('span.fl-node-n', tname(n.opp.team))] : h('span.fl-node-g', { 'aria-hidden': 'true' }),
+      // 안아트 노드 아이콘(manifest ui.icon.node.*, flame.css .fl-node-g) + 종류 글자. 완료·지나침·잠김 = 같은 모양의 불투명 회색
+      h('span.fl-node-h', h('span.fl-node-g', { 'aria-hidden': 'true' }), h('span.fl-node-t', F.NODE_SHORT[n.type] ?? n.type)),
+      n.opp ? [emblem(n.opp.team), h('span.fl-node-n', tname(n.opp.team))] : null,
       n.type === 'recruit' && roomHeal > 0 ? h('span.fl-node-n.fl-node-heal.tabular', `HP +${roomHeal}%`) : null); // 영입실 입장 회복 %(flame_catalog.recruitRoomHealPct, 0 = 꺼짐 → 표시 없음)
   };
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -149,7 +153,7 @@ export function map(ctx) {
       h('div.fl-head-x',
         h('span.fl-chip.opp', h('i', '다음 상대'), nextOpp.length ? nextOpp.map((n) => h('span.fl-opp', emblem(n.opp.team), tname(n.opp.team))) : h('b', '-')),
         Number.isFinite(run.matchesTotal) ? chip('남은 경기', String(run.matchesTotal - run.matchesWon)) : null, pointChip(run), // 엔드리스 = matchesTotal:null(남은 경기 없음)
-        h('button.fl-arts', { type: 'button', 'data-k': 'arts', 'aria-label': '장착 아티팩트', onclick: () => ctx.open('artifact') },
+        F.artOff() ? null : h('button.fl-arts', { type: 'button', 'data-k': 'arts', 'aria-label': '장착 아티팩트', onclick: () => ctx.open('artifact') }, // off(§13.26): 공용 3칸 없음
           run.artifacts.map((id) => (id ? icon(F.artDef(id)) : emptyIcon())))),
       // 연습 경기(PROTOCOL §13.15): 받을 수 있고(run.practiceAvailable) 풀지 않은 선택이 없을 때만 작은 버튼. 결과는 도전에 반영되지 않는다(거절 = 토스트)
       run.practiceAvailable === true && !run.pending?.length && !run.node ? btn('연습 경기', 'practice', () => ctx.send('flame_practice'), '.small.fl-practice-b') : null,
@@ -217,12 +221,17 @@ export function reward(ctx) {
     if (!d) return null;
     const pick = btn('선택', 'pick-' + i, () => ctx.send('flame_choose', { i }), '.primary.center');
     if (i === 0) pick.dataset.first = '1';
-    if (!isEq) return h('article.pwin.fl-card', icon(d, { big: true }), h('h2.fl-card-n', d.name), h('div.fl-card-k', F.CAT_KO[d.category] ?? ''), h('p.fl-card-s', d.specText), pick);
+    if (!isEq) {
+      // 아티팩트 카드(§13.22): 이름 · 등급 딱지 + 유형(보스 보상 3칸 = 필살슛·포메이션·팀 강화) · 한 줄 속성. 같은 슛·포메이션을 갖고 있으면 그 등급(더 높은 등급만 후보로 온다)
+      const g = F.grantOf(d), own = F.ownedGrade(run.artifactsOwned, d);
+      return h('article.pwin.fl-card' + (g ? '.g-' + g.grade : ''), { 'data-kind': F.artKind(d) ?? '' }, icon(d, { big: true }), h('h2.fl-card-n', F.artName(d)),
+        h('div.fl-card-k', artKindTag(d), own ? h('span.fl-card-own', { 'data-k': 'own-g' }, '보유 ', gradeTag(own)) : null), h('p.fl-card-s', F.artLine(d)), F.artPair(d) ? h('p.fl-card-s.fl-pair', F.artPair(d)) : null, pick);
+    }
     const cur = curOf(d.slot), cs = cur?.stats ?? {};
     const keys = [...new Set([...Object.keys(d.stats ?? {}), ...Object.keys(cs)])];
     const vac = known ? run.roster.filter((r) => vacant(r, d.slot)).length : 0;
     return h('article.pwin.fl-card.r-' + d.rarity, icon(d, { big: true }), h('h2.fl-card-n', d.name),
-      h('div.fl-card-k', h('span.fl-rar.r-' + d.rarity, F.rarityName(d.rarity)), F.SLOT_KO[d.slot],
+      h('div.fl-card-k', rarTag(d.rarity), F.SLOT_KO[d.slot],
         known ? h('span.fl-card-own.tabular', `보유 ${run.items.filter((it) => it.id === d.id).length}` + (vac ? ` · 빈 선수 ${vac}명` : '')) : null),
       h('div.fl-card-st', keys.map((k) => {
         const nv = d.stats?.[k] ?? 0, df = nv - (cs[k] ?? 0);
@@ -240,7 +249,7 @@ export function reward(ctx) {
   const C = F.catalog(), srcType = pend.nodeType ?? run.done?.find((d) => d.id === pend.src)?.type ?? (pend.kind === 'artifact' ? 'boss' : null);
   const healPct = pend.src === 'start' ? 0 : Number(srcType === 'boss' && Number.isFinite(C.afterBossHealPct) ? C.afterBossHealPct : C.afterWinHealPct);
   ctx.root.append(h('div.screen.fl.fl-reward',
-    h('header.fl-head', h('h1.pix-title.fl-title', isEq ? '장비 보상' : '아티팩트 보상'),
+    h('header.fl-head', h('h1.pix-title.fl-title', isEq ? '장비 보상' : pend.g === 'firstWin' ? '첫 승리 보상' : F.artOff() ? `${F.itemTitle(pend.choices)} 보상` : '아티팩트 보상'), // off(§13.26): 칸 종류(필살기·포메이션 아이템)로
       h('div.fl-head-x', h('span.tag', SRC_KO(pend)), healPct > 0 ? chip('승리 회복', `+${healPct}%`, '.heal') : null, run.pending.length > 1 ? h('span.fl-count.tabular', `1/${run.pending.length}`) : null)),
     isEq ? h('div.fl-cmp', h('span.fl-cmp-t', '비교 선수'),
       h('div.fl-cmp-row', { role: 'group', 'aria-label': '비교 선수' }, run.roster.map((r, i) =>
@@ -254,19 +263,22 @@ export function reward(ctx) {
 export function shop(ctx) {
   const run = ctx.run(), stock = run.node.stock ?? [];
   const leave = () => ctx.send('flame_leave');
-  const KIND = { equipment: (d) => [h('span.fl-rar.r-' + d.rarity, F.rarityName(d.rarity)), F.SLOT_KO[d.slot]], artifact: (d) => `아티팩트 · ${F.CAT_KO[d.category] ?? ''}`, consumable: () => '소모품' };
+  // 아티팩트 칸(§13.22): 등급제면 등급 딱지 + 유형 + 같은 종류 보유 등급, 종전 = 분류 이름
+  const ownTag = (d) => { const o = F.ownedGrade(run.artifactsOwned, d); return o ? h('span.fl-card-own', '보유 ', gradeTag(o)) : null; };
+  const KIND = { equipment: (d) => [rarTag(d.rarity), F.SLOT_KO[d.slot]], artifact: (d) => (F.artKind(d) ? [artKindTag(d), ownTag(d)] : F.artOff() ? F.CAT_KO[d.category] ?? '' : `아티팩트 · ${F.CAT_KO[d.category] ?? ''}`), consumable: () => '소모품' };
+  const nameOf = (g, d) => (g.kind === 'artifact' ? F.artName(d) : d.name);
   const defOf = (g) => (g.kind === 'equipment' ? F.equipDef(g.id) : g.kind === 'artifact' ? F.artDef(g.id) : F.consDef(g.id));
   const rows = stock.map((g, i) => {
     const d = defOf(g);
     if (!d) return null;
     return h('div.fl-shop-row' + (g.sold ? '.sold' : ''), icon(d),
-      h('div.fl-shop-m', h('b.fl-shop-n', d.name), h('span.fl-shop-k', KIND[g.kind](d)), h('span.fl-shop-s', d.specText)),
-      h('button.btn.fl-buy' + (!g.sold && run.points < g.price ? '.dim' : ''), { type: 'button', 'data-k': 'buy-' + i, disabled: g.sold, 'aria-label': `${d.name} ${g.sold ? '품절' : `${g.price} 경기 포인트`}`,
+      h('div.fl-shop-m', h('b.fl-shop-n', nameOf(g, d)), h('span.fl-shop-k', KIND[g.kind](d)), h('span.fl-shop-s', g.kind === 'artifact' ? F.artLine(d) : d.specText), g.kind === 'artifact' && F.artPair(d) ? h('span.fl-shop-s.fl-pair', F.artPair(d)) : null),
+      h('button.btn.fl-buy' + (!g.sold && run.points < g.price ? '.dim' : ''), { type: 'button', 'data-k': 'buy-' + i, disabled: g.sold, 'aria-label': `${nameOf(g, d)} ${g.sold ? '품절' : `${g.price} 경기 포인트`}`,
         onclick: () => ctx.send('flame_buy', { i }) }, g.sold ? '품절' : h('span.tabular', String(g.price))));
   });
   const out = btn('나가기', 'leave', leave, '.primary.center');
   ctx.root.append(h('div.screen.fl', h('header.fl-head', h('h1.pix-title.fl-title', '장비 상점'), h('div.fl-head-x', pointChip(run))),
-    h('section.pwin.fl-shop', { 'data-sc': 'shop' }, rows),
+    h('section.pwin.fl-shopw', h('div.fl-shop', { 'data-sc': 'shop' }, rows)), // 스크롤은 창 안쪽 목록이(창 테두리 밖으로 줄이 걸치지 않게)
     h('div.fl-cmds', manage(ctx, ['inv', 'team', 'artifact', 'items']), out)));
   (ctx.root.querySelector('.fl-buy:not(:disabled)') ?? out).dataset.first = '1';
   return { esc: () => ctx.go('home') };
@@ -291,7 +303,7 @@ export function train(ctx) {
   ctx.root.append(h('div.screen.fl', h('header.fl-head', h('h1.pix-title.fl-title', '특훈장'),
     h('div.fl-head-x', chip('남은 특훈', String(picks)), chip('비용', String(T.cost)), pointChip(run))),
     playerRow(ctx, S.trainP, (i) => { S.trainP = i; ctx.paint(); }),
-    h('section.pwin.fl-train', { role: 'group', 'aria-label': '특훈' }, opts),
+    h('section.pwin.fl-trainw', h('div.fl-train', { role: 'group', 'aria-label': '특훈' }, opts)), // 스크롤은 창 안쪽 칸 묶음이
     h('div.fl-cmds', btn('장비 강화', 'open-inv', () => ctx.open('inv'), '.center'), manage(ctx, ['team', 'artifact', 'items']), out)));
   (ctx.root.querySelector('.fl-train-b:not(:disabled)') ?? out).dataset.first = '1';
   return { esc: () => ctx.go('home') };
@@ -322,13 +334,15 @@ export function recruit(ctx) {
   if (!(S.recSel >= 0 && S.recSel < list.length)) S.recSel = 0;
   if (!(Number.isInteger(S.recP) && S.recP >= 0 && S.recP < run.roster.length) || locked(S.recP)) S.recP = null;
   const out = S.recP === null ? null : ctx.team().players[S.recP]; // 교체 대상(능력치 비교의 기준 = 그 선수의 기본 능력치)
-  const allow = ctx.team().allow ?? [];
+  const allow = ctx.team().allow ?? [], G = F.granted();
   // 후보 칸(PROTOCOL §13.10): 클론 {kind:'clone', name, role, stat, sp, skin} = 자기 이름·역할·색 입힌 몸(ui.js bindCast 가 걸어 둔 칸), 원작 {kind:'original', rare, stat, sp} = 종전 표시 + 희귀 발견 표식.
   // stat·sp 가 없는 칸(종전 서버)은 종전대로 화면 에셋(편성 표 6종·ROM 필살기)으로 채운다. 등급(grade)은 보이지 않는다(능력치 숫자로 판단)
   const cards = list.map((c, i) => {
     const clone = isClone(c), rare = c.kind === 'original' && c.rare === true;
     const six = F.SIX_KEYS.every((k) => Number.isFinite(c.stat?.[k])) ? F.SIX_KEYS.map((k) => c.stat[k]) : clone ? null : F.baseSix(c);
-    const own = Object.hasOwn(c, 'sp') ? (Number.isInteger(c.sp) && c.sp >= 0 ? c.sp : null) : ownShotOf(c), none = own !== null && !allow.includes(own);
+    // 필살기 칸. 부여 구조(§13.21): 클론 = 「필살기 없음」, 원작 선수 = 고유 슛 이름 + 「고유」(후보 칸의 sp 만 쓴다. 「미습득」 없음). 종전: 원래 필살기 + 아티팩트가 없으면 「미습득」
+    const csp = Number.isInteger(c.sp) && c.sp >= 0 ? c.sp : null;
+    const own = G ? (clone ? null : csp) : Object.hasOwn(c, 'sp') ? csp : ownShotOf(c), none = !G && own !== null && !allow.includes(own);
     return h('button.pwin.fl-card.fl-rec-card' + (rare ? '.rare' : ''), { type: 'button', 'data-k': 'rc-' + i, 'aria-pressed': String(S.recSel === i),
       'aria-label': `${pname(c)} ${clone ? F.roleName(c.role) : tname(c.team)}${rare ? ' 원작' : ''}`, onclick: () => { S.recSel = i; if (none) learnTip(own); ctx.paint(); } },
       h('div.fl-cx-top', sprite(c), h('div', h('div.fl-cx-name', pname(c)), h('div.fl-cx-sub', pteam(c), rare ? h('b.fl-rare-m', '원작') : null))),
@@ -337,7 +351,8 @@ export function recruit(ctx) {
         const df = out && REC_CMP.includes(k) && Number.isFinite(out.base?.[k]) ? six[j] - out.base[k] : 0;
         return h('span', h('i', F.statName(k)), h('b.tabular', String(six[j]), df ? h('em.fl-diff' + (df > 0 ? '.up' : '.down'), df > 0 ? `▲${df}` : `▼${-df}`) : null));
       })) : null,
-      h('div.fl-cx-line', h('i', '필살기'), own !== null ? F.shotName(own) : '없음', none ? h('span.tag.off', '미습득') : null));
+      G ? (own !== null ? h('div.fl-cx-line', { 'data-k': 'rc-sp' }, h('i', '필살기'), F.shotName(own), h('span.tag.host', '고유')) : h('div.fl-cx-line', { 'data-k': 'rc-sp' }, F.NO_SHOT))
+        : h('div.fl-cx-line', h('i', '필살기'), own !== null ? F.shotName(own) : '없음', none ? h('span.tag.off', '미습득') : null));
   });
   const no = btn('영입 안 함', 'rc-no', () => ctx.send('flame_choose', { i: -1 }), '.center');
   const yes = btn(list.length && S.recP !== null ? `영입 · ${F.josa(pname(run.roster[S.recP].from), '와/과')} 교체` : '영입', 'rc-yes', () => S.recP !== null && ctx.send('flame_choose', { i: S.recSel, p: S.recP }), '.primary.center', { disabled: !list.length || S.recP === null });
@@ -356,7 +371,7 @@ export function recruit(ctx) {
 const OP_TEXT = {
   points: (o) => `경기 포인트 ${F.sgn(o.value)}`, hpAll: (o) => `전원 HP ${F.sgn(o.value)}`, hpAllPct: (o) => `전원 HP ${F.sgn(o.value)}%`, hpCaptain: (o) => `주장 HP ${F.sgn(o.value)}`,
   trainRandom: (o) => `한 명 ${F.statName(o.stat)} ${F.sgn(o.value)}`, gamble: (o) => `${o.winPct}% 확률로 경기 포인트 +${o.win}`,
-  gainEquipment: () => '장비 1개', gainConsumable: () => '소모품 1개', gainArtifact: () => '아티팩트 1개',
+  gainEquipment: () => '장비 1개', gainConsumable: () => '소모품 1개', gainArtifact: () => (F.artOff() ? '필살기 아이템 1개' : '아티팩트 1개'), // off(§13.26 D61): E05 = 필살기 아이템
 };
 export function event(ctx) {
   const run = ctx.run(), pend = run.pending[0], ev = F.eventDef(pend.event);

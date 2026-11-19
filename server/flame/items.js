@@ -2,8 +2,10 @@
 // 전부 도전 상태(run)를 직접 고치는 함수다. 거절은 FlameError(code)로 던지고, 던지기 전에는 run 을 고치지 않는다(거절된 요청이 상태를 바꾸지 않게).
 // 능력치는 여기서 계산하지 않는다(stats.js 가 run 을 읽어 매번 다시 계산 -> 장비를 빼면 정확히 원복).
 import { ferr } from './save.js';
-import { pv, roundHalfUp, cloneOf } from './catalog.js';
-import { upgradedStats, allowOf } from './stats.js';
+import { pv, roundHalfUp, grantedModel, baseSpecial, ownSpecial, gradeOn, grantOf, teamArtifactsOn } from './catalog.js';
+import { upgradedStats, allowOf, cleanSpecials, grantShotOf, spItemShot } from './stats.js';
+
+export { baseSpecial, ownSpecial }; // 선수의 원작 필살기·고유 슛(정의는 catalog.js. 종전 호출자용으로 여기서도 내보낸다)
 
 const player = (run, p) => (Number.isInteger(p) && p >= 0 && p < run.roster.length ? run.roster[p] : ferr('FLAME_INVALID'));
 const instOf = (run, inst) => run.items.find((it) => it.inst === inst) ?? ferr('FLAME_INVALID');
@@ -91,21 +93,82 @@ export function sell(cat, run, inst) {
 }
 
 // ---------- 아티팩트 ----------
+/**
+ * 등급 아이템(D39): 같은 슛·같은 포메이션은 가장 높은 등급 하나만 가진다. 이미 같거나 높은 등급을 갖고 있으면 FLAME_INVALID(후보를 만들 때 이미 뺀다. 안전망),
+ * 더 높은 등급을 얻으면 낮은 것은 그 자리에서 판매가(decisions.json grade.price.sell)만큼 경기 포인트로 바뀌고, 끼고 있었으면 같은 칸에 새 등급이 들어간다(슛·패턴이 같아 필살기 슬롯·포메이션은 그대로다).
+ * @returns {{id:string, points:number}|null} 자동 판매된 낮은 등급(없으면 null)
+ */
 export function addArtifact(cat, run, id) {
   if (!cat.artifacts.has(id) || run.artifactsOwned.includes(id)) ferr('FLAME_INVALID'); // 같은 아티팩트는 하나만(37 §3-C20)
+  const g = grantOf(cat, id), teamOn = teamArtifactsOn(cat);
+  if (!teamOn && !g) ferr('FLAME_INVALID'); // off(D58): 손으로 쓴 아티팩트(A01~A30)는 받지 않는다(보상·상점·이벤트에도 나오지 않는다. 안전망)
+  let sold = null;
+  if (g) {
+    const prev = run.artifactsOwned.find((a) => { const o = grantOf(cat, a); return !!o && o.kind === g.kind && o.key === g.key; });
+    if (prev) {
+      const o = grantOf(cat, prev);
+      if (o.rank >= g.rank) ferr('FLAME_INVALID');
+      run.artifactsOwned.splice(run.artifactsOwned.indexOf(prev), 1);
+      const at = run.artifacts.indexOf(prev);
+      if (at >= 0) run.artifacts[at] = id;
+      if (!teamOn) { for (const r of run.roster) if (r.spItem === prev) r.spItem = id; if (run.fmItem === prev) run.fmItem = id; } // off: 낀 선수(팀 칸)에게 새 등급이 이어진다(슛·패턴이 같아 슬롯·포메이션은 그대로)
+      sold = { id: prev, points: cat.grade.price.sell[o.grade] ?? 0 };
+      run.points += sold.points;
+    }
+  }
   run.artifactsOwned.push(id);
   see(run, 'artifacts', id);
+  return sold;
+}
+
+/** 지금은 받을 수 없는 아티팩트인가: 이미 가진 id, 또는 같은 종류를 같거나 높은 등급으로 가진 등급 아이템(addArtifact 가 FLAME_INVALID 로 거절하는 것과 같은 조건) */
+export function staleArtifact(cat, run, id) {
+  if (!cat.artifacts.has(id) || run.artifactsOwned.includes(id)) return true;
+  const g = grantOf(cat, id);
+  return !!g && run.artifactsOwned.some((a) => { const o = grantOf(cat, a); return !!o && o.kind === g.kind && o.key === g.key && o.rank >= g.rank; });
+}
+
+/**
+ * 받을 수 없게 된 선택지 자동 무효(D48, 정검수 L3): 아티팩트를 얻은 뒤, 아직 풀지 않은 아티팩트 선택(run.pending)에서 지금은 받을 수 없는 칸(staleArtifact)을 뺀다.
+ * 선택지가 하나도 남지 않은 선택은 통째로 뺀다(진행이 막히지 않게). 다른 종류의 선택(장비·영입·휴식·이벤트)은 건드리지 않는다
+ * @returns {string[]} 빠진 아이템 id
+ */
+export function pruneArtifactChoices(cat, run) {
+  const gone = [];
+  for (const p of run.pending) {
+    if (p.kind !== 'artifact') continue;
+    const keep = p.choices.filter((id) => !staleArtifact(cat, run, id));
+    gone.push(...p.choices.filter((id) => !keep.includes(id)));
+    p.choices = keep;
+  }
+  if (gone.length) run.pending = run.pending.filter((p) => p.kind !== 'artifact' || p.choices.length > 0);
+  return gone;
+}
+
+/**
+ * 아티팩트 구성이 바뀐 뒤 포메이션 맞추기(등급제 D42 전용). before = 바뀌기 전의 run.artifacts.
+ * 새로 낀 포메이션 아이템이 있으면 그 패턴으로 바꾸고, 지금 패턴을 주는 아이템이 빠졌으면 기본 포메이션으로 돌아간다(기본 포메이션은 아이템 없이 쓸 수 있다)
+ */
+export function syncFormation(cat, run, before) {
+  if (!gradeOn(cat)) return;
+  const fmOf = (a) => (a ? cat.artifacts.get(a)?.grant?.formation : undefined), def = cat.cfg.formation.default;
+  for (const a of run.artifacts) if (a && !before.includes(a) && fmOf(a) !== undefined) run.fm = fmOf(a);
+  if (run.fm !== def && !run.artifacts.some((a) => fmOf(a) === run.fm)) run.fm = def;
 }
 
 /**
  * 아티팩트 장착·해제(3슬롯). id = null 이면 그 슬롯을 비운다. slot 을 생략하면 빈 칸에 넣고, 빈 칸이 없으면 FLAME_FULL(4번째 거절).
- * 해금이 풀린 필살기는 슬롯에 남되 발동하지 않는다(엔진 allow 에서 빠진다). 다시 장착하면 그대로 살아난다
+ * 종전(legacy): 해금이 풀린 필살기는 슬롯에 남되 발동하지 않는다(엔진 allow 에서 빠진다). 다시 장착하면 그대로 살아난다.
+ * 부여 구조(D38, data 를 넘겼을 때): 바뀐 뒤 필살기 슬롯을 맞춘다(syncSpecials) — 뺀 아티팩트에서 온 슛은 슬롯에서 비워지고, 새로 낀 아티팩트의 대표 슛이 빈 주 슬롯에 들어간다.
+ * @param {object} [data] 엔진 데이터(원작 선수의 고유 슛을 읽는다). 생략하면 슬롯을 맞추지 않는다(경기 조립·저장 읽기가 다시 정리하므로 발동 규칙은 같다)
  */
-export function setArtifact(cat, run, slot, id) {
-  const n = cat.rules.team.artifactSlots;
+export function setArtifact(cat, run, slot, id, data) {
+  if (!teamArtifactsOn(cat)) ferr('FLAME_INVALID'); // off(D58): 공용 아티팩트 칸을 쓰지 않는다 -> flame_sp_item·flame_fm_item
+  const n = cat.rules.team.artifactSlots, before = run.artifacts.slice();
   if (id === null || id === undefined) {
     if (!Number.isInteger(slot) || slot < 0 || slot >= n) ferr('FLAME_INVALID');
     run.artifacts[slot] = null;
+    syncSpecials(cat, data, run, before); syncFormation(cat, run, before);
     return;
   }
   if (!run.artifactsOwned.includes(id)) ferr('FLAME_INVALID');
@@ -117,24 +180,66 @@ export function setArtifact(cat, run, slot, id) {
   } else if (!Number.isInteger(slot) || slot < 0 || slot >= n) ferr('FLAME_INVALID');
   if (at >= 0 && at !== slot) run.artifacts[at] = run.artifacts[slot]; // 다른 칸에 있던 것이면 두 칸을 맞바꾼다(같은 아티팩트 중복 장착 없음)
   run.artifacts[slot] = id;
+  syncSpecials(cat, data, run, before); syncFormation(cat, run, before);
 }
 
-/** 선수의 원래 필살기 ID(해금 후보에서 빠진 ID·무작위 풀 선수는 null, 39 §3) */
-export function baseSpecial(cat, data, from) {
-  const id = data.specials.row[from.team]?.[from.idx];
-  return Number.isInteger(id) && id >= 0 && !cat.excludedShots.has(id) ? id : null;
+/**
+ * 아티팩트 구성이 바뀐 뒤 필살기 슬롯 맞추기(부여 구조 D38 전용. 종전·data 없음이면 아무것도 하지 않는다). before = 바뀌기 전의 run.artifacts.
+ *  1) 선수별 발동 가능 집합(낀 아티팩트가 부여한 슛 + 원작 선수의 고유 슛) 밖의 ID 를 두 슬롯에서 비운다. 원작 선수의 주 슬롯이 비면 고유 슛으로 돌아간다.
+ *  2) 주 슬롯이 비고 예비 슬롯에 쓸 수 있는 슛이 남았으면 주 슬롯으로 올린다.
+ *  3) 새로 낀 아티팩트의 대표 슛을 아직 주 슬롯이 빈 선수(= 필살기 없는 클론·불씨)에게 넣는다. 이미 슛이 있는 선수는 건드리지 않는다
+ */
+export function syncSpecials(cat, data, run, before) {
+  if (!grantedModel(cat) || !data) return;
+  cleanSpecials(cat, data, run.roster, run.artifacts);
+  for (const r of run.roster) if (r.sp[0] === null && r.sp[1] !== null) r.sp = [r.sp[1], null];
+  for (const a of run.artifacts) {
+    const g = a && !before.includes(a) ? grantShotOf(cat, a) : null;
+    if (g !== null) for (const r of run.roster) if (r.sp[0] === null) r.sp = [g, null];
+  }
 }
-/** 로스터 한 칸의 원래 필살기: 영입 풀 클론은 풀의 sp(42 §3), 그 밖은 출신 선수의 ID */
-export const ownSpecial = (cat, data, r) => cloneOf(cat, r)?.sp ?? baseSpecial(cat, data, r.from);
 
-/** 필살기 슬롯 2칸 지정(D1: 발동은 슬롯 0 만, D3: 해금된 슛은 아무 선수나). 넣을 수 있는 것 = 지금 해금된 ID 또는 그 선수의 원래 ID */
+/**
+ * 필살기 슬롯 2칸 지정(D1: 발동은 슬롯 0 만, D3: 아티팩트 슛은 아무 선수나). 넣을 수 있는 것 = 지금 낀 아티팩트의 슛 또는 그 선수의 고유 슛(ownSpecial). 그 밖은 FLAME_LOCKED.
+ * 부여 구조(D38): 고유 슛은 원작 선수 본인만 가진다 -> 다른 선수의 고유 슛(아티팩트로 부여되지 않은 것)·불씨와 클론의 옛 필살기는 FLAME_LOCKED 로 거절된다.
+ *   원작 선수의 주 슬롯은 비울 수 없다: 비워 보내면 고유 슛으로 돌아간다(저장 읽기와 같은 정리. 클론·불씨는 [null, null] = 「필살기 없음」으로 둘 수 있다)
+ */
 export function setSpecial(cat, data, run, p, sp) {
   const r = player(run, p);
   if (!Array.isArray(sp) || sp.length !== cat.rules.team.specialSlotsPerPlayer) ferr('FLAME_INVALID');
-  const ok = new Set(allowOf(cat, run.artifacts.filter(Boolean))), own = ownSpecial(cat, data, r);
+  const item = spItemShot(cat, r), ok = new Set(teamArtifactsOn(cat) ? allowOf(cat, run.artifacts.filter(Boolean)) : item === null ? [] : [item]), own = ownSpecial(cat, data, r); // off(D58): 그 선수가 낀 아이템의 슛만(남이 낀 아이템의 슛은 FLAME_LOCKED)
   for (const id of sp) if (id !== null && !(Number.isInteger(id) && (ok.has(id) || id === own))) ferr('FLAME_LOCKED');
   if (sp[0] !== null && sp[0] === sp[1]) ferr('FLAME_INVALID');
   r.sp = [sp[0], sp[1]];
+  if (grantedModel(cat) && own !== null && r.sp[0] === null) r.sp = [own, r.sp[1] === own ? null : r.sp[1]];
+}
+
+// ---------- 선수별 필살기 아이템·팀 포메이션 아이템(off, analysis/39 D58~D63, PROTOCOL §13.26) ----------
+/** 그 필살슛 아이템을 낀 선수 번호(없으면 -1) */
+export const spWearerOf = (run, id) => run.roster.findIndex((r) => r.spItem === id);
+
+/**
+ * 선수 p 의 필살기 아이템 칸 장착·해제(flame_sp_item). id = null 이면 뺀다.
+ * 장착: 보유한 필살슛 아이템만(그 밖 FLAME_INVALID), 다른 선수가 낀 아이템은 FLAME_EQUIPPED(먼저 빼야 한다, 장비와 같은 규칙). 그 선수의 슬롯 = [아이템의 슛, 원작 선수면 고유 슛(같은 슛이면 null)].
+ * 해제: 아이템의 슛이 그 선수 슬롯에서 빠진다(원작 선수는 고유 슛으로 돌아가고 불씨·클론은 「필살기 없음」). team 모델에서는 FLAME_INVALID
+ */
+export function setSpItem(cat, data, run, p, id) {
+  if (teamArtifactsOn(cat)) ferr('FLAME_INVALID');
+  const r = player(run, p);
+  if (id === null || id === undefined) { delete r.spItem; cleanSpecials(cat, data, [r], []); return; }
+  if (typeof id !== 'string' || !run.artifactsOwned.includes(id) || grantOf(cat, id)?.kind !== 'shot') ferr('FLAME_INVALID');
+  const w = spWearerOf(run, id);
+  if (w >= 0 && w !== p) ferr('FLAME_EQUIPPED');
+  const shot = cat.artifacts.get(id).grant.shot, own = ownSpecial(cat, data, r);
+  r.spItem = id; r.sp = [shot, own !== null && own !== shot ? own : null];
+}
+
+/** 팀 포메이션 아이템 칸 장착·해제(flame_fm_item). 장착 = 그 패턴으로 바꾼다, 해제(null) = 기본 포메이션으로. 보유한 포메이션 아이템만(그 밖 FLAME_INVALID). team 모델에서는 FLAME_INVALID */
+export function setFmItem(cat, run, id) {
+  if (teamArtifactsOn(cat)) ferr('FLAME_INVALID');
+  if (id === null || id === undefined) { run.fmItem = null; run.fm = cat.cfg.formation.default; return; }
+  if (typeof id !== 'string' || !run.artifactsOwned.includes(id) || grantOf(cat, id)?.kind !== 'formation') ferr('FLAME_INVALID');
+  run.fmItem = id; run.fm = cat.artifacts.get(id).grant.formation;
 }
 
 // ---------- 소모품 ----------

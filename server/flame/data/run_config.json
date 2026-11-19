@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "version": 5,
+    "version": 7,
     "doc": "docs/PROTOCOL.md §13, analysis/39_flame_decisions.md",
     "notes": [
       "P2~P5(도전 진행·보상·상점·특훈·휴식·영입·이벤트·영구 성장 C) 에 필요한데 기획서(analysis/36)에 값이 없는 수치를 모은 파일이다. 이 파일의 값은 전부 [자작 제안]이다(임밸런 초안 대기, 37 §7 [수치 미정] 목록). 코드에는 숫자를 두지 않고 여기 값만 고치면 된다.",
@@ -13,7 +13,10 @@
       "[자작 제안 2026-11-19 박백엔, analysis/39 D15] rest.afterWinHealPct = 승리 뒤 전원 회복(최대 HP 대비 %, 최대 HP 까지, HP 1 로 남은 선수 포함). 휴식실(rest.options)과 별개의 보조 규칙이다. 키를 지우거나 0 으로 두면 꺼진다(종전 동작). 시작값 30 의 근거는 시뮬 측정(40 §2·§12).",
       "[자작 제안·시작값 2026-11-19, analysis/42 §8.2·analysis/39 D18·D19·D22] version 3: recruit 에 clone·original 을 더했다(영입 풀 2차). recruit.clone.gradePct = 구간별 클론 등급 확률(열 = D·C·B·A·S, 가중치. 한 칸마다 뽑는다). recruit.original = 원작 희귀 발견: 영입실에 들어갈 때 maxPerVisit 번 visitPct[구간] % 로 굴려 맞으면 마지막 칸을 원작 선수로 바꾼다(후보 수 영구 성장 PB04·소모품 C19 는 클론 칸만 늘린다). segmentTeams = 구간 상한(해금 팀 unlocks.content.PC01 과의 교집합: 구간 1 은 팀 1~7 만, 구간 2 는 14 까지), minPts = 이 점수(42 §2.1) 미만인 원작 선수는 내지 않는다(null = 걸러 내지 않음). 되돌리기: clone 키를 지우면 종전 영입(원작 선수만, 후보 n 명)으로 돌아간다(코드 수정 없음). original 키만 지우면 클론만 나온다. 풀 명단은 recruit_pool.json(생성 도구 tools/gen_recruit_pool.mjs, 입력 recruit_pool_spec.json).",
       "[자작 제안·시작값 2026-11-19 임밸런, analysis/40 §13] version 2: opponents.segments[2].boss [4,8] -> [4,16]. 하플레이 관찰(숙련 조작이면 후반이 7:0 반복)과 시뮬(최종 보스에 도달한 판의 승률이 영구 성장 전부 14/14, 중간 5/6 으로 구간 2 보다 쉬웠다)에 따른 조정이다. 팀 8 은 구간 2 보스·구간 3 강팀에도 있어 최종 보스 후보에서만 뺐고, 팀 16(SPECIAL, HP 39~80 으로 낮고 공격력 31~48 로 높은 팀)을 넣었다. 랠리가 길어지는 팀(18·19·21, 시간 종료 비율이 높다)은 쓰지 않았다. 같은 시드 40판: 최종 보스 승률 14/14 -> 10/14, 우승 1/5/14 -> 0/4/10. PC05 해금 강팀 후보의 16 은 그대로 두었다(같은 구간에서 한 팀은 한 번만 나온다). 되돌리기: boss 를 [4, 8] 로.",
-      "[자작 제안·시작값 2026-11-19 임밸런, analysis/40 §16] version 4(하플레이 플레이 보고 보정, 세 묶음): (1) opponents.segments[0] 강팀 [14,12] 레벨 2 -> [7,10] 레벨 1, 보스 [7,11] -> [11,14](레벨 2 그대로). 종전에는 강팀(내야 HP 합 366·355, 팀 12 외야 140)이 보스 팀 7(333)보다 단단했고 도전 안 승률도 강팀 85% < 보스 88%(600판)였다. 뒤: 강팀 91% > 보스 86%, HP 합 강팀 333·336 < 보스 356·366. 팀 12 는 구간 1 에서 빠졌다. 주의: 고난도(레벨 +1)에서는 강팀이 레벨 2 가 되어 보스보다 어렵다(강팀 90% < 보스 96%, 120판). 되돌리기: strong [14,12]·boss [7,11]·cpuLevel.strong 2. (2) recruit.clone.gradePct[0] [35,40,20,5,0] -> [25,35,32,8,0]: 후보 3명 중 B 급 이상이 1명 이상일 확률 58% -> 78%(산수). B 급(점수 0~3)은 교체할 수 있는 시작 6명 중 5명보다 높다. 되돌리기: 첫 줄을 [35,40,20,5,0] 으로. (3) statCaps.s0 null -> 112: 최종 HP 상한(특훈·장비·영구 성장 포함. HUD 얼굴 칸 한계 public/js/game/hud.js HP_FACE_MAX 와 같은 값). 넘는 몫은 버려진 값(over)으로 표시된다. 기본 HP 가 112 를 넘는 원작 희귀 영입 선수(팀 2·4·8·12·15·19·20 의 일부)도 112 로 잘린다. 되돌리기: null. 영입실 회복(recruitRoom.healPct 10)·승리 뒤 회복(30)은 바꾸지 않았다."
+      "[자작 제안·시작값 2026-11-19 임밸런, analysis/40 §16] version 4(하플레이 플레이 보고 보정, 세 묶음): (1) opponents.segments[0] 강팀 [14,12] 레벨 2 -> [7,10] 레벨 1, 보스 [7,11] -> [11,14](레벨 2 그대로). 종전에는 강팀(내야 HP 합 366·355, 팀 12 외야 140)이 보스 팀 7(333)보다 단단했고 도전 안 승률도 강팀 85% < 보스 88%(600판)였다. 뒤: 강팀 91% > 보스 86%, HP 합 강팀 333·336 < 보스 356·366. 팀 12 는 구간 1 에서 빠졌다. 주의: 고난도(레벨 +1)에서는 강팀이 레벨 2 가 되어 보스보다 어렵다(강팀 90% < 보스 96%, 120판). 되돌리기: strong [14,12]·boss [7,11]·cpuLevel.strong 2. (2) recruit.clone.gradePct[0] [35,40,20,5,0] -> [25,35,32,8,0]: 후보 3명 중 B 급 이상이 1명 이상일 확률 58% -> 78%(산수). B 급(점수 0~3)은 교체할 수 있는 시작 6명 중 5명보다 높다. 되돌리기: 첫 줄을 [35,40,20,5,0] 으로. (3) statCaps.s0 null -> 112: 최종 HP 상한(특훈·장비·영구 성장 포함. HUD 얼굴 칸 한계 public/js/game/hud.js HP_FACE_MAX 와 같은 값). 넘는 몫은 버려진 값(over)으로 표시된다. 기본 HP 가 112 를 넘는 원작 희귀 영입 선수(팀 2·4·8·12·15·19·20 의 일부)도 112 로 잘린다. 되돌리기: null. 영입실 회복(recruitRoom.healPct 10)·승리 뒤 회복(30)은 바꾸지 않았다.",
+      "[자작 제안·시작값 2026-11-19 임밸런, analysis/40 §18 · analysis/39 D32] version 5: difficulty[1].cpuLevelAdd 1 -> { normal: 1, strong: 0, boss: 1 }(고난도 레벨 가산을 경기 종류별로). 종전(전 종류 +1)에는 구간 1 강팀이 레벨 2 가 되어 보스보다 어려웠다(강팀 90% < 보스 96%, 120판). 뒤: 세 구간 모두 강팀 승률 >= 보스 승률(구간 1 96% · 92%), 고난도가 기본보다 어려운 폭(약 -0.9승)은 그대로. 남는 것: 구간 1 일반(레벨 2)이 강팀(레벨 1)보다 어렵다(40 §18.3). 새로 만드는 구간부터 적용된다(만들어 둔 지도는 그대로, 39 B67). 그 사이 박백엔이 더한 키(practice, recruitRoom.healPct, rest.afterBossHealPct, training.maxPerStat)는 version 을 올리지 않고 넣었다(39 B51·B59·B69). 되돌리기: cpuLevelAdd 를 1 로.",
+      "[자작 제안·시작값 2026-11-19 임밸런, analysis/40 §20.6 · analysis/39 D49] version 6: 장비 S(전설) 극희귀화. reward.rarityShift 의 legendary 만 바꿨다 — segment 0/2/5 -> -2.95/-2.85/-2.7, node strong 2 -> 0, boss 5 -> 0(다른 등급 값·rules.json dropRatePct 3 은 그대로). 전설 가중치 = 구간 1 0.05 · 구간 2 0.15 · 구간 3+ 0.3(경기 종류 무관). 완주 12경기(보상 3칸씩) 동안 전설 장비가 한 칸이라도 뜰 확률 93% -> 6.3%(필살슛·포메이션 S 3.4% 와 같은 자릿수), 제시 칸 기대값 2.55 -> 0.07. 승률 영향 없음(영구 성장 전부 120판 같은 시드: 승수 7.03 -> 7.52, 짝 차이 +0.48 [-0.21, 1.18]). 소수 가중치다(rng.weighted 는 실수를 받는다). 되돌리기: segment legendary 0/2/5, node strong 2 · boss 5.",
+      "[2026-11-19 팀장 결정, analysis/39 D49·D50, analysis/40 §21.4] version 7: 위 version 6(장비 S 극희귀화)을 채택(D49)하고 그에 연동해 unlocks.content.PC02(전설 장비 설계도) 비용 500 -> 300(D50). 다른 값은 그대로. 되돌리기: PC02 costs [500]."
     ]
   },
   "match": {
@@ -22,6 +25,7 @@
   },
   "practice": { "enabled": true, "cpuLevel": 1 },
   "recruitRoom": { "healPct": 10 },
+  "versusTeam": { "enabled": true, "surviveUsesPerMatch": 1, "humans": true },
   "difficulty": [
     { "id": 0, "name": "기본", "cpuLevelAdd": 0, "coinPct": 100, "requires": null },
     { "id": 1, "name": "고난도", "cpuLevelAdd": { "normal": 1, "strong": 0, "boss": 1 }, "coinPct": 150, "requires": "PC06" }
@@ -50,14 +54,14 @@
     "extraChoiceMax": 2,
     "rarityShift": {
       "segment": [
-        { "common": 0, "rare": 0, "epic": 0, "legendary": 0 },
-        { "common": -10, "rare": 3, "epic": 5, "legendary": 2 },
-        { "common": -20, "rare": 5, "epic": 10, "legendary": 5 }
+        { "common": 0, "rare": 0, "epic": 0, "legendary": -2.95 },
+        { "common": -10, "rare": 3, "epic": 5, "legendary": -2.85 },
+        { "common": -20, "rare": 5, "epic": 10, "legendary": -2.7 }
       ],
       "node": {
         "normal": { "common": 0, "rare": 0, "epic": 0, "legendary": 0 },
-        "strong": { "common": -15, "rare": 5, "epic": 8, "legendary": 2 },
-        "boss": { "common": -25, "rare": 5, "epic": 15, "legendary": 5 },
+        "strong": { "common": -15, "rare": 5, "epic": 8, "legendary": 0 },
+        "boss": { "common": -25, "rare": 5, "epic": 15, "legendary": 0 },
         "shop": { "common": -5, "rare": 3, "epic": 2, "legendary": 0 },
         "event": { "common": 0, "rare": 0, "epic": 0, "legendary": 0 },
         "start": { "common": 45, "rare": -30, "epic": -12, "legendary": -3 }
@@ -115,7 +119,7 @@
     "defaultArtifactsExcept": ["A06", "A08", "A18", "A28", "A29", "A30"],
     "content": {
       "PC01": { "maxLevel": 2, "costs": [300, 600], "grants": [{ "recruitTeams": [8, 9, 10, 11, 12, 13, 14] }, { "recruitTeams": [15, 16, 17, 18, 19, 20, 21] }] },
-      "PC02": { "maxLevel": 1, "costs": [500], "grants": [{ "legendaryEquipment": true }] },
+      "PC02": { "maxLevel": 1, "costs": [300], "grants": [{ "legendaryEquipment": true }] },
       "PC03": { "maxLevel": 2, "costs": [300, 600], "grants": [{ "artifacts": ["A06", "A08", "A18"] }, { "artifacts": ["A28", "A29", "A30"] }] },
       "PC04": { "maxLevel": 1, "costs": [200], "grants": [{ "events": ["E04", "E05"] }] },
       "PC05": { "maxLevel": 1, "costs": [400], "grants": [{ "opponents": true }] },

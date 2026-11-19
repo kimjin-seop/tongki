@@ -96,14 +96,14 @@ test('flame 도전 한 판(결과 주입 시뮬, 엔드리스 끔 = 종전): 12�
   assert.deepEqual(r.end.coins, { normal: 120, strong: 120, boss: 240, champion: 200, first: 300, defeat: 0, pct: 100, total: 980 });
   assert.deepEqual([profile.coins, profile.firstClear, profile.best.clears, profile.best.wins], [980, true, 1, 12]);
   assert.ok(profile.codex.items.length > 0 && profile.achievements.includes('ACH03'));
-  // 영구 성장: 비용·단계·상한
-  assert.equal(Run.buyPerm(cat, profile, 'PA01'), 100);
-  assert.equal(Run.buyPerm(cat, profile, 'PA01'), 200);
-  assert.equal(Run.buyPerm(cat, profile, 'PB03'), 300);
-  assert.deepEqual([profile.coins, profile.perm], [380, { PA01: 2, PB03: 1 }]);
+  // 영구 성장: 비용·단계·상한(39 D50 표: PA01 150/250/350/450 · PB03 150/300 · PA02 1단계 700)
+  assert.equal(Run.buyPerm(cat, profile, 'PA01'), 150);
+  assert.equal(Run.buyPerm(cat, profile, 'PA01'), 250);
+  assert.equal(Run.buyPerm(cat, profile, 'PB03'), 150);
+  assert.deepEqual([profile.coins, profile.perm], [430, { PA01: 2, PB03: 1 }]);
   assert.throws(() => Run.buyPerm(cat, profile, 'PC06'), (e) => e.code === 'FLAME_NO_FUNDS');
   const r2 = playRun(profile, { seed: 6, C: catOff });
-  assert.deepEqual([r2.end.result, r2.end.coins.first, r2.end.coins.total, profile.coins], ['champion', 0, 680, 1060]);
+  assert.deepEqual([r2.end.result, r2.end.coins.first, r2.end.coins.total, profile.coins], ['champion', 0, 680, 1110]);
   assert.ok(r2.run.artifactsOwned.length >= 1); // 전술 연구(PB03): 시작 아티팩트 선택
   assert.throws(() => { for (let i = 0; i < 3; i++) Run.buyPerm(cat, profile, 'PA02'); }, (e) => e.code === 'FLAME_MAX');
 });
@@ -112,7 +112,7 @@ test('flame 패배: 3번째 경기 패배 -> 도전 종료 정산(일반 2승 = 
   const store = new SqliteFlameStore(openDb(':memory:'));
   assert.equal(schemaVersion(store.db), 2); // 엔드리스·순위표는 DB 스키마를 바꾸지 않는다
   const profile = freshProfile();
-  profile.coins = 500; Run.buyPerm(cat, profile, 'PA03');
+  profile.coins = 950; Run.buyPerm(cat, profile, 'PA03'); // 투구 훈련 1단계 700(D50) -> 250 남는다
   // 도중 저장 -> 읽기(sanitize) -> 같은 상태로 이어진다
   const run = Run.newRun(cat, data, profile, { seed: 9 });
   resolve(run, profile);
@@ -171,10 +171,10 @@ test('flame 로비 연결: flame_new -> 보상 선택 -> 장착 -> 경기 노드
     a.send({ t: 'hello', nickname: '불꽃A' }); await a.type('welcome');
     a.send({ t: 'flame_get' });
     let st = await a.type('flame_state');
-    assert.deepEqual([st.run, st.profile.coins, st.profile.permList.length], [null, 0, 17]);
+    assert.deepEqual([st.run, st.profile.coins, st.profile.permList.length], [null, 0, 17 - cat.artifact.hiddenPerm.length]); // off(D63): 신규 아티팩트 해금(PC03)은 싣지 않는다
     a.send({ t: 'flame_catalog' });
     const cm = await a.type('flame_catalog');
-    assert.deepEqual([cm.equipment.length, cm.artifacts.length, cm.consumables.length, cm.ver], [40, 30, 20, st.catalogVer]);
+    assert.deepEqual([cm.equipment.length, cm.artifacts.length, cm.consumables.length, cm.ver], [40, 30 + 188 + 60, 20, st.catalogVer]); // 아티팩트 = 손으로 쓴 30 + 등급 아이템(필살슛 188·포메이션 60, §13.22)
     a.send({ t: 'flame_node', id: '0-0-0', ref: 1 });
     assert.equal((await a.wait((m) => m.t === 'error' && m.ref === 1)).code, 'FLAME_NONE');
     a.send({ t: 'flame_new' });
@@ -386,7 +386,9 @@ test('flame 리뷰 L9·L5: 로비 경유 승리(game_end -> flame_result{win} ->
     st = await a.type('flame_state');
     assert.deepEqual([st.run.matchesWon, st.run.pending[0].kind, st.run.done[0].win, st.run.layer, st.run.inMatch], [1, 'equipment', true, 1, false]);
     await a.type('room_left');
-    // 다음 경기 노드까지: 보상 받지 않음 -> 상점|특훈 -> 나가기
+    // 다음 경기 노드까지: 보상 받지 않음(장비 + 첫 승리 필살슛 보상, §13.22) -> 상점|특훈 -> 나가기
+    a.send({ t: 'flame_choose', i: -1 }); st = await a.type('flame_state');
+    assert.deepEqual([st.run.pending.length, st.run.pending[0].kind, st.run.pending[0].g], [1, 'artifact', 'firstWin']);
     a.send({ t: 'flame_choose', i: -1 }); st = await a.type('flame_state');
     a.send({ t: 'flame_node', id: st.run.candidates[0] }); await a.type('flame_state');
     a.send({ t: 'flame_leave' }); st = await a.type('flame_state');
@@ -484,7 +486,12 @@ test('flame 오리지널 팀(D17): 새 도전은 오리지널 7명으로 시작�
   assert.deepEqual([run.origTeam, run.roster.map((r) => r.orig)], ['bulssi', ['o1', 'o2', 'o3', 'o4', 'o5', 'o6', 'o7']]);
   assert.deepEqual([old.origTeam, old.roster.map((r) => r.orig)], [undefined, Array(7).fill(undefined)]);
   const node = candidates(run).find((n) => isMatch(n.type)), a = Run.matchOptions(cat, data, run, profile, node), b = Run.matchOptions(catLegacy, data, old, profile, node);
-  assert.deepEqual([run.map, a.flame], [old.map, b.flame]); // 지도·엔진 옵션(출신·능력치·필살기)이 종전과 같다 = 밸런스 재측정 0
+  // 지도·엔진 옵션(출신·능력치)이 태동 시작과 같다. 필살기만 다르다(D38 부여 구조): 불씨는 필살기 없음, 태동(원작 선수)은 고유 슛을 아티팩트 없이 쓴다
+  const noSp = (f) => ({ ...f, allow: null, roster: f.roster.map((r) => ({ ...r, sp: null })) });
+  assert.deepEqual([run.map, noSp(a.flame)], [old.map, noSp(b.flame)]);
+  const own = data.specials.row[0].filter((id) => !cat.excludedShots.has(id));
+  assert.deepEqual([a.flame.allow, a.flame.roster.map((r) => r.sp[0])], [[], Array(7).fill(null)]);
+  assert.deepEqual([b.flame.allow, b.flame.roster.map((r) => r.sp[0]).filter((id) => id !== null)], [[...new Set(own)].sort((x, y) => x - y), own]);
   const v = Run.viewOf(cat, data, run, profile).run.cast;
   assert.deepEqual([v.team.name, v.team.short, v.players[0].name, v.players[0].role, v.players[0].protagonist, v.players[0].locked, v.players[1].locked], ['불씨 국민학교', '불씨', '윤이음', 'ace', true, true, false]);
   assert.deepEqual([Object.keys(v.players[6].skin), a.cast.players.map((p) => p.id), catalogMsg(cat).original.players.length], [['team', 'idx', 'uni', 'hair'], run.roster.map((r) => r.orig), 7]);

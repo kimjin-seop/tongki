@@ -2,12 +2,16 @@
 import { h } from '../../util.js';
 import { fmNameKo } from '../../game/formation.js';
 import * as F from './store.js';
-import { icon, emptyIcon, pface, pname, pteam, isClone, tname, emblem, sprite, head, chip, btn, castFor } from './ui.js';
+import { icon, emptyIcon, pface, pname, pteam, isClone, tname, emblem, sprite, head, chip, btn, castFor, rarTag, artKindTag, rankName, KEEP_SLOTS, KEEP_LABEL, keepTag, keepNew, keepMark, keepRec } from './ui.js';
 import { champCoins } from './run.js';
 
 const coinChip = (n) => chip('불꽃코인', String(n), '.coin');
 /** 내 순위(도달 순위표의 내 줄, PROTOCOL §13.13 flame_ranking.me.rank). 손님(me:null)·기록 없는 계정(rank:null)·아직 받지 못했으면 null → 줄을 그리지 않는다 */
 const myRank = (app) => { const r = app.flameRank?.me?.rank; return Number.isInteger(r) && r > 0 ? r : null; };
+/** 보관 팀(키운 팀 슬롯, §13.20): 기능이 켜져 있는가(flame_catalog.versusTeam.enabled) / 슬롯 요약 */
+const keepOn = () => F.catalog()?.versusTeam?.enabled === true;
+const keepOf = (P) => (P?.teams && typeof P.teams === 'object' ? P.teams : {});
+const KEEP_SEEN = 'dd.flame.keepSeen'; // 도전 종료 화면의 보관 팀 NEW 배지를 이미 보였는가(이 브라우저에서 한 번)
 
 // ---------------- 모드 메인 ----------------
 export function home(ctx) {
@@ -28,6 +32,7 @@ export function home(ctx) {
     no.dataset.first = '1';
     body = h('section.pwin.fl-ask', { role: 'dialog', 'aria-label': '새로운 도전' },
       run ? h('div.fl-ask-t', '진행 중인 도전을 포기하고 새로 시작합니다') : null,
+      keepOn() && KEEP_SLOTS.some((k) => keepOf(P)[k]) ? h('span.kp-keep', { 'data-k': 'keep-stay' }, keepMark(), '보관 팀 유지') : null,
       diffs.length > 1 ? h('div.fl-opts', { role: 'group', 'aria-label': '난이도' }, diffs.map((d) =>
         h('button.btn', { type: 'button', 'data-k': 'diff-' + d.id, 'aria-pressed': String(S.newDiff === d.id), onclick: () => { S.newDiff = d.id; ctx.paint(); } }, d.name))) : null,
       h('div.fl-cmds', ok, no));
@@ -36,12 +41,24 @@ export function home(ctx) {
       ['새로운 도전', 'new', askNew], ['이어하기', 'cont', () => ctx.go('run'), !run], ['영구 성장', 'perm', () => ctx.go('perm')],
       ['선수 도감', 'cx-player', () => { S.codexTab = 'player'; S.codexSel = null; ctx.go('codex'); }],
       ['장비 도감', 'cx-equip', () => { S.codexTab = 'equip'; S.codexSel = null; ctx.go('codex'); }],
-      ['아티팩트 도감', 'cx-art', () => { S.codexTab = 'art'; S.codexSel = null; ctx.go('codex'); }],
+      [F.artOff() ? '아이템 도감' : '아티팩트 도감', 'cx-art', () => { S.codexTab = 'art'; S.codexSel = null; ctx.go('codex'); }], // off(§13.26): 필살기·포메이션 아이템
       ['기록 및 업적', 'rec', () => ctx.go('records')],
     ];
-    const bs = items.map(([label, k, fn, off]) => h('button.btn.fl-menu-b', { type: 'button', 'data-k': k, disabled: !!off, onclick: fn }, label));
+    const bs = items.map(([label, k, fn, off]) => h('button.ritem.fl-menu-b', { type: 'button', 'data-k': k, disabled: !!off, onclick: fn }, label));
     (run ? bs[1] : bs[0]).dataset.first = '1';
     body = h('nav.pwin.fl-menu', { 'aria-label': '불꽃의 계승' }, bs);
+  }
+  // 보관 팀 칸 2개(최근·최고): 요약만(편집 없음). 누르면 핵심 3명을 펼친다. 빈 슬롯 = 점선 빈 칸
+  if (keepOn() && !S.newAsk) {
+    const T = keepOf(P);
+    top.append(h('section.pwin.kp-win', { 'aria-label': '보관 팀' }, h('span.kp-title', keepMark(), '보관 팀'),
+      KEEP_SLOTS.map((k) => {
+        const t = T[k];
+        if (!t) return h('span.kp-slot.empty', { 'data-k': 'keep-' + k, role: 'img', 'aria-label': `보관 팀 ${KEEP_LABEL[k]} 없음` }, keepTag(k));
+        const open = S.keepOpen === k, core = (Array.isArray(t.core) ? t.core : []).slice(0, 3).map(rankName).filter(Boolean);
+        return h('button.kp-slot', { type: 'button', 'data-k': 'keep-' + k, 'aria-expanded': String(open), onclick: () => { S.keepOpen = open ? null : k; ctx.paint(); } },
+          keepTag(k), h('span.tabular', keepRec(t)), open && core.length ? h('span.kp-core', core.join(' · ')) : null);
+      })));
   }
   ctx.root.append(h('div.screen.fl.fl-home', top, body,
     h('footer.fl-foot', btn('뒤로 가기', 'back', ctx.leave, '.small.back'), btn('순위', 'rank', () => ctx.go('rank'), '.small'))));
@@ -52,25 +69,29 @@ export function home(ctx) {
 const PERM_GROUP = { A: '기본 훈련', B: '출발 준비', C: '콘텐츠 해금' };
 const PERM_KEY = { startMatchPoints: (n) => `시작 경기 포인트 +${n}`, startEquipmentChoices: (n) => `시작 장비 선택 +${n}`, startArtifactChoices: (n) => `시작 아티팩트 선택 +${n}`,
   recruitCandidates: (n) => `영입 후보 +${n}`, shopSlots: (n) => `상점 상품 +${n}`, upgradeCostDiscountPct: (n) => `강화 비용 −${n}%`, rewardRerolls: (n) => `재선택 +${n}` };
-function permText(id) {
+// 단계당 효과 + 산 단계가 있으면 총효과(「· 현재 +6」). 옛 저장 이관(PROTOCOL §13.23)으로 A 단계가 maxLevel 보다 클 수 있어 총효과는 lv 그대로 곱한다
+function permText(id, lv) {
   const e = F.permDef(id)?.effect;
-  if (!e) return '';
-  if (e.stat) return `${F.statName(e.stat)} +${e.perLevel}`;
-  return PERM_KEY[e.key]?.(e.perLevel) ?? '';
+  if (!e || !Number.isFinite(e.perLevel)) return '';
+  const one = e.stat ? `${F.statName(e.stat)} +${e.perLevel}` : PERM_KEY[e.key]?.(e.perLevel) ?? '';
+  if (!one || !(lv > 1)) return one;
+  const n = e.perLevel * lv;
+  return `${one} · 현재 ${e.key === 'upgradeCostDiscountPct' ? `−${n}%` : `+${n}`}`;
 }
 export function perm(ctx) {
   const P = ctx.prof();
   const back = () => ctx.go('home');
   const row = (u) => {
-    const max = u.next === null || u.next === undefined;
+    const max = u.next === null || u.next === undefined, over = u.lv > u.maxLevel; // over = 옛 표에서 산 효과를 보존한 단계(더 살 수 없음)
     return h('div.fl-perm-row' + (max ? '.max' : ''),
-      h('span.fl-perm-n', u.name), h('span.fl-perm-e', permText(u.id)),
-      h('span.fl-pips', { role: 'img', 'aria-label': `${u.lv}/${u.maxLevel}단계` }, Array.from({ length: u.maxLevel }, (_, i) => h('i' + (i < u.lv ? '.on' : '')))),
+      h('span.fl-perm-n', u.name), h('span.fl-perm-e', typeof u.text === 'string' && u.text ? u.text : permText(u.id, u.lv)), // off(§13.26): 뜻이 바뀐 항목(PB03)은 서버 문구 permList[].text
+      h('span.fl-pips', { role: 'img', 'aria-label': max ? '최대' + (over ? ' · 이전 구매 보존' : '') : `${u.lv}/${u.maxLevel}단계`, title: over ? '이전 구매 보존' : null },
+        Array.from({ length: u.maxLevel }, (_, i) => h('i' + (i < u.lv ? '.on' : '')))),
       h('button.btn.small.fl-perm-b' + (!max && P.coins < u.next ? '.dim' : ''), { type: 'button', 'data-k': 'perm-' + u.id, disabled: max, 'aria-label': `${u.name} ${max ? '최대' : `${u.next} 불꽃코인`}`,
         onclick: () => ctx.send('flame_perm', { id: u.id }) }, max ? '최대' : h('span.tabular', String(u.next))));
   };
   const groups = ['A', 'B', 'C'].map((g) => h('section.pwin.fl-perm-g', { 'aria-label': PERM_GROUP[g] },
-    h('h2.fl-sub', PERM_GROUP[g]), P.permList.filter((u) => u.group === g).map(row)));
+    h('h2.fl-sub', PERM_GROUP[g]), P.permList.filter((u) => u.group === g && !(F.catalog().artifact?.hiddenPerm ?? []).includes(u.id)).map(row))); // hiddenPerm(PC03) = 서버도 빼서 보낸다
   ctx.root.append(h('div.screen.fl', head('영구 성장', back, coinChip(P.coins)), h('div.fl-perm', { 'data-sc': 'perm' }, groups)));
   const first = ctx.root.querySelector('.fl-perm-b:not(:disabled)') ?? ctx.root.querySelector('[data-k="back"]');
   first.dataset.first = '1';
@@ -79,6 +100,7 @@ export function perm(ctx) {
 
 // ---------------- 도감 ----------------
 const CODEX_TABS = [['player', '선수'], ['equip', '장비'], ['art', '아티팩트']];
+const codexTabs = () => CODEX_TABS.map(([k, l]) => [k, k === 'art' && F.artOff() ? '필살기·포메이션 아이템' : l]); // off(§13.26)
 export function codex(ctx) {
   const { S } = ctx, P = ctx.prof(), run = ctx.run(), C = F.catalog();
   const back = () => ctx.go('home');
@@ -90,7 +112,7 @@ export function codex(ctx) {
     player: [...new Set([...P.codex.players, ...(run?.roster ?? []).map((r) => (typeof r.clone === 'string' ? 'c:' + r.clone : isClone(r.from) ? null : `${r.from.team}:${r.from.idx}`)).filter(Boolean)])],
   };
   const tab = S.codexTab;
-  const tabs = h('div.fl-tabs', { role: 'group', 'aria-label': '도감' }, CODEX_TABS.map(([k, label]) =>
+  const tabs = h('div.fl-tabs', { role: 'group', 'aria-label': '도감' }, codexTabs().map(([k, label]) =>
     h('button.btn.small', { type: 'button', 'data-k': 'tab-' + k, 'aria-pressed': String(tab === k), onclick: () => { S.codexTab = k; S.codexSel = null; ctx.paint(); } }, label)));
   let grid, detail = null, count;
   const pick = (id) => { S.codexSel = id; ctx.paint(); };
@@ -122,24 +144,44 @@ export function codex(ctx) {
     if (cell && !sel) detail = [h('div.fl-cx-top', emptyIcon('?'), h('div.fl-cx-name', UNK))];
     else if (sel) {
       // 클론의 능력치·필살기는 도감 정의에 없다(몸을 빌린 원작 선수의 값을 내면 틀린다) → 이름·역할·모습만
-      const clone = cell.kind === 2, six = clone ? null : F.baseSix(sel), own = clone ? null : F.ownShot(sel);
+      // 부여 구조(§13.21): 고유 슛은 원작 선수(kind 1)만 갖는다 — 오리지널(불씨) 선수 칸에는 필살기 줄을 내지 않는다
+      const G = F.granted(), clone = cell.kind === 2, six = clone ? null : F.baseSix(sel), own = clone || (G && cell.kind !== 1) ? null : F.ownShot(sel);
       detail = [h('div.fl-cx-top', sprite(sel), h('div', h('div.fl-cx-name', pname(sel)), h('div.fl-cx-sub', pteam(sel)))),
         six ? h('div.fl-kv', F.SIX_KEYS.map((k, i) => h('span', h('i', F.statName(k)), h('b.tabular', String(six[i]))))) : null,
-        own !== null ? h('div.fl-cx-line', h('i', '필살기'), F.shotName(own)) : null];
+        own !== null ? h('div.fl-cx-line', h('i', '필살기'), F.shotName(own), G ? h('span.tag.host', '고유') : null) : null];
     }
   } else {
-    const all = tab === 'equip' ? C.equipment : C.artifacts, has = seen[tab];
+    // 아티팩트 탭(§13.22): 분모 = 손으로 쓴 것(30종)만. 등급 아이템은 종류(슛 47 · 포메이션 15)마다 한 칸 = 발견한 가장 높은 등급(딱지), 묶음 머리에 발견 수
+    // off(§13.26): 손으로 쓴 아티팩트(30종) 칸·분모를 내지 않는다 — 종류별 최고 등급 묶음만, 머리 수 = 묶음 합
+    const OFF = tab === 'art' && F.artOff(), has = seen[tab], all = tab === 'equip' ? C.equipment : OFF ? [] : C.artifacts.filter((d) => !F.grantOf(d));
     count = `${all.filter((d) => has.has(d.id)).length}/${all.length}`;
+    const groups = [];
+    if (tab === 'art') {
+      const best = new Map();
+      for (const id of has) { const g = F.grantOf(F.artDef(id)); if (g && !(best.get(`${g.kind}:${g.key}`)?.rank >= g.rank)) best.set(`${g.kind}:${g.key}`, g); }
+      if (F.gradeOn() || best.size) for (const kind of ['shot', 'formation']) {
+        const keys = [...new Set(C.artifacts.map(F.grantOf).filter((g) => g?.kind === kind).map((g) => g.key))];
+        const list = keys.map((key) => { const grade = best.get(`${kind}:${key}`)?.grade ?? null; return { id: (kind === 'shot' ? 'SP' : 'FM') + key, d: F.artDef(F.gradeId(kind, key, grade ?? 'C')), grade }; }).filter((x) => x.d);
+        if (list.length) groups.push({ kind, list });
+      }
+    }
+    if (OFF) { const xs = groups.flatMap((g) => g.list); count = `${xs.filter((x) => x.grade).length}/${xs.length}`; }
     grid = h('div.fl-cx-grid', { 'data-sc': 'cx' }, all.map((d) => {
       const ok = has.has(d.id);
       return h('button.fl-cx-cell' + (ok ? '' : '.unk'), { type: 'button', 'data-k': 'cx-' + d.id, 'aria-pressed': String(S.codexSel === d.id), 'aria-label': ok ? d.name : '미발견', onclick: () => pick(d.id) },
         icon(d, { dim: !ok }), h('span.nm', ok ? d.name : '???'));
-    }));
-    const d = all.find((x) => x.id === S.codexSel);
-    if (d && has.has(d.id)) {
+    }), groups.map((g) => [h('h2.fl-sub.fl-cx-h', { 'data-k': 'cxh-' + g.kind }, F.KIND_KO[g.kind], h('span.fl-count.tabular', `${g.list.filter((x) => x.grade).length}/${g.list.length}`)),
+      g.list.map((x) => h('button.fl-cx-cell' + (x.grade ? '' : '.unk'), { type: 'button', 'data-k': 'cx-' + x.id, 'aria-pressed': String(S.codexSel === x.id), 'aria-label': x.grade ? `${F.artName(x.d)} ${x.grade} 등급` : '미발견', onclick: () => pick(x.id) },
+        icon(x.d, { dim: !x.grade, grade: x.grade }), h('span.nm', x.grade ? F.artName(x.d) : '???')))]));
+    const d = all.find((x) => x.id === S.codexSel), gx = groups.flatMap((g) => g.list).find((x) => x.id === S.codexSel);
+    if (gx) {
+      detail = gx.grade ? [h('div.fl-cx-top', icon(gx.d, { big: true }), h('div', h('div.fl-cx-name', F.artName(gx.d)), h('div.fl-cx-sub', artKindTag(gx.d)))), h('div.fl-cx-spec', F.artLine(gx.d)), F.artPair(gx.d) ? h('div.fl-cx-spec.fl-pair', F.artPair(gx.d)) : null]
+        : [h('div.fl-cx-top', icon(gx.d, { big: true, dim: true, grade: null }), h('div.fl-cx-name', '???'))];
+    } else if (d && has.has(d.id)) {
       detail = [h('div.fl-cx-top', icon(d, { big: true }), h('div', h('div.fl-cx-name', d.name),
-        h('div.fl-cx-sub', tab === 'equip' ? [h('span.fl-rar.r-' + d.rarity, F.rarityName(d.rarity)), F.SLOT_KO[d.slot]] : F.CAT_KO[d.category] ?? ''))),
-        h('div.fl-cx-spec', d.specText)];
+        h('div.fl-cx-sub', tab === 'equip' ? [rarTag(d.rarity), F.SLOT_KO[d.slot]] : artKindTag(d)))),
+        h('div.fl-cx-spec', tab === 'equip' ? d.specText : F.artSpec(d)), tab !== 'equip' && F.artPair(d) ? h('div.fl-cx-spec.fl-pair', F.artPair(d)) : null,
+        tab !== 'equip' && F.artShot(d.id) !== null ? h('div.fl-cx-line', { 'data-k': 'art-shot' }, h('i', '대표 슛'), F.shotName(F.artShot(d.id))) : null];
     } else if (d) detail = [h('div.fl-cx-top', icon(d, { big: true, dim: true }), h('div.fl-cx-name', '???'))];
   }
   ctx.root.append(h('div.screen.fl', head('도감', back, tabs, h('span.fl-count.tabular', count)),
@@ -166,6 +208,21 @@ export function records(ctx) {
 }
 
 // ---------------- 도전 종료 ----------------
+/** 이번 정산에서 갱신된 보관 팀 슬롯(flame_end.summary.teams): 딱지 + 구간·승수 + 한 줄. 경기 없이 끝난 도전(둘 다 false)·기능 꺼짐 = 없음.
+ *  NEW 는 이 브라우저에서 처음 보관 팀이 생긴 결과 화면에서만(localStorage, 같은 요약을 다시 그려도 같은 값) */
+function keepEnd(m) {
+  const kt = m.teams && typeof m.teams === 'object' ? m.teams : {}, upd = KEEP_SLOTS.filter((k) => kt[k] === true);
+  if (!upd.length) return null;
+  if (m.kpNew === undefined) {
+    let seen = true;
+    try { seen = !!localStorage.getItem(KEEP_SEEN); if (!seen) localStorage.setItem(KEEP_SEEN, '1'); } catch { /* 저장소 불가: NEW 없음 */ }
+    m.kpNew = !seen;
+  }
+  const rec = keepRec({ seg: m.seg, wins: m.matches ?? 0 });
+  return h('div.kp-end', { 'data-k': 'keep-end' },
+    upd.map((k, i) => h('div.kp-end-row', { 'data-k': 'keep-end-' + k }, keepTag(k), m.kpNew && i === 0 ? keepNew() : null, h('span.tabular', rec))),
+    h('div.kp-end-t', '보관 팀으로 멀티 대전에 쓸 수 있습니다'));
+}
 const END_TITLE = { defeat: '도전 종료', champion: '우승', abandon: '도전 포기' };
 export function end(ctx) {
   const { app } = ctx, m = app.flameEnd;
@@ -177,7 +234,8 @@ export function end(ctx) {
   const parts = [['일반', coins.normal], ['강팀', coins.strong], ['보스', coins.boss], ['우승', coins.champion], ['첫 우승', coins.first]].filter(([, v]) => v > 0)
     .map(([k, v]) => `${k} ${v}`).join(' + ') + (coins.pct && coins.pct !== 100 ? ` ×${coins.pct}%` : '');
   const lost = m.lost ?? {};
-  const lostRows = [['장비', lost.items, '개'], ['아티팩트', lost.artifacts, '개'], ['소모품', lost.consumables, '개'], ['경기 포인트', lost.points, ''], ['영입 선수', lost.recruited, '명']];
+  // off(§13.26): lost.artifacts = 보유한 필살기·포메이션 아이템 수
+  const lostRows = [['장비', lost.items, '개'], [F.artOff() ? '필살기·포메이션 아이템' : '아티팩트', lost.artifacts, '개'], ['소모품', lost.consumables, '개'], ['경기 포인트', lost.points, ''], ['영입 선수', lost.recruited, '명']];
   const ach = (m.achievements ?? []).map((id) => F.achDef(id)?.name).filter(Boolean);
   // 우승한 도전(엔드리스는 우승해도 도전이 이어져 result 가 'champion' 으로 오지 않는다 → summary.championed): 제목을 금색으로 바꾸고 제목 바로 아래에 우승 요약 한 줄(소멸 목록보다 먼저 보인다)
   const won = m.result === 'champion' || m.championed === true, cc = champCoins(coins), rank = myRank(app);
@@ -191,7 +249,7 @@ export function end(ctx) {
         kv('도달 구간', F.segText(m.seg, m, ctx.S.segments)), // 엔드리스 = 분모 없음(summary.endless, PROTOCOL §13.12)
         kv('승리', `${m.matches}승` + (m.matches ? ` (일반 ${m.wins.normal} · 강팀 ${m.wins.strong} · 보스 ${m.wins.boss})` : '')),
         h('div.fl-rec-row', h('i', '격파한 보스'), h('b.fl-end-boss', m.bosses?.length ? m.bosses.map((t) => h('span', emblem(t), tname(t))) : '없음')),
-        h('div.fl-rec-row', h('i', '최고 장비 등급'), m.bestRarity ? h('b.fl-rar.r-' + m.bestRarity, F.rarityName(m.bestRarity)) : h('b', '없음')),
+        h('div.fl-rec-row', h('i', '최고 장비 등급'), m.bestRarity ? rarTag(m.bestRarity) : h('b', '없음')),
         kv('사용한 포메이션', m.formations?.length ? m.formations.map(fmNameKo).join(' · ') : '없음'),
         // 경기를 한 판도 치르지 않은 도전은 도전 횟수·최고 기록·업적에 들지 않는다(summary.counted, PROTOCOL §13.3)
         // 엔드리스는 우승해도 도전이 이어져 result 가 'champion' 으로 오지 않는다: 우승 여부는 summary.championed 로 표식 한 개
@@ -201,7 +259,8 @@ export function end(ctx) {
         h('div.fl-rec-row.fl-coin-row', h('i', '획득 불꽃코인'), h('b.tabular', `+${coins.total}`)),
         parts ? h('div.fl-end-parts.tabular', parts) : null,
         coins.defeat > 0 ? kv('분투 보상', `+${coins.defeat}`) : null, // 패배 분투 보상(PROTOCOL §13.3, total 에 이미 포함)
-        ach.length ? h('div.fl-rec-row', h('i', '새 업적'), h('b', ach.join(' · '))) : null),
+        ach.length ? h('div.fl-rec-row', h('i', '새 업적'), h('b', ach.join(' · '))) : null,
+        keepEnd(m)),
       h('section.pwin.fl-rec-box.fl-lost', h('h2.fl-sub', '소멸'),
         lostRows.filter(([, v]) => v > 0).map(([k, v, u]) => kv(k, `${v}${u}`)))),
     h('div.fl-cmds.one', ok)));

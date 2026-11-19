@@ -1,34 +1,41 @@
 {
   "_meta": {
-    "version": 1,
+    "version": 2,
     "source": "analysis/36_flame_legacy_spec.md §10.3",
     "notes": [
       "A(기본 훈련)는 단계·효과·비용이 기획서 표 그대로다.",
       "B(출발 준비)는 기획서에 최대 단계와 효과 문구만 있다. costs=null, perLevel=null 이고 proposed 가 [자작 제안]이다.",
-      "C(콘텐츠 해금)는 기획서에 항목 이름만 있다. cost=null. 개별 해금 대상 목록은 후속 단계에서 정한다."
+      "C(콘텐츠 해금)는 기획서에 항목 이름만 있다. cost=null. 개별 해금 대상 목록은 후속 단계에서 정한다.",
+      "[2026-11-19 D50, 팀장 결정·사용자 지시 「풀강화 20~30시간, 능력치는 개미쥐똥만큼」, analysis/40 §21.4] version 2: A(PA01~04)의 단계·효과·비용과 B 의 proposed 비용·단계를 §21.4 표로 바꿨다. 기획 36 §10.3 의 A 표는 고치지 않았고 이 파일이 그 표를 대체한다(validate_data.mjs 는 39 D50 표와 대조한다). 합계 A 3,000 · B 2,980 · C 3,500 = 9,480코인 · 37단계.",
+      "[D50 이관 규칙] legacy = version 1 의 단계·효과(maxLevel·perLevel). 영구 저장에 permV(영구 성장 표 판) 가 없거나 2 미만이면 읽을 때 한 번 환산한다: 새 단계 = round(옛 단계 × legacy.perLevel ÷ 새 perLevel) -> 총효과 보존. A 는 새 maxLevel 을 넘어도 자르지 않는다(이미 산 효과 보존, 환불 없음, 더 살 수 없음). B 는 새 maxLevel 안에 든다. legacy 가 없는 항목은 단계 그대로(A 는 옛 maxLevel 까지 보존)."
     ]
   },
   "training": [
     {
       "id": "PA01",
       "name": "기초 체력 훈련",
-      "maxLevel": 3,
-      "specText": "시작 선수 HP 단계별 +2",
+      "maxLevel": 4,
+      "specText": "시작 선수 HP 단계별 +1",
       "effect": {
         "stat": "s0",
-        "perLevel": 2,
+        "perLevel": 1,
         "target": "starters"
       },
       "costs": [
-        100,
-        200,
-        350
-      ]
+        150,
+        250,
+        350,
+        450
+      ],
+      "legacy": {
+        "maxLevel": 3,
+        "perLevel": 2
+      }
     },
     {
       "id": "PA02",
       "name": "기본 수비 훈련",
-      "maxLevel": 2,
+      "maxLevel": 1,
       "specText": "시작 선수 방어력 단계별 +1",
       "effect": {
         "stat": "s1",
@@ -36,14 +43,17 @@
         "target": "starters"
       },
       "costs": [
-        250,
-        500
-      ]
+        700
+      ],
+      "legacy": {
+        "maxLevel": 2,
+        "perLevel": 1
+      }
     },
     {
       "id": "PA03",
       "name": "투구 훈련",
-      "maxLevel": 2,
+      "maxLevel": 1,
       "specText": "시작 선수 공격력 단계별 +1",
       "effect": {
         "stat": "s4",
@@ -51,14 +61,17 @@
         "target": "starters"
       },
       "costs": [
-        250,
-        500
-      ]
+        700
+      ],
+      "legacy": {
+        "maxLevel": 2,
+        "perLevel": 1
+      }
     },
     {
       "id": "PA04",
       "name": "캐치 훈련",
-      "maxLevel": 2,
+      "maxLevel": 1,
       "specText": "시작 선수 캐치 지속 단계별 +1",
       "effect": {
         "stat": "s5",
@@ -66,16 +79,19 @@
         "target": "starters"
       },
       "costs": [
-        200,
         400
-      ]
+      ],
+      "legacy": {
+        "maxLevel": 2,
+        "perLevel": 1
+      }
     }
   ],
   "preparation": [
     {
       "id": "PB01",
       "name": "초기 지원금",
-      "maxLevel": 3,
+      "maxLevel": 6,
       "specText": "시작 경기 포인트 증가",
       "effect": {
         "key": "startMatchPoints",
@@ -83,12 +99,19 @@
       },
       "costs": null,
       "proposed": {
-        "perLevel": 30,
+        "perLevel": 15,
         "costs": [
+          40,
+          60,
+          80,
           100,
-          200,
-          350
+          130,
+          160
         ]
+      },
+      "legacy": {
+        "maxLevel": 3,
+        "perLevel": 30
       }
     },
     {
@@ -104,8 +127,8 @@
       "proposed": {
         "perLevel": 1,
         "costs": [
-          200,
-          400
+          120,
+          240
         ]
       }
     },
@@ -122,8 +145,8 @@
       "proposed": {
         "perLevel": 1,
         "costs": [
-          300,
-          600
+          150,
+          300
         ]
       }
     },
@@ -140,9 +163,9 @@
       "proposed": {
         "perLevel": 1,
         "costs": [
+          80,
           150,
-          300,
-          500
+          250
         ]
       }
     },
@@ -159,16 +182,16 @@
       "proposed": {
         "perLevel": 1,
         "costs": [
+          80,
           150,
-          300,
-          500
+          250
         ]
       }
     },
     {
       "id": "PB06",
       "name": "특훈 효율",
-      "maxLevel": 2,
+      "maxLevel": 4,
       "specText": "장비 강화 비용 감소",
       "effect": {
         "key": "upgradeCostDiscountPct",
@@ -176,11 +199,17 @@
       },
       "costs": null,
       "proposed": {
-        "perLevel": 10,
+        "perLevel": 5,
         "costs": [
-          250,
-          500
+          40,
+          60,
+          80,
+          100
         ]
+      },
+      "legacy": {
+        "maxLevel": 2,
+        "perLevel": 10
       }
     },
     {
@@ -196,8 +225,8 @@
       "proposed": {
         "perLevel": 1,
         "costs": [
-          200,
-          400
+          120,
+          240
         ]
       }
     }

@@ -8,21 +8,23 @@ import { computeTeam, teamOfRun, upgradeBonus, upgradePreview } from '../server/
 import * as Items from '../server/flame/items.js';
 import { newRun } from '../server/flame/run.js';
 
-const data = loadData(), cat = loadCatalog();
+const data = loadData(), cat = { ...loadCatalog(), artifact: { ...loadCatalog().artifact, model: 'team' } }; // 아티팩트 스위치 team(종전 공용 3칸) 고정. off(기본값) 동작은 flame_noartifact.test.js
+const catOff = { ...cat, grade: { ...cat.grade, on: false } }; // 등급제 스위치(decisions.json grade.model)를 끈 것과 같은 카탈로그
 const code = (fn) => { try { fn(); } catch (e) { if (e instanceof FlameError) return e.code; throw e; } return null; };
 const fresh = () => { const run = newRun(cat, data, freshProfile(), { seed: 11 }); run.pending = []; return run; };
 const give = (run, id, lv = 0) => { const it = Items.addItem(cat, run, id); it.lv = lv; return it.inst; };
 
 test('flame 카탈로그: 40/30/20·영구 성장 17·특훈 11 을 읽고 엔진 데이터 참조(팀·포메이션·필살기)가 맞다', () => {
   assert.equal(checkAgainstEngine(cat, data), true);
-  assert.deepEqual([cat.items.size, cat.artifacts.size, cat.consumables.size, cat.perm.size, cat.training.length], [40, 30, 20, 17, 11]);
+  assert.deepEqual([cat.items.size, cat.authored.length, cat.consumables.size, cat.perm.size, cat.training.length], [40, 30, 20, 17, 11]); // 손으로 쓴 아티팩트 30종(등급 아이템 248종은 flame_grade.test.js)
   assert.deepEqual([...cat.perm.values()].reduce((a, u) => { a[u.group]++; return a; }, { A: 0, B: 0, C: 0 }), { A: 4, B: 7, C: 6 });
 });
 
 test('flame 파이프라인 9단계: 기본→영구→특훈→장비(강화)→아티팩트→포메이션→시너지→소모품→상한. 장비를 빼면 정확히 원복', () => {
+  const cat = catOff; // 등급제(D42)를 끈 카탈로그: 이 시험은 포메이션을 아이템 없이 고르던 종전 규칙의 9단계 계산을 본다(등급제의 포메이션 아이템·등급 보너스는 flame_grade.test.js)
   const run = fresh(), perm = { PA01: 2, PA03: 1 };
   const before = teamOfRun(cat, data, run, perm);
-  assert.deepEqual([before.players[0].final.s0, before.players[0].final.s4], [85 + 4, 28 + 1]); // 영구 성장: HP +2x2, 공격력 +1
+  assert.deepEqual([before.players[0].final.s0, before.players[0].final.s4], [85 + 2, 28 + 1]); // 영구 성장: HP +1x2(D50), 공격력 +1
   // 통키(0:0): 기본 hp85 def10 spd16 s3 44 pow28
   run.roster[0].train = { s4: 2, r1: 30 };
   const h = give(run, 'H08', 3), g = give(run, 'G05'), pr = give(run, 'P09'), u = give(run, 'U07');
@@ -32,7 +34,7 @@ test('flame 파이프라인 9단계: 기본→영구→특훈→장비(강화)�
   run.buffs = [{ c: 'C04', p: 0 }, { c: 'C10', p: 0 }, { c: 'C13', p: null }];
   const t = teamOfRun(cat, data, run, perm), p0 = t.players[0];
   // s4 = 28 + 영구 1 + 특훈 2 + H08(3 → +3 강화 5) + G05 3 + A19 2 + A13 3(공격형) + C04 3 = 47. SY01 의 공격력 +3 은 A13 과 같은 수치라 다시 더하지 않는다(D10)
-  assert.deepEqual({ s0: p0.final.s0, s1: p0.final.s1, s2: p0.final.s2, s3: p0.final.s3, s4: p0.final.s4 }, { s0: 85 + 4 + 5, s1: 10 + 3 - 1, s2: 18, s3: 45, s4: 47 });
+  assert.deepEqual({ s0: p0.final.s0, s1: p0.final.s1, s2: p0.final.s2, s3: p0.final.s3, s4: p0.final.s4 }, { s0: 85 + 2 + 5, s1: 10 + 3 - 1, s2: 18, s3: 45, s4: 47 });
   assert.deepEqual(p0.steps.map((s) => s.add.s4 ?? 0), [28, 1, 2, 8, 2, 3, 0, 3, 0]);
   assert.deepEqual([p0.final.r1, p0.over.r1, p0.steps[8].add.r1], [60, 5, -5]); // R1 20 + 15 + 30 = 65 -> 상한 60
   assert.deepEqual([t.tag, t.synergies, t.allow], ['attack', ['SY01', 'SX01'], [22, 25]]);
@@ -77,7 +79,7 @@ test('flame 장비: 4슬롯 독립, 같은 인스턴스 중복 장착 거절, �
   assert.deepEqual([run.points, run.items.find((i) => i.inst === g).lv, code(() => Items.upgrade(cat, run, {}, g))], [0, 3, 'FLAME_MAX']);
   assert.equal(code(() => Items.upgrade(cat, run, {}, h)), 'FLAME_NO_FUNDS');
   assert.equal(teamOfRun(cat, data, run, {}).players[0].final.s4, 28 + 5);
-  assert.equal(Items.upgradeCost(cat, { PB06: 2 }, 0), 48); // 특훈 효율 2단계 = 20% 할인
+  assert.equal(Items.upgradeCost(cat, { PB06: 4 }, 0), 48); // 특훈 효율 4단계 = 20% 할인(D50: 단계당 5%)
   // 판매: 낀 장비는 거절, 인벤토리 장비만
   assert.equal(code(() => Items.sell(cat, run, g)), 'FLAME_EQUIPPED');
   assert.deepEqual([Items.sell(cat, run, h), run.points, run.items.length], [30, 30, 2]);
@@ -91,19 +93,19 @@ test('flame 아티팩트·필살기: 3개 제한(4번째 거절), 장착하면 �
   const run = fresh();
   for (const a of ['A01', 'A02', 'A03', 'A06']) Items.addArtifact(cat, run, a);
   assert.deepEqual(teamOfRun(cat, data, run, {}).allow, []); // 갖고만 있으면 잠금
-  for (const a of ['A01', 'A02', 'A03']) Items.setArtifact(cat, run, null, a);
-  assert.equal(code(() => Items.setArtifact(cat, run, null, 'A06')), 'FLAME_FULL');
+  for (const a of ['A01', 'A02', 'A03']) Items.setArtifact(cat, run, null, a, data);
+  assert.equal(code(() => Items.setArtifact(cat, run, null, 'A06', data)), 'FLAME_FULL');
   assert.equal(code(() => Items.addArtifact(cat, run, 'A01')), 'FLAME_INVALID'); // 같은 아티팩트 중복 소지 없음
   assert.deepEqual(teamOfRun(cat, data, run, {}).allow, [1, 2, 11, 22, 25, 48, 49, 53]);
   Items.setSpecial(cat, data, run, 3, [22, 11]); // D3: 해금된 슛은 아무 선수나
-  Items.setArtifact(cat, run, 0, null); // A01 해제
+  Items.setArtifact(cat, run, 0, null, data); // A01 해제
   assert.deepEqual(teamOfRun(cat, data, run, {}).allow, [1, 2, 11, 48, 49, 53]);
-  assert.equal(code(() => Items.setSpecial(cat, data, run, 4, [22, null])), 'FLAME_LOCKED'); // 잠긴 슛은 새로 넣을 수 없다(슬롯에 남은 것은 발동만 안 된다)
-  assert.deepEqual(run.roster[3].sp, [22, 11]);
-  Items.setArtifact(cat, run, 0, 'A06');
+  assert.equal(code(() => Items.setSpecial(cat, data, run, 4, [22, null])), 'FLAME_LOCKED'); // 부여가 끊긴 슛은 넣을 수 없다
+  assert.deepEqual(run.roster[3].sp, [11, null]); // D38: 뺀 아티팩트에서 온 슛(22)은 슬롯에서 비워지고 남은 예비 슛(11)이 주 슬롯으로 올라온다
+  Items.setArtifact(cat, run, 0, 'A06', data);
   const allow = teamOfRun(cat, data, run, {}).allow;
   assert.ok(allow.includes(29) && allow.includes(53) && !allow.includes(22) && !allow.includes(25) && allow.includes(11)); // 11 은 A02 로 열린 것
-  Items.setArtifact(cat, run, 1, null);
+  Items.setArtifact(cat, run, 1, null, data);
   assert.ok(!teamOfRun(cat, data, run, {}).allow.includes(11));
 });
 

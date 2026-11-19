@@ -3,8 +3,9 @@
 import { ferr } from './save.js';
 import { roundHalfUp, originalOf, isLockedPlayer, cloneOf, cloneRecruitOn, playerPts, POOL_GRADES, segRow, canTrain } from './catalog.js';
 import { rngSecret } from './rng.js';
-import { equipChoices, artifactChoices, consumableChoices } from './rewards.js';
+import { equipChoices, artifactChoices, consumableChoices, artifactPrice } from './rewards.js';
 import { addItem, addArtifact, addConsumable, canHold, baseSpecial, itemsFull } from './items.js';
+import { initialSpecials } from './stats.js';
 import { conflicts, fixOpponents } from './map.js';
 
 const permLv = (cat, perm, id) => Math.min(perm?.[id] ?? 0, cat.perm.get(id).maxLevel);
@@ -81,7 +82,7 @@ export function openNode(cat, data, run, perm, unlocked, node) {
     const S = C.shop, stock = [];
     for (const id of equipChoices(cat, run, unlocked, S.equipmentSlots + permVal(cat, perm, 'PB05'), 'shop', [node.id])) stock.push({ kind: 'equipment', id, price: cat.equipPrice(id), sold: false });
     for (const id of consumableChoices(cat, run, S.consumableSlots, [node.id])) stock.push({ kind: 'consumable', id, price: cat.consumablePrice(id), sold: false });
-    for (const id of artifactChoices(cat, run, unlocked, S.artifactSlots, ['shop', node.id])) stock.push({ kind: 'artifact', id, price: S.artifactPrice, sold: false });
+    for (const id of artifactChoices(cat, run, unlocked, S.artifactSlots, ['shop', node.id], 'shop')) stock.push({ kind: 'artifact', id, price: artifactPrice(cat, id), sold: false }); // 등급제(D40): 유형·등급을 뽑는다. 값은 등급별
     run.node.stock = stock;
   } else if (node.type === 'training') run.node.picks = C.training.picksPerVisit;
   else if (node.type === 'rest') run.pending.push({ kind: 'rest', node: node.id });
@@ -100,7 +101,10 @@ export function openNode(cat, data, run, perm, unlocked, node) {
   }
 }
 
-/** 상점 구매(i = 상품 번호). 경기 포인트 지불 */
+/**
+ * 상점 구매(i = 상품 번호). 경기 포인트 지불
+ * @returns {{upgraded:true, id:string, sold:string, points:number}|null} 등급 아이템을 사서 낮은 등급이 자동 판매됐으면 그 알림(보상 선택의 note 와 같은 모양, 정검수 L1), 아니면 null
+ */
 export function buy(cat, run, i) {
   if (run.node?.type !== 'shop') ferr('FLAME_NOT_HERE');
   const g = run.node.stock?.[i];
@@ -108,10 +112,12 @@ export function buy(cat, run, i) {
   if (run.points < g.price) ferr('FLAME_NO_FUNDS');
   if (g.kind === 'consumable' && !canHold(cat, run, g.id)) ferr('FLAME_FULL');
   if (g.kind === 'equipment' && itemsFull(cat, run)) ferr('FLAME_FULL'); // 장비 보유 상한(D24): 값을 치르고 바로 팔리지 않게 구매는 거절한다(먼저 판다)
+  let note = null;
   if (g.kind === 'equipment') addItem(cat, run, g.id);
-  else if (g.kind === 'artifact') addArtifact(cat, run, g.id);
+  else if (g.kind === 'artifact') { const sold = addArtifact(cat, run, g.id); if (sold) note = { upgraded: true, id: g.id, sold: sold.id, points: sold.points }; }
   else addConsumable(cat, run, g.id);
   run.points -= g.price; g.sold = true;
+  return note;
 }
 
 /**
@@ -157,7 +163,9 @@ export function chooseRecruit(cat, data, run, pend, i, p, oppUnlocked) {
   // 영입 풀 클론(D18): from = 몸, clone = 풀 id(능력치·이름·기본 필살기는 풀에서 읽는다). 원작 선수는 종전 그대로
   const cl = c.clone !== undefined ? cloneOf(cat, c) ?? ferr('FLAME_INVALID') : null, from = cl ? { ...cl.body } : { team: c.team, idx: c.idx };
   if (run.roster.some((r, k) => k !== p && r.from.team === from.team && r.from.idx === from.idx)) ferr('FLAME_INVALID'); // 같은 몸이 로스터에 있으면 엔진이 경기를 거절한다(후보를 만들 때 이미 걸렀다. 안전망)
-  run.roster[p] = { from, ...(cl ? { clone: cl.id } : {}), hp: Number.MAX_SAFE_INTEGER, train: {}, equip: Object.fromEntries(cat.slots.map((s) => [s, null])), sp: [cl ? cl.sp : baseSpecial(cat, data, c), null], recruited: true }; // hp 는 호출자가 최대 HP 로 자른다(가득 찬 상태로 합류)
+  // 필살기 슬롯(D38 부여 구조): 원작 선수 = [고유 슛, null], 클론 = 필살기 없음(지금 낀 필살기 아티팩트가 있으면 그 대표 슛이 주 슬롯에 들어간다). 종전(legacy) = [풀의 sp | 원작 ID, null]
+  const who = { from, ...(cl ? { clone: cl.id } : {}) };
+  run.roster[p] = { ...who, hp: Number.MAX_SAFE_INTEGER, train: {}, equip: Object.fromEntries(cat.slots.map((s) => [s, null])), sp: initialSpecials(cat, data, who, run.artifacts), recruited: true }; // hp 는 호출자가 최대 HP 로 자른다(가득 찬 상태로 합류)
   run.buffs = run.buffs.filter((b) => b.p !== p); // 빠진 선수에게 걸어 둔 다음 경기 효과는 새 선수에게 넘어가지 않는다(P2 리뷰 L4). 팀 대상(p = null)은 남는다
   const seenKey = cl ? `c:${cl.id}` : `${c.team}:${c.idx}`; // 도감 키(D23): 클론 = c:<풀 id>, 원작 선수 = 팀:번호
   if (!run.seen.players.includes(seenKey)) run.seen.players.push(seenKey);
@@ -170,8 +178,8 @@ export function chooseEvent(cat, run, pend, i, unlocked, maxHp) {
   if (!ch) ferr('FLAME_INVALID');
   const cost = ch.cost ?? 0, rng = rngSecret(run.secret, 'eventop', pend.node, i);
   if (run.points < cost) ferr('FLAME_NO_FUNDS');
-  // 거절 조건을 먼저 본다(지불 뒤에 실패하지 않게)
-  const art = ch.ops.some((o) => o.op === 'gainArtifact') ? artifactChoices(cat, run, unlocked, 1, ['event', pend.node])[0] : null;
+  // 거절 조건을 먼저 본다(지불 뒤에 실패하지 않게). off(D61): E05 는 필살기 아이템 1개(등급 = artifact.off.eventGrade 출처), team 은 종전 팀 강화
+  const art = ch.ops.some((o) => o.op === 'gainArtifact') ? artifactChoices(cat, run, unlocked, 1, ['event', pend.node], 'event')[0] : null;
   if (ch.ops.some((o) => o.op === 'gainArtifact') && !art) ferr('FLAME_NO_EFFECT');
   // 특훈 누적 상한(D31): 받을 수 있는 선수가 한 명도 없으면 선택지를 거절한다(비용·HP 를 치르기 전에)
   if (ch.ops.some((o) => o.op === 'trainRandom' && !run.roster.some((r) => canTrain(cat, r, o.stat, o.value)))) ferr('FLAME_TRAIN_CAP');

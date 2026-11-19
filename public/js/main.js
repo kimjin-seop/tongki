@@ -3,7 +3,7 @@ import { net } from './net.js';
 import { loadManifest, loadFonts } from './game/assets.js';
 import { toast } from './ui.js';
 import { loadNames, teamName, teamLabel } from './names.js';
-import { ERR, ROOM_LEFT, TRAIN_END, LEAGUE, RANK_WHY } from './i18n.js';
+import { ERR, ERR_CODE, ROOM_LEFT, TRAIN_END, LEAGUE, RANK_WHY } from './i18n.js';
 import { $, isTyping } from './util.js';
 import { loadPix } from './pix.js';
 import * as Nick from './screens/nick.js';
@@ -78,12 +78,12 @@ function wire() {
   let quietClose = false;
   net.on('error', (m) => {
     if (m.code === 'LOGIN_TIMEOUT' && app.view === 'nick') { quietClose = true; return; }
-    toast(m.msg || ERR.UNKNOWN, 'error');
+    toast(app.screen?.errText?.(m) || ERR_CODE[m.code] || m.msg || ERR.UNKNOWN, 'error'); // errText = 화면이 정하는 문구(불꽃의 계승 필살기 슬롯 거절, flame/index.js)
     app.screen?.onError?.(m);
     // 토큰 거절(저장 토큰은 net 이 지웠다)·다른 곳에서 접속: 로그인 화면으로(가입 화면이 떠 있었으면 일반 접속 화면으로)
     if (m.code === 'TOKEN_INVALID' || m.code === 'SESSION_REPLACED') { app.room = null; app.account = false; app.flame = null; app.flameEnd = null; app.flameChamp = null; app.flameRank = null; if (app.view !== 'nick' || app.screen?.upgrade) app.go('nick'); }
   });
-  net.on('toast', (m) => toast(m.msg || m.code, 'warn'));
+  net.on('toast', (m) => toast(ERR_CODE[m.code] || m.msg || m.code, 'warn')); // 코드 문구표(i18n ERR_CODE: FLAME_TEAM_CLEARED 등)가 서버 msg 보다 먼저
   net.on('close', ({ was }) => {
     if (was && !net.closing && !quietClose) toast(ERR.DISCONNECTED, 'error');
     quietClose = false;
@@ -152,8 +152,9 @@ function wire() {
   });
   net.on('league_end', (m) => { app.leagueChamp = m.champions || []; if (app.view === 'league') app.screen.onLeagueEnd?.(m); });
   // 불꽃의 계승(PROTOCOL §13): 상태는 app.flame 한 곳에 두고 화면은 그것만 그린다. 경기 종료 순서 = game_end{flame} → flame_result → (flame_end) → flame_state → room_left
-  net.on('flame_state', (m) => { app.flame = m; if (app.view === 'flame') app.screen.onFlameState?.(m); });
-  net.on('flame_catalog', (m) => { setFlameCatalog(m); if (app.view === 'flame') app.screen.onFlameCatalog?.(m); });
+  // 대기실(room)도 받는다: 팀 선택의 불꽃 팀 칸(PROTOCOL §13.20)이 슬롯 요약·카탈로그를 본다
+  net.on('flame_state', (m) => { app.flame = m; if (app.view === 'flame' || app.view === 'room' || app.view === 'rules') app.screen.onFlameState?.(m); });
+  net.on('flame_catalog', (m) => { setFlameCatalog(m); if (app.view === 'flame' || app.view === 'room' || app.view === 'rules') app.screen.onFlameCatalog?.(m); }); // rules = 방 규칙 창의 늦은 「불꽃 팀」 줄
   net.on('flame_end', (m) => { app.flameEnd = m.summary ?? null; if (app.view === 'flame') app.screen.onFlameEnd?.(m); else if (app.view === 'game') app.screen.on_flame_end?.(m); });
   net.on('flame_result', (m) => {
     // 엔드리스 우승(§13.12): 도전은 이어진다. 도전 화면으로 돌아가면 그 도전에서 한 번 우승 화면을 보인다
@@ -177,6 +178,14 @@ function wire() {
   }
 }
 
+/** 레트로 UI 도트 글꼴(app.css @font-face 'RT *')을 첫 화면 전에 받는다(글꼴 바뀜 깜빡임 방지). 실패해도 부팅은 계속 */
+function uiFonts() {
+  if (!document.fonts?.load) return Promise.resolve();
+  const mob = matchMedia('(max-width: 900px), (max-height: 560px)').matches; // app.css 배율 1 구간(폭 900 이하 포함)과 같게
+  const fams = mob ? ['12px "RT 11"', '14px "RT 14"', '12px "RT 11B"'] : ['10px "RT 9"', '12px "RT 11"', '12px "RT 11B"'];
+  return Promise.all(fams.map((f) => document.fonts.load(f, '가A1').catch((e) => console.warn('font', f, e)))).then(() => {});
+}
+
 async function boot() {
   const root = $('#app');
   root.innerHTML = '<div class="center-screen"><div class="muted">불러오는 중…</div></div>';
@@ -195,7 +204,7 @@ async function boot() {
       delete document.body.dataset.intro;
       root.inert = false;
     }
-    await Promise.all([loadFonts(), loadNames(), loadPix()]);
+    await Promise.all([loadFonts(), loadNames(), loadPix(), uiFonts()]);
   } catch (e) { console.error(e); app.intro?.abort(); toast(ERR.ASSETS, 'error'); return; }
   wire();
   await net.connect();

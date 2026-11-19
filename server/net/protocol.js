@@ -67,6 +67,12 @@ export const ERR = {
   FLAME_PROTAGONIST: '주인공은 교체할 수 없습니다',
   FLAME_PRACTICE_NONE: '지금은 연습 경기를 할 수 없습니다',
   FLAME_TRAIN_CAP: '이 능력치는 특훈으로 더 올릴 수 없습니다',
+  // 키운 팀 슬롯(PROTOCOL §13.20)
+  FLAME_TEAM_NONE: '저장된 불꽃 팀이 없습니다',
+  FLAME_TEAM_ROOM: '이 방은 불꽃 팀을 허용하지 않습니다',
+  FLAME_TEAM_RULES: '불꽃 팀은 체력제 규칙에서만 쓸 수 있습니다',
+  FLAME_TEAM_CHANGED: '불꽃 팀 기록이 바뀌어 새로 불러왔습니다. 확인 후 다시 시작하세요', // 사람끼리 방(D53): 시작 때 슬롯 요약 at 이 고를 때와 다름
+  FLAME_TEAM_CLEARED: '방장이 불꽃 팀 허용을 꺼서 팀 선택이 풀렸습니다', // 토스트(D53): 고른 사람에게 1회
   // 계정(PROTOCOL §2.1)
   ACCOUNT_REQUIRED: '계정으로 로그인해야 합니다',
   ACCOUNT_EXISTS: '이미 가입된 닉네임입니다',

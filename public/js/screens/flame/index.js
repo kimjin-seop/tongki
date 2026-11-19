@@ -14,7 +14,7 @@ import { available as prematchOk } from '../prematch.js';
 import * as F from './store.js';
 import { imageAt } from '../../game/assets.js';
 import * as Skin from './skin.js';
-import { padNav, pname, bindCast, castOf, ORIG_EMBLEM } from './ui.js';
+import { padNav, pname, bindCast, castOf, ORIG_EMBLEM, nodeIcons } from './ui.js';
 import * as Home from './home.js';
 import * as RunV from './run.js';
 import * as Team from './team.js';
@@ -45,6 +45,7 @@ export function mount(root, app, data = {}) {
   let peek = false, req = null, seen = null; // peek = 휴식실에서 지도 보기 / req = 마지막으로 보낸 요청 / seen = 직전 상태 요약(획득·구매 토스트용)
   S.newAsk = false; S.abAsk = false; // 확인 창은 화면을 다시 열 때 닫힌 상태로
   const offPad = padNav();
+  nodeIcons(); // 지도 노드 아이콘 manifest 경로 → CSS 변수(한 번)
   const st = () => app.flame ?? null;
 
   const ctx = {
@@ -157,7 +158,7 @@ export function mount(root, app, data = {}) {
   }
 
   /** 상태 요약: 요청 전후를 견줘 획득·구매·성장 완료를 토스트 한 줄로 알린다 */
-  const digest = (s) => (s ? { run: s.run?.id ?? null, items: s.run?.items?.length ?? 0, arts: s.run?.artifactsOwned?.length ?? 0,
+  const digest = (s) => (s ? { run: s.run?.id ?? null, items: s.run?.items?.length ?? 0, arts: s.run?.artifactsOwned?.length ?? 0, artIds: s.run?.artifactsOwned ?? [],
     sold: (s.run?.node?.stock ?? []).filter((g) => g.sold).length, perm: (s.profile?.permList ?? []).reduce((a, u) => a + (u.lv ?? 0), 0) } : null);
   function showDone(m) {
     const was = seen, now = digest(m), r = req;
@@ -166,7 +167,11 @@ export function mount(root, app, data = {}) {
     if (r === 'flame_perm') { if (now.perm > was.perm) toast('성장 완료', 'ok'); return; }
     if (now.run === null || now.run !== was.run) return;
     if (r === 'flame_buy' && now.sold > was.sold) toast('구매 완료', 'ok');
-    else if (r === 'flame_choose' && now.arts > was.arts) toast('아티팩트 획득 — 장착 가능', 'ok');
+    else if (r === 'flame_choose' && now.arts > was.arts) {
+      // off(§13.26): 받은 아이템 이름 + 종류(필살기·포메이션 아이템). 받은 것은 자동으로 끼지 않는다
+      const id = F.artOff() ? now.artIds.find((x) => !was.artIds.includes(x)) : null, d = id ? F.artDef(id) : null, g = F.grantOf(d);
+      toast(F.artOff() ? (g ? `${F.ITEM_KO[g.kind]} 획득 ${F.artName(d)}` : '아이템 획득') : '아티팩트 획득 — 장착 가능', 'ok');
+    }
     else if (r === 'flame_choose' && now.items > was.items) toast('장비 획득 — 장착 가능', 'ok');
   }
   seen = digest(st());
@@ -185,6 +190,10 @@ export function mount(root, app, data = {}) {
   /** 이벤트 결과(flame_state.note): 토스트 한 줄 */
   function showNote(n) {
     // 장비 보유 상한(PROTOCOL §13.12): 고른 장비가 받는 즉시 판매가만큼 경기 포인트로 바뀌었다
+    // 등급 아이템(PROTOCOL §13.22): 더 높은 등급을 얻어 갖고 있던 낮은 등급이 자동 판매됐다(note = {upgraded, id, sold, points})
+    if (n?.upgraded) { const d = F.artDef(n.id), o = F.artDef(n.sold); toast(`${F.artName(d)} ${o?.grade ?? ''} → ${d?.grade ?? ''} · 자동 판매 +${Number.isFinite(n.points) ? n.points : 0}`, 'ok', 4200); return; }
+    // 무효가 된 선택(서버 .m15, note = {voided, id}): 이미 같거나 높은 등급을 갖고 있어 받지 못했다(남은 칸은 다시 고른다)
+    if (n?.voided) { toast(`${F.artName(F.artDef(n.id))} — 이미 같거나 높은 등급 보유`.replace(/^ — /, ''), 'warn', 4200); return; }
     if (n?.full) { toast(`장비가 가득 차 ${Number.isFinite(n.sold) ? n.sold : 0} 포인트로 바뀌었습니다`, 'warn', 4200); return; }
     if (!n || !Array.isArray(n.results)) return;
     const out = [];
@@ -197,7 +206,7 @@ export function mount(root, app, data = {}) {
       else if (r.op === 'gamble') out.push(r.win ? `내기 승리 경기 포인트 +${r.value}` : '내기 패배');
       else if (r.op === 'gainEquipment') out.push(Number.isFinite(r.sold) ? `장비가 가득 차 ${r.sold} 포인트로 바뀌었습니다` : `장비 획득 ${F.equipDef(r.id)?.name ?? ''}`);
       else if (r.op === 'gainConsumable') out.push(`소모품 획득 ${F.consDef(r.id)?.name ?? ''}`);
-      else if (r.op === 'gainArtifact') out.push(`아티팩트 획득 ${F.artDef(r.id)?.name ?? ''}`);
+      else if (r.op === 'gainArtifact') { const d = F.artDef(r.id), g = F.grantOf(d); out.push(`${F.artOff() ? F.ITEM_KO[g?.kind] ?? '아이템' : '아티팩트'} 획득 ${F.artName(d)}`); }
     }
     toast(out.length ? out.join(' · ') : '아무 일도 일어나지 않았다', 'ok', 4200);
   }
@@ -222,6 +231,13 @@ export function mount(root, app, data = {}) {
     onFlameRanking() { if (mode === 'rank' || mode === 'home' || mode === 'end') paint(); },
     onFlameEnd() { mode = 'end'; sub = null; askMyRank(); },
     // 카탈로그 요청이 거절되면 '불러오는 중'에 머물지 않게 로비로 돌아간다(거절 사유는 main.js 토스트)
+    /** 거절 토스트 문구를 이 화면이 정한다(main.js 가 먼저 묻는다. null = 종전 문구). 부여 구조(§13.21)의 슬롯 지정 거절 = 그 선수가 쓸 수 없는 슛 */
+    errText(m) {
+      if (m?.code !== 'FLAME_LOCKED') return null;
+      if (req === 'flame_special' && F.artOff()) return '그 선수의 필살기 아이템이 아닙니다'; // off: 자기 아이템의 슛 + 고유 슛만
+      if (req === 'flame_formation' && F.gradeOn()) return '장착한 포메이션 아이템만 고를 수 있습니다'; // 등급제(§13.22): 기본 + 낀 아이템의 패턴만
+      return req === 'flame_special' && F.granted() ? '부여되지 않은 필살기입니다' : null;
+    },
     onError() { busy = false; wantRun = false; req = null; clearTimeout(busyT); F.catalogRetry(); const s = st(); if (!s || !F.catalogReady(s.catalogVer)) app.go('lobby'); },
     onWelcome() { net.send('flame_get'); if (mode === 'rank') net.send('flame_ranking_get', {}); else askMyRank(); },
     unmount() { alive = false; offView?.(); offNav?.(); offPad(); clearTimeout(busyT); },

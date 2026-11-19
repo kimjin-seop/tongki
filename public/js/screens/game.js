@@ -18,6 +18,7 @@ import { FmName } from '../game/formation.js';
 import { teamName } from '../names.js';
 import { toast } from '../ui.js';
 import * as Skin from './flame/skin.js';
+import { granted as flGranted, artOff as flArtOff } from './flame/store.js';
 
 const STAGE_FILE_RE = /^rom\/bg\/stage_\d{2}$/, STAGE_JSON_RE = /^rom\/bg\/stage_\d{2}\.json$/, STAGE_KEY_RE = /^bg\.stage\.\d{2}$/;
 
@@ -57,11 +58,18 @@ export function mount(root, app, { start }) {
   const training = start.training?.kind ? start.training : null; // 특훈(혼자 하기, PROTOCOL §9): {kind, step, balls, pass, steps, gauge?}
   const league = start.league && Number.isInteger(start.league.i) ? start.league : null; // 리그 사람 경기(PROTOCOL §10): 끝나면 방이 없어지고 리그 메뉴로
   const flame = start.flame && Number.isInteger(start.flame.seat) ? start.flame : null; // 불꽃의 계승 경기(PROTOCOL §12.2·§13): 끝나면 방이 없어지고 도전 화면으로
+  // 키운 팀 대전(PROTOCOL §13.20, 컴퓨터 대전 방의 불꽃 팀): game_start.flameVs. 그리기(선수 이름·skin·필살기 안내)만 flame 경기처럼 하고, 흐름(결과 카드·holdLobby·room_left)은 일반 방 그대로(= flame 은 null)
+  // 사람끼리 방(§13.25): flameVs = {mode:'versus', seats:[{seat, fm, allow, slot} | null, …]} → 내 좌석 칸이 내 그리기 기준(안내 줄), 선수 이름·skin 은 좌석마다(flameCast.seats)
+  const vsSeats = Array.isArray(start.flameVs?.seats) ? start.flameVs.seats : null;
+  const flDraw = flame ?? (start.flameVs && Number.isInteger(start.flameVs.seat) ? start.flameVs
+    : vsSeats ? vsSeats.find((x) => x && x.seat === start.you) ?? null : null);
   const trSpecial = training?.kind === 'special'; // 필살 슛 특훈(§9.5): 공중 차지 필살, 차지 게이지 HUD
   const practice = !!flame && start.flameCast?.practice === true; // 불꽃의 계승 연습 경기(PROTOCOL §13.15): 결과가 도전에 반영되지 않는다. 화면에 작은 「연습」 표시
   // 불꽃의 계승: 내 팀에 지금 발동되는 필살기(teams[seat].players[i].spOn)가 하나도 없으면 조작 안내의 필살기 줄을 숨긴다(아티팩트 장착 전). 칸이 없는 서버면 해금 목록(flame.allow)으로 본다
-  const flPlayers = flame ? start.teams?.[flame.seat]?.players ?? [] : [];
-  const noSpecial = !!flame && (flPlayers.some((p) => p && 'spOn' in p) ? !flPlayers.some((p) => Number.isInteger(p?.spOn)) : Array.isArray(flame.allow) && !flame.allow.length);
+  const flPlayers = flDraw ? start.teams?.[flDraw.seat]?.players ?? [] : [];
+  const noSpecial = !!flDraw && (flPlayers.some((p) => p && 'spOn' in p) ? !flPlayers.some((p) => Number.isInteger(p?.spOn)) : Array.isArray(flDraw.allow) && !flDraw.allow.length);
+  // 부여 구조(PROTOCOL §13.21): 필살기가 없는 선수가 섞여 있으면 안내 줄에 「없으면 일반 슛」(그 선수의 공중 차지 투구는 일반 슛으로 나간다). 종전 구조는 줄 그대로
+  const someNoSp = !!flDraw && flGranted() && flPlayers.some((p) => p && 'spOn' in p && !Number.isInteger(p.spOn));
   const you = start.you;
   const canvas = h('canvas.game-canvas', { width: W, height: H, 'aria-label': '경기 화면' });
   // 닉네임·팀 이름은 캔버스 HUD 에 도트 글자로 그린다(hud.js). DOM 이름은 화면 읽기 전용(보이지 않음), 서든데스 글자는 DOM
@@ -95,6 +103,19 @@ export function mount(root, app, { start }) {
     e.preventDefault(); toggleQuitWin();
   };
   addEventListener('keydown', onEsc);
+  // 그만두기 창이 열려 있는 동안만 ←→·Tab 은 창의 포커스 이동(경기 입력 InputSender 보다 먼저 받아 전파를 끊는다). ↑↓·A/S/D 와 키 떼기는 경기로 그대로, 창을 닫으면 원래대로
+  const onQuitNav = (e) => {
+    if (!training || quitWin.hidden || ended || e.ctrlKey || e.metaKey || e.altKey) return;
+    const b = [quitStay, quitGo], i = b.indexOf(document.activeElement);
+    let to;
+    if (e.key === 'ArrowLeft') to = 0;
+    else if (e.key === 'ArrowRight') to = i < 0 ? 0 : 1;
+    else if (e.key === 'Tab') to = i < 0 ? 0 : (i + 1) % 2; // 두 칸이라 Shift+Tab 도 같은 순환
+    else return;
+    e.preventDefault(); e.stopPropagation();
+    b[to].focus({ preventScroll: true });
+  };
+  addEventListener('keydown', onQuitNav, true);
   // 필살기 임팩트 연출 켬/끔(fx.impact, 기본 켬: 오라·트레일·명중·화면 흔들림, game/impact.js). 누른 뒤 포커스를 풀어 경기 키 입력과 겹치지 않게
   const impactBtn = h('button.btn.small', { type: 'button', 'aria-pressed': String(impactOn()), title: '필살기 이펙트',
     onclick: () => { setImpactOn(!impactOn()); impactBtn.setAttribute('aria-pressed', String(impactOn())); impactBtn.blur(); } }, '이펙트');
@@ -106,14 +127,20 @@ export function mount(root, app, { start }) {
   const opts = h('div.game-opts', { hidden: true, role: 'group', 'aria-label': '설정' }, soundButton(h), impactBtn, shoutBtn);
   const optBtn = h('button.btn.small', { type: 'button', 'aria-expanded': 'false', onclick: () => toggleOpts() }, '설정');
   function toggleOpts(on = opts.hidden) { opts.hidden = !on; optBtn.setAttribute('aria-expanded', String(on)); optBtn.blur(); }
-  const help = h('div.help', opts, optBtn, quit);
-  const onOptsOut = (e) => { if (!opts.hidden && !help.contains(e.target)) toggleOpts(false); };
+  // 조작키 안내는 처음엔 접어 둔다(사용자 요청: 화면을 가림). 하단 줄 「조작」 명령 칸 · H 키로 펼치고, 다시 누르기 · H · 바깥 클릭으로 닫는다. 튜토리얼(특훈)은 조작을 배우는 곳이라 펼친 채 시작
+  let guideOpen = !!training;
+  const guideBtn = h('button.btn.small.ctl-btn', { type: 'button', 'aria-expanded': String(guideOpen), 'aria-keyshortcuts': 'H', onclick: () => toggleGuide() }, '조작');
+  function toggleGuide(on = !guideOpen) { guideOpen = !!on; guideBtn.setAttribute('aria-expanded', String(guideOpen)); guideBtn.blur(); fit(); }
+  const help = h('div.help', opts, guideBtn, optBtn, quit);
+  const onOptsOut = (e) => {
+    if (!opts.hidden && !help.contains(e.target)) toggleOpts(false);
+    if (guideOpen && !training && !guide.contains(e.target) && !guideBtn.contains(e.target)) toggleGuide(false);
+  };
   addEventListener('pointerdown', onOptsOut);
   const wrap = h('div.game' + (training ? '.train' : ''), bar, stage, help);
   root.append(wrap);
-  // 조작키 안내(키보드 전용, input.js KEYMAP 과 일치: A=A, S=B, D=C 점프, F=S 포메이션). 옆 여백이 있으면 캔버스 밖, 없으면 캔버스 왼쪽 아래 반투명.
-  // H 로 숨김/표시(localStorage dd.ctlGuide), 터치 기기는 숨김(가상 패드)
-  const GUIDE_KEY = 'dd.ctlGuide';
+  // 조작키 안내(키보드 전용, input.js KEYMAP 과 일치: A=A, S=B, D=C 점프, F=S 포메이션). 펼치면 옆 여백이 있으면 캔버스 밖, 없으면 캔버스 왼쪽 아래 불투명 창.
+  // 「조작」 칸·H 로 펼침/닫기(경기마다 접힌 채 시작, 종전 dd.ctlGuide 저장 값은 읽지 않는다), 터치 기기는 숨김(가상 패드)
   const row = (k, t) => [h('span.ck', ...k.map((x, i) => (i ? [' + ', h('b', x)] : h('b', x))).flat()), h('span', t)];
   // 캐치 특훈: A·S 모두 상대 조준 투구(패스 없음), 필살·포메이션 없음(PROTOCOL §9.1). 필살 슛 특훈: 같은 조작 + 점프 중 S 길게 = 차지(§9.5)
   const guide = h('div.ctl-guide', { 'aria-label': '조작키' },
@@ -121,21 +148,18 @@ export function mount(root, app, { start }) {
       ? [...row(['←↑↓→'], '이동'), ...row(['A'], '줍기·던지기·웅크림'), ...row(['S'], '캐치·던지기'), ...row(['D'], '점프'),
         ...(trSpecial ? row(['D', 'S'], '길게 → 필살기') : []), ...row(['Esc'], '그만두기')]
       : [...row(['←↑↓→'], '이동'), ...row(['A'], '줍기·패스·웅크림'), ...row(['S'], '캐치·던지기·차지'),
-        ...row(['D'], '점프'), ...(noSpecial ? [] : row(['D', 'S'], '길게 → 필살기')), ...row(['F'], '포메이션')]),
-    h('span.ck.dim', h('b', 'H')), h('span.dim', '숨김'));
-  let guideOff = false;
-  try { guideOff = localStorage.getItem(GUIDE_KEY) === '0'; } catch { /* 저장소 불가: 기본 표시 */ }
+        ...row(['D'], '점프'), ...(noSpecial ? [] : row(['D', 'S'], someNoSp ? '길게 → 필살기 · 없으면 일반 슛' : '길게 → 필살기')), ...row(['F'], '포메이션')]),
+    h('span.ck.dim', h('b', 'H')), h('span.dim', '닫기'));
   function placeGuide(cw) {
-    guide.hidden = guideOff || !!pad;
+    guideBtn.hidden = !!pad;
+    guide.hidden = !guideOpen || !!pad;
     if (guide.hidden) return;
     guide.classList.add('side'); wrap.append(guide);
     if ((innerWidth - cw) / 2 - 16 < guide.offsetWidth) { guide.classList.remove('side'); stage.insertBefore(guide, keys); }
   }
   const onGuideKey = (e) => {
     if (e.code !== 'KeyH' || e.repeat || e.ctrlKey || e.metaKey || e.altKey || isTyping(e.target)) return;
-    guideOff = !guideOff;
-    try { localStorage.setItem(GUIDE_KEY, guideOff ? '0' : '1'); } catch { /* 저장 불가 무시 */ }
-    fit();
+    toggleGuide();
   };
   addEventListener('keydown', onGuideKey);
   const input = new InputSender((bits) => net.send('input', { bits }));
@@ -162,11 +186,13 @@ export function mount(root, app, { start }) {
   const seats = app.room?.slots ?? [];
   const nickOf = (s) => (isCpuSeat(app.room, s) ? '컴퓨터' : seats[s]?.nick ?? '');
   // 불꽃의 계승 오리지널 팀(PROTOCOL §12.2 game_start.flameCast = {seat, team|null, players[7]}): 표시용 정의. 없으면(일반 경기·종전 도전) 전부 종전 경로
-  const cast = flame && start.flameCast && Array.isArray(start.flameCast.players) ? start.flameCast : null;
-  const castSeat = cast ? (cast.seat === 0 || cast.seat === 1 ? cast.seat : flame.seat) : -1;
-  const castTeam = cast?.team && typeof cast.team.name === 'string' && cast.team.name ? cast.team : null;
-  const castAt = (seat, i) => { const p = seat === castSeat ? cast.players[i] : null; return p && typeof p === 'object' ? p : null; };
-  const tName = (s) => (s === castSeat && castTeam ? castTeam.name : teamName(start.teams[s].id, start.teams[s].name));
+  // 좌석별 표(casts[좌석]): 도전·1차 컴퓨터 대전 = 단일 객체 {seat, players…}, 사람끼리 방(§13.25) = {versus, seats:[{…cast, slot} | null, …]}(좌석 칸에 seat 없음 → 배열 위치가 좌석)
+  const fc = start.flameCast, casts = [null, null];
+  if (fc && Array.isArray(fc.seats)) fc.seats.slice(0, 2).forEach((c, s) => { if (c && Array.isArray(c.players)) casts[s] = c; });
+  else if (fc && Array.isArray(fc.players) && (flDraw || vsSeats)) { const s = fc.seat === 0 || fc.seat === 1 ? fc.seat : flDraw?.seat; if (s === 0 || s === 1) casts[s] = fc; }
+  const castTeamOf = (s) => { const t = casts[s]?.team; return t && typeof t.name === 'string' && t.name ? t : null; };
+  const castAt = (seat, i) => { const p = casts[seat]?.players?.[i]; return p && typeof p === 'object' ? p : null; };
+  const tName = (s) => (castTeamOf(s) ? castTeamOf(s).name : teamName(start.teams[s].id, start.teams[s].name));
   nameL.textContent = `${nickOf(0)} · ${tName(0)}`; nameR.textContent = `${tName(1)} · ${nickOf(1)}`;
 
   // ---- 크기: 창에 꽉 차게(util.fitScale: 정수배가 거의 꽉 차면 정수배, 아니면 비정수 최근접 이웃) ----
@@ -190,6 +216,7 @@ export function mount(root, app, { start }) {
     stage.style.width = s.cw + 'px'; stage.style.height = s.ch + 'px';
     bar.style.width = over ? '' : s.cw + 'px';
     stage.style.setProperty('--k', s.k);
+    stage.style.setProperty('--ki', Math.max(1, Math.floor(s.k + 0.01))); // 캔버스에 붙는 DOM 글자(배너·떠오르는 글자)는 정수 배율(css)
     toastK = s.k; placeToast();
     placeGuide(s.cw);
   }
@@ -300,8 +327,8 @@ export function mount(root, app, { start }) {
     buf.push(s);
     // 시작/종료 글자는 원작 배너(snap.ban)를 캔버스에 그린다. 구버전 서버(lock 없음)는 준비 단계에만 안내
     keys.hidden = (s.lock ?? (s.ph === 'ready' ? 1 : 0)) !== 1 || !!ended;
-    // 겹침 배치: 경기가 시작되고 6초 뒤 도움말 글자는 접고 기권 버튼만 남긴다
-    if (!helpDim && s.ph === 'play' && !s.lock) helpDim = setTimeout(() => help.classList.add('dim'), 6000);
+    // 겹침 배치: 경기가 시작되고 6초 뒤 도움말 줄을 흐린 표시로(조작 안내는 「조작」 칸으로만 펼친다)
+    if (!helpDim && s.ph === 'play' && !s.lock) helpDim = setTimeout(() => { help.classList.add('dim'); }, 6000);
     for (const e of s.ev || []) onEvent(e, s);
     if (training) onTrain(s.tr);
     timer.textContent = s.sd ? '서든데스' : '';
@@ -493,7 +520,7 @@ export function mount(root, app, { start }) {
       }
       if (m.outcome === 'rematch') setFlameLine(m.saveFailed ? '저장 실패 · 재경기' : '재경기'); // saveFailed = 결과 저장 실패(사유는 서버 error 토스트, PROTOCOL §13.2)
       else if (m.champion === true) setFlameLine('우승!'); // 엔드리스(§13.12): 우승해도 flame_end 는 오지 않고 도전이 이어진다
-      if (m.artifactPoints > 0) toast(`아티팩트 대신 경기 포인트 +${m.artifactPoints}`, 'ok', 4200); // 아티팩트 고갈
+      if (m.artifactPoints > 0) toast(`${flArtOff() ? '아이템' : '아티팩트'} 대신 경기 포인트 +${m.artifactPoints}`, 'ok', 4200); // 아티팩트 고갈(off §13.26 = 보스 보상으로 낼 아이템이 없음)
     },
     on_flame_end(m) { setFlameLine(m.summary?.result === 'champion' ? '우승' : '도전 종료'); },
     holdLobby: () => trainDone || ((!!league || !!flame) && !!ended), // 완료·결과 카드가 떠 있으면 room_left 가 화면을 넘기지 않는다(main.js)
@@ -512,7 +539,7 @@ export function mount(root, app, { start }) {
       mbgm.stop();
       cancelAnimationFrame(raf); clearTimeout(backTimer); clearInterval(backTick); clearTimeout(quitArmed); clearTimeout(campFallback); clearTimeout(helpDim);
       input.setEnabled(false); input.destroy();
-      removeEventListener('resize', fit); removeEventListener('blur', onBlur); removeEventListener('keydown', onGuideKey); removeEventListener('keydown', onEsc); removeEventListener('pointerdown', onOptsOut); removeEventListener('wheel', noWheelZoom, { passive: false });
+      removeEventListener('resize', fit); removeEventListener('blur', onBlur); removeEventListener('keydown', onGuideKey); removeEventListener('keydown', onEsc); removeEventListener('keydown', onQuitNav, true); removeEventListener('pointerdown', onOptsOut); removeEventListener('wheel', noWheelZoom, { passive: false });
       coarse.removeEventListener('change', applyTouch);
       document.removeEventListener('gesturestart', noMenu);
     },

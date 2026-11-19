@@ -5,6 +5,7 @@ import { net } from '../net.js';
 import { has, entry, image, json } from '../game/assets.js';
 import { teamName, teamPlayers } from '../names.js';
 import { arrowNav } from '../pix.js';
+import { toast } from '../ui.js';
 import * as StoryCut from '../story_cut.js';
 import { available as lineupOk } from './lineup.js';
 import { RULE_TIMES } from './rules.js';
@@ -68,9 +69,10 @@ export function mount(root, app, data = {}) {
         const cur = ch.k === reached;
         const tm = titles.find((x) => x.k === ch.k);
         const opp = ch.teamOpp != null ? teamName(ch.teamOpp, tm?.opponentName ?? '') : '';
+        // 잠긴 행도 방향키 포커스는 받는다(disabled 면 arrowNav 대상에서 빠져 격자 이동이 끊김). 선택만 막는다
         list.append(h('button.chapter-row' + (cur ? '.current' : '') + (ch.cleared ? '.cleared' : ''), {
-          type: 'button', role: 'listitem', disabled: !ch.unlocked, 'aria-current': cur ? 'step' : null,
-          onclick: () => app.go('story', { mode: 'pre', k: ch.k }),
+          type: 'button', role: 'listitem', 'aria-disabled': ch.unlocked ? null : 'true', 'aria-current': cur ? 'step' : null,
+          onclick: () => (ch.unlocked ? app.go('story', { mode: 'pre', k: ch.k }) : toast('잠겨 있어요', 'info', 1500)),
         },
           h('b.ch-no.tabular', pad2(ch.k + 1)),
           h('span.ch-main', h('span.ch-opp', opp || `경기 ${ch.k + 1}`), tm?.title ? h('span.ch-title', tm.title) : null),
@@ -99,12 +101,13 @@ export function mount(root, app, data = {}) {
     const face = h('canvas.dlg-face', { width: FACE, height: FACE, hidden: true, 'aria-hidden': 'true' });
     const who = h('div.dlg-who');
     const text = h('div.dlg-text', { 'aria-live': 'polite' });
-    const more = h('span.dlg-more', { 'aria-hidden': 'true' }, '▼');
+    const more = h('span.dlg-more', { 'aria-hidden': 'true' }); // 넘김 표시 = 공 커서(css)
     const skip = h('button.btn.small.dlg-skip', { type: 'button', onclick: (e) => { e.stopPropagation(); finish(); } }, '건너뛰기');
-    const actions = h('div.dlg-actions', { hidden: true });
-    const box = h('div.pwin.dlg-box', face, h('div.dlg-body', who, text, more), skip, actions);
-    const cap = h('div.scene-cap', h('span.scene-no', `경기 ${o.k + 1}`), opp ? h('span', opp) : null, o.tag ? h('span.scene-tag' + (o.tagCls ?? ''), o.tag) : null);
-    const sc = h('div.story-scene', { style: { backgroundImage: bgUrl(o.stage ?? ch.stage) }, onclick: () => advance() }, cap, box);
+    const actions = h('div.dlg-actions', { hidden: true, onclick: (e) => e.stopPropagation() });
+    const box = h('div.pwin.dlg-box', face, h('div.dlg-body', who, text, more), actions);
+    // 장면 머리 = 검정 이름판(경기 번호 + 상대) + 승패 태그(검정 칸)
+    const cap = h('div.scene-cap', h('span.rplate', h('i.scene-no', `경기 ${o.k + 1}`), opp || null), o.tag ? h('span.tag.scene-tag' + (o.tagCls ?? ''), o.tag) : null);
+    const sc = h('div.story-scene', { style: { backgroundImage: bgUrl(o.stage ?? ch.stage) }, onclick: () => advance() }, cap, box, skip);
     root.append(sc);
     let faces = null;
     if (has('hud.faces')) image('hud.faces').then((img) => { faces = img; paintFace(); }).catch(() => {});
@@ -125,6 +128,7 @@ export function mount(root, app, data = {}) {
       const f = l ? faceOf(l.speaker) : null;
       const mine = f ? f[0] === ch.teamMine || (ch.teamMine === 22 && f[0] === 0) : true;
       box.classList.toggle('opp', !mine);
+      box.classList.toggle('noface', !f || !faces); // 초상 없음(해설 등): 이름판을 창 왼쪽부터
       if (!f || !faces) { face.hidden = true; return; }
       const g = face.getContext('2d');
       g.imageSmoothingEnabled = false;
@@ -183,6 +187,22 @@ export function mount(root, app, data = {}) {
   function setActions(v, btns) {
     v.actions.replaceChildren(...btns);
     v.actions.hidden = false;
+    // 가로 선택 줄: ←↑ = 앞, →↓ = 다음(끝에서 멈춤, 로비 메뉴와 같음), Enter·Space 실행(버튼 기본 동작). 포커스가 줄 밖이면 첫 항목으로
+    if (!v.navOff) {
+      const STEP = { ArrowLeft: -1, ArrowUp: -1, ArrowRight: 1, ArrowDown: 1 };
+      const onNav = (e) => {
+        const d = STEP[e.key];
+        if (!d || e.altKey || e.ctrlKey || e.metaKey || e.isComposing || v.actions.hidden || !v.actions.isConnected) return;
+        const items = [...v.actions.querySelectorAll('button:not(:disabled)')];
+        if (!items.length) return;
+        e.preventDefault();
+        const i = items.indexOf(document.activeElement);
+        items[i < 0 ? 0 : Math.max(0, Math.min(items.length - 1, i + d))].focus();
+      };
+      addEventListener('keydown', onNav);
+      v.navOff = () => removeEventListener('keydown', onNav);
+      cleanup.push(v.navOff);
+    }
     v.box.classList.add('has-actions');
     setTimeout(() => btns[0]?.focus(), 30);
   }
@@ -221,7 +241,7 @@ export function mount(root, app, data = {}) {
       onError() { // CAMPAIGN_LOCKED 등(토스트는 main). 목록으로
         if (!waiting) return;
         waiting = false;
-        if (view) setActions(view, [h('button.btn.primary.center', { type: 'button', onclick: () => app.go('story', { mode: 'list' }) }, '챕터 목록')]);
+        if (view) setActions(view, [h('button.ritem', { type: 'button', onclick: () => app.go('story', { mode: 'list' }) }, '챕터 목록')]);
       },
     };
   }
@@ -238,12 +258,12 @@ export function mount(root, app, data = {}) {
     };
     const buttons = () => {
       if (win && !r.final && k < LAST_K) {
-        return [h('button.btn.primary.center', { type: 'button', onclick: () => app.go('story', { mode: 'pre', k: k + 1 }) }, '다음 경기'),
-          h('button.btn.center', { type: 'button', onclick: toList }, '챕터 목록')];
+        return [h('button.ritem', { type: 'button', onclick: () => app.go('story', { mode: 'pre', k: k + 1 }) }, '다음 경기'),
+          h('button.ritem', { type: 'button', onclick: toList }, '챕터 목록')];
       }
-      if (win) return [h('button.btn.primary.center', { type: 'button', onclick: toList }, '챕터 목록')];
-      return [h('button.btn.primary.center', { type: 'button', onclick: retry }, '재도전'),
-        h('button.btn.center', { type: 'button', onclick: toList }, '챕터 목록')];
+      if (win) return [h('button.ritem', { type: 'button', onclick: toList }, '챕터 목록')];
+      return [h('button.ritem', { type: 'button', onclick: retry }, '재도전'),
+        h('button.ritem', { type: 'button', onclick: toList }, '챕터 목록')];
     };
     loadDialogue().then((d) => {
       if (app.view !== 'story') return;

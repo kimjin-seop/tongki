@@ -7,6 +7,7 @@
 // 로고가 로비/닉네임 화면 상단 로고 자리로 옮겨 가고 아래 UI 가 나타난다.
 import { h, $, fitScale } from './util.js';
 import { has, entry, image, json } from './game/assets.js';
+import { audio } from './audio.js';
 
 const W = 398, H = 224, BW = 320, DW = (W - BW) / 2, TICK = 1000 / 60;
 const SEEN_KEY = 'dd.introSeen';
@@ -257,14 +258,18 @@ export function start({ app, onEnd }) {
     if (state === 'play') { try { app.bgmStop?.(); } catch { /* 무시 */ } finish(); } // 원작: 건너뛰면 0xE1(곡 즉시 정지)
   }
 
+  // 원작은 전원을 켜면 소리가 나지만 브라우저는 첫 입력 전엔 막는다: 소리가 잠긴 채 받은 첫 입력 1번은 소리만 열고
+  // 인트로를 이어 간다(곡은 원작 시점 f642 에, 이미 지났으면 지난 만큼 건너뛴 위치에서). 다음 입력부터 건너뛰기
+  let soundTap = false;
+  const opensSound = () => !soundTap && audio.kickLocked && (soundTap = true);
   function onKey(e) {
     if (state !== 'play' && !(state === 'load' && !skipWanted)) return; // 건너뛴 뒤에는 통과
     if (e.ctrlKey || e.metaKey || e.altKey || /^F\d+$/.test(e.key)) return; // 새로고침·개발자 도구 등은 통과
     e.preventDefault(); e.stopPropagation();
-    if (!e.repeat) skip();
+    if (!e.repeat && !opensSound()) skip();
   }
   addEventListener('keydown', onKey, true);
-  overlay.addEventListener('pointerdown', (e) => { e.preventDefault(); skip(); });
+  overlay.addEventListener('pointerdown', (e) => { e.preventDefault(); if (!opensSound()) skip(); });
 
   // ---------- 로드 ----------
   const loadTimer = setTimeout(() => { if (state === 'load') { console.warn('intro: 로드 시간 초과'); abort(); } }, 10000);

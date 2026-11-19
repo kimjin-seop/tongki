@@ -33,7 +33,8 @@ function pool(cat, seg, type, oppUnlocked) {
 }
 function oppOf(cat, data, seg, type, team, diff) {
   const O = cat.cfg.opponents, add = cpuLevelAddOf(cat, diff, type); // 숫자 = 전 종류 공통(종전), {normal,strong,boss} = 종류별(D32)
-  return { team, cpuLevel: Math.min(O.cpuLevelMax, O.segments[segRow(O.segments, seg)].cpuLevel[type] + add), stage: homeStage(data.stages, team) };
+  // 하한 1(리뷰 L1): 레벨 0 이하가 지도에 저장되면 save.js 의 cpuLevel >= 1 검사에 걸려 도전이 격리된다
+  return { team, cpuLevel: Math.max(1, Math.min(O.cpuLevelMax, O.segments[segRow(O.segments, seg)].cpuLevel[type] + add)), stage: homeStage(data.stages, team) };
 }
 
 /**

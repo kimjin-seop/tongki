@@ -1,4 +1,4 @@
-// 로비(시안 A): 왼쪽 로고 + 큰 메뉴 4줄(스토리 모드 / 전국 리그 / 불꽃의 계승 / 컴퓨터 대결 + 난이도 1·2·3) + 작은 메뉴 한 줄(튜토리얼·오프닝 다시보기·가입·로그아웃),
+// 로비(시안 A): 왼쪽 로고 + 큰 메뉴 4줄(스토리 모드 / 전국 리그 / 불꽃의 계승 / 컴퓨터 대결 + 난이도 1·2·3) + 작은 메뉴 한 줄(튜토리얼·오프닝 다시보기·가입). 로그아웃은 오른쪽 머리줄,
 // 오른쪽 방 목록 창(방 만들기 + 행을 눌러 입장, 서버 푸시로 실시간).
 // 방 코드 입력 입장은 화면에서 뺐다(프로토콜 join_room{code} 는 그대로: 행을 누르면 그 방의 code 로 보낸다).
 // 튜토리얼 = 종전 특훈 2종(training_start). 고르는 화면은 screens/tutorial.js
@@ -7,7 +7,6 @@ import { toast } from '../ui.js';
 import { net } from '../net.js';
 import { ROOM_OFF, ERR } from '../i18n.js';
 import { rulesText } from './rules.js';
-import { isNew as tutorialNew } from './tutorial.js';
 import { titleLogo, start as startIntro } from '../intro.js';
 import { arrowNav } from '../pix.js';
 import { soundButton } from '../audio.js';
@@ -37,7 +36,7 @@ export function mount(root, app) {
   root.append(h('div.screen.lobby',
     h('div.lobby-l',
       titleLogo(), // 타이틀 로고(인트로가 끝나면 이 자리로 이동)
-      h('div.lobby-menu.title-follow',
+      h('div.pwin.lobby-menu.title-follow', // 레트로 UI: 모드 창(9-slice) 안 메뉴 줄
         story,
         league,
         flame,
@@ -47,13 +46,13 @@ export function mount(root, app) {
           lvBtns),
         // 작은 메뉴 한 줄: 튜토리얼 · 오프닝 다시보기 · (손님이면) 가입 = 지금 닉네임을 계정으로(진행 승계) · 로그아웃
         h('div.lobby-foot',
-          h('button.btn.small.tut-entry', { type: 'button', onclick: () => app.go('tutorial') },
-            h('span.tut-entry-t', '튜토리얼'), tutorialNew() ? h('span.tag.new', '신규') : null),
+          h('button.btn.small.tut-entry', { type: 'button', onclick: () => app.go('tutorial') }, '튜토리얼'),
           h('button.btn.small.replay-intro', { type: 'button', onclick: () => { if (!app.intro?.active) app.intro = startIntro({ app, onEnd: () => { app.intro = null; } }); } }, '오프닝 다시보기'),
-          acct ? null : h('button.btn.small.acct-btn', { type: 'button', 'data-k': 'signup', onclick: () => app.go('nick', { upgrade: true }) }, '가입'),
-          h('button.btn.small.acct-btn', { type: 'button', 'data-k': 'logout', onclick: () => net.send('logout') }, '로그아웃')))),
+          acct ? null : h('button.btn.small.acct-btn', { type: 'button', 'data-k': 'signup', onclick: () => app.go('nick', { upgrade: true }) }, '가입')))),
     h('div.lobby-r.title-follow',
-      h('div.nick-line', h('span.nick-t', app.nick || ''), soundButton(h)),
+      // 머리줄: 닉네임 이름판 · 소리 · 로그아웃(시안 01: 로그아웃은 오른쪽 위 명령 칸)
+      h('div.nick-line', h('span.nick-t', app.nick || ''), soundButton(h),
+        h('button.btn.small.acct-btn.logout', { type: 'button', 'data-k': 'logout', onclick: () => net.send('logout') }, '로그아웃')),
       h('section.pwin.room-panel',
         h('div.rl-top', h('h1', '방 목록'),
           h('span.rl-mk', rankBtn, h('button.btn.primary.mk', { type: 'button', onclick: () => net.send('create_room', rankedOpt ? { ranked: true } : {}) }, '방 만들기'))),

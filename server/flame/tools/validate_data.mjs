@@ -10,6 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { generatePool, serializePool, summarizePool, cellCounts, scoreOf, GRADES, POOL_STATS } from './gen_recruit_pool.mjs';
+import { loadCatalog } from '../catalog.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_ROOT = path.resolve(HERE, '../../..');
@@ -73,7 +74,8 @@ function numbersOf(v, acc = []) {
   return acc;
 }
 
-export function validate({ root = DEFAULT_ROOT, assetRoot, strict = false, bodyLock } = {}) {
+/** artifactModel = 'off'|'team': 카탈로그로 하는 검사(등급제·아티팩트 스위치)를 그 스위치 값으로 돌린다(데이터 파일은 고치지 않는다. 생략 = 파일 값) */
+export function validate({ root = DEFAULT_ROOT, assetRoot, strict = false, bodyLock, artifactModel } = {}) {
   const errors = [], warnings = [], info = [];
   const err = (m) => errors.push(m), warn = (m) => warnings.push(m);
   const dataDir = path.join(root, 'server/flame/data');
@@ -165,7 +167,7 @@ export function validate({ root = DEFAULT_ROOT, assetRoot, strict = false, bodyL
     const condTags = [...new Set((it.effects ?? []).map((e) => e.conditions?.formationTag).filter(Boolean))];
     if ((it.formationTag ?? null) !== (condTags[0] ?? null) || condTags.length > 1) err(`${it.id}: formationTag 와 효과 조건이 다름`);
     if (it.formationTag !== null && !tagIds.includes(it.formationTag)) err(`${it.id}: formationTag "${it.formationTag}" 미정의`);
-    const expectSyn = F.synergies.synergies.filter((s) => s.requires.artifacts.includes(it.id)).map((s) => s.id);
+    const expectSyn = F.synergies.synergies.filter((s) => s.requires.artifacts.includes(it.id) || (s.requires.shotFamily != null && (it.unlockShotFamilies ?? []).includes(s.requires.shotFamily))).map((s) => s.id); // 계열 조건(D47)은 그 계열을 여는 아티팩트의 시너지로 센다
     if (JSON.stringify([...it.synergyKeys ?? []].sort()) !== JSON.stringify(expectSyn.sort())) err(`${it.id}: synergyKeys 가 synergies.json 과 다름`);
     (it.effects ?? []).forEach((e, i) => checkEffect(`${it.id}.effects[${i}]`, e));
     checkIcon(it);
@@ -189,6 +191,8 @@ export function validate({ root = DEFAULT_ROOT, assetRoot, strict = false, bodyL
     for (const a of s.requires?.artifacts ?? []) if (!arIds.includes(a)) err(`${s.id}: 조건 아티팩트 ${a} 없음`);
     if ((s.requires?.artifacts ?? []).length > F.rules.team.artifactSlots) err(`${s.id}: 조건 아티팩트 수가 슬롯 수를 넘음`);
     if (s.requires?.formationTag != null && !tagIds.includes(s.requires.formationTag)) err(`${s.id}: formationTag 미정의`);
+    if (s.requires?.shotFamily != null && !F.shot_families.families.some((x) => x.id === s.requires.shotFamily)) err(`${s.id}: 조건 계열 ${s.requires.shotFamily} 미정의`);
+    if ((s.requires?.artifacts ?? []).length + (s.requires?.shotFamily != null ? 1 : 0) > F.rules.team.artifactSlots) err(`${s.id}: 조건(아티팩트 + 계열)이 슬롯 수를 넘음`);
     (s.effects ?? []).forEach((e, i) => {
       checkEffect(`${s.id}.effects[${i}]`, e);
       if (e.duplicatesArtifact && !arIds.includes(e.duplicatesArtifact)) err(`${s.id}: duplicatesArtifact ${e.duplicatesArtifact} 없음`);
@@ -318,13 +322,15 @@ export function validate({ root = DEFAULT_ROOT, assetRoot, strict = false, bodyL
       compared++;
       const costs = m[3].split('/').map((x) => Number(x.trim()));
       const per = Number(m[2].match(/\+(\d+)$/)?.[1]);
-      if (Number(m[1]) !== u.maxLevel || JSON.stringify(costs) !== JSON.stringify(u.costs) || per !== u.effect.perLevel || m[2] !== u.specText || costs.length !== u.maxLevel) err(`기획 대조: 영구 성장 ${u.id} ${u.name} 이 기획 표와 다름`);
+      // D50: 단계·효과·비용은 기획 36 표가 아니라 39 D50 표(PERM_D50, 아래)와 대조한다. 기획 36 의 값은 legacy(옛 표 = 저장 이관 근거)와 같아야 하고, 효과 문구는 끝의 「+숫자」만 다를 수 있다
+      if (Number(m[1]) !== u.legacy?.maxLevel || per !== u.legacy?.perLevel || costs.length !== u.legacy?.maxLevel) err(`기획 대조: 영구 성장 ${u.id} ${u.name} 의 legacy(옛 표 ${u.legacy?.maxLevel} × ${u.legacy?.perLevel})가 기획 표(${m[1]} × ${per})와 다름`);
+      if (m[2].replace(/\+\d+$/, '') !== u.specText.replace(/\+\d+$/, '') || !u.specText.endsWith(`+${u.effect.perLevel}`)) err(`기획 대조: 영구 성장 ${u.id} specText "${u.specText}" (기획 "${m[2]}", 끝 +${u.effect.perLevel})`);
     }
     for (const u of F.perm_upgrades.preparation) {
       const m = spec.match(new RegExp(`\\| ${u.name} \\| (\\d+) \\| (.+?) \\|`));
       if (!m) { err(`기획 대조: 영구 성장 B "${u.name}" 행 없음`); continue; }
       compared++;
-      if (Number(m[1]) !== u.maxLevel || m[2] !== u.specText) err(`기획 대조: 영구 성장 ${u.id} ${u.name} 이 기획 표와 다름`);
+      if (Number(m[1]) !== (u.legacy?.maxLevel ?? u.maxLevel) || m[2] !== u.specText) err(`기획 대조: 영구 성장 ${u.id} ${u.name} 이 기획 표와 다름(단계 수는 legacy 기준, D50)`);
       if (u.costs !== null) err(`${u.id}: 기획서에 비용이 없으므로 costs 는 null, 제안은 proposed.costs`);
       if (u.proposed?.costs?.length !== u.maxLevel) err(`${u.id}: proposed.costs 길이가 maxLevel 과 다름`);
     }
@@ -338,6 +344,20 @@ export function validate({ root = DEFAULT_ROOT, assetRoot, strict = false, bodyL
     for (const s of F.synergies.synergies) for (const line of s.specEffects) if (!spec.includes(line)) err(`기획 대조: ${s.id} 문구 "${line}" 없음`);
   }
   if (F.perm_upgrades.training.length !== 4 || F.perm_upgrades.preparation.length !== 7 || F.perm_upgrades.content.length !== 6) err('perm_upgrades: A 4종·B 7종·C 6종이 아님');
+  { // 영구 성장 단계·비용표 = analysis/39 D50(= analysis/40 §21.4, 사용자 지시 「풀강화 20~30시간, 능력치는 개미쥐똥만큼」). 기획 36 §10.3 의 A 표·B 단계 수를 대체한다(36 은 고치지 않는다)
+    const PERM_D50 = { PA01: [4, 1, [150, 250, 350, 450]], PA02: [1, 1, [700]], PA03: [1, 1, [700]], PA04: [1, 1, [400]], PB01: [6, 15, [40, 60, 80, 100, 130, 160]], PB02: [2, 1, [120, 240]], PB03: [2, 1, [150, 300]], PB04: [3, 1, [80, 150, 250]], PB05: [3, 1, [80, 150, 250]], PB06: [4, 5, [40, 60, 80, 100]], PB07: [2, 1, [120, 240]], PC02: [1, null, [300]] };
+    const PERM_D50_TOTAL = [9480, 37]; // 코인 · 단계(A 7 · B 22 · C 8)
+    const CC = load('run_config.json').unlocks?.content ?? {}, rowsAll = [...F.perm_upgrades.training.map((u) => [u.id, u.maxLevel, u.effect.perLevel, u.costs]), ...F.perm_upgrades.preparation.map((u) => [u.id, u.maxLevel, u.effect.perLevel ?? u.proposed?.perLevel, u.costs ?? u.proposed?.costs]), ...F.perm_upgrades.content.map((u) => [u.id, CC[u.id]?.maxLevel, null, CC[u.id]?.costs])];
+    let coins = 0, levels = 0;
+    for (const [id, max, per, costs] of rowsAll) {
+      coins += (costs ?? []).reduce((a, c) => a + c, 0); levels += max ?? 0;
+      const want = PERM_D50[id];
+      if (want && (max !== want[0] || (want[1] !== null && per !== want[1]) || JSON.stringify(costs) !== JSON.stringify(want[2]))) err(`영구 성장 ${id}: ${max}단계 × ${per} · ${JSON.stringify(costs)} 이 39 D50 표(${want[0]} × ${want[1]} · ${JSON.stringify(want[2])})와 다름`);
+    }
+    for (const u of [...F.perm_upgrades.training, ...F.perm_upgrades.preparation]) if (u.legacy !== undefined && !(Number.isInteger(u.legacy?.maxLevel) && u.legacy.maxLevel >= 0 && u.legacy.perLevel > 0)) err(`영구 성장 ${u.id}: legacy 는 {maxLevel 정수, perLevel 양수}`);
+    if (coins !== PERM_D50_TOTAL[0] || levels !== PERM_D50_TOTAL[1]) err(`영구 성장 풀강화 ${coins}코인 · ${levels}단계 (39 D50: ${PERM_D50_TOTAL[0]} · ${PERM_D50_TOTAL[1]})`);
+    info.push(`영구 성장(39 D50): 풀강화 ${coins}코인 · ${levels}단계`);
+  }
   info.push(`기획서 대조 ${compared}건`);
   info.push(`아이콘 경로 ${iconSeen.size}개, 파일 없음 ${missingIcons.length}개`);
 
@@ -527,6 +547,15 @@ export function validate({ root = DEFAULT_ROOT, assetRoot, strict = false, bodyL
     info.push(`영입실 입장 회복: ${H > 0 ? `전원 최대 HP 의 ${H}%` : '꺼짐(0 또는 키 없음)'}`);
   } else if (CFG) info.push('영입실 입장 회복: 키 없음(꺼짐)');
 
+  // ---- 10-2. 키운 팀 슬롯(run_config.json versusTeam, analysis/39 D33·D35). 키가 없으면 꺼짐(종전 동작: 슬롯을 저장하지 않고 컴퓨터 대전에서 고를 수 없다) ----
+  if (CFG && CFG.versusTeam !== undefined) {
+    const V = CFG.versusTeam, U = V?.surviveUsesPerMatch;
+    if (!V || typeof V.enabled !== 'boolean') err('run_config versusTeam.enabled 는 true|false');
+    if (U !== undefined && !(Number.isInteger(U) && U >= 0)) err('run_config versusTeam.surviveUsesPerMatch 는 0 이상의 정수');
+    if (V && V.humans !== undefined && typeof V.humans !== 'boolean') err('run_config versusTeam.humans 는 true|false'); // 사람끼리 방 허용(39 D53). 없으면 꺼짐(1차: 컴퓨터 대전 방만)
+    info.push(`키운 팀 슬롯(컴퓨터 대전): ${V?.enabled === true ? '켜짐' : '꺼짐'}(치사 생존 경기당 ${U ?? 1}회, 사람끼리 방 ${V?.humans === true ? '허용' : '안 함'})`);
+  } else if (CFG) info.push('키운 팀 슬롯(컴퓨터 대전): 키 없음(꺼짐)');
+
   // ---- 11. 보스 뒤 회복(rest.afterBossHealPct, 39 D30)·특훈 누적 상한(training.maxPerStat, D31)·난이도 레벨 가산(difficulty[].cpuLevelAdd, D32). 키가 없으면 종전 동작 ----
   if (CFG) {
     const B = CFG.rest?.afterBossHealPct, W = CFG.rest?.afterWinHealPct, M = CFG.training?.maxPerStat;
@@ -543,9 +572,78 @@ export function validate({ root = DEFAULT_ROOT, assetRoot, strict = false, bodyL
     } else info.push('특훈 누적 상한: 키 없음(상한 없음)');
     for (const d of CFG.difficulty ?? []) {
       const a = d.cpuLevelAdd, isObj = a !== null && typeof a === 'object' && !Array.isArray(a);
-      if (!(Number.isInteger(a) || (isObj && Object.entries(a).every(([k, v]) => ['normal', 'strong', 'boss'].includes(k) && Number.isInteger(v))))) err(`run_config difficulty[${d.id}].cpuLevelAdd 는 정수 또는 {normal, strong, boss} 정수`);
+      const nat = (v) => Number.isInteger(v) && v >= 0; // 음수 금지(리뷰 L1)
+      if (!(nat(a) || (isObj && Object.entries(a).every(([k, v]) => ['normal', 'strong', 'boss'].includes(k) && nat(v))))) err(`run_config difficulty[${d.id}].cpuLevelAdd 는 0 이상의 정수 또는 {normal, strong, boss} 0 이상의 정수`);
     }
+    // 이벤트 선택지 하나에 같은 능력치의 trainRandom 은 1개만(리뷰 L2): 받을 수 있는 선수 검사는 op 마다 따로 하므로, 앞 op 가 마지막 자리를 채우면 뒤 op 가 조용히 건너뛰어진다
+    for (const e of CFG.events ?? []) (e.choices ?? []).forEach((c, ci) => {
+      const stats = (c.ops ?? []).filter((o) => o.op === 'trainRandom').map((o) => o.stat);
+      for (const s of new Set(stats)) if (stats.filter((x) => x === s).length > 1) err(`run_config 이벤트 ${e.id} 선택지 ${ci}: 같은 능력치(${s})의 trainRandom 이 2개 이상`);
+    });
   }
+
+  // ---- 필살기 부여 구조(decisions.json special.model + shot_families.json grantShotId, analysis/39 D38) ----
+  // model 은 granted|legacy(키가 없으면 legacy = 종전). 대표 슛(grantShotId)은 그 계열 아티팩트가 실제로 부여하는 ID(계열 ID − 제외 계열 − 표값 255·제외 ID)여야 하고,
+  // granted 일 때는 아티팩트가 여는 모든 계열에 대표 슛이 있어야 한다(없으면 끼어도 빈 주 슬롯이 채워지지 않는다)
+  if (DEC?.special) {
+    const model = DEC.special.model, fams = F.shot_families.families, excl = new Set(DEC.special.excludedShotIds ?? []);
+    if (model !== undefined && !['granted', 'legacy'].includes(model)) err(`decisions.json special.model=${JSON.stringify(model)} (granted|legacy 만)`);
+    const idsOf = (id) => fams.find((x) => x.id === id)?.shotIds ?? [];
+    const grantable = (f) => { const cut = new Set((f.unlockExcludesFamilies ?? []).flatMap(idsOf)); return (f.shotIds ?? []).filter((id) => !cut.has(id) && !excl.has(id) && !(shotPower && shotPower[id] === 255)); };
+    for (const f of fams) {
+      if (f.grantShotId === undefined) continue;
+      if (!Number.isInteger(f.grantShotId) || !grantable(f).includes(f.grantShotId)) err(`shot_families.${f.id}.grantShotId=${f.grantShotId}: 그 계열 아티팩트가 부여하는 ID(${grantable(f).join(',')})가 아님`);
+    }
+    if (model === 'granted') for (const a of ar) for (const fid of a.unlockShotFamilies ?? []) if (fams.find((x) => x.id === fid)?.grantShotId === undefined) err(`${a.id}: 부여 구조(granted)인데 계열 ${fid} 의 대표 슛(grantShotId)이 없음`);
+    info.push(`필살기 구조: ${model === 'granted' ? `부여(대표 슛 ${fams.filter((f) => f.grantShotId !== undefined).map((f) => `${f.unlockedBy} ${f.grantShotId}`).join(' · ')})` : '종전(legacy: 원래 필살기 + 아티팩트 해금)'}`);
+  }
+
+  // ---- 등급제(decisions.json grade, analysis/39 D39~D44) ----
+  // 등급 아이템은 카탈로그(catalog.js buildGrade)가 규칙으로 만든다 -> 실제로 읽어 만든 결과를 센다: 필살슛 = 쓸 수 있는 슛(계열표 − 표값 255) × 등급 4, 포메이션 = 패턴 15 × 등급 4,
+  // id 규칙 SP<슛 ID>-<등급>·FM<패턴>-<등급>, 손으로 쓴 ID 와 겹치지 않음, 출처별 등급 가중치는 줄마다 합 100, 등급 표는 낮은 등급부터 줄지 않는다(가산·배율·값)
+  if (DEC?.grade !== undefined) {
+    const G = DEC.grade, GR = ['C', 'B', 'A', 'S'];
+    let cat = null;
+    try { cat = loadCatalog({ dir: dataDir, patch: artifactModel ? (raw) => { raw.decisions.artifact = { ...(raw.decisions.artifact ?? {}), model: artifactModel }; } : undefined }); } catch (e) { err(`등급제: 카탈로그 생성 실패 (${e.message})`); }
+    if (cat) {
+      const gen = [...cat.artifacts.values()].filter((a) => a.grant), shots = gen.filter((a) => a.kind === 'shot'), fms = gen.filter((a) => a.kind === 'formation');
+      const usable = shotPower ? [...new Set(F.shot_families.families.flatMap((f) => f.shotIds ?? []))].filter((id) => shotPower[id] !== 255) : null;
+      const wantShots = (usable?.length ?? 47) * GR.length, wantFms = F.formation_tags.existingFormations.length * GR.length;
+      if (shots.length !== wantShots || shots.length !== 188) err(`등급제: 필살슛 아이템 ${shots.length}종 (기대 ${wantShots} = 47 × 4)`);
+      if (fms.length !== wantFms || fms.length !== 60) err(`등급제: 포메이션 아이템 ${fms.length}종 (기대 ${wantFms} = 15 × 4)`);
+      for (const a of gen) {
+        const m = /^(SP|FM)(\d+)-([CBAS])$/.exec(a.id), key = a.kind === 'shot' ? a.grant.shot : a.grant.formation;
+        if (!m || (m[1] === 'SP') !== (a.kind === 'shot') || Number(m[2]) !== key || m[3] !== a.grade) err(`등급제: id 규칙 위반 ${a.id} (kind ${a.kind}, 대상 ${key}, 등급 ${a.grade})`);
+        if (arIds.includes(a.id)) err(`등급제: ${a.id} 가 손으로 쓴 아티팩트 ID 와 겹침`);
+      }
+      if (new Set(gen.map((a) => a.id)).size !== gen.length) err('등급제: 등급 아이템 ID 중복');
+      if (usable) for (const id of usable) for (const g of GR) if (!cat.artifacts.has(`SP${id}-${g}`)) err(`등급제: SP${id}-${g} 없음`);
+      const sum = (o) => GR.reduce((s, g) => s + (o?.[g] ?? NaN), 0), rows = [...(G.drop?.boss ?? []).map((r, i) => [`drop.boss[${i}]`, r]), ['drop.shop', G.drop?.shop], ['drop.firstWin', G.drop?.firstWin]];
+      for (const [w, r] of rows) if (!(Math.abs(sum(r) - 100) < 1e-6)) err(`등급제: ${w} 가중치 합 ${sum(r)} (100 이어야 함)`);
+      const mono = (o, w) => { if (GR.some((g, i) => i > 0 && !(o?.[g] >= o?.[GR[i - 1]]))) err(`등급제: ${w} 가 낮은 등급부터 줄지 않는 값이 아님 (${GR.map((g) => o?.[g]).join('/')})`); };
+      if (G.spOtherCap !== undefined && !(Math.max(...GR.map((g) => G.spPow?.[g] ?? 0)) + G.spOtherCap <= G.spPowCap)) err(`등급제: spPow 최댓값 + spOtherCap(${G.spOtherCap}) 이 spPowCap(${G.spPowCap})을 넘음`);
+      if (G.drop?.escalateMax !== undefined && !GR.includes(G.drop.escalateMax)) err(`등급제: drop.escalateMax "${G.drop.escalateMax}"`);
+      mono(G.spPow, 'spPow'); if (G.spSpd !== undefined) mono(G.spSpd, 'spSpd'); mono(G.formation?.tagPct, 'formation.tagPct'); mono(G.price?.shop, 'price.shop'); mono(G.price?.sell, 'price.sell');
+      for (const [k, v] of Object.entries(G.formation?.stat ?? {})) mono(v, `formation.stat.${k}`);
+      if ((G.drop?.boss?.length ?? 0) < F.rules.run.segments) warn(`등급제: drop.boss ${G.drop?.boss?.length ?? 0}줄 (구간 ${F.rules.run.segments}개보다 적다. 뒤 구간은 마지막 줄을 쓴다)`);
+      info.push(`등급제 ${G.model}: 필살슛 ${shots.length}종·포메이션 ${fms.length}종 생성, 위력 가산 ${GR.map((g) => G.spPow?.[g]).join('/')} 필살 속도 가산 ${GR.map((g) => G.spSpd?.[g] ?? 0).join('/')} 그 밖의 가산 상한 +${G.spOtherCap ?? '없음'} 전체 안전 상한 +${G.spPowCap}, 올려 찾기 최고 ${G.drop?.escalateMax ?? '제한 없음'}, 보스 등급 가중치 ${(G.drop?.boss ?? []).map((r) => GR.map((g) => r[g]).join('/')).join(' | ')}, 상점 ${GR.map((g) => G.drop?.shop?.[g]).join('/')}`);
+    }
+  } else info.push('등급제: decisions.json grade 없음(꺼짐)');
+
+  // ---- 팀 공용 아티팩트 스위치(decisions.json artifact, analysis/39 D58~D63 · analysis/44). artifacts.json 30종·시너지·기획 대조(공용 슬롯 3)는 그대로 검사한다(데이터·코드는 남긴다) ----
+  if (DEC?.artifact !== undefined) {
+    const A = DEC.artifact, model = artifactModel ?? A.model;
+    if (!['off', 'team'].includes(model)) err(`decisions artifact.model "${model}" (off|team)`);
+    let c2 = null;
+    try { c2 = loadCatalog({ dir: dataDir, patch: (raw) => { raw.decisions.artifact = { ...raw.decisions.artifact, model }; } }); } catch (e) { err(`아티팩트 스위치 ${model}: 카탈로그 생성 실패 (${e.message})`); }
+    const fromIds = (F.formation_tags.tags ?? []).flatMap((t) => (t.bonus ?? []).map((b) => b.from));
+    for (const t of F.formation_tags.tags) for (const b of t.bonus ?? []) {
+      const a = ar.find((x) => x.id === b.from), e = a?.effects.find((x) => x.type === 'stat_bonus' && x.params?.stat === b.stat);
+      if (!a || !e || e.params.value !== b.value || e.conditions?.formationTag !== t.id) err(`formation_tags.${t.id}.bonus ${b.stat} +${b.value}: 출처 ${b.from} 의 태그 조건 효과와 다름`);
+    }
+    if (new Set(fromIds).size !== fromIds.length) err('formation_tags bonus: 같은 출처 효과가 두 번');
+    if (c2) info.push(`아티팩트 스위치 ${model}${artifactModel ? '(검사용 지정)' : ''}: ${model === 'off' ? `공용 3칸·A01~A30·시너지 꺼짐, 필살슛 아이템 선수별 1칸·포메이션 아이템 팀 1칸, 보스 유형 ${c2.artifact.off.bossKinds.join('·')}, 상점 유형 ${Object.entries(c2.artifact.off.shopKinds).map(([k, v]) => `${k} ${v}`).join('·')}, A 번호 환급 ${c2.artifact.refundPoints}점, 숨김 영구 성장 ${c2.artifact.hiddenPerm.join(',') || '-'}, 태그 보너스 ${fromIds.length}칸(${fromIds.join(',')})` : '종전(공용 3칸)'}`);
+  } else info.push('아티팩트 스위치: decisions.json artifact 없음(team = 종전)');
 
   const ok = errors.length === 0 && (!strict || warnings.length === 0);
   return { ok, errors, warnings, info, counts, missingIcons };
@@ -566,7 +664,8 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   }
   const strict = args.includes('--strict');
   const ai = args.indexOf('--asset-root');
-  const r = validate({ strict, assetRoot: ai >= 0 ? path.resolve(args[ai + 1]) : undefined });
+  const am = args.find((a) => a.startsWith('--artifact-model='))?.slice(17); // 아티팩트 스위치를 바꿔 검사(off|team, D58)
+  const r = validate({ strict, assetRoot: ai >= 0 ? path.resolve(args[ai + 1]) : undefined, artifactModel: am });
   console.log('== 불꽃의 계승 데이터 검증 ==');
   r.info.forEach((m) => console.log('  정보  ' + m));
   r.warnings.forEach((m) => console.log('  경고  ' + m));

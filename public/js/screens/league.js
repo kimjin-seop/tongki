@@ -53,6 +53,7 @@ export function mount(root, app, data = {}) {
   const head = (title, onBack, extra) => h('header.rules-head', h('h1.pix-title', title), extra ?? null,
     onBack ? h('button.btn.small.back', { type: 'button', 'data-k': 'back', onclick: onBack }, '돌아가기') : null);
   const btn = (label, k, onclick, cls = '') => h('button.btn' + cls, { type: 'button', 'data-k': k, onclick }, label);
+  const item = (label, k, onclick) => h('button.ritem.lg-big', { type: 'button', 'data-k': k, onclick }, label); // 창 안 메뉴 줄(공 커서)
   const opt = (label, k, on, onclick, disabled = false) => h('button.btn', { type: 'button', 'data-k': k, 'aria-pressed': String(!!on), disabled, onclick }, label);
 
   // ---------------- ① 진입 창 ----------------
@@ -64,8 +65,8 @@ export function mount(root, app, data = {}) {
         h('div.lg-cmds', btn('처음부터', 'yes', startNew, '.primary.danger'), btn('취소', 'no', () => { confirmNew = false; focusSel = '[data-k="new"]'; paint(); })));
       win.querySelector('[data-k="no"]').dataset.first = '1';
     } else {
-      const cont = h('button.btn.lg-big', { type: 'button', 'data-k': 'cont', disabled: !has, onclick: () => go(lg()?.done ? 'champ' : 'menu') }, '이어하기');
-      const nw = h('button.btn.lg-big', { type: 'button', 'data-k': 'new', onclick: () => { if (lg()) { confirmNew = true; paint(); } else startNew(); } }, '처음부터');
+      const cont = h('button.ritem.lg-big', { type: 'button', 'data-k': 'cont', disabled: !has, onclick: () => go(lg()?.done ? 'champ' : 'menu') }, '이어하기');
+      const nw = h('button.ritem.lg-big', { type: 'button', 'data-k': 'new', onclick: () => { if (lg()) { confirmNew = true; paint(); } else startNew(); } }, '처음부터');
       (has ? cont : nw).dataset.first = '1';
       win.append(h('div.lg-steps', nw, cont));
     }
@@ -173,12 +174,12 @@ export function mount(root, app, data = {}) {
   function menu() {
     const L = lg();
     if (!L) { go('entry'); return; }
-    const play = btn('경기하기', 'play', () => go(L.done ? 'champ' : 'cards'), '.lg-big');
+    const play = item('경기하기', 'play', () => go(L.done ? 'champ' : 'cards'));
     play.dataset.first = '1';
     root.append(h('div.screen.rules', h('section.pwin.rules-win.lg-menu', { 'aria-label': '리그' },
       head('리그', () => app.go('lobby')),
-      h('div.lg-steps', play, btn('성적 보기', 'table', () => go('table'), '.lg-big'),
-        btn('설정 변경', 'cfg', () => { cfg = { com: L.teams.map((t) => t.com), rules: fixRules(L.rules) }; go('mancom'); }, '.lg-big')))));
+      h('div.lg-steps', play, item('성적 보기', 'table', () => go('table')),
+        item('설정 변경', 'cfg', () => { cfg = { com: L.teams.map((t) => t.com), rules: fixRules(L.rules) }; go('mancom'); })))));
     setNav({ onEsc: () => app.go('lobby') });
   }
 

@@ -98,12 +98,15 @@ class SoundManager {
   }
 
   get unlocked() { return this.ctx?.state === 'running'; }
+  /** 열 수 있는 소리가 잠겨 있다(WebAudio 지원·소리 켬·아직 동작 전) */
+  get canUnlock() { return !this.unlocked && !this.prefs.muted && !!(globalThis.AudioContext || globalThis.webkitAudioContext); }
 
   /** 앱 수명 동안 1회: 입력 시 잠금 해제, 탭 숨김 시 일시 정지 */
   install() {
     if (this.installed) return;
     this.installed = true;
-    const kick = () => this.unlock();
+    // kickLocked = 이번 입력 직전에 소리가 잠겨 있었나(인트로: 소리를 여는 첫 입력은 건너뛰기로 쓰지 않는다)
+    const kick = () => { this.kickLocked = this.canUnlock; this.unlock(); };
     for (const t of ['pointerdown', 'touchend', 'mousedown', 'keydown', 'click']) addEventListener(t, kick, { capture: true, passive: true });
     document.addEventListener('visibilitychange', () => {
       if (!this.ctx) return;

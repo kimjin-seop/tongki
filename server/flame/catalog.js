@@ -35,8 +35,21 @@ const bad = (m) => { throw new Error('flame catalog: ' + m); };
  * 8 = practice(연습 경기 요약, D28) 추가 + flame_state 의 profile.practiceUsed·run.practiceAvailable. run_config.json 의 _meta.version 은 올리지 않았다(키 하나만 더했다)
  * 9 = recruitRoomHealPct(영입실 입장 회복 %, D29) 추가 + flame_state 의 run.recruitHeal·profile.codexCast(도감 클론 정의). run_config.json 의 _meta 는 고치지 않았다(키 하나만 더했다)
  * 10 = afterBossHealPct(구간 보스 승리 뒤 회복 %, D30)·training.maxPerStat(특훈 누적 상한, D31) 추가 + flame_result.practiceRefunded(연습 경기 오류 종료 복구). difficulty[].cpuLevelAdd 는 숫자 또는 {normal,strong,boss}(D32). run_config.json 의 _meta 는 고치지 않았다
+ * 11 = flame_state.run.pending[] 의 아티팩트 선택 칸에도 nodeType(start|boss, 장비 보상 칸과 같은 칸) 추가. 카탈로그 내용은 그대로다
+ * 12 = versusTeam(키운 팀 슬롯 요약: 켜짐·슬롯 이름·치사 생존 횟수, D33·D35) 추가 + flame_state.profile.teams{recent, best}(슬롯 요약). run_config.json 은 키 하나(versusTeam)만 더했다(_meta 는 그대로)
+ * 13 = special(필살기 부여 구조 D38: model·artifactShots·slotRule) 추가 + flame_state.team 의 grant(아티팩트가 부여한 슛)·players[i].kind·own(고유 슛). 부여 구조에서는 클론 칸의 cast.players[i].sp·영입 후보 칸의 sp 가 null 이다
+ * 14 = grade(등급제 D39~D44: model·grades·spPow·spPowCap·formation·drop·price·equipmentLetters) 추가 + artifacts 목록에 규칙으로 만든 등급 아이템(SP<슛>-<등급> 188종·FM<패턴>-<등급> 60종, 칸 grant{shot|formation}·grade·kind)이 붙는다
+ *      + flame_state.team 의 fm·fmItem·fmGrade·players[i].special{id, grade, add, cut}, flame_state 의 note.upgraded(상위 등급 획득으로 자동 판매)
+ * 15 = 등급제 리뷰 반영(D45~D48): grade.spOtherCap(등급 가산을 뺀 필살 가산 합의 상한) 추가, grade.spPowCap 은 전체 안전 상한(표값 + 이 값, 캐치 직후 포함)으로 뜻이 넓어졌다(칸 이름 그대로),
+ *      grade.drop.escalateMax·emptyAsTeam 추가, synergies[].requires.shotFamily(그 계열의 슛을 부여하는 아티팩트를 낀 조건. SY01·SX01 의 A01 조건을 대체) 추가
+ *      + flame_state.team.players[i].special 에 other(등급 가산을 뺀 평소 필살 가산)·cutCatch(전체 상한으로 줄인 캐치 가산) 추가, 상점 구매(flame_buy)의 flame_state 에도 note.upgraded, note.voided(이미 가진 등급 이하라 무효가 된 선택)
+ * 16 = grade.spSpd(등급별 필살 투구 속도 가산, D52) 추가 + flame_state.team.players[i].fx.spSpd(그 선수의 필살 속도 가산)
+ * 17 = versusTeam.humans(사람끼리 방에서 규칙 「불꽃 팀」을 켤 수 있는가, D53) 추가 + flame_end.summary.teams{recent, best}(이번 정산에서 갱신된 키운 팀 슬롯). run_config.json 은 versusTeam 에 키 하나(humans)만 더했다(_meta 는 그대로)
+ * 18 = artifact(팀 공용 아티팩트 스위치 D58~D63: model 'off'|'team'·refundPoints·hiddenPerm·permText) 추가 + formationTags[].bonus(태그 보너스표) + flame_state.run.roster[i].spItem·run.fmItem·team.players[i].spItem.
+ *      model 'off' 에서는 flame_artifact 를 받지 않고(FLAME_INVALID) 새 요청 flame_sp_item·flame_fm_item 을 쓴다(PROTOCOL §13.26).
+ *      model 'off' 이면 cat.ver 에 `.aoff` 가 든다(개정 번호는 그대로. team 이면 그 칸이 없다)
  */
-export const CATALOG_MSG_REV = 10;
+export const CATALOG_MSG_REV = 18;
 
 const pctOn = (v) => (Number.isFinite(v) && v > 0 ? v : 0);
 /**
@@ -57,7 +70,7 @@ export const trainCapOf = (cat, stat) => { const v = cat.cfg.training?.maxPerSta
 export const canTrain = (cat, r, stat, value) => { const cap = trainCapOf(cat, stat); return cap === null || (r.train?.[stat] ?? 0) + value <= cap; };
 
 /**
- * 난이도의 상대 레벨 가산(run_config.json difficulty[].cpuLevelAdd, D32): 숫자 = 모든 경기 종류에 같은 값(종전), {normal, strong, boss} = 종류별(없는 종류는 0). 없는 난이도·잘못된 값은 0
+ * 난이도의 상대 레벨 가산(run_config.json difficulty[].cpuLevelAdd, D32): 숫자 = 모든 경기 종류에 같은 값(종전), {normal, strong, boss} = 종류별(없는 종류는 0). 없는 난이도·잘못된 값은 0. 값은 0 이상의 정수만 데이터로 받는다(리뷰 L1, 레벨 하한 1 은 map.js oppOf)
  */
 export const cpuLevelAddOf = (cat, diff, type) => {
   const a = cat.cfg.difficulty.find((d) => d.id === diff)?.cpuLevelAdd;
@@ -96,11 +109,90 @@ export const practiceCfg = (cat) => {
   return P?.enabled === true ? { cpuLevel: Number.isInteger(P.cpuLevel) ? P.cpuLevel : cat.cfg.opponents.segments[0].cpuLevel.normal } : null;
 };
 
+/** 필살 속도 가산(grade.spSpd, D52)의 데이터 상한(s6 단위, 64 = +4px/f). 엔진 fx 안전 상한(255)보다 좁게 자른다 */
+export const SP_SPD_LIMIT = 64;
+/** 등급 순서(낮은 것부터). 등급 아이템 id 의 꼬리표(`SP22-A`·`FM7-S`)이자 decisions.json grade 의 표 열 */
+export const GRADES = ['C', 'B', 'A', 'S'];
+/** 등급제(analysis/39 D39~D44, decisions.json grade.model = 'v1')가 켜져 있는가. 꺼져 있으면 등급 아이템이 새로 나오지 않고 등급 가산·위력 상한·포메이션 아이템 규칙이 전부 꺼진다(D38 까지의 동작) */
+export const gradeOn = (cat) => cat.grade.on;
+/** 등급 아이템이면 {kind:'shot'|'formation', key: 슛 ID | 패턴 번호, grade, rank(0 = C)}, 아니면 null */
+export function grantOf(cat, id) {
+  const d = cat.artifacts.get(id);
+  return d?.grant ? { kind: d.kind, key: d.kind === 'shot' ? d.grant.shot : d.grant.formation, grade: d.grade, rank: GRADES.indexOf(d.grade) } : null;
+}
+/**
+ * 팀 공용 아티팩트(analysis/39 D58~D63, decisions.json artifact.model)가 켜져 있는가. 'team' = 종전(3칸 공용, A01~A30·시너지),
+ * 'off' = 아티팩트를 쓰지 않는다: 필살슛 아이템은 선수마다 1칸(roster[i].spItem, 그 선수에게만 적용), 포메이션 아이템은 팀 1칸(run.fmItem). 키가 없으면 'team'(이 키가 생기기 전의 데이터 폴더와 같다)
+ */
+export const teamArtifactsOn = (cat) => cat.artifact.model === 'team';
+/** 팀 강화 아티팩트(손으로 쓴 30종 중 필살기 계열을 열지 않는 것 = A07~A30)인가. 등급제에서 새로 얻을 수 있는 아티팩트는 이것과 등급 아이템뿐이다(A01~A06 은 신규 획득 중단, D40) */
+export const isTeamArtifact = (cat, id) => { const d = cat.artifacts.get(id); return !!d && !d.grant && d.unlockShotFamilies.length === 0; };
+
+/**
+ * 등급제 데이터 검사 + 등급 아이템 생성(손으로 쓰지 않는다). 필살슛 = 계열표에 든 쓸 수 있는 슛 전부(47종) × 등급 4 = 188, 포메이션 = 태그가 붙은 패턴 15 × 4 = 60.
+ * 아이템은 아티팩트와 같은 모양(effects 는 비어 있다: 부여·가산은 stats.js 가 grant·grade 로 계산한다)이라 보유·장착·저장·도감이 종전 경로 그대로다. 스위치가 꺼져 있어도 만든다(가진 것이 '모르는 id' 로 버려지지 않게)
+ */
+function buildGrade(raw, artifacts, families, excluded, tagOfFm) {
+  const G = raw.decisions.grade ?? {}, model = G.model ?? 'off';
+  if (!['v1', 'off'].includes(model)) bad(`decisions grade.model=${model} (v1|off)`);
+  const row = (o, w, { sum = null, int = false } = {}) => {
+    if (!o || typeof o !== 'object' || GRADES.some((g) => !(Number.isFinite(o[g]) && o[g] >= 0 && (!int || Number.isInteger(o[g])))) || Object.keys(o).length !== GRADES.length) bad(`decisions grade.${w}: 등급 ${GRADES.join('/')} 네 칸(0 이상${int ? '의 정수' : ''})`);
+    if (sum !== null && Math.abs(GRADES.reduce((s, g) => s + o[g], 0) - sum) > 1e-6) bad(`decisions grade.${w}: 합이 ${sum} 이 아님`);
+    return o;
+  };
+  const shotIds = [...new Set(raw.shot_families.families.flatMap((f) => f.shotIds ?? []))].filter((id) => !excluded.has(id)).sort((a, b) => a - b);
+  const fmIds = [...tagOfFm.keys()].sort((a, b) => a - b);
+  const famOfShot = (id) => raw.shot_families.families.find((f) => !f.overlap && (f.shotIds ?? []).includes(id));
+  const gen = { shot: new Map(), formation: new Map() };
+  const tagName = (fm) => raw.formation_tags.tags.find((t) => t.id === tagOfFm.get(fm))?.name ?? '';
+  const add = (def) => { if (artifacts.has(def.id)) bad(`등급 아이템 ID 중복 ${def.id}`); artifacts.set(def.id, def); };
+  const base = { effects: [], unlockShotFamilies: [], formationTag: null, synergyKeys: [] };
+  for (const id of shotIds) {
+    const fam = famOfShot(id), icon = artifacts.get(fam?.unlockedBy)?.icon ?? null, byG = {};
+    for (const g of GRADES) { byG[g] = `SP${id}-${g}`; add({ id: byG[g], name: `필살슛 ${id} [${g}]`, category: 'special', kind: 'shot', grant: { shot: id }, grade: g, specText: `필살슛 ${id} 부여(${fam?.name ?? ''} 계열), ${g} 등급`, ...base, icon }); }
+    gen.shot.set(id, byG);
+  }
+  for (const fm of fmIds) {
+    const byG = {};
+    for (const g of GRADES) { byG[g] = `FM${fm}-${g}`; add({ id: byG[g], name: `포메이션 ${fm} [${g}]`, category: 'formation', kind: 'formation', grant: { formation: fm }, grade: g, specText: `포메이션 ${fm} 사용(${tagName(fm)}), ${g} 등급`, ...base, icon: artifacts.get('A18')?.icon ?? null }); }
+    gen.formation.set(fm, byG);
+  }
+  const zero = Object.fromEntries(GRADES.map((g) => [g, 0]));
+  if (raw.decisions.grade === undefined) return { on: false, model, grades: GRADES, shotIds, fmIds, gen, spPow: zero, spPowCap: 0, spOtherCap: null, spSpd: zero, spSpdMax: 0, formation: { stat: {}, tagPct: zero, ampCapPct: 0 }, drop: null, price: { shop: zero, sell: zero }, letters: null };
+  const F = G.formation ?? {}, D = G.drop ?? {}, KINDS = ['shot', 'formation', 'team'];
+  if (JSON.stringify(G.grades) !== JSON.stringify(GRADES)) bad(`decisions grade.grades 는 ${JSON.stringify(GRADES)}`);
+  row(G.spPow, 'spPow', { int: true });
+  if (!Number.isInteger(G.spPowCap) || G.spPowCap < 0) bad('decisions grade.spPowCap 는 0 이상의 정수');
+  // 위력 상한 구조(D45): spOtherCap = 등급 가산을 뺀 그 밖의 필살 가산 합의 상한(없으면 따로 자르지 않는다), spPowCap = 전체 안전 상한. 가장 높은 등급 가산 + spOtherCap 이 전체 상한 안에 들어야 평소 필살이 전체 상한에 걸리지 않는다
+  if (G.spOtherCap !== undefined && (!Number.isInteger(G.spOtherCap) || G.spOtherCap < 0)) bad('decisions grade.spOtherCap 는 0 이상의 정수');
+  if (G.spOtherCap !== undefined && Math.max(...GRADES.map((g) => G.spPow[g])) + G.spOtherCap > G.spPowCap) bad('decisions grade: spPow 최댓값 + spOtherCap 이 spPowCap(전체 안전 상한)을 넘음');
+  const spSpd = G.spSpd === undefined ? zero : row(G.spSpd, 'spSpd', { int: true }); // 필살 속도 가산(D52). 없으면 전 등급 0
+  if (GRADES.some((g) => spSpd[g] > SP_SPD_LIMIT)) bad(`decisions grade.spSpd 는 ${SP_SPD_LIMIT} 이하`);
+  for (const [k, v] of Object.entries(F.stat ?? {})) { if (!STAT_KEYS.includes(k)) bad(`decisions grade.formation.stat.${k}`); row(v, `formation.stat.${k}`, { int: true }); }
+  row(F.tagPct, 'formation.tagPct', { int: true });
+  if (!Number.isInteger(F.ampCapPct) || F.ampCapPct < 0) bad('decisions grade.formation.ampCapPct 는 0 이상의 정수');
+  if (!Array.isArray(D.boss) || !D.boss.length) bad('decisions grade.drop.boss 는 구간별 줄');
+  D.boss.forEach((r, i) => row(r, `drop.boss[${i}]`, { sum: 100 }));
+  row(D.shop, 'drop.shop', { sum: 100 }); row(D.firstWin, 'drop.firstWin', { sum: 100 });
+  if (!Array.isArray(D.bossKinds) || !D.bossKinds.length || D.bossKinds.some((k) => !KINDS.includes(k))) bad('decisions grade.drop.bossKinds');
+  if (!D.shopKinds || Object.entries(D.shopKinds).some(([k, v]) => !KINDS.includes(k) || !(Number.isFinite(v) && v >= 0)) || !Object.values(D.shopKinds).some((v) => v > 0)) bad('decisions grade.drop.shopKinds');
+  if (!Number.isInteger(D.firstWinChoices) || D.firstWinChoices < 0) bad('decisions grade.drop.firstWinChoices');
+  if (D.escalateMax !== undefined && !GRADES.includes(D.escalateMax)) bad('decisions grade.drop.escalateMax 는 등급 하나');
+  if (D.emptyAsTeam !== undefined && typeof D.emptyAsTeam !== 'boolean') bad('decisions grade.drop.emptyAsTeam 는 boolean');
+  row(G.price?.shop, 'price.shop', { int: true }); row(G.price?.sell, 'price.sell', { int: true });
+  const rar = raw.rules.rarity.order, L = G.equipmentLetters;
+  if (!L || rar.some((r) => !GRADES.includes(L[r]))) bad('decisions grade.equipmentLetters: 장비 등급 키마다 C/B/A/S');
+  return { on: model === 'v1', model, grades: GRADES, shotIds, fmIds, gen, spPow: G.spPow, spPowCap: G.spPowCap, spOtherCap: G.spOtherCap ?? null, spSpd, spSpdMax: Math.max(...GRADES.map((g) => spSpd[g])), formation: { stat: F.stat ?? {}, tagPct: F.tagPct, ampCapPct: F.ampCapPct }, drop: D, price: G.price, letters: L };
+}
+
 let cache = null;
 
-/** @param {{dir?:string, data?:object}} o data = 엔진 데이터(loadData()). 주면 선수·필살기·포메이션 참조까지 검증한다 */
+/**
+ * @param {{dir?:string, data?:object, patch?:(raw:object)=>void}} o data = 엔진 데이터(loadData()). 주면 선수·필살기·포메이션 참조까지 검증한다.
+ *   patch = 읽은 원본 JSON 을 검증 전에 고치는 함수(측정·검증 도구가 스위치를 바꿔 볼 때. 캐시하지 않는다)
+ */
 export function loadCatalog(o = {}) {
-  if (!o.dir && cache) return cache;
+  if (!o.dir && !o.patch && cache) return cache;
   const dir = o.dir ?? DIR, raw = {};
   for (const f of FILES) {
     try { raw[f] = JSON.parse(readFileSync(path.join(dir, f + '.json'), 'utf8')); } catch (e) { bad(`${f}.json 읽기 실패: ${e.message}`); }
@@ -110,8 +202,9 @@ export function loadCatalog(o = {}) {
     if (!existsSync(file)) { raw[f] = null; continue; }
     try { raw[f] = JSON.parse(readFileSync(file, 'utf8')); } catch (e) { bad(`${f}.json 읽기 실패: ${e.message}`); }
   }
+  o.patch?.(raw);
   const cat = build(raw);
-  if (!o.dir) cache = cat;
+  if (!o.dir && !o.patch) cache = cat;
   return cat;
 }
 
@@ -197,6 +290,39 @@ function buildEndless(raw) {
   };
 }
 
+/**
+ * 팀 공용 아티팩트 스위치(decisions.json artifact, D58~D63). model 'off' | 'team'(키가 없으면 team = 종전). refundPoints = 옛 도전 저장의 A01~A30 1개당 환급 경기 포인트,
+ * hiddenPerm = off 에서 숨기고 산 단계를 코인으로 한 번 돌려주는 영구 성장 항목(C 그룹), off = off 전용 보상 유형(bossKinds·shopKinds)·등급 출처(startGrade·eventGrade)·문구(permText)
+ */
+function buildArtifactModel(raw) {
+  const A = raw.decisions.artifact;
+  if (A === undefined) return { model: 'team', refundPoints: 0, hiddenPerm: [], off: null };
+  if (A === null || typeof A !== 'object' || Array.isArray(A)) bad('decisions artifact 는 객체(model·refundPoints·hiddenPerm·off)');
+  const model = A.model ?? 'team', O = A.off ?? {}; // model 키가 없으면 team(키 전체가 없을 때와 같게, 정검수 L1)
+  if (!['off', 'team'].includes(model)) bad(`decisions artifact.model=${model} (off|team)`);
+  if (!Number.isInteger(A.refundPoints) || A.refundPoints < 0) bad('decisions artifact.refundPoints 는 0 이상의 정수');
+  const hidden = A.hiddenPerm ?? [];
+  if (!Array.isArray(hidden) || hidden.some((id) => !raw.run_config.unlocks.content[id])) bad('decisions artifact.hiddenPerm 은 run_config unlocks.content 의 항목 id 목록');
+  const KINDS = ['shot', 'formation'], SRC = ['boss', 'shop', 'firstWin'];
+  if (!Array.isArray(O.bossKinds) || !O.bossKinds.length || O.bossKinds.some((k) => !KINDS.includes(k))) bad('decisions artifact.off.bossKinds (shot|formation 목록)');
+  if (!O.shopKinds || Object.entries(O.shopKinds).some(([k, v]) => !KINDS.includes(k) || !(Number.isFinite(v) && v >= 0)) || !Object.values(O.shopKinds).some((v) => v > 0)) bad('decisions artifact.off.shopKinds');
+  for (const k of ['startGrade', 'eventGrade']) if (!SRC.includes(O[k])) bad(`decisions artifact.off.${k} (${SRC.join('|')})`);
+  const permText = O.permText ?? {};
+  if (typeof permText !== 'object' || Object.values(permText).some((v) => typeof v !== 'string')) bad('decisions artifact.off.permText');
+  return { model, refundPoints: A.refundPoints, hiddenPerm: hidden.slice(), off: { bossKinds: O.bossKinds.slice(), shopKinds: { ...O.shopKinds }, startGrade: O.startGrade, eventGrade: O.eventGrade, permText: { ...permText } } };
+}
+
+/** 태그 보너스표(formation_tags.json tags[].bonus, D60): 태그 id -> [{stat, value}]. 없는 태그는 빈 목록 */
+function buildTagBonus(raw) {
+  const m = new Map();
+  for (const t of raw.formation_tags.tags) {
+    const b = t.bonus ?? [];
+    if (!Array.isArray(b) || b.some((e) => !STAT_KEYS.includes(e?.stat) || !Number.isInteger(e.value))) bad(`formation_tags.${t.id}.bonus: [{stat, value(정수)}]`);
+    m.set(t.id, b.map((e) => ({ stat: e.stat, value: e.value })));
+  }
+  return m;
+}
+
 /** 구간별 표(상대·보상 등급 보정·영입 확률)의 줄 번호: 표 길이를 넘는 구간(엔드리스 구간 4+)은 마지막 줄 고정 */
 export const segRow = (rows, seg) => Math.max(0, Math.min(seg, rows.length - 1));
 
@@ -225,6 +351,32 @@ export const cloneRecruitOn = (cat) => !!cat.pool && !!cat.cfg.recruit.clone;
 /** 로스터 한 칸(또는 영입 후보 한 칸)이 영입 풀 클론이면 그 정의(recruit_pool.json players[]), 아니면 null */
 export const cloneOf = (cat, r) => (typeof r?.clone === 'string' ? cat.pool?.byId.get(r.clone) ?? null : null);
 
+/**
+ * 필살기 부여 구조(analysis/39 D38, decisions.json special.model)가 켜져 있는가.
+ *   'granted' = 선수 자체에는 필살기가 없고 낀 아티팩트가 부여한 슛만 나간다. 단 원작 선수(로스터 칸에 orig·clone 표시가 없는 칸)는 자기 고유 슛을 기본으로 가진다.
+ *   'legacy'(또는 키 없음) = 종전: 모든 선수가 원래 필살기를 슬롯에 갖고 시작하고 아티팩트가 계열을 '해금'해야 발동한다
+ */
+export const grantedModel = (cat) => cat.special.model === 'granted';
+
+/** 원작 선수 한 명(from)의 원작 필살기 ID. 표값 255 로 빠진 ID(39 D2)·무작위 풀 선수는 null */
+export function baseSpecial(cat, data, from) {
+  const id = data.specials.row[from.team]?.[from.idx];
+  return Number.isInteger(id) && id >= 0 && !cat.excludedShots.has(id) ? id : null;
+}
+
+/** 로스터 한 칸의 선수 구분(D38): 'starter' = 오리지널 시작 선수(불씨, orig 표시), 'clone' = 영입 풀 클론, 'original' = 원작 선수(표시 없음: 희귀 영입·D17 이전 태동 도전) */
+export const playerKind = (cat, r) => (originalOf(cat, r) ? 'starter' : cloneOf(cat, r) ? 'clone' : 'original');
+
+/**
+ * 로스터 한 칸의 고유 필살기(그 선수만 슬롯에 넣을 수 있는 ID) | null.
+ * 부여 구조(D38): 원작 선수만 원작 ID 를 갖는다. 불씨(from 몸과 무관)·클론은 없다(풀 데이터의 sp 칸은 남아 있지만 쓰지 않는다).
+ * 종전(legacy): 영입 풀 클론은 풀의 sp(42 §3), 그 밖은 출신 선수의 ID
+ */
+export function ownSpecial(cat, data, r) {
+  if (!grantedModel(cat)) return cloneOf(cat, r)?.sp ?? baseSpecial(cat, data, r.from);
+  return playerKind(cat, r) === 'original' && r.lost !== true ? baseSpecial(cat, data, r.from) : null; // lost = 불씨·클론 표시가 무효가 되어 버려진 칸(save.js). 원작 필살기를 거저 얻지 않는다(정검수 L1)
+}
+
 /** 원작 선수의 점수(42 §2.1 = Σ (능력치 − 기준값) ÷ 단위, 풀 파일의 model 기준). 풀이 없으면 null */
 export function playerPts(cat, data, from) {
   const M = cat.pool?.model, src = data.teams[from.team]?.players?.[from.idx];
@@ -234,11 +386,12 @@ export function playerPts(cat, data, from) {
 
 /**
  * 영입 후보 한 칸의 표시용 정의(flame_state.run.pending[].choices[], PROTOCOL §13.10). 저장에는 {team, idx, clone?, rare?} 만 있고 이 함수가 볼 때마다 채운다(풀 개정으로 능력치가 바뀌면 바로 반영).
- * 클론: team·idx = 몸(그림), kind 'clone'. 원작 선수: kind 'original'(rare = 희귀 발견 칸). stat = 기본 능력치 s0~s7(장비·영구 성장 전), sp = 기본 필살기 ID | null
+ * 클론: team·idx = 몸(그림), kind 'clone'. 원작 선수: kind 'original'(rare = 희귀 발견 칸). stat = 기본 능력치 s0~s7(장비·영구 성장 전), sp = 영입하면 갖고 오는 고유 필살기 ID | null
+ * 부여 구조(D38)에서는 클론의 sp 가 언제나 null(필살기 없음)이고 원작 선수만 고유 슛 ID 를 싣는다. 종전(legacy)은 클론도 풀의 sp
  */
 export function recruitView(cat, data, c) {
   const cl = cloneOf(cat, c);
-  if (cl) return { team: cl.body.team, idx: cl.body.idx, kind: 'clone', id: cl.id, name: cl.name, role: cl.role, grade: cl.grade, stat: { ...cl.base }, sp: cl.sp, skin: { ...cl.skin } };
+  if (cl) return { team: cl.body.team, idx: cl.body.idx, kind: 'clone', id: cl.id, name: cl.name, role: cl.role, grade: cl.grade, stat: { ...cl.base }, sp: grantedModel(cat) ? null : cl.sp, skin: { ...cl.skin } };
   const src = data.teams[c.team]?.players?.[c.idx], stat = {}, sp = data.specials.row[c.team]?.[c.idx];
   for (const [k, ek] of Object.entries(ENGINE_STAT)) stat[k] = src?.[ek] ?? 0;
   return { team: c.team, idx: c.idx, kind: 'original', rare: c.rare === true, stat, sp: Number.isInteger(sp) && sp >= 0 && !cat.excludedShots.has(sp) ? sp : null };
@@ -269,7 +422,8 @@ export function displayCast(cat, run) {
       const d = originalOf(cat, r), cl = d ? null : cloneOf(cat, r);
       // 영입 풀 클론(D18): 이름·역할·등급·몸과 색 세트. 한 줄 소개는 없다(null). 원작 선수 칸은 종전대로 null
       // sp = 클론의 기본 필살기 ID(풀 정의). 새로고침 뒤에도 화면이 '원래 필살기'를 선택지로 낼 수 있게 싣는다(슬롯에서 뺀 뒤에는 roster[i].sp 로 알 수 없다)
-      if (cl) return { id: cl.id, kind: 'clone', name: cl.name, role: cl.role, grade: cl.grade, tagline: null, skin: { ...cl.skin }, sp: cl.sp, protagonist: false, locked: false };
+      // 부여 구조(D38)에서는 클론에게 원래 필살기가 없다 -> null(선수별 고유 슛은 flame_state.team.players[i].own 이 원본이다)
+      if (cl) return { id: cl.id, kind: 'clone', name: cl.name, role: cl.role, grade: cl.grade, tagline: null, skin: { ...cl.skin }, sp: grantedModel(cat) ? null : cl.sp, protagonist: false, locked: false };
       return d ? { id: d.id, kind: 'starter', name: d.name, role: d.role, tagline: d.tagline, skin: { ...d.skin }, protagonist: d.id === O.protagonist, locked: isLockedPlayer(cat, r) } : null;
     }),
   };
@@ -302,7 +456,21 @@ function build(raw) {
     unlockIds[f.id] = families[f.id].filter((id) => !cut.has(id) && !excluded.has(id));
   }
   for (const a of artifacts.values()) for (const f of a.unlockShotFamilies) if (!families[f]) bad(`${a.id} 계열 ${f} 없음`);
-  for (const s of raw.synergies.synergies) for (const a of s.requires.artifacts) if (!artifacts.has(a)) bad(`${s.id} 조건 아티팩트 ${a} 없음`);
+  // 필살기 부여 구조(D38): model = decisions.json special.model(없으면 legacy = 종전), grantShot = 계열의 대표 슛(shot_families.json families[].grantShotId. 그 계열 아티팩트를 끼면 빈 주 슬롯에 들어가는 ID)
+  const spModel = raw.decisions.special.model ?? 'legacy', grantShot = {};
+  if (!['granted', 'legacy'].includes(spModel)) bad(`decisions special.model=${spModel} (granted|legacy)`);
+  for (const f of raw.shot_families.families) {
+    if (f.grantShotId === undefined) continue;
+    if (!unlockIds[f.id].includes(f.grantShotId)) bad(`shot_families.${f.id}.grantShotId ${f.grantShotId}: 그 계열 아티팩트가 부여하는 ID 가 아님`);
+    grantShot[f.id] = f.grantShotId;
+  }
+  if (spModel === 'granted') for (const a of artifacts.values()) for (const f of a.unlockShotFamilies) if (grantShot[f] === undefined) bad(`${a.id}: 계열 ${f} 의 대표 슛(grantShotId) 없음`);
+  // 등급제(D39~D44): 손으로 쓴 30종(authored) 뒤에 규칙으로 만든 등급 아이템 248종이 같은 표(artifacts)에 붙는다
+  const authored = [...artifacts.keys()], grade = buildGrade(raw, artifacts, families, excluded, tagOfFm);
+  for (const s of raw.synergies.synergies) {
+    for (const a of s.requires.artifacts) if (!artifacts.has(a)) bad(`${s.id} 조건 아티팩트 ${a} 없음`);
+    if (s.requires.shotFamily != null && !families[s.requires.shotFamily]) bad(`${s.id} 조건 계열 ${s.requires.shotFamily} 없음`); // D47: 그 계열의 슛을 부여하는 아티팩트를 낀 조건
+  }
   // 영구 성장 17항목: A·B 는 perm_upgrades.json(B 는 proposed), C 는 run_config.json unlocks.content
   const perm = new Map();
   for (const u of raw.perm_upgrades.training) perm.set(u.id, { id: u.id, name: u.name, group: 'A', maxLevel: u.maxLevel, costs: u.costs, effect: u.effect });
@@ -314,6 +482,16 @@ function build(raw) {
   if (perm.size !== 17) bad(`영구 성장 ${perm.size}/17`);
   for (const u of perm.values()) if (!Array.isArray(u.costs) || u.costs.length !== u.maxLevel || u.costs.some((c) => !Number.isInteger(c) || c < 0)) bad(`${u.id} 비용 표`);
   for (const u of perm.values()) if (u.group === 'C' && u.grants.length !== u.maxLevel) bad(`${u.id} grants 길이`);
+  // 영구 성장 표 개정(D50, perm_upgrades version 2): legacy = 옛 표(version 1)의 단계·효과. permLegacy 는 옛 저장을 읽을 때 단계 환산(save.js), permCap = 저장값으로 받아 주는 단계 상한.
+  // A 는 이미 산 효과를 보존한다(옛 표의 총효과를 새 perLevel 로 환산한 단계까지 = 새 maxLevel 을 넘을 수 있다, 더 살 수는 없다). B·C 는 maxLevel. 메시지(flame_catalog.perm)에는 싣지 않는다
+  const permLegacy = new Map(), permCap = new Map();
+  for (const u of [...raw.perm_upgrades.training, ...raw.perm_upgrades.preparation]) {
+    const p = perm.get(u.id), L = u.legacy;
+    if (L !== undefined && (!Number.isInteger(L?.maxLevel) || L.maxLevel < 0 || !(L.perLevel > 0))) bad(`${u.id} legacy`);
+    if (L) permLegacy.set(u.id, { maxLevel: L.maxLevel, perLevel: L.perLevel });
+    permCap.set(u.id, p.group === 'A' && L ? Math.max(p.maxLevel, Math.round((L.maxLevel * L.perLevel) / p.effect.perLevel)) : p.maxLevel);
+  }
+  for (const u of perm.values()) if (!permCap.has(u.id)) permCap.set(u.id, u.maxLevel);
   // run_config 참조 검증
   const training = raw.nodes.trainingOptions.map((t) => ({ ...t, value: t.value ?? cfg.training.values[t.id] ?? bad(`특훈 ${t.id} 증가량 없음`) }));
   if (training.length !== 11) bad('특훈 11종');
@@ -333,8 +511,14 @@ function build(raw) {
     if (M !== undefined && (!M || typeof M !== 'object' || Array.isArray(M) || Object.entries(M).some(([k, v]) => !STAT_KEYS.includes(k) || !Number.isInteger(v) || v < 0))) bad('training.maxPerStat 는 {능력치 키: 0 이상의 정수}');
     for (const d of cfg.difficulty) {
       const a = d.cpuLevelAdd, isObj = a !== null && typeof a === 'object' && !Array.isArray(a);
-      if (!(Number.isInteger(a) || (isObj && Object.entries(a).every(([k, v]) => ['normal', 'strong', 'boss'].includes(k) && Number.isInteger(v))))) bad(`difficulty[${d.id}].cpuLevelAdd 는 정수 또는 {normal, strong, boss} 정수`);
+      const nat = (v) => Number.isInteger(v) && v >= 0; // 음수 금지(리뷰 L1): 레벨을 깎는 난이도는 없다
+      if (!(nat(a) || (isObj && Object.entries(a).every(([k, v]) => ['normal', 'strong', 'boss'].includes(k) && nat(v))))) bad(`difficulty[${d.id}].cpuLevelAdd 는 0 이상의 정수 또는 {normal, strong, boss} 0 이상의 정수`);
     }
+  }
+  if (cfg.versusTeam !== undefined) { // 키운 팀 슬롯(D33·D35). 키가 없으면 꺼짐
+    const V = cfg.versusTeam, U = V?.surviveUsesPerMatch;
+    if (!V || typeof V.enabled !== 'boolean') bad('versusTeam.enabled 는 true|false');
+    if (U !== undefined && !(Number.isInteger(U) && U >= 0)) bad('versusTeam.surviveUsesPerMatch 는 0 이상의 정수');
   }
   if (cfg.recruitRoom !== undefined) { // 영입실 입장 회복(D29). 키가 없으면 꺼짐
     const H = cfg.recruitRoom?.healPct;
@@ -347,13 +531,14 @@ function build(raw) {
   if (R.run.segments * raw.decisions.run.matchesPerSegment !== R.run.matches) bad('총 경기 수');
   const rar = R.rarity.order;
   const price = E.shop.proposed, mp = E.matchPoints.proposed;
-  const original = buildOriginal(raw), pool = buildPool(raw), endless = buildEndless(raw);
+  const original = buildOriginal(raw), pool = buildPool(raw), endless = buildEndless(raw), artifact = buildArtifactModel(raw);
+  if (artifact.model === 'off' && artifact.hiddenPerm.some((id) => !perm.has(id) || perm.get(id).group !== 'C')) bad('decisions artifact.hiddenPerm 은 C 그룹 영구 성장만');
   checkRecruitCfg(raw);
   return {
-    ver: `${raw.items_equipment._meta.version}.${raw.artifacts._meta.version}.${raw.consumables._meta.version}.${cfg._meta.version}${original ? `.o${original.version}` : ''}${pool ? `.p${pool.version}` : ''}${endless ? `.e${endless.version}` : ''}.m${CATALOG_MSG_REV}`,
-    original, pool, endless, raw, rules: R, economy: E, decisions: raw.decisions, cfg, items, artifacts, consumables, perm, training,
+    ver: `${raw.items_equipment._meta.version}.${raw.artifacts._meta.version}.${raw.consumables._meta.version}.${cfg._meta.version}${original ? `.o${original.version}` : ''}${pool ? `.p${pool.version}` : ''}${endless ? `.e${endless.version}` : ''}${artifact.model === 'off' ? '.aoff' : ''}.m${CATALOG_MSG_REV}`, // .aoff = 팀 공용 아티팩트 끔(정검수 L4: 데이터 버전이 같아도 off<->team 전환 때 클라 캐시를 바꾸게. team 은 종전 문자열 그대로)
+    original, pool, endless, artifact, tagBonus: buildTagBonus(raw), raw, rules: R, economy: E, decisions: raw.decisions, cfg, items, artifacts, authored, grade, consumables, perm, permLegacy, permCap, training,
     synergies: raw.synergies.synergies, applyDuplicates: raw.synergies._meta.proposed.applyDuplicates === true,
-    tags: raw.formation_tags.tags, tagOfFm, families, unlockIds, excludedShots: excluded,
+    tags: raw.formation_tags.tags, tagOfFm, families, unlockIds, excludedShots: excluded, special: { model: spModel, grantShot },
     template: tpl, slots: R.equipmentSlots, rarities: rar, rarityRank: Object.fromEntries(rar.map((r, i) => [r, i])),
     matchPoints: mp, coin: E.flameCoin, upgrade: E.upgrade,
     equipPrice: (id) => price.equipmentPrice[items.get(id).rarity],
@@ -385,6 +570,7 @@ export function checkAgainstEngine(cat, data) {
   for (const fm of cat.tagOfFm.keys()) if (!fms.has(fm)) bad(`포메이션 패턴 ${fm} 가 엔진 데이터에 없음`);
   if (!fms.has(cat.cfg.formation.default)) bad('formation.default');
   const pw = data.specials.power;
+  for (const fm of cat.grade.fmIds) if (!fms.has(fm)) bad(`등급 아이템 FM${fm}: 엔진 데이터에 없는 포메이션 패턴`);
   for (const [f, ids] of Object.entries(cat.families)) for (const id of ids) if (!(id >= 0 && id < pw.length) || pw[id] === 255) bad(`계열 ${f}: 쓸 수 없는 필살기 ID ${id}`);
   return true;
 }

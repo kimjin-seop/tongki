@@ -1,8 +1,8 @@
 // 불꽃의 계승(flame_legacy) 엔진 훅. Match 옵션 `flame` 을 줄 때만 쓰인다(주지 않으면 match.js 의 모든 분기가 건너뛴다: this.fl = null, p.fl = undefined).
 // 근거: analysis/37_flame_legacy_analysis.md §2.5~§2.12, 확정 결정 analysis/39_flame_decisions.md. 원작에 없는 규칙이라 전부 [자작].
-// 이 파일은 난수(m.rng)를 부르지 않는다 -> 같은 시드의 난수 순서는 flame 여부와 무관하다. 효과는 flame 좌석 선수에게만 걸린다(상대 좌석에는 없다).
+// 이 파일은 난수(m.rng)를 부르지 않는다 -> 같은 시드의 난수 순서는 flame 여부와 무관하다. 효과는 flame 좌석 선수에게만 걸린다(상대 좌석에는 없다). 좌석 단위 값(caps·allow·famOf·surviveUsed)은 언제나 그 선수의 좌석 것(m.fls[p.seat])을 읽는다.
 //
-// 옵션 형식(PROTOCOL §12):
+// 옵션 형식(PROTOCOL §12). 두 좌석(analysis/39 D53): flame 에 아래 객체를 1~2칸 배열로 주면 좌석마다 따로 정규화된다(Match.fls[좌석]. 단일 객체 = 종전 그대로)
 // flame: {
 //   seat?: 0|1,                       // flame 좌석(기본 0). 그 좌석의 Match 옵션 teams[seat] 는 쓰이지 않는다
 //   roster: [7칸 {                    // 순서 = 라인업(0~3 내야, 4 상단·5 하단·6 후방 외야). 0번 = 주장(D12)·점프볼 참가자
@@ -11,7 +11,7 @@
 //     hp?: number,                    // 시작 현재 HP(도전 전용). 기본 = 최대 HP. [hpFloor, 최대 HP] 로 자른다(D5)
 //     ext?: {r1, r2, r3},             // R1 넉백 저항 %, R2 캐치 후 밀림 감소 %, R3 쓰러짐 단축 프레임
 //     sp?: [id|null, id|null],        // 필살기 슬롯(D1: 경기 중 발동은 슬롯 0 = 주 슬롯만)
-//     fx?: {catchPow, passSpd, chargePow, airPow, lowHpDef, survive, spPow, spAirPow, spPct, famPow:{계열:n}, famPct:{계열:%}},
+//     fx?: {catchPow, passSpd, chargePow, airPow, lowHpDef, survive, spPow, spAirPow, spPct, spSpd, famPow:{계열:n}, famPct:{계열:%}}, // spSpd = 필살 투구 속력 가산(s6 단위, <<4. 등급 D52)
 //   }],
 //   allow?: number[],                 // 해금된 필살기 ID. 없으면 전부 잠금. 표값 255 인 ID 는 넣어도 빠진다(D2)
 //   families?: {계열: number[]},      // famPow/famPct 판정용 계열표(server/flame/data/shot_families.json 을 호출자가 넘긴다)
@@ -35,7 +35,7 @@ export const FLAME_DEFAULTS = Object.freeze({
 });
 
 export const FLAME_STATS = ['hp', 'def', 'spd', 's3', 'pow', 's5', 'thr', 'pass'];
-const FX_NUM = ['catchPow', 'passSpd', 'chargePow', 'airPow', 'lowHpDef', 'survive', 'spPow', 'spAirPow', 'spPct'];
+const FX_NUM = ['catchPow', 'passSpd', 'chargePow', 'airPow', 'lowHpDef', 'survive', 'spPow', 'spAirPow', 'spPct', 'spSpd'];
 
 const bad = (msg) => { throw new Error('flame: ' + msg); };
 const int = (v, name) => { if (!Number.isInteger(v)) bad(`${name} 가 정수가 아님: ${v}`); return v; };
@@ -106,6 +106,21 @@ export function initFlame(data, o, R) {
   return { seat, team, fm, fmTeam, caps, allow, famOf, roster, surviveUsed: [] };
 }
 
+/**
+ * 좌석별 flame 옵션(analysis/39 D53): 종전의 단일 객체(좌석 하나) 또는 1~2칸 배열(칸마다 seat 를 준다. 같은 좌석 두 번 = 예외).
+ * 반환 = [좌석 0 | null, 좌석 1 | null]. 칸마다 initFlame 을 그대로 거친다(한 좌석 경기는 종전과 같은 값) -> allow·famOf·caps·surviveUsed 는 좌석마다 따로다(합집합 없음)
+ */
+export function initFlameSeats(data, o, R) {
+  const list = Array.isArray(o) ? o : [o];
+  if (list.length < 1 || list.length > 2) bad('flame 배열은 1~2칸');
+  const out = [null, null];
+  for (const x of list) { const fl = initFlame(data, x, R); if (out[fl.seat]) bad('같은 좌석이 두 번: ' + fl.seat); out[fl.seat] = fl; }
+  return out;
+}
+
+/** 선수 p 의 좌석 flame 상태(p.fl 이 있는 선수만 부른다) */
+const flOf = (m, p) => m.fls[p.seat];
+
 /** 지금 발동되는 필살기 ID(D1: 주 슬롯). 잠겨 있거나 비어 있으면 null */
 export function flActiveId(fl, p) {
   const id = fl.caps.slotRule === 'primary' ? p.fl.sp[0] : p.fl.sp[0] ?? p.fl.sp[1];
@@ -141,7 +156,13 @@ export function flPass(m, p) { m.ball.flPass = p.fl ? p.fl.fx.passSpd : 0; if (p
 export function flThrowSpd(m, p, spd, counter) {
   const add = p.flPassSpd | 0;
   p.flPassSpd = 0;
-  return counter && !m.fl.caps.counterBonus ? spd : (spd + (add << 4)) & 0xffff;
+  return counter && !flOf(m, p).caps.counterBonus ? spd : (spd + (add << 4)) & 0xffff;
+}
+
+/** 필살 투구 속력(8.8) 가산(등급, analysis/39 D52): 필살 ID 가 정해진 뒤 +spSpd(s6 단위, <<4). 받아치기 공은 승계값 그대로. 가산이 없으면 spd 를 그대로 돌려준다(호출 쪽은 값이 달라졌을 때만 속도를 다시 분해한다) */
+export function flSpSpd(m, p, spd, counter) {
+  const add = p.fl.fx.spSpd | 0;
+  return add <= 0 || (counter && !flOf(m, p).caps.counterBonus) ? spd : (spd + (add << 4)) & 0xffff;
 }
 
 /**
@@ -149,9 +170,9 @@ export function flThrowSpd(m, p, spd, counter) {
  * c = {air, ch(가산에 쓰인 차지 0~15), spId(null = 일반), counter}
  */
 export function flThrowPow(m, p, power, c) {
-  const f = p.fl.fx, L = m.R.special, caught = p.flCatch;
+  const f = p.fl.fx, L = m.R.special, caught = p.flCatch, S = flOf(m, p);
   p.flCatch = 0; // 캐치 후 '첫' 투구: 받아치기로 던져도 소비된다
-  if (c.counter && !m.fl.caps.counterBonus) return power;
+  if (c.counter && !S.caps.counterBonus) return power;
   let add = 0, pct = 0;
   if (caught) add += f.catchPow;
   if (c.ch >= L.minCharge && c.ch <= L.maxCharge) add += f.chargePow;
@@ -159,7 +180,7 @@ export function flThrowPow(m, p, power, c) {
   if (c.spId !== null) {
     add += f.spPow; pct += f.spPct;
     if (c.air) add += f.spAirPow;
-    for (const fam of m.fl.famOf.get(c.spId) ?? []) { add += f.famPow[fam] | 0; pct += f.famPct[fam] | 0; }
+    for (const fam of S.famOf.get(c.spId) ?? []) { add += f.famPow[fam] | 0; pct += f.famPct[fam] | 0; }
   }
   power += add;
   return clamp(pct ? Math.floor((power * (100 + pct)) / 100) : power, 0, FLAME_LIMITS.powMax); // 음수·8.8 넘침 방지(P1 리뷰 M2)
@@ -167,7 +188,7 @@ export function flThrowPow(m, p, power, c) {
 
 /** 피격 피해: HP 30% 이하 방어 가산, 도전당 1회 치사 생존(HP 1). 내야 슬롯·체력제에서 원작 피해가 0 보다 클 때만 불린다 */
 export function flHitDmg(m, q, power, dmg) {
-  const f = q.fl.fx, fl = m.fl;
+  const f = q.fl.fx, fl = flOf(m, q); // 맞은 선수의 좌석(치사 생존 기록 surviveUsed 는 좌석별)
   if (f.lowHpDef && q.hp * 100 <= q.stat.hp * fl.caps.lowHpPct) dmg = Math.max(0, power - q.stat.def - f.lowHpDef);
   if (f.survive > 0 && q.hp > 0 && q.hp - dmg <= 0) {
     f.survive--; dmg = q.hp - 1;
@@ -177,8 +198,8 @@ export function flHitDmg(m, q, power, dmg) {
   return dmg;
 }
 
-/** 경기 종료 뒤 도전 상태에 돌려줄 값: 라인업 순서의 최종 HP·최대 HP, 치사 생존을 쓴 선수 번호 */
-export function flameResult(m) {
-  const fl = m.fl, ps = m.players.slice(fl.seat * 7, fl.seat * 7 + 7);
+/** 경기 종료 뒤 도전 상태에 돌려줄 값: 라인업 순서의 최종 HP·최대 HP, 치사 생존을 쓴 선수 번호(fl = 그 좌석, 생략 = 한 좌석 경기의 m.fl) */
+export function flameResult(m, fl = m.fl) {
+  const ps = m.players.slice(fl.seat * 7, fl.seat * 7 + 7);
   return { seat: fl.seat, hp: ps.map((p) => p.hp), maxHp: ps.map((p) => p.stat.hp), surviveUsed: fl.surviveUsed.slice() };
 }

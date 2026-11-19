@@ -6,7 +6,8 @@
       "mapping = 그 태그에 속하는 기존 포메이션 패턴 번호(server/data/formations.json 의 name_idx 0~14) 목록. D7 로 37 §2.11 제안안을 채택했다(analysis/39_flame_decisions.md).",
       "[근거 약함] 원작 포메이션에는 전술 태그·능력치 효과가 없다. 배정은 이름·모양만 참고한 자작이다. 특히 고공형은 엔드 어택이 언제나 점프 투구라 구분 근거가 약하다. 바꾸려면 이 표만 고친다.",
       "existingFormations 는 기존 데이터에서 읽은 포메이션 이름 15종과 그 포메이션을 쓰는 팀 번호다(참고용).",
-      "엔진은 Match 옵션 flame.fm(패턴 번호)으로 패턴을 고른다. 태그 보너스는 경기 전 능력치 계산(서버)에서 더한다."
+      "엔진은 Match 옵션 flame.fm(패턴 번호)으로 패턴을 고른다. 태그 보너스는 경기 전 능력치 계산(서버)에서 더한다.",
+      "[2026-11-19 D60, analysis/44] tags[].bonus = 태그 보너스표(팀 전원, 6단계). decisions.json artifact.model 이 off 일 때 낀 포메이션 아이템(FM<패턴>-<등급>)이 그 패턴의 태그 보너스를 등급 배율(grade.formation.tagPct C50/B100/A150/S200 %)로 준다. 수치는 종전 포메이션 강화 아티팩트(from = A09·A10·A12~A17)의 값을 그대로 옮겼다(A11 주장 완장·A18 전술 교본은 옮기지 않았다). artifact.model team 에서는 쓰지 않는다(종전대로 아티팩트가 준다). [시작값 — 임밸런 재측정 대기]"
     ]
   },
   "tags": [
@@ -18,7 +19,14 @@
         7,
         11
       ],
-      "memo": "D7 채택(analysis/39_flame_decisions.md). 37 §2.11 제안안, 원작 근거 약함(이름·모양만 참고)"
+      "memo": "D7 채택(analysis/39_flame_decisions.md). 37 §2.11 제안안, 원작 근거 약함(이름·모양만 참고)",
+      "bonus": [
+        {
+          "stat": "s4",
+          "value": 3,
+          "from": "A13"
+        }
+      ]
     },
     {
       "id": "defense",
@@ -28,7 +36,24 @@
         9,
         10
       ],
-      "memo": "D7 채택(analysis/39_flame_decisions.md). 37 §2.11 제안안, 원작 근거 약함(이름·모양만 참고)"
+      "memo": "D7 채택(analysis/39_flame_decisions.md). 37 §2.11 제안안, 원작 근거 약함(이름·모양만 참고)",
+      "bonus": [
+        {
+          "stat": "s1",
+          "value": 2,
+          "from": "A09"
+        },
+        {
+          "stat": "s5",
+          "value": 2,
+          "from": "A14"
+        },
+        {
+          "stat": "r1",
+          "value": 15,
+          "from": "A17"
+        }
+      ]
     },
     {
       "id": "fast",
@@ -37,7 +62,19 @@
         8,
         14
       ],
-      "memo": "D7 채택(analysis/39_flame_decisions.md). 37 §2.11 제안안, 원작 근거 약함(이름·모양만 참고)"
+      "memo": "D7 채택(analysis/39_flame_decisions.md). 37 §2.11 제안안, 원작 근거 약함(이름·모양만 참고)",
+      "bonus": [
+        {
+          "stat": "s2",
+          "value": 1,
+          "from": "A10"
+        },
+        {
+          "stat": "s6",
+          "value": 2,
+          "from": "A16"
+        }
+      ]
     },
     {
       "id": "combo",
@@ -47,7 +84,14 @@
         4,
         13
       ],
-      "memo": "D7 채택(analysis/39_flame_decisions.md). 37 §2.11 제안안, 원작 근거 약함(이름·모양만 참고)"
+      "memo": "D7 채택(analysis/39_flame_decisions.md). 37 §2.11 제안안, 원작 근거 약함(이름·모양만 참고)",
+      "bonus": [
+        {
+          "stat": "s7",
+          "value": 3,
+          "from": "A12"
+        }
+      ]
     },
     {
       "id": "highair",
@@ -56,7 +100,14 @@
         2,
         6
       ],
-      "memo": "D7 채택(analysis/39_flame_decisions.md). 37 §2.11 제안안, 원작 근거 약함(이름·모양만 참고)"
+      "memo": "D7 채택(analysis/39_flame_decisions.md). 37 §2.11 제안안, 원작 근거 약함(이름·모양만 참고)",
+      "bonus": [
+        {
+          "stat": "s3",
+          "value": 2,
+          "from": "A15"
+        }
+      ]
     },
     {
       "id": "balanced",
@@ -65,7 +116,8 @@
         3,
         12
       ],
-      "memo": "D7 채택(analysis/39_flame_decisions.md). 37 §2.11 제안안, 원작 근거 약함(이름·모양만 참고)"
+      "memo": "D7 채택(analysis/39_flame_decisions.md). 37 §2.11 제안안, 원작 근거 약함(이름·모양만 참고)",
+      "bonus": []
     }
   ],
   "existingFormations": [

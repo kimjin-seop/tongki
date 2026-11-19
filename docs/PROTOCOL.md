@@ -106,7 +106,7 @@
 - **배포 필수 주의**: ① 리버스 프록시 뒤에서는 반드시 `TRUST_PROXY=1` — 빠뜨리면 모든 사용자가 프록시 IP 하나로 보여 IP별 로그인 잠금·가입/로그인 레이트 리밋·동시 연결 상한을 전원이 나눠 쓴다(한 사람의 실패로 전원 `LOGIN_LOCKED`). 반대로 프록시 없이 켜면 IP 위조로 우회된다. ② Node 22.5 이상(`node:sqlite`). 22.5~22.12 는 `--experimental-sqlite` 가 필요하다(pm2: `pm2 start server/index.js --name dodge-danpei --node-args="--experimental-sqlite"`), 22.13 이상은 옵션 없이 된다. ③ 공개 시 `wss://`(TLS) 필수. ④ DB 파일은 POSIX 에서 시작 때 권한 0600 으로 좁힌다(본 파일과 그때 있는 `-wal`·`-shm`, Windows 는 건너뜀).
 
 ## 3. 로비
-- `{t:'list_rooms'}` -> `room_list`. 로비에 있는 사용자에게는 방 생성/삭제/인원/상태 변화 시 서버가 `room_list`를 푸시한다(최대 250ms 단위로 합쳐서 전체 목록).
+- `{t:'list_rooms'}` -> `room_list`. 로비에 있는 사용자에게는 방 생성/삭제/인원/상태 변화·규칙 변경(`set_rules` 로 `mode`·`time`·`flameTeams` 가 실제로 바뀐 때, 2026-11-19) 시 서버가 `room_list`를 푸시한다(최대 250ms 단위로 합쳐서 전체 목록).
 ```js
 { t:'room_list', rooms:[{ code, host:'방장닉네임', players:1|2, max:2, status:'waiting'|'playing', rules:{mode, time} }] }  // 최근 생성 순. rules = 추가 필드(하위 호환, 방 목록 행의 규칙 요약용)
 ```
@@ -120,7 +120,7 @@
 | `join_room` | `code`(대소문자 무시) | -> `room_joined`. 없는 코드/가득/게임 중이면 오류 |
 | `leave_room` | | -> `room_left{reason:'leave'}` 후 `room_list`. **게임 중이면 기권패**(상대에게 `game_end.reason='forfeit_leave'`). 기권한 본인도 순서대로 `game_end` -> `room_state`(waiting) -> `room_left{reason:'leave'}` -> `room_list`를 받는다(`room_left`가 항상 마지막 화면 전환 신호) |
 | `ready` | `ready:boolean` | 방장 제외 본인. 방장은 `HOST_NO_READY` |
-| `set_team` | `team`(0~24) | 내 팀 선택. 게임 중 불가(`IN_GAME`). 변경 시 내 준비 해제. 두 사람이 같은 팀이어도 허용 |
+| `set_team` | `team`(0~24) | 내 팀 선택. 게임 중 불가(`IN_GAME`). 변경 시 내 준비 해제. 두 사람이 같은 팀이어도 허용. **컴퓨터 대전 방에서는 `team:'flame:recent'`·`'flame:best'`(불꽃의 계승에서 키운 팀 슬롯)도 받는다(§13.20)** |
 | `set_rules` | `rules:{mode?, time?}` | **규칙 창**(방장 전용, 대기 중에만). `mode`=`'knockout'`(체력제)/`'official'`(공식), `time`=경기 시간 분 `0`(무제한)/`3`/`5`/`8`. 빠진 필드는 현재 값 유지. 값이 바뀌면 상대 준비 해제 후 `room_state`. 방장 아님 `NOT_HOST`, 게임 중 `IN_GAME`, 틀린 값 `RULES_INVALID`. **`mode:'official'`(こうしき) 을 받는다**(2026-11-18 엔진 이식, §5.7. `server/net/protocol.js` `OFFICIAL_ENABLED=true`. `create_room` 의 `rules` 도 같다). `official` + `time 0` 은 `time 3` 으로 바뀐다(원작 규칙 창 동작: こうしき 는 무제한을 쓸 수 없다). 캠페인 방에서는 `mode` 를 보내도 무시하고 항상 `knockout` |
 | `start` | | 방장 전용. 조건: 참가자 2명 + 상대 준비 완료 |
 | `transfer_host` | | 방장 위임(상대에게). 좌석이 교환되어 새 방장이 왼쪽 팀이 된다 |
@@ -591,6 +591,7 @@ flame: {
       lowHpDef,               // HP 30% 이하일 때 방어 +N
       survive,                // 치사 피해를 HP 1 로 버티는 남은 횟수
       spPow, spAirPow, spPct, // 필살 위력 +N / 공중 필살 +N / 필살 위력 +%
+      spSpd,                  // 필살 투구 속력 +N(s6 단위 = N/16 px/f). 필살 ID 가 정해진 뒤 직역 투구(romThrow)에서만 붙고 초기 속도(V0)가 된다. 받아치기 공·일반 투구는 가산 없음(D52, 2026-11-19)
       famPow:{계열:N}, famPct:{계열:%}, // 계열 필살 위력(계열 = families 의 키)
     },
   }],
@@ -607,6 +608,7 @@ flame: {
 - 위력 가산 순서: (일반 슛 = 원작 식 / 필살 = 표값) + 고정값 합 → % 는 마지막에 내림. 받아치기 공(잡은 공의 위력·속력 승계)과 포메이션 엔드 어택에는 가산하지 않는다.
 - 필살 잠금: 주 슬롯 ID 가 `allow` 에 없으면 공중 차지 13~15 투구도 일반 슛(차지의 위력·속력 가산은 남는다, こうしき 와 같은 형태). 받아치기 필살도 주 슬롯이 해금된 선수만 된다.
 - 20초 보유 제한·피격/캐치 판정·난수 순서는 건드리지 않는다.
+- 필살기 부여 구조(§13.21, 2026-11-19): 엔진 옵션은 **바뀌지 않았다**. 서버가 `allow` 에 「낀 아티팩트가 부여한 슛 + 로스터 원작 선수의 고유 슛」을 넣고, `roster[i].sp` 는 선수별 발동 가능 집합으로 거른 값을 넘긴다(불씨·클론은 아티팩트가 없으면 `[null, null]`).
 - 오리지널 팀(§13.8, 2026-11-19): 엔진 옵션은 **바뀌지 않았다**. 오리지널 선수의 `from` 에는 능력치·히트박스·기본 필살기의 출처인 `original_team.json` 의 `base` 선수가 들어간다(1차 = 태동 7명과 같은 값). 이름·몸(skin)·팀명은 엔진에 넘기지 않고 `RoomGame` 옵션 `flameCast` 로 따로 실어 `game_start.flameCast` 로 보낸다(§12.2).
 
 ### 12.2 `game_start` 확장 (flame 경기에만 있는 키)
@@ -669,11 +671,11 @@ flame: {
 
 - `flame_state {catalogVer, profile, run|null, team|null, note?}`
   - `profile`: `coins`, `earned`, `perm{id:단계}`, `permList[17]{id,name,group:'A'|'B'|'C',lv,maxLevel,costs[],next}`, `spent[]`(최근 20), `unlocked{recruitTeams[], legendary, items[], artifacts[], events[], opponents, difficulty[]}`, `codex{items[],artifacts[],consumables[],players['팀:번호' | 'c:<클론 id>']}`(선수 키: 원작 선수·시작 7명 = `'팀:번호'`, 영입한 오리지널 클론 = `'c:c001'` 꼴. §13.10 D23), `best{seg,wins,clears,clearDiff[]}`, `totals{runs,wins,boss}`, `achievements[]`, `firstClear`.
-  - `run`(도전 저장 그대로 + 파생): `id`, `diff`, `seg`(0~2)·`layer`, `segments`(3), `map[seg].layers[][]{id,type,opp?{team,cpuLevel,stage},next[]}`, `candidates[]`(지금 고를 수 있는 노드 ID. 선택이 남았거나 노드 안이면 빈 배열), `node|null{id,type,stock?[{kind,id,price,sold}],picks?}`, `pending[]`(`{kind:'equipment'|'artifact'|'recruit'|'event'|'rest', choices?, event?, src?, n}`. 영입(`recruit`)의 `choices[]` 는 표시용 정의가 채워진 칸이다, §13.10), `done[]`, `wins{normal,strong,boss}`, `matchesWon`/`matchesTotal`(12), `origTeam?`(오리지널 팀 id. 오리지널 팀으로 시작한 도전만), `roster[7]{from{team,idx},orig?(오리지널 선수 id),clone?(영입 풀 클론 id. 그 칸의 `from` = 클론의 몸, §13.10),hp,train{},equip{headband,glove,protector,uniform},sp[2],recruited}`, `cast{team|null, players[7]}`(추가 칸, 표시용 정의. §13.8), `items[]{inst,id,lv,slot,rarity,stats,wearer,sell,up{lv,maxLevel,cost,stats[{stat,base,now,next,noChange}],noChange,noChangeLabel}}`, `artifactsOwned[]`, `artifacts[3]`, `consumables{id:n}`, `buffs[]{c,p}`, `extraReward`, `extraRecruit`, `points`, `fm`, `rerolls`, `surviveUsed[]`(치사 생존을 쓴 장비 인스턴스, 표시용), `surviveCount`(이 도전에서 쓴 치사 생존 횟수), `inMatch`, `coinsPending{normal,strong,boss,champion,first,pct,total}`, `stat{bestRarity,fms[],bosses[]}`, `matchHp[7]{hp,max,bonus}`(추가 칸, 표시용: 다음 경기 출전 HP. `max` = 다음 경기 최대 HP(= `team.players[i].final.s0`), `hp` = 출전 현재 HP = `min(max, roster[i].hp + bonus)`(HP 0 은 1 로 출전, D5), `bonus` = 다음 경기 소모품 C03·C13 으로 늘어난 최대 HP(D13). 서버가 경기를 만들 때 쓰는 `matchOptions` 와 같은 식이다. `roster[i].hp` 는 종전 그대로 저장된 현재 HP 다).
+  - `run`(도전 저장 그대로 + 파생): `id`, `diff`, `seg`(0~2)·`layer`, `segments`(3), `map[seg].layers[][]{id,type,opp?{team,cpuLevel,stage},next[]}`, `candidates[]`(지금 고를 수 있는 노드 ID. 선택이 남았거나 노드 안이면 빈 배열), `node|null{id,type,stock?[{kind,id,price,sold}],picks?}`, `pending[]`(`{kind:'equipment'|'artifact'|'recruit'|'event'|'rest', choices?, event?, src?, nodeType?, n}`. `nodeType`(장비·아티팩트 보상 칸, 아티팩트는 `.m11` 부터) = 보상이 나온 곳의 종류 `start|normal|strong|boss`, §13.19. 영입(`recruit`)의 `choices[]` 는 표시용 정의가 채워진 칸이다, §13.10), `done[]`, `wins{normal,strong,boss}`, `matchesWon`/`matchesTotal`(12), `origTeam?`(오리지널 팀 id. 오리지널 팀으로 시작한 도전만), `roster[7]{from{team,idx},orig?(오리지널 선수 id),clone?(영입 풀 클론 id. 그 칸의 `from` = 클론의 몸, §13.10),hp,train{},equip{headband,glove,protector,uniform},sp[2],recruited}`, `cast{team|null, players[7]}`(추가 칸, 표시용 정의. §13.8), `items[]{inst,id,lv,slot,rarity,stats,wearer,sell,up{lv,maxLevel,cost,stats[{stat,base,now,next,noChange}],noChange,noChangeLabel}}`, `artifactsOwned[]`, `artifacts[3]`, `consumables{id:n}`, `buffs[]{c,p}`, `extraReward`, `extraRecruit`, `points`, `fm`, `rerolls`, `surviveUsed[]`(치사 생존을 쓴 장비 인스턴스, 표시용), `surviveCount`(이 도전에서 쓴 치사 생존 횟수), `inMatch`, `coinsPending{normal,strong,boss,champion,first,pct,total}`, `stat{bestRarity,fms[],bosses[]}`, `matchHp[7]{hp,max,bonus}`(추가 칸, 표시용: 다음 경기 출전 HP. `max` = 다음 경기 최대 HP(= `team.players[i].final.s0`), `hp` = 출전 현재 HP = `min(max, roster[i].hp + bonus)`(HP 0 은 1 로 출전, D5), `bonus` = 다음 경기 소모품 C03·C13 으로 늘어난 최대 HP(D13). 서버가 경기를 만들 때 쓰는 `matchOptions` 와 같은 식이다. `roster[i].hp` 는 종전 그대로 저장된 현재 HP 다).
   - `team`(능력치 계산 결과, `stats.js`): `tag`(포메이션 태그), `synergies[]`, `allow[]`(해금된 필살기 ID), `amp{formation,synergy}`(강화 배율 % 합), `unsupported[]`(엔진 훅이 없어 적용되지 않는 효과), `players[7]{from, base{s0..s7,r1,r2,r3}, final{…}, delta{…}, steps[9]{id,add{}}, over{}(상한 초과분), fx{…§12.1}, down(쓰러짐 프레임), move{walk, capPxPerFrame, capS2, wasted}, role}`.
 - `flame_catalog {ver, original, recruit, equipment[40], artifacts[30], consumables[20], synergies[], formationTags[], shotFamilies[], rarity, slots, stats, clamps, nodeTypes, training{options[11],cost,picksPerVisit}, rest[], afterWinHealPct, events[], difficulty[], roles[], achievements[], economy, perm[17]}` — `server/flame/data` 원문(아이콘 경로 `icon` 포함). `afterWinHealPct`(추가 칸) = 승리 뒤 전원 회복 %(`run_config.rest.afterWinHealPct`, 키가 없거나 0 이하면 0 = 꺼짐). `rest[]` 는 종전대로 휴식실 선택지뿐이다. `original`(추가 칸, 개정 4) = 오리지널 팀 정의 `{id, name, short, intro, protagonist, start, protagonistLocked, skinSets{uniforms, hairs}, players[7]{id, name, role, tagline, skin{team, idx, uni, hair}}}` 또는 `null`(§13.8). `ver` = `장비.아티팩트.소모품.run_config 의 _meta.version` + (오리지널 팀 파일이 있으면 `.o<original_team.json 의 _meta.version>`) + `.m<메시지 개정 번호>`(`catalog.js CATALOG_MSG_REV`, 지금 6. 예 `1.1.1.3.o3.p1.m6`. 영입 풀 파일이 있으면 `.o…` 뒤에 `.p<recruit_pool.json 의 _meta.version>` 이 든다). `recruit`(추가 칸, 개정 6) = 영입 풀 요약 `{clone, poolId, poolVersion, count, grades[], rareOriginal}`(§13.10. 풀 명단은 싣지 않는다): 데이터 버전이 그대로여도 메시지에 칸이 늘면 개정 번호가 올라 `catalogVer` 가 바뀐다(클라이언트는 문자열 비교만 하면 된다).
 - `flame_result {matchId, node, type, outcome:'win'|'lose'|'rematch'|'stale', reason, hp:[7]|null, saveFailed?}` — flame 경기의 `game_end` 바로 뒤 1회. 결과 저장에 실패하면(3회 시도) 먼저 `error{code:'FLAME_SAVE_FAILED'}`(`ref` 없음, 토스트)가 오고 `outcome:'rematch', saveFailed:true` 다: 결과는 반영되지 않았고 같은 노드를 다시 고를 수 있다(뒤따르는 `flame_state` 는 저장되어 있는 상태).
-- `flame_end {summary}` — 도전 종료(패배·우승·포기). `summary{result:'defeat'|'champion'|'abandon', counted(경기를 1판 이상 치른 도전인가. false 면 도전 횟수·최고 기록·업적에 들지 않았다), seg(도달 구간 1~3), wins{}, matches, bosses[팀], bestRarity, formations[], coins{normal,strong,boss,champion,first,defeat,pct,total}, defeatOuts, achievements[새로 얻은 것], lost{items,artifacts,consumables,points,recruited}}`. `coins.defeat` = 패배 분투 보상(D16, [자작 제안]. §13.3 정산), `defeatOuts` = 그 계산에 쓴 상대 아웃 수(0~7. 보상 대상이 아니면 0). 둘 다 항상 있고 패배가 아니면 0 이다. `coins.total` 에 이미 들어 있다(`pct` 적용). `flame_result` 에는 코인 칸이 없다(패배 코인은 뒤따르는 `flame_end.summary.coins` 로만 온다).
+- `flame_end {summary}` — 도전 종료(패배·우승·포기). `summary{result:'defeat'|'champion'|'abandon', counted(경기를 1판 이상 치른 도전인가. false 면 도전 횟수·최고 기록·업적에 들지 않았다), seg(도달 구간 1~3), wins{}, matches, bosses[팀], bestRarity, formations[], coins{normal,strong,boss,champion,first,defeat,pct,total}, defeatOuts, achievements[새로 얻은 것], lost{items,artifacts,consumables,points,recruited}, teams{recent, best}}`. `teams` = 이번 정산에서 키운 팀 슬롯(§13.20)이 갱신됐는가(boolean 둘. 경기 없는 도전·`versusTeam` 꺼짐 = 둘 다 false, 기록을 넘지 못한 도전 = `recent` 만 true. 응답 칸일 뿐 저장 형식과 무관, 2026-11-19 추가). `coins.defeat` = 패배 분투 보상(D16, [자작 제안]. §13.3 정산), `defeatOuts` = 그 계산에 쓴 상대 아웃 수(0~7. 보상 대상이 아니면 0). 둘 다 항상 있고 패배가 아니면 0 이다. `coins.total` 에 이미 들어 있다(`pct` 적용). `flame_result` 에는 코인 칸이 없다(패배 코인은 뒤따르는 `flame_end.summary.coins` 로만 온다).
 - 경기 종료 순서: `game_end{flame}` -> `flame_result` -> (`flame_end`) -> `flame_state` -> `room_left{reason:'leave'}` -> `room_list`.
 
 > **엔드리스(2026-11-19, §13.12)**: 위 `run.seg`(0~2)·`segments`(3)·`map[seg]`·`flame_end.summary.result`·`seg(1~3)` 설명은 엔드리스가 꺼진 종전 형태다. 켜져 있으면(기본) §13.12 의 표가 우선한다 — `seg` 는 상한이 없고, `segments`·`matchesTotal` 은 `null`, 도전은 패배·포기로만 끝난다.
@@ -685,7 +687,7 @@ flame: {
 - **승리 보상**: 경기 포인트(일반 60·강팀 100·보스 160) + 장비 선택 3장(등급 55/30/12/3 에 구간·노드 보정, 전설은 PC02 해금 뒤, A28·A29·C18 로 장수 증가) + 보스 = 아티팩트 선택 3 / 강팀 = 소모품 1. 선택(`pending`)을 풀어야 다음 노드를 고를 수 있다(`FLAME_PENDING`).
 - **정산**: 도전 종료 때 한 번. 일반 20·강팀 40·보스 80 × 승수 + 우승 200 + 첫 우승 300(× 난이도 `coinPct`). **패배 분투 보상(D16, [자작 제안])**: 끝까지 치른 경기(`annihilation`·`timeup`·`sudden_death`)를 져서 도전이 끝나면 그 마지막 경기에서 아웃시킨 상대 수 × `economy.flameCoin.proposed.defeatOutCoin`(지금 값 4, 처음 2)을 최대 `defeatOutCoinMax`(18, 처음 12. 2026-11-19 임밸런 보정 analysis/40 §16.2)까지 더한다(같은 `coinPct` 적용). 아웃 수는 서버의 경기 결과 `game_end.rem[1]`(상대 남은 인원)에서만 읽는다(7 - 남은 인원). 기권(`forfeit_*`)·무승부 상한(`draw_cap`)·포기(`flame_abandon`·`flame_new`)·재경기(`error`·서버 재시작·저장 실패)·우승·승리에는 없다. 두 키가 없거나 0 이면 꺼짐. 값은 `flame_catalog.economy.coin.proposed` 로도 받는다. `flame_state.run.coinsPending` 에는 들지 않는다(항상 `defeat:0`). 도전 저장은 지워지고(영입 선수·장비·아티팩트·강화·특훈·경기 포인트·소모품) 코인·영구 성장·도감·기록·업적은 남는다. **경기를 한 판도 치르지 않은 도전**(시작 직후 포기·`flame_new` 반복)은 도전 횟수(`totals.runs`)·최고 기록(`best`)·업적에 넣지 않는다(`summary.counted:false`, 도감만 합친다).
 - **능력치**: §14.1 9단계(`team.players[i].steps`). 정수, 반올림은 half-up 하나. 매번 원본에서 다시 계산하므로 장비를 빼면 정확히 원복한다. 강화는 양수 능력치만 20/40/60% half-up(D11, 변하지 않는 단계는 `noChange`). R1·R2 상한 60, R3 상한 24(쓰러짐 하한 36), 방어 0 이상·HP 1 이상. 이동속도는 걷기 식이 3.0px/f 에 닿는 `capS2`(36)부터 낭비(`move.wasted`).
-- **필살기**: 아티팩트를 장착해야 계열이 해금된다(`team.allow`). 해제하면 슬롯에는 남되 발동하지 않는다. A06(강위력)은 불꽃·도끼를 열지 않는다.
+- **필살기**(부여 구조 D38, §13.21): 선수 자체에는 필살기가 없고 낀 아티팩트가 계열의 슛을 부여한다(`team.grant`). 원작 선수만 자기 고유 슛(`team.players[i].own`)을 아티팩트 없이 쓴다. 아티팩트를 빼면 그 슛은 슬롯에서 비워진다. A06(강위력)은 불꽃·도끼를 주지 않는다. (종전 `special.model='legacy'`: 아티팩트를 장착해야 계열이 해금되고 해제하면 슬롯에는 남되 발동하지 않는다.)
 - **소모품**: 보유 5개·종류당 3개. 회복은 즉시, 다음 경기 효과는 `buffs` 에 걸렸다가 경기 뒤 사라진다(C20 은 보스전 뒤). 같은 소모품을 같은 대상에 두 번 걸 수 없다(`FLAME_DUP`). 다음 경기 최대 HP 소모품(C03 선수 +10, C13 팀 +5)은 그 경기에 한해 최대 HP 와 현재 HP 를 같이 올려 출전하고(D13), 경기 뒤 그 선수의 현재 HP 는 **경기 전 값을 넘지 않는다**(늘어난 몫이 먼저 깎인 셈. 회복으로 남지 않는다). 영입으로 교체된 자리의 선수 대상 효과는 사라진다(팀 대상은 남는다).
 - **치사 생존(P10)**: 도전 전체에서 1회(`run.surviveCount`). 같은 장비를 또 얻거나 두 명이 껴도 늘지 않고, 라인업 앞 선수가 먼저 받는다. 팔아도 횟수는 돌아오지 않는다.
 
@@ -699,7 +701,7 @@ flame: {
 | `FLAME_SAVE_FAILED` | 경기 결과 저장 실패(푸시, `ref` 없음). 같은 노드 재경기 |
 | `FLAME_NONE` | 진행 중인 도전 없음 |
 | `FLAME_INVALID` | 없는 번호·ID, 고를 수 없는 항목 |
-| `FLAME_LOCKED` | 해금되지 않은 필살기·난이도·포메이션 |
+| `FLAME_LOCKED` | 해금되지 않은 난이도·포메이션. 필살기 슬롯(`flame_special`): 그 선수가 쓸 수 없는 슛 — 낀 아티팩트가 부여하지 않은 슛, **다른 선수의 고유 슛**, 불씨·클론의 옛 원래 필살기(§13.21) |
 | `FLAME_NO_FUNDS` | 경기 포인트·불꽃코인 부족 |
 | `FLAME_FULL` | 아티팩트 슬롯 3·소모품 보유 상한 |
 | `FLAME_EQUIPPED` | 다른 선수가 낀 장비(장착)·낀 장비(판매) |
@@ -711,6 +713,9 @@ flame: {
 | `FLAME_NO_EFFECT` | 효과 없음(HP 가득, 후보 없음) |
 | `FLAME_PROTAGONIST` | 주인공은 영입 교체 대상으로 고를 수 없음(D20, §13.8) |
 | `FLAME_PRACTICE_NONE` | 연습 경기를 받을 수 없음(꺼져 있음·첫 도전이 아님·이미 썼음·실전을 치렀음, §13.15) |
+| `FLAME_TEAM_NONE` | 키운 팀 슬롯이 없음·쓸 수 없음(`set_team{team:'flame:…'}`·`start`, §13.20) |
+| `FLAME_TEAM_ROOM` | 불꽃 팀을 쓸 수 없는 방(랭크·사람끼리 방, §13.20) |
+| `FLAME_TEAM_RULES` | 불꽃 팀은 체력제(`knockout`)에서만(§13.20): 공식 규칙 방에서 고르거나, 고른 뒤 공식으로 바꾸려 할 때 |
 | `FLAME_TRAIN_CAP` | 특훈 누적 상한(D31, §13.18): 그 선수의 그 능력치는 특훈으로 더 올릴 수 없음(`flame_train`), 또는 이벤트 선택지의 무작위 특훈을 받을 선수가 없음(`flame_choose`). 포인트·횟수 소모 없음 |
 | 공통 | `ALREADY_IN_ROOM`(경기 중), `TOO_MANY_ROOMS`, `CAMPAIGN_RATE_LIMITED`, `BAD_MESSAGE` |
 
@@ -954,7 +959,7 @@ flame 경기 방은 특훈·리그 방과 같은 비공개 방이다: 방 목록
 
 ### 13.18 밸런스 보정 후속: 보스 뒤 회복 · 특훈 누적 상한 · 난이도 레벨 가산 종류별 · 연습 경기 오류 복구 (2026-11-19 박백엔) — 서버·데이터. 화면은 후속(윤프론)
 
-결정 `analysis/39` D30·D31·D32(가정 B60~B69), 제안 `analysis/40` §16.9, 정검수 리뷰 L1. 원작 경기 엔진·`public/` 은 고치지 않았다. `CATALOG_MSG_REV` 9 → 10(`flame_catalog.ver` 끝이 `.m10`). 저장 형식 버전은 그대로(도전 3·영구 2). `run_config.json` 은 키 2개만 더했다(`_meta` 불변).
+결정 `analysis/39` D30·D31·D32(가정 B60~B69), 제안 `analysis/40` §16.9, 정검수 리뷰 L1. 원작 경기 엔진·`public/` 은 고치지 않았다. `CATALOG_MSG_REV` 9 → 10(`flame_catalog.ver` 끝이 `.m10`). 저장 형식 버전은 그대로(도전 3·영구 2). `run_config.json` 은 키 2개만 더했다(그때는 `_meta` 불변. **그 뒤 임밸런 보정으로 `_meta.version` 5·`difficulty[1].cpuLevelAdd = {normal:1, strong:0, boss:1}`**, (3) 참조).
 
 **(1) 구간 보스 뒤 회복(D30)** — 데이터 `run_config.json rest.afterBossHealPct`(시작값 50, [자작 제안]). **키를 지우면 종전 동작**(보스 뒤에도 `afterWinHealPct` 30).
 
@@ -970,7 +975,7 @@ flame 경기 방은 특훈·리그 방과 같은 비공개 방이다: 방 목록
 - 구 저장: 이미 상한을 넘은 누적은 읽기만 하고 깎지 않는다(능력치에도 그대로 반영). 더 받을 수만 없다.
 - 추가 칸: `flame_catalog.training.maxPerStat` = `{능력치: 상한}` 또는 `null`(키 없음). 화면은 `roster[p].train[stat] + options[].value > maxPerStat[stat]` 이면 그 특훈 버튼을 막아 둘 수 있다(서버가 어차피 거절한다).
 
-**(3) 난이도 레벨 가산 종류별(D32)** — `run_config.json difficulty[].cpuLevelAdd` 가 **숫자**(종전, 모든 상대에 같은 값) 또는 **`{normal, strong, boss}`**(종류별, 없는 종류 0). 데이터 값은 종전 그대로(기본 0·고난도 1)라 동작 변화 없음. `flame_catalog.difficulty[]` 는 원문 그대로 나간다(객체로 바꾸면 그 칸이 객체가 된다). 상대 레벨은 지도 생성 때 정해 저장하므로 값을 바꿔도 이미 만든 구간은 그대로다.
+**(3) 난이도 레벨 가산 종류별(D32)** — `run_config.json difficulty[].cpuLevelAdd` 가 **숫자**(종전, 모든 상대에 같은 값) 또는 **`{normal, strong, boss}`**(종류별, 없는 종류 0). **현재 값(임밸런 보정, `analysis/40` §18.3, `run_config.json _meta.version` 5): 기본 `0`, 고난도 `difficulty[1].cpuLevelAdd = { "normal": 1, "strong": 0, "boss": 1 }`**(종전 `1` = 전 종류 +1. 기능을 넣을 때는 값을 종전 그대로 두었다). `flame_catalog.difficulty[]` 는 원문 그대로 나가므로 **지금 `difficulty[1].cpuLevelAdd` 는 객체다**(숫자로 읽지 말 것). 상대 레벨은 지도 생성 때 정해 저장하므로 값을 바꿔도 이미 만든 구간은 그대로다.
 
 **(4) 연습 경기 오류 복구(정검수 리뷰 L1, §13.15 개정)** — 연습 경기가 엔진 오류(`game_end.reason === 'error'`, 토스트 `GAME_ABORTED`)로 끝나면 서버가 `profile.practiceUsed` 를 되돌려 다시 받을 수 있다. 방 생성·입장·경기 시작 실패(`INTERNAL`)도 되돌린다(종전에는 경기 시작 실패만).
 
@@ -982,4 +987,240 @@ flame 경기 방은 특훈·리그 방과 같은 비공개 방이다: 방 목록
 
 화면 후속(윤프론): ① `FLAME_TRAIN_CAP` 토스트(서버 `msg` 그대로 써도 된다) + 특훈장에서 상한에 닿은 선수·능력치 버튼 막기/「최대」 표시(`flame_catalog.training.maxPerStat`, `roster[p].train`). ② 승리 보상 화면의 「전원 회복 n%」 한 칸(`public/js/screens/flame/run.js`, 지금은 `afterWinHealPct` 만 읽는다)이 **보스 승리 보상에서는 `afterBossHealPct`** 를 읽게(보상 `pending[].nodeType === 'boss'`). 고치기 전에는 보스 뒤에 실제 50% 가 들어오는데 화면에는 30% 로 적힌다. ③ (선택) `flame_result.practiceRefunded` 면 「연습 경기를 다시 받을 수 있습니다」 한 줄. ④ `catalogVer` 가 `.m10` 으로 바뀌므로 캐시된 카탈로그는 다시 받는다(종전 문자열 비교 그대로).
 
-화면 반영(2026-11-19 윤프론, HANDOFF §4-39): ① 특훈장에서 상한을 넘는 특훈 버튼은 누를 수 없고 「능력치 값 · 최대」로 적는다(`maxPerStat` `null`·키 없음 = 종전). `FLAME_TRAIN_CAP` 은 서버 `msg` 토스트. ② 승리 보상의 「승리 회복 +n%」는 보스 승리 보상에서 `afterBossHealPct`. 아티팩트 보상 칸(`pending[]{kind:'artifact'}`)에는 `nodeType` 이 없어 화면이 `run.done[]` 의 노드 종류 → 「승리 보상 아티팩트 = 보스」 순으로 판별한다. ③ `practiceRefunded` → 토스트 「연습 경기를 다시 할 수 있습니다」. ④ 코드 수정 없음.
+화면 반영(2026-11-19 윤프론, HANDOFF §4-39): ① 특훈장에서 상한을 넘는 특훈 버튼은 누를 수 없고 「능력치 값 · 최대」로 적는다(`maxPerStat` `null`·키 없음 = 종전). `FLAME_TRAIN_CAP` 은 서버 `msg` 토스트. ② 승리 보상의 「승리 회복 +n%」는 보스 승리 보상에서 `afterBossHealPct`. 보스 판별은 `pending[].nodeType` 을 먼저 읽는다. **아티팩트 보상 칸(`pending[]{kind:'artifact'}`)에도 `.m11`(`CATALOG_MSG_REV` 11, 39 B70, §13.19)부터 `nodeType` 이 실린다** — 이 화면을 반영할 때(`.m10`)는 그 칸이 없어 `run.done[]` 의 노드 종류 → 「승리 보상 아티팩트 = 보스」 순의 대체 판별을 넣었고, 그 대체 판별은 지금은 **`.m11` 전에 만들어져 저장된 선택 칸**에만 쓰인다. ③ `practiceRefunded` → 토스트 「연습 경기를 다시 할 수 있습니다」. ④ 코드 수정 없음.
+
+### 13.19 아티팩트 보상 칸의 `nodeType` (2026-11-19 박백엔) — 서버. 화면은 후속(윤프론)
+
+가정 `analysis/39` B70~B72. 원작 경기 엔진·`public/` 은 고치지 않았다. `CATALOG_MSG_REV` 10 → 11(`flame_catalog.ver` 끝이 `.m11`, 카탈로그 내용은 그대로). 저장 형식 버전은 그대로(도전 3·영구 2).
+
+- `flame_state.run.pending[]` 의 **아티팩트 선택 칸**(`kind:'artifact'`)에도 장비 보상 칸과 같은 **`nodeType`** 이 실린다: 보스 승리 보상 = `'boss'`, 시작 보상(전술 연구 PB03) = `'start'`. 같은 승리에서 나온 장비 칸과 값이 같다(`src` 도 같다). 다른 칸(`kind`·`src`·`choices`·`n`)은 그대로다.
+- 표시용이다: 서버는 아티팩트 칸의 `nodeType` 을 뽑기·재선택에 쓰지 않는다(장비 칸은 종전대로 등급 확률에 쓴다).
+- **이 변경 전에 만들어져 저장된 선택 칸에는 `nodeType` 이 없다**(저장을 고쳐 채우지 않는다) → 화면은 없을 때의 종전 판별(`run.done[]` → 「승리 보상 아티팩트 = 보스」)을 남겨 둔다.
+- 화면 후속(윤프론): `public/js/screens/flame/run.js` 의 승리 회복 % 판별은 이미 `pend.nodeType` 을 먼저 읽으므로(§13.18 화면 반영 ②) **코드를 고치지 않아도 새 칸을 쓴다.** 할 일은 확인뿐이다: 보스 승리 뒤 두 번째 보상(아티팩트) 화면의 「승리 회복 +50%」, 시작 보상 아티팩트 화면에는 회복 칸이 없음, `catalogVer` `.m11` 로 카탈로그를 다시 받는지.
+
+같이 넣은 정검수 리뷰 Low 2건(39 B71·B72, 현재 데이터에는 영향 없음):
+
+- **L1 상대 레벨 하한 1**: `difficulty[].cpuLevelAdd`(숫자·객체의 값)는 **0 이상의 정수**만 받는다(`catalog.js` 로드 검사·`validate_data.mjs` 11절). 지도 생성(`map.js oppOf`)도 `max(1, min(cpuLevelMax, 기본 + 가산))` 으로 자른다 — 레벨 0 이하가 저장되면 저장 검사(`cpuLevel >= 1`)에 걸려 도전이 격리되기 때문이다.
+- **L2 이벤트 선택지 하나에 같은 능력치의 `trainRandom` 은 1개**(`validate_data.mjs` 11절 오류). 받을 수 있는 선수 검사는 op 마다 따로 하므로 2개 이상이면 뒤쪽이 조용히 건너뛰어질 수 있다. 서버 동작(`nodes.js chooseEvent`)은 고치지 않았다.
+
+### 13.20 키운 팀 슬롯 + 컴퓨터 대전에서 그 팀 고르기 (1차 증분, 2026-11-19 박백엔) — 서버·데이터. 화면은 후속(윤프론)
+
+결정 `analysis/39` D33~D37(가정 B73~B84), 요구·분해 `analysis/43_flame_team_in_versus.md`. 사용자 요청 「멀티에서 팀 고를 때 자기가 키웠던 팀을 선택할 수 있으면 좋을듯」의 **1차 범위 = 컴퓨터 대전 방**(사람 1명 + 컴퓨터 원작 팀). 온라인 사람끼리 방은 2차(미구현, 43 §6). 원작 경기 엔진(`server/engine/`)·`public/` 은 고치지 않았다. 데이터 `run_config.json versusTeam{enabled, surviveUsesPerMatch?}` — **키를 지우거나 `enabled:false` 면 종전 동작**(슬롯을 저장하지 않고 고를 수도 없다. 이미 저장된 슬롯은 지우지 않는다). `CATALOG_MSG_REV` 11 → 12(`flame_catalog.ver` 끝이 `.m12`). 저장 형식 버전은 그대로(도전 3·영구 2). 새 DB 표 없음.
+
+**(1) 슬롯 저장** — 영구 저장(`flame_profiles` 의 JSON)의 **선택 칸** `teams{recent?, best?}`.
+
+- 저장 시점 = 도전 종료 정산(`run.js settle`, 패배·포기·종전 우승 종료 공통). **경기를 1판 이상 치른 도전**(`flame_end.summary.counted`)만 저장한다.
+  - `recent`(최근) = 그런 도전이 끝날 때마다 덮어쓴다.
+  - `best`(최고) = 그 도전이 순위 기록(`best.rank`, §13.13)을 가진 도전일 때만 쓴다(= 정산 뒤 `best.rank.run` 이 이 도전의 id. `best.rank` 에 기록을 세운 도전 id `run` 이 선택 칸으로 늘었다. 구간·승수가 같은 동률 도전은 기록을 바꾸지 않으므로 `best` 도 그대로다. `run` 이 없는 변경 전 기록은 다시 넘어설 때부터 `best` 가 채워진다). 기록을 넘지 못한 도전은 `best` 를 건드리지 않는다. 저장되는 팀은 **기록을 세운 순간이 아니라 그 도전이 끝난 시점의 팀**이다.
+- 저장 내용은 **재료만**이다: `{v:1, at, diff, seg(도달 구간, 1부터), wins, origTeam?(팀 id), fm, arts[3], perm{영구 성장 A 단계}, roster[7]{from{team,idx}, orig?, clone?, recruited, train{}, equip{슬롯:{id, lv}|null}, sp[2]}}`. 한 칸 약 1.2KB.
+- **저장하지 않는 것**: 최종 능력치, 이름·skin·팀명, 현재 HP, 소모품·다음 경기 효과, 끼지 않은 장비, 경기 포인트, 지도, 난수 시드·비밀값, 치사 생존 사용 횟수.
+- 읽을 때마다 검증한다(`teams.js sanitizeTeam`, 저장할 때도 같은 함수): 없어진 아이템·아티팩트 id 는 그 칸만 비우고, 특훈 누적은 `training.maxPerStat`(§13.18, 표에 없는 능력치는 255)로 자르고, 없어진 클론·오리지널 id 는 표시만 버리고(= 그 몸의 원작 선수로 읽힌다) 팀은 살린다. 7명이 아니거나 같은 선수가 겹치거나 형식 번호가 더 새것이면 **그 슬롯만** 없음이다.
+- 손님도 저장된다(불꽃의 계승 기존 규칙. 가입 경합으로 남은 손님 세션은 종전대로 쓰지 않는다).
+- **한계(되돌리기)**: `PROFILE_VERSION` 을 올리지 않았으므로 이 변경 전 서버로 되돌려도 영구 저장은 읽힌다. 다만 되돌린 서버가 그 계정의 영구 저장을 다시 쓰면(아무 `flame_*` 조작) **`teams` 칸만 사라진다**(`best.rank`·`practiceUsed` 와 같은 성질). 코인·기록·도감은 그대로다.
+
+**(2) 요약 칸** — `flame_state.profile.teams = {recent, best}`, 각 `{seg, wins, diff, at, core:[이름 3], team:{id,name,short}|null, captain:{team,idx}} | null`.
+
+- `core` = 라인업 0~2번 칸의 이름(오리지널·클론 = 이름 문자열, 원작 선수 = `'@팀:번호'`, 순위표 `team` 과 같은 표기). `team` = 오리지널 팀으로 시작한 도전이면 그 팀, 아니면 `null`. `captain` = 주장 칸의 몸.
+- 재료·능력치는 보내지 않는다. `flame_get` 은 방 안에서도 받을 수 있다(대기실의 팀 선택 화면이 슬롯 유무를 알 수 있다).
+- `flame_catalog.versusTeam = {enabled:true, slots:['recent','best'], ruleMode:'knockout', surviveUsesPerMatch} | {enabled:false, slots:[]}`.
+
+**(3) 고르기** — `set_team { team: 'flame:recent' | 'flame:best' }`(새 메시지 없음. `team` 이 문자열이면 슬롯 참조다).
+
+- 되는 방: **일반 컴퓨터 대전 방**(`create_room{vsCpu:true}`)의 방장(= 유일한 사람), 대기 중, 규칙 `mode:'knockout'`(시간은 자유).
+- 성공하면 `room_state`: `slots[0].flameTeam = {slot, …요약 칸과 같은 값}`, `slots[0].team` = 주장 칸의 몸 출처 팀 번호(표시 fallback), 컴퓨터 팀이 내 로스터와 겹치면 다시 뽑힌다((5)). **`room.flame` 은 생기지 않는다**(그 키는 도전 경기 방 표시다, §13.5).
+- 숫자 `team` 으로 다시 `set_team` 하면 선택이 풀린다(`slots[0].flameTeam` 없음).
+- 거절(전부 토스트): `TEAM_INVALID`(`'flame:…'` 형식이 아닌 문자열·모르는 슬롯·객체 등 위조 값), `NOT_IN_CAMPAIGN_ROOM`(스토리·튜토리얼·리그·불꽃의 계승 도전 방 — 종전 `set_team` 과 같은 코드), `FLAME_TEAM_ROOM`(랭크 방·사람끼리 방), `FLAME_TEAM_RULES`(공식 규칙 방), `FLAME_TEAM_NONE`(그 슬롯이 없음·쓸 수 없음·읽지 못한 저장), `FLAME_UNAVAILABLE`(모드 또는 `versusTeam` 꺼짐), `FLAME_SAVE_NEWER`, `CAMPAIGN_RATE_LIMITED`(영구 저장을 읽는 요청이라 `flame_*` 빈도 창에 든다), 공통 `NOT_IN_ROOM`·`IN_GAME`.
+- 불꽃 팀을 고른 방에서 `set_rules{mode:'official'}` 은 `FLAME_TEAM_RULES`(먼저 원작 팀으로 바꾼다).
+
+**(4) 경기** — `start`(종전 요청 그대로).
+
+- 서버가 **시작 시점의 저장값**을 다시 읽어 `computeTeam → toEngine` 으로 능력치를 다시 계산하고 엔진 flame 옵션(§12.1, 좌석 0)을 조립한다. 클라이언트가 보낸 것은 슬롯 이름뿐이다. 그사이 슬롯을 쓸 수 없게 됐으면 `start` 가 `FLAME_TEAM_NONE` 등으로 거절된다(방은 그대로).
+- 도전과 다른 점: **시작 HP 는 언제나 최대**, 소모품·다음 경기 효과 없음, 보스전 한정 효과 없음, 치사 생존(P10)은 **경기마다 새로 세고 팀 합계 `surviveUsesPerMatch`(시작값 1)회**(0 = 발동하지 않음. 아이템 정의의 `usesPerRun` 보다 늘리지는 못한다).
+- **`game_start` 구분값**: 도전 경기의 `flame:{seat, fm, allow}` **키가 없고**, 대신 **`flameVs:{seat:0, fm, allow, mode:'versus', slot}`** 가 실린다. `teams[0]`(§12.2 의 `flame:true`·`from`·`hp0`·`sp`·`spOn` 등)·`flameCast` 형식은 도전 경기와 같고 `flameCast` 에 `versus:true, slot` 이 더 있다.
+  - 이유: 클라이언트는 `game_start.flame` 을 「불꽃의 계승 도전 경기」 표시로 쓴다(`screens/game.js` 의 `flame` 판별 → 결과 카드 「도전으로」·`holdLobby`·`room_left` 뒤 도전 화면 이동, `main.js`). 같은 키를 쓰면 대전이 끝난 뒤 도전 화면으로 넘어가 버린다. 키를 나눴으므로 **화면을 고치지 않아도 경기 흐름(끝나면 대기실)은 종전 컴퓨터 대전과 같다** — 고칠 것은 표시뿐이다(아래 화면 후속).
+- 끝나면 일반 방과 같다: `game_end`(`flameVs:{seat, hp[7], maxHp[7], surviveUsed[]}` 표시용, `flame` 키 없음) → `room_state`(waiting). 방과 팀 선택은 남는다(다시 `start` 할 수 있다). `flame_result`·`flame_end`·`flame_state`·`room_left` 는 오지 않는다.
+- **무반영 보장**: 이 경기는 도전 경로(`flameEnd`·`applyMatchResult`·`settle`)를 타지 않는다 — 진행 중인 도전·현재 HP·승수·코인·최고 기록·순위표·슬롯·업적·도감이 전부 그대로이고 **저장이 한 번도 일어나지 않는다**. 결과 레코드(`results.jsonl`)도 쓰지 않는다(연습 경기와 같은 `noRecord`).
+
+**(5) 상대 팀**(D36) — 불꽃 팀을 고르면 컴퓨터 팀은 **내 로스터 7칸의 몸 출처 팀(`from.team`) 전부를 뺀 무작위**다(고를 때와 시작할 때 겹치면 다시 뽑는다). 도전 경기(상대 = 지도 노드의 팀 그대로, 39 B30)와 다르다: 대전은 상대를 정한 지도가 없고, 같은 원작 선수가 양쪽에 서는 일을 피한다.
+
+> **2차(2026-11-19, §13.25)**: 사람끼리 방에서도 방장이 규칙 「불꽃 팀」(`rules.flameTeams`)을 켜면 두 사람이 각자 슬롯을 고를 수 있다. 위 (3) 의 `FLAME_TEAM_ROOM`(사람끼리 방) 거절은 그 규칙이 꺼진 방에만 해당하고, 문구는 「이 방은 불꽃 팀을 허용하지 않습니다」로 바뀌었다. 컴퓨터 대전 방의 동작·`game_start.flameVs{seat:0,…}`·`noRecord` 는 이 절 그대로다. 도전 종료 요약에 `flame_end.summary.teams{recent, best}` 가 늘었다(§13.2 목록).
+
+화면 후속(윤프론): ① 대기실 팀 선택 격자에 「최근」「최고」 2칸(`flame_state.profile.teams`, `flame_catalog.versusTeam.enabled`, 컴퓨터 대전 방·체력제일 때만 활성) → `set_team{team:'flame:recent'}`. ② 대기실 좌석 표시(`slots[0].flameTeam`: 구간·승수·핵심 3명). ③ `screens/game.js`: 그리기용 판별을 `start.flame ?? start.flameVs` 로(선수 이름·skin `flameCast`, 필살기 안내 `noSpecial`), **흐름용 판별(결과 카드 「도전으로」·`holdLobby`·`room_left`)은 `start.flame` 만** 보게 유지. ④ 새 오류 코드 3개 토스트. ⑤ 공식 규칙을 고르면 불꽃 팀 칸 비활성(또는 `FLAME_TEAM_RULES` 토스트).
+
+### 13.21 필살기 부여 구조 (2026-11-19 박백엔) — 서버·데이터. 화면은 후속(윤프론). 결정 analysis/39 D38(가정 B85~B93)
+
+사용자 결정: 선수 자체에는 필살기가 없고, **낀 아티팩트가 부여한 슛**만 나간다. 단 **원작 선수**는 자기 고유 슛을 기본으로 갖는다. 엔진은 바뀌지 않았다(§12.1 그대로. 서버가 `allow` 와 슬롯을 맞춰 넘긴다).
+
+- **스위치**: `server/flame/data/decisions.json special.model` = `'granted'`(지금 값) | `'legacy'`(또는 키 없음 = 종전: 원래 필살기를 갖고 시작하고 아티팩트가 계열을 해금). `flame_catalog.special = {model, slotRule, artifactShots:{아티팩트 id: 대표 슛 ID}}`(`CATALOG_MSG_REV` 13 → `catalogVer` 끝이 `.m13`).
+- **선수 구분**(`flame_state.team.players[i].kind`): `'starter'` = 불씨 시작 선수(`roster[i].orig`), `'clone'` = 영입 클론(`roster[i].clone`), `'original'` = 원작 선수(두 표시가 없는 칸: 희귀 발견으로 영입한 원작 캐릭터, D17 이전 저장의 태동 선수).
+- **고유 슛**(`flame_state.team.players[i].own`): 원작 선수 = 원작 필살기 ID(표값 255 로 빠진 ID 면 `null`), 불씨·클론 = 언제나 `null`.
+- **선수별 발동 가능 집합** = `team.grant`(낀 아티팩트가 부여한 ID. 아무 선수나 슬롯에 넣을 수 있다) + 그 선수의 `own`. 화면의 슬롯 선택지는 이 둘로 만든다.
+  - `team.allow` 는 **엔진에 넘기는 값**(= `grant` + 로스터 원작 선수들의 `own`)이다. 팀 공용이라 **선택지로 쓰면 안 된다**(남의 고유 슛이 들어 있다 → 넣으면 `FLAME_LOCKED`).
+  - 발동은 주 슬롯(`roster[i].sp[0]`)만(D1). 그 값이 `null` 이면 「필살기 없음」, `own` 과 같으면 「고유」, 그 밖이면 아티팩트 슛이다. 「미습득」(슬롯에 있지만 발동하지 않는 상태)은 더 없다 — 서버가 집합 밖의 값을 비운다.
+- **새 도전**: 불씨 7명 `sp = [null, null]`, 아티팩트가 없으면 경기 `allow = []`(필살기 발동 없음. 공중 차지 13~15 투구는 일반 슛, §12.1 「필살 잠금」과 같다).
+- **영입**(`flame_choose`): 클론 = `[null, null]`(풀 정의의 `sp` 는 쓰지 않는다. 지금 낀 필살기 아티팩트가 있으면 슬롯 순서로 첫 아티팩트의 대표 슛이 주 슬롯에 들어간다), 원작 선수 = `[own, null]`. 영입 후보 칸(`pending[].choices[]`)의 `sp`: 클론 = `null`, 원작 선수 = 고유 슛 ID. `run.cast.players[i].sp`(클론 칸)도 `null`.
+- **아티팩트 장착·해제**(`flame_artifact`) 뒤 서버가 슬롯을 맞춘다: ① 집합 밖의 ID 를 두 슬롯에서 비운다(원작 선수의 주 슬롯이 비면 고유 슛으로 복귀) ② 주 슬롯이 비고 예비 슬롯에 쓸 수 있는 슛이 있으면 주 슬롯으로 올린다 ③ 새로 낀 아티팩트의 대표 슛을 주 슬롯이 빈 선수 전원에게 넣는다(이미 슛이 있는 선수·원작 선수는 그대로). 응답 `flame_state.run.roster[i].sp` 가 바뀐 값이다.
+- **슬롯 지정**(`flame_special{p, sp:[a, b]}`): 넣을 수 있는 것 = `team.grant` 의 ID 또는 그 선수의 `own`. 그 밖 — **다른 선수의 고유 슛, 부여되지 않은 슛, 불씨·클론의 옛 「원래 필살기」** — 은 `FLAME_LOCKED`(상태 그대로). 두 칸이 같은 ID 면 `FLAME_INVALID`. 원작 선수의 주 슬롯을 비워 보내면 고유 슛으로 돌아간다(`[null, x]` → `[own, x]`).
+- **저장**: 형식 번호 그대로(도전 3·영구 2). 읽을 때(`sanitizeRun`) 집합 밖의 슬롯 값을 `null` 로 정리한다 → 변경 전 도전의 불씨·클론 필살기는 비고 원작 선수의 고유 슛은 남는다. 키운 팀 슬롯(§13.20)은 저장된 칸을 고치지 않고 대전 조립 때마다 같은 정리를 한다(`flameVs.allow` 에도 원작 선수의 고유 슛이 든다). 한계: 정리된 값은 `legacy` 로 되돌려도 되살아나지 않는다(39 B91).
+- **대표 슛**: `shot_families.json families[].grantShotId`. 시작값 [자작] = 그 계열 아티팩트가 부여하는 ID 중 위력 최저(A01 22 · A02 11 · A03 1 · A04 9 · A05 3 · A06 13). 검증기(`validate_data.mjs`)가 「그 아티팩트가 실제로 부여하는 ID 인가」와 `model` 값을 본다.
+
+화면 후속(윤프론): ① 선수 카드·팀 관리 슬롯 탭의 선택지를 `team.grant` + `team.players[i].own` 으로(지금의 `allow`·`cast.sp`·몸 주인 필살기 기반 「원래 필살기」 선택지는 거절된다) ② 주 슬롯 표기 「필살기 없음」/「고유」, 「미습득」 표기 제거 ③ 영입 카드: 클론 = 「필살기 없음」, 원작 선수 = 고유 슛 이름 + 「고유」 ④ 도감·아티팩트 설명문 「해금」→「부여」(대표 슛 = `flame_catalog.special.artifactShots`) ⑤ `FLAME_LOCKED` 토스트 문구 ⑥ 경기 조작 안내(필살기 없는 선수의 공중 차지 투구는 일반 슛) ⑦ `special.model === 'legacy'` 면 종전 화면.
+
+화면 반영(2026-11-19 윤프론, HANDOFF §4-45): ①~⑦ 구현. 서버 메시지는 그대로다. `FLAME_LOCKED` 토스트는 `flame_special` 요청의 거절일 때만 화면이 「부여되지 않은 필살기입니다」로 바꿔 내고(서버 `msg` 불변), 아티팩트 설명문은 화면에서 「해금」→「부여」 낱말만 바꾼다(`specText` 원문 불변).
+
+### 13.22 등급제: 필살슛·포메이션 아이템 (2026-11-19 박백엔) — 서버·데이터. 화면은 후속(윤프론). 결정 analysis/39 D39~D44(가정 B94~B108)
+
+필살슛과 포메이션이 **등급(C/B/A/S)이 붙은 아이템**이 됐다. 엔진은 바뀌지 않았다(§12.1 그대로). 수치는 전부 `server/flame/data/decisions.json grade` 의 시작값이다.
+
+- **스위치**: `grade.model` = `'v1'`(지금 값) | `'off'`(등급 아이템이 새로 나오지 않고 가산·상한·포메이션 아이템 규칙이 꺼진다 = §13.21 까지의 동작). `CATALOG_MSG_REV` 13 → 14(`catalogVer` 끝 `.m14`).
+- **아이템 id**: `SP<슛 ID>-<등급>`(47종 × 4 = 188), `FM<패턴 번호>-<등급>`(15 × 4 = 60). 서버가 규칙으로 만들어 **`flame_catalog.artifacts` 뒤에 붙인다**(30 → 278칸). 등급 아이템의 칸: `kind:'shot'|'formation'`, `grant:{shot:ID}|{formation:패턴}`, `grade`, `effects:[]`. `name`·`specText`·`icon` 은 임시 값이다(화면이 `grant` 로 이름을 붙인다).
+- **`flame_catalog.grade`** = `{model, grades:['C','B','A','S'], spPow:{C,B,A,S}, spPowCap, formation:{default, stat:{s7,s6,s4:{C,B,A,S}}, tagPct:{C,B,A,S}, ampCapPct}, drop:{boss:[구간별 {C,B,A,S}], shop, firstWin, bossKinds, shopKinds, firstWinChoices}, price:{shop, sell}, equipmentLetters}`. `flame_catalog.rarity.letters` = 장비 등급 표기 `{common:'C', rare:'B', epic:'A', legendary:'S'}`(데이터 키는 그대로).
+- **보유·장착**: 종전 아티팩트와 같다(`run.artifactsOwned` id 목록, `flame_artifact` 로 3슬롯에 낀다). **같은 슛·같은 포메이션은 가장 높은 등급 하나만**: 더 높은 등급을 얻으면 낮은 것은 자동 판매(경기 포인트 `price.sell`)되고 끼고 있던 칸을 새 등급이 물려받는다. 보상 선택이면 `flame_state.note = {upgraded:true, id, sold, points}`. 같거나 낮은 등급을 받으려 하면 `FLAME_INVALID`(후보에는 나오지 않는다).
+- **드롭**: 등급 먼저(출처별 가중치) → 종류 균등. 같은 도전의 같은 보상은 다시 열어도 같다.
+  - 구간 보스 승리의 아티팩트 선택 = **「필살슛 1 · 포메이션 1 · 팀 강화(A07~A30) 1」** 고정(낼 것이 없는 유형은 빠진다).
+  - **첫 승리 보상**: 도전의 첫 승리(보스 제외)에 `pending` 한 칸이 더 선다 — `{kind:'artifact', g:'firstWin', nodeType, choices:[필살슛 C 3개]}`. 장비 보상 다음 차례다(`flame_choose` 로 고르거나 `i:-1`).
+  - 상점의 아티팩트 칸: 유형을 가중치로 뽑는다. 값은 `stock[].price`(등급 아이템 = 등급별).
+  - 시작 보상·이벤트의 아티팩트 = 팀 강화만. **A01~A06 은 새로 나오지 않는다**(가진 것은 종전대로 계열을 부여한다).
+- **필살슛 아이템**: 끼면 그 슛 하나가 `team.grant` 에 들고(아무 선수나 슬롯에 넣을 수 있다) 대표 슛 자동 채움은 그 슛이다(§13.21 규칙 그대로). **등급 위력 가산** = 주 슬롯의 슛을 주는 낀 아이템의 등급(`spPow`). 고유 슛·A01~A06 의 슛은 등급 없음(가산 0) — 같은 슛의 아이템을 끼면 그 등급을 받는다.
+  - `flame_state.team.players[i].special = {id: 주 슬롯 슛|null, grade: 'C'|…|null, add: 등급 가산, cut: 위력 상한으로 잘린 값}`.
+  - **위력 상한**: 필살 최종 위력 ≤ 표값 + `spPowCap`(장비·아티팩트·시너지 가산 포함). 서버가 엔진에 넘기는 `fx` 를 자른다 → `team.players[i].fx` 는 잘린 뒤 값이다.
+- **포메이션 아이템**: 기본 포메이션(`grade.formation.default`)은 아이템 없이 쓰지만 **태그·보너스·시너지가 없다**(`team.tag = null`). 아이템을 끼면 그 패턴으로 바뀌고 태그 + 등급 보너스를 받는다. 빼면 기본으로.
+  - `flame_formation{fm}`: 기본 포메이션 또는 **낀** 포메이션 아이템의 패턴만. 그 밖은 `FLAME_LOCKED`.
+  - `flame_state.team.fm`(실제로 쓰이는 패턴)·`fmItem`(그 패턴을 주는 낀 아이템 id|null)·`fmGrade`. 등급 보너스는 능력치 6단계(`steps[5]`)에 들어 있다.
+- **저장**: 형식 번호 그대로. 변경 전 도전의 「아이템 없이 고른 포메이션」은 읽을 때 기본 포메이션이 된다(되살아나지 않는다). 표시(`orig`·`clone`)가 무효가 된 칸은 `lost:true` 가 붙어 고유 슛이 없다(§13.21 의 「원작 선수로 이어져 고유 슛을 갖는다」를 대체).
+- **키운 팀·컴퓨터 대전(§13.20)**: 같은 계산이다(등급 가산·상한·포메이션 아이템). 주 슬롯이 빈 불씨·클론은 낀 필살슛 아이템의 대표 슛을 받는다.
+
+**리뷰 반영 보강 (2026-11-19 박백엔, 결정 analysis/39 D45~D48·가정 B109~B119)** — 기존 칸의 이름·모양은 그대로이고 **새 칸만 더했다**. `CATALOG_MSG_REV` 14 → 15(`catalogVer` 끝 `.m15`).
+
+- **위력 상한 구조가 바뀌었다(D45, 위의 「위력 상한」 줄을 대체)**: 등급 가산(`special.add`)은 상한 밖에서 언제나 전액 붙는다. 그 밖의 필살 가산 합(장비·아티팩트·시너지 + 필살 투구에 늘 붙는 차지·공중 가산, 캐치 직후가 아닌 평소 필살 기준)만 `grade.spOtherCap`(20)에서 자른다. 캐치 직후까지 더한 전체는 `grade.spPowCap`(60 — **칸 이름 그대로, 값 45 → 60, 뜻 = 전체 안전 상한**)에서 캐치 가산(`fx.catchPow`)만 줄인다.
+  - 새 칸 **`flame_catalog.grade.spOtherCap`**(정수 | `null` = 따로 자르지 않음).
+  - 새 칸 **`flame_state.team.players[i].special.other`**(자른 뒤 평소 필살의 그 밖의 가산, 0~`spOtherCap`)·**`special.cutCatch`**(전체 상한 때문에 줄인 캐치 가산, 0 = 줄이지 않음). `special.id·grade·add·cut` 은 그대로다(`cut` = 그 밖의 가산 상한으로 잘린 값). 평소 필살 위력 = 표값 + `add` + `other`.
+  - `team.players[i].fx` 는 종전처럼 자른 뒤 값이다. 자를 때 접는 `famPow`·`famPct` 는 그 슛이 속한 계열 칸만이다(다른 계열 칸은 남는다).
+- **드롭(D46)**: 뽑힌 등급으로 받을 것이 없을 때 올려 찾는 범위 = 그 출처의 가중치가 0 보다 큰 등급, `grade.drop.escalateMax`(`'A'`) 이하. 상점의 S·첫 승리 보상의 B 이상은 나오지 않고 보스의 S 는 직접 뽑혔을 때만 나온다. 낼 것이 없는 필살슛·포메이션 칸은 `grade.drop.emptyAsTeam`(true)이면 **팀 강화 한 칸으로 대신**한다 → 보스 3칸이 「팀 강화 · 포메이션 · 팀 강화」처럼 설 수 있고, **첫 승리 보상(`g:'firstWin'`)·상점의 칸에도 팀 강화가 올 수 있다**(유형은 칸의 아이템 `kind` 로 판별한다. 없으면 팀 강화). 새 칸 **`flame_catalog.grade.drop.escalateMax`·`emptyAsTeam`**.
+- **시너지 조건(D47)**: 새 칸 **`flame_catalog.synergies[].requires.shotFamily`**(계열 id | 없음) = 그 계열의 슛을 부여하는 아티팩트(계열 아티팩트 또는 그 계열 슛의 필살슛 아이템)를 낀 조건. SY01·SX01 은 `requires = {formationTag, artifacts:['A13'], shotFamily:'flame'}` 이다(종전 `artifacts:['A01','A13']`). 켜진 시너지는 종전대로 `team.synergies`.
+- **알림(D48)**: `flame_buy` 의 `flame_state` 에도 **`note = {upgraded:true, id, sold, points}`**(보상 선택과 같은 모양)가 붙는다. 새 알림 **`note = {voided:true, id}`** = 고른 칸이 이미 가진 등급 이하라 무효가 됐다(거절 아님. `FLAME_INVALID` 대신 온다). 아티팩트를 얻으면 남은 아티팩트 선택(`pending`)에서 받을 수 없게 된 칸이 빠지고 빈 선택은 통째로 사라진다 → 화면은 받은 `pending` 을 그대로 그린다(칸 번호는 새 목록 기준).
+
+화면 후속 추가(윤프론): ⑪ `special.other`·`cutCatch` 표시(선택) ⑫ `note.voided` 토스트·상점 `note.upgraded` 토스트 ⑬ 첫 승리 보상·보스 보상 칸에 팀 강화가 섞일 수 있음 ⑭ 시너지 조건을 그리게 되면 `requires.shotFamily`.
+
+화면 후속(윤프론): ① 아티팩트 목록·보상·상점·도감에서 등급 아이템 표시(`grant` 로 슛·포메이션 이름, 등급 배지 C/B/A/S, 「같은 종류 보유 등급」 비교) ② 보스 보상 3칸의 유형 표시(필살슛·포메이션·팀 강화) ③ 첫 승리 보상 화면(`g:'firstWin'`) ④ 자동 판매 알림(`note.upgraded` 토스트) ⑤ 선수 카드의 슛 등급·가산·상한 표시(`special`) ⑥ 포메이션 화면: 고를 수 있는 것 = 기본 + 낀 아이템의 패턴, 기본은 「태그 없음」, `fmGrade` 보너스 표시, `FLAME_LOCKED` 토스트 ⑦ 장비 등급 표기 C/B/A/S(`rarity.letters`) ⑧ 도감 아티팩트 탭의 분모(30 → 등급 아이템 포함 여부 결정) ⑨ `grade.model === 'off'` 면 종전 화면 ⑩ 전용 아이콘(안아트)이 생기기 전까지 임시 아이콘.
+
+화면 반영(2026-11-19 윤프론, HANDOFF §4-47): ①~⑩ 구현. 서버 칸·메시지는 그대로다. 이름은 화면이 `grant` 로 붙이고(`name`·`specText` 임시 문구 미사용), ⑧ 도감 분모는 손으로 쓴 30종 그대로 두고 등급 아이템은 종류당 한 칸(슛 47 · 포메이션 15, 발견한 최고 등급)으로 따로 센다. `flame_formation` 의 `FLAME_LOCKED` 는 화면이 「장착한 포메이션 아이템만 고를 수 있습니다」로 바꿔 낸다(서버 `msg` 불변). `.m15` 의 `note.voided`·상점 구매 `note.upgraded` 는 토스트로 받고, `special.other`·`special.cutCatch`·`grade.spOtherCap` 은 화면에 내지 않는다.
+
+### 13.23 영구 성장 표 개정·옛 저장 이관 + 장비 S 극희귀화 채택 + 포메이션 C 보너스 (2026-11-19 박백엔) — 서버·데이터. 화면은 후속(윤프론). 결정 analysis/39 D49~D51(가정 B120~B123)
+
+메시지 칸 이름·모양은 바뀌지 않았다. 값과 한 가지 범위만 바뀐다. `run_config.json _meta.version` 6 → 7 이라 `cat.ver`(예 `1.1.1.7.o3.p2.m15`)가 바뀌어 클라이언트는 옛 카탈로그(영구 성장 비용 포함)를 버리고 다시 받는다.
+
+- **영구 성장 값(D50)**: `flame_catalog.perm[]`·`flame_state.profile.permList[]` 의 `maxLevel`·`costs`·`effect.perLevel` 이 새 표다 — PA01 4단계(HP +1, 150/250/350/450) · PA02/PA03 1단계(700) · PA04 1단계(400) · PB01 6단계(+15, 40/60/80/100/130/160) · PB02 120/240 · PB03 150/300 · PB04 80/150/250 · PB05 80/150/250 · PB06 4단계(−5%, 40/60/80/100) · PB07 120/240 · PC02 300. 풀강화 9,480코인 · 37단계.
+- **범위가 바뀐 칸**: `profile.perm{id:단계}`·`permList[].lv` 의 **A(PA01~04) 단계는 `maxLevel` 보다 클 수 있다**(옛 표에서 산 효과를 보존한 저장: PA01 최대 6, PA02~04 최대 2). 그때 `next` 는 null 이고 `flame_perm` 은 `FLAME_MAX`. B·C 는 언제나 `maxLevel` 이하다. 키운 팀 슬롯(§13.20)의 `perm` 도 같다.
+- **옛 저장 이관(읽을 때 한 번)**: 영구 저장의 선택 필드 `permV`(영구 성장 표 판, 지금 2)가 없거나 2 미만이면 단계를 총효과가 같게 바꾼다(PA01 ×2, PB01 ×2, PB06 ×2, 나머지 그대로). 환불은 없다. 새 프로필은 처음부터 `permV:2`. `profile.v`(`PROFILE_VERSION` 2)는 그대로. `permV` 는 `flame_state` 에 싣지 않는다. 되돌림 한계는 39 B122.
+- **장비 S(D49)**: 전설 장비 제시 확률이 완주당 약 6.3% 로 줄었다(`run_config reward.rarityShift` v6 값 채택). 메시지는 그대로.
+- **포메이션 등급 보너스(D51)**: `flame_catalog.grade.formation.stat.s7` = `{C:1, B:2, A:2, S:4}`(종전 0/1/2/4). C 포메이션 아이템만 껴도 팀 패스 속도 +1.
+
+화면 후속(윤프론): ① 영구 성장 화면이 6단계(PB01)·4단계(PA01·PB06) 칸을 담는지 ② A 의 `lv > maxLevel`(예 6/4)을 「최대」로 보이게(넘친 단계는 「이전 구매 보존」 정도로, 문구는 최소) ③ 카탈로그 캐시가 `cat.ver` 변경으로 새로 받아지는지 ④ 포메이션 C 아이템 설명의 「효과 없음」 류 문구가 있으면 「패스 속도 +1」로.
+
+### 13.24 필살 속도의 등급 차 — 엔진 훅 E1 (2026-11-19 박백엔) — 엔진·서버·데이터. 화면은 후속(윤프론). 결정 analysis/39 D52(가정 B124~B128)
+
+사용자 지시 「S등급으로 맞출때쯤이면 엄청나게 빠르고 쎄야됨」「같은 슛이라도 등급에 따라 속도나 파워가 달라야함」. 같은 슛이라도 등급 아이템의 등급에 따라 필살 공이 빨라진다(위력 가산 D41·D45 는 그대로).
+
+- **엔진 옵션 새 칸 `flame.roster[i].fx.spSpd`**(§12.1): 0 이상 정수(엔진 안전 상한 255). 필살 투구에서만 속력 +N×16(8.8) 후 같은 식으로 속도를 다시 분해한다. 일반 투구·받아치기 공(잡은 공의 속력 승계)·비직역 투구 경로는 가산 없음. 칸이 없거나 0 이면 종전과 비트 단위로 같다.
+- **카탈로그 새 칸 `flame_catalog.grade.spSpd`** = `{C:0, B:4, A:10, S:24}`(투구 속도 s6 단위, +4 = +0.25px/f, S = +1.5px/f. 데이터 `decisions.json grade.spSpd`, 0~64 정수, 낮은 등급부터 줄지 않게. 키가 없으면 전 등급 0). `CATALOG_MSG_REV` 15 → 16 이라 `cat.ver` 끝이 `.m16` 으로 바뀌어 클라이언트는 카탈로그를 다시 받는다.
+- **`flame_state.team.players[i].fx.spSpd`**: 그 선수의 필살 속도 가산 = 주 슬롯 슛을 주는 낀 등급 아이템의 `grade.spSpd[등급]`(데이터 최댓값 이내로 자른 값). 고유 슛·계열 아티팩트 단독 = 0, 고유 슛 + 같은 슛 아이템 = 그 등급. `players[i].special` 의 칸은 그대로다(`special.grade` 와 함께 읽는다).
+
+화면 후속(윤프론, 표시만): ① 선수 카드(팀 화면의 필살 슛 줄)에 `fx.spSpd > 0` 이면 「필살 속도 +n」(n = `fx.spSpd`) ② 필살슛 아이템 카드·상점 줄·보상 카드·도감 상세에 그 등급의 `grade.spSpd[등급]` 이 0 보다 크면 「필살 속도 +n」(위력 가산 표시와 같은 줄) ③ 단위 문구는 붙이지 않는다(숫자만, 설명 최소).
+
+### 13.25 사람끼리 방에서 키운 팀으로 대전 — 엔진 두 좌석 + 방 규칙 「불꽃 팀」 (2차 증분, 2026-11-19 박백엔) — 엔진·서버·데이터. 화면은 후속(윤프론). 결정 analysis/39 D53~D57(가정 B129~B134)
+
+사용자 승인 「내가 키운 선수들을 멀티에서 편성해 다른 유저와 붙어보게」(문기획 권고안 A: 방장이 켠 방에서만, 능력치 보정 없음, 랭크 제외). 박제 슬롯은 읽기 전용이다 — 대전은 슬롯·도전·코인·순위·도감·업적·성장 어디에도 쓰지 않고, 슬롯은 새 도전에 가져가지 못한다(도전 종료 때 영입·장비·아티팩트 초기화 그대로).
+
+**(1) 데이터 스위치** — `run_config.json versusTeam.humans`(boolean, 기본 데이터 true). **false 이거나 키가 없으면 1차 동작**: `rules.flameTeams` 를 받지 않고 버린다(방 규칙에 키가 생기지 않는다), 사람끼리 방의 `set_team{'flame:…'}` 은 `FLAME_TEAM_ROOM`. `flame_catalog.versusTeam.humans` 로 화면이 토글을 숨긴다. `CATALOG_MSG_REV` 16 → 17.
+
+**(2) 방 규칙 `rules.flameTeams`** — `create_room{rules:{…, flameTeams:true}}`·`set_rules{rules:{flameTeams:true|false}}`(방장만, 대기 중. 다른 규칙 칸과 함께 보내도 된다. 생략 = 지금 값).
+
+- 켜진 방에만 `room.rules.flameTeams:true` 가 실린다(`room_state.room.rules`·`room_list.rooms[].rules` 둘 다 — 방 목록 표시용). 꺼져 있으면 키가 없다(종전 모양).
+- 거절: 랭크 방(`create_room{ranked:true, rules:{flameTeams:true}}` 포함) `RANKED_RULES_FIXED`, 공식 규칙과 함께 `FLAME_TEAM_RULES`(허용 방에서 `mode:'official'` 로 바꾸려 해도 같다. 먼저 허용을 끈다 — `{mode:'official', flameTeams:false}` 한 번에 보내도 된다), boolean 이 아닌 값 `RULES_INVALID`. 컴퓨터 대전 방·스토리 방에서는 키를 버린다(컴퓨터 대전 방은 1차대로 언제나 고를 수 있다).
+- 바뀌면 상대 준비가 풀린다(종전 규칙 창과 같다). **끄면** 불꽃 팀을 고른 사람(양쪽 모두)의 선택을 풀고 준비를 해제한 뒤 그 사람에게 `toast{code:'FLAME_TEAM_CLEARED'}` 를 1회 보낸다. 좌석 `team` 번호는 주장 칸 몸 출처 팀 그대로 남는다(원작 팀으로 고른 상태).
+
+**(3) 고르기** — 1차와 같은 `set_team{team:'flame:recent'|'flame:best'}`. 허용 방에서는 **두 좌석 모두**(방장·손님) 고를 수 있다. `room_state.slots[i].flameTeam` = 그 사람 슬롯 요약(양쪽에 보인다).
+
+- 준비(D53 (6)): 손님이 고르거나 바꾸면 손님 자신의 준비가 풀린다(1차와 같다). **방장이 불꽃 팀 선택을 바꾸면**(다른 슬롯·슬롯 → 원작 팀·원작 팀 → 슬롯, 같은 슬롯을 다시 골라 요약 `at` 이 바뀐 경우 포함) **손님 준비가 풀린다**. 같은 슬롯·같은 `at` 을 다시 고르면 풀지 않는다.
+- 거절은 1차 목록 그대로(`FLAME_TEAM_ROOM` = 허용이 꺼진 사람끼리 방·랭크 방).
+- 방 안에서는 슬롯이 바뀌지 않는다: 도전 조작(`flame_new`·`flame_abandon`·`flame_node` 등 `flame_*` 쓰기 전부)은 방에 있으면 `ALREADY_IN_ROOM` 이다(handlers.js `act`·`flame_node`·`flame_practice`). 바뀌는 경우는 **같은 계정의 다른 접속**이 도전을 끝냈을 때뿐이다 → (4) 의 `at` 검사.
+
+**(4) 시작** — `start`(종전). 서버가 **좌석마다 그 사람의 지금 저장값**으로 `versusTeamOf → versusOptions(seat)` 를 다시 계산해 엔진 flame 옵션을 좌석별 배열로 조립한다(클라이언트가 보낸 것은 슬롯 이름뿐. 위조 문자열은 고를 때 `TEAM_INVALID`).
+
+- 고를 때 본 요약의 `at` 과 지금 저장의 `at` 이 다르면 **`FLAME_TEAM_CHANGED` 로 거절**하고 새 요약으로 `room_state` 를 방송한다(손님 준비 해제 → 바뀐 팀을 보고 다시 준비). 슬롯이 없어졌으면 `FLAME_TEAM_NONE`.
+- 경기 옵션은 시작 때 `RoomGame` 에 고정된다. 경기 중 저장이 바뀌어도 그 경기는 시작 값으로 돌고, **재접속 `game_start{resumed:true}` 는 같은 값**을 다시 보낸다.
+- 경기 조건은 1차와 같다: 시작 HP 최대, 소모품·다음 경기 효과 없음, 치사 생존(P10)은 **좌석(팀)마다** 경기당 `surviveUsesPerMatch`(1)회, 규칙 체력제(`FLAME_TEAM_RULES`), 상대 팀 제외 규칙(D36)은 없다(상대가 사람이 고른 팀). 같은 원작 몸이 양쪽에 설 수 있다(미러전 유니폼 구분은 범위 밖).
+
+**(5) 경기 메시지(사람끼리 방만. 한 좌석만 불꽃 팀이어도 같은 모양)**
+
+| 메시지 | 칸 |
+|---|---|
+| `game_start.flameVs` | `{mode:'versus', seats:[{seat, fm, allow[], slot} | null, {…} | null]}`(고르지 않은 좌석 = null). `game_start.flame` 키는 없다(도전 경기 표시) |
+| `game_start.teams[s]` | 불꽃 팀 좌석은 §12.2 의 flame 팀 정보(`flame:true`·`from`·`hp0`·`sp`·`spOn` 등) — 좌석마다 |
+| `game_start.flameCast` | `{versus:true, seats:[{…cast, slot} | null, …]}`(1차의 `{seat, …cast, versus, slot}` 와 다르다: 좌석 칸 `seat` 없음) |
+| `game_end.flameVs` | `{seats:[{seat, hp[7], maxHp[7], surviveUsed[]} | null, …]}`(표시용) |
+
+- 끝나면 일반 방과 같다(대기실 복귀, 방·선택 유지). `flame_result`·`flame_end`·`flame_state` 는 오지 않는다. **저장 호출 0회**(영구 저장·도전 상태·순위표·코인·도감·업적·슬롯 불변). 랭크가 아니므로 레이팅도 없다.
+- **결과 레코드(`results.jsonl`)는 남긴다**(사람끼리 방의 일반 대전과 같다). 불꽃 팀을 고른 좌석에 `players[i].flameTeam = {slot, at}` 칸이 붙는다. 이 파일은 서버만 쓰고(`store.append`) 어떤 메시지·HTTP 경로로도 나가지 않는다(정적 파일은 `public/` 만).
+- 컴퓨터 대전 방(1차)은 그대로: `flameVs:{seat:0,…}`·`flameCast:{seat:0,…}`·`noRecord`(결과 레코드 없음).
+
+**(6) 엔진 옵션 형식(§12.1 추가)** — `flame` 에 종전 단일 객체 대신 **1~2칸 배열**을 줄 수 있다(칸마다 `seat`, 같은 좌석 두 번 = 예외). 좌석마다 `initFlame` 을 따로 거쳐 `Match.fls[좌석]` 에 들어가고, `allow`(해금)·`families`(계열)·`caps`·치사 생존 기록은 **좌석별**이다(합집합 없음 — 남의 고유 슛·계열 가산이 넘어오지 않는다). 훅은 언제나 그 선수의 좌석 값을 읽는다. 두 좌석이면 `info().flame = {seats:[…]}`, `flameResult()` = `[좌석 0, 좌석 1]`. 단일 객체·1칸 배열은 종전과 바이트 단위로 같다(§ 검증: HANDOFF §4-56).
+
+오류 코드(토스트): `FLAME_TEAM_ROOM` 문구 변경 「이 방은 불꽃 팀을 허용하지 않습니다」, 새 `FLAME_TEAM_CHANGED`(「불꽃 팀 기록이 바뀌어 새로 불러왔습니다. 확인 후 다시 시작하세요」), 새 `FLAME_TEAM_CLEARED`(토스트 전용, 「방장이 불꽃 팀 허용을 꺼서 팀 선택이 풀렸습니다」).
+
+화면 후속(윤프론): ① 규칙 창에 「불꽃 팀」 토글(사람끼리 일반 방·`flame_catalog.versusTeam.humans`·체력제일 때만, 랭크 방 숨김) → `set_rules{rules:{flameTeams}}`. ② 방 목록 행에 `rules.flameTeams` 표시. ③ 대기실 상대 좌석의 `slots[i].flameTeam` 요약(구간·승수·핵심 3명) 표시와 손님 쪽 팀 선택 격자의 「최근」「최고」 활성(허용 방). ④ `screens/game.js`: 사람끼리 방은 `flameVs.seats[s]`·`flameCast.seats[s]` 로 좌석별 그리기(선수 이름·skin·필살 안내). 흐름 판별은 여전히 `start.flame` 만. ⑤ 토스트 `FLAME_TEAM_CHANGED`·`FLAME_TEAM_CLEARED`, 문구 바뀐 `FLAME_TEAM_ROOM`. ⑥ 결과 화면의 「최근/최고 보관 팀」 딱지는 `flame_end.summary.teams`(§13.2).
+
+### 13.26 팀 공용 아티팩트 빼기 — 선수별 필살기 아이템 칸 + 팀 포메이션 아이템 칸 (2026-11-19 박백엔) — 서버·데이터. 화면은 후속(윤프론). 결정 analysis/39 D58~D63(가정 B135~B145), 분석 analysis/44
+
+사용자 지시 「아티팩트는 그냥 빼」「각각 선수마다 필살기가 적용되는 구조」. 엔진·엔진 옵션 형식(§12.1)은 그대로다(서버가 선수마다 다른 `sp`·`fx` 를 만들어 넘긴다).
+
+**(1) 스위치** — `decisions.json artifact.model`: `'off'`(기본 데이터) | `'team'`(종전 §13.21·§13.22 그대로). `artifact` 키가 없거나 `model` 키가 없으면 team, `artifact` 가 객체가 아니면(`null` 등) 카탈로그 읽기 오류. 화면은 `flame_catalog.artifact` 로 판별한다.
+
+| `flame_catalog.artifact` 칸 | 뜻 |
+|---|---|
+| `model` | `'off'` \| `'team'` |
+| `slots` | 공용 아티팩트 칸 수(off = 0, team = 3) |
+| `refundPoints` | 옛 도전의 A01~A30 1개당 돌려준 경기 포인트(표시용) |
+| `hiddenPerm` | off 에서 영구 성장 목록에 없는 항목 id(`['PC03']`). team = `[]` |
+| `permText` | off 에서 바뀐 영구 성장 설명 `{PB03: '시작 필살기 아이템(C 등급) 후보 선택권 제공'}`. team = `{}` |
+
+`formationTags[].bonus` = 태그 보너스표 `[{stat, value, from}]`(off 에서 포메이션 아이템을 끼면 `× grade.formation.tagPct[등급]%`, `from` = 옮겨 온 종전 아티팩트 id).
+
+**(2) 새 요청(off 전용. team 에서는 `FLAME_INVALID`)** — 도전 조작 공통 규칙(`act`: 방 안이면 `ALREADY_IN_ROOM`, 도전 없으면 `FLAME_NONE`, 성공하면 `flame_state`).
+
+| 요청 | 칸 | 동작 | 오류 |
+|---|---|---|---|
+| `flame_sp_item` | `p`(선수 번호 0~6), `id`(보유한 필살슛 아이템 `SP<슛>-<등급>` \| `null` = 빼기) | 끼우면 그 선수 슬롯 = `[아이템 슛, 원작 선수면 고유 슛(같은 슛이면 null)]`. 빼면 아이템 슛이 슬롯에서 빠진다(원작 선수 = 고유 슛, 불씨·클론 = `[null, null]`) | 다른 선수가 낀 아이템 `FLAME_EQUIPPED`(먼저 그 선수에게서 뺀다), 보유하지 않음·필살슛 아이템 아님·잘못된 `p` `FLAME_INVALID` |
+| `flame_fm_item` | `id`(보유한 포메이션 아이템 `FM<패턴>-<등급>` \| `null`) | 끼우면 `run.fm` = 그 패턴, 빼면 기본 포메이션(`run_config.json formation.default`, 지금 7) | 보유하지 않음·포메이션 아이템 아님 `FLAME_INVALID` |
+
+바뀐 종전 요청(off):
+
+- `flame_artifact` → 언제나 `FLAME_INVALID`(공용 칸이 없다).
+- `flame_special{p, sp}` → 넣을 수 있는 것 = **그 선수가 낀 아이템의 슛 + 그 선수의 고유 슛**. 다른 선수가 낀 아이템의 슛은 `FLAME_LOCKED`. 원작 선수의 주 슬롯은 종전대로 비울 수 없다.
+- `flame_formation{fm}` → 기본 포메이션과 `fmItem` 의 패턴만(그 밖 `FLAME_LOCKED`). 보통은 `flame_fm_item` 만 쓰면 된다.
+- `flame_perm{id:'PC03'}` → `FLAME_LOCKED`.
+
+**(3) `flame_state` 칸(추가)**
+
+| 칸 | 뜻 |
+|---|---|
+| `run.roster[i].spItem` | 그 선수가 낀 필살슛 아이템 id. **없으면 키가 없다**(undefined) |
+| `run.fmItem` | 팀 포메이션 아이템 id \| `null` |
+| `run.artifacts` | off 에서는 언제나 `[null, null, null]` |
+| `run.artifactsOwned` | 보유한 필살슛·포메이션 아이템(off 에서는 A 번호가 없다). 끼지 않은 것 = 인벤토리 |
+| `team.players[i].spItem` | 계산에 쓰인 그 선수의 아이템 id \| `null` |
+| `team.players[i].special` | 종전 칸 그대로. `grade`·`add` 는 **그 선수의 아이템**에서만 온다(다른 선수 아이템의 등급은 붙지 않는다) |
+| `team.grant` | off 에서는 `[]`(아무 선수나 넣을 수 있는 슛이 없다) |
+| `team.synergies` | off 에서는 `[]` |
+| `profile.permList` | off 에서는 `hiddenPerm` 항목이 빠지고, `permText` 항목에 `text`(바뀐 설명)가 붙는다 |
+
+보상·상점 칸 모양은 그대로다(`pending kind 'artifact'`·`node.stock[].kind 'artifact'`, 칸 id 가 SP·FM 아이템뿐). 받은 아이템은 보유로 들어오고 자동으로 끼지 않는다.
+
+**(4) 저장 이관(읽을 때 한 번, 형식 번호 그대로)** — 도전: 낀 SP → 주 슬롯이 그 슛인 첫 선수의 `spItem`, 낀 FM → `fmItem` = team 에서 실제로 쓰이던 아이템(저장된 `fm` 패턴의 아이템, 없으면 기본 포메이션 패턴의 아이템, 둘 다 없으면 `null` — 그래서 `run.fmItem` 과 `team.fmItem`·`run.fm` 이 언제나 짝이 맞고 쓰던 패턴·태그가 이어진다), 3칸 비움, A01~A30 버림 + 1개당 `refundPoints` 경기 포인트, 풀지 않은 선택·열린 상점의 A 번호 칸 제거(빈 선택은 통째로). 단 풀지 않은 시작 보상(PB03, `nodeType 'start'`)이 A 번호뿐이었으면 같은 칸 수의 시작 필살기 아이템 후보(출처 start, 결정적 난수)로 바꿔 넣는다. 영구 저장: PC03 산 단계 비용 합을 코인으로 한 번 환불 + 단계 삭제, `profile.artV` 1(중복 방지). 새 계정은 off 에서 만들면 `artV` 1, team 에서 만들면 표시 없이 시작한다(team 에서 산 PC03 은 off 로 바꿀 때 한 번 환불). 키운 팀 슬롯: 옛 슬롯은 쓸 때 이관해 읽고 저장 칸은 그대로, 새 슬롯은 `roster[i].spItem`·`fmItem` 을 담는다. 되돌린 서버는 `spItem`·`fmItem`·`artV` 를 버린다(이관된 도전은 아무것도 끼지 않은 상태로 읽힌다).
+
+**(5) `CATALOG_MSG_REV` 17 → 18** — `cat.ver` 끝이 `.m18` 이 된다. off 이면 그 앞에 `.aoff` 가 든다(예 `1.1.1.7.o3.p2.e1.aoff.m18`, team 은 그 칸이 없다) — 데이터 버전이 같아도 off↔team 을 바꾸면 클라이언트가 카탈로그를 다시 받는다(개정 번호는 그대로). 구 클라이언트는 `catalogVer` 가 달라 카탈로그를 다시 받는다. 다시 받아도 `artifact` 칸을 모르는 구 화면은 아티팩트 탭을 그대로 보여 주고, 장착을 누르면 `FLAME_INVALID` 토스트가 난다(상태는 바뀌지 않는다). 선수별 칸을 낄 방법이 없으므로 화면 갱신 전에는 아이템이 보유로만 쌓인다.
+
+**배포 순서 주의(정검수 R1)**: 기본 데이터가 이미 `'off'` 다. **3300 재시작은 화면(`public/`) 반영과 함께** 한다. 화면이 반영되지 않은 채 서버만 재시작하면 옛 도전을 처음 읽는 순간 A01~A30 이 환급 처리되고(되돌릴 수 없다) 공용 3칸에 끼어 있던 필살기 아이템은 주 슬롯이 그 슛인 첫 선수에게만 남는데, 화면에서는 그것을 보거나 다시 낄 방법이 없다. 화면 반영이 늦어지면 서버만 먼저 올릴 때는 `artifact.model` 을 `'team'` 으로 두고 올린다(이관은 off 에서만 일어난다).
+
+화면 후속(윤프론): ① 선수 칸마다 「필살기 아이템」 1칸(보유 SP 아이템 목록, 다른 선수가 낀 것은 표시·`FLAME_EQUIPPED` 토스트), ② 팀 「포메이션 아이템」 1칸(`flame_fm_item`), ③ `artifact.model === 'off'` 면 아티팩트 탭·공용 3칸·시너지 표시를 숨긴다, ④ 영구 성장 목록은 `permList` 그대로(PC03 없음, PB03 은 `text`), ⑤ 도감 아티팩트 기록은 그대로 표시해도 된다.

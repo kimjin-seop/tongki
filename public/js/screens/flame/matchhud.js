@@ -47,7 +47,8 @@ function onSnap(s) {
 }
 
 net.on('game_start', (m) => {
-  drop(); active = !!m?.flame && Number.isInteger(m.flame.seat);
+  const f = m?.flame ?? m?.flameVs; // flameVs = 키운 팀 대전(PROTOCOL §13.20): HP 숫자는 같이 보인다
+  drop(); active = !!f && (Number.isInteger(f.seat) || (Array.isArray(f.seats) && f.seats.some(Boolean))); // 사람끼리 방(§13.25) = seats 배열(한 좌석만 불꽃 팀이어도 양쪽 숫자)
   hpCap = Math.max(0, ...(m?.teams ?? []).flatMap((t) => (t?.players ?? []).map((p) => (Number.isFinite(p?.hp) ? p.hp : 0))));
 });
 net.on('room_left', () => { active = false; });
