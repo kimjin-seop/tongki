@@ -427,15 +427,15 @@ export class Lobby {
 
   /**
    * 모든 방 사람 좌석의 래더 요약(PROTOCOL §3 room_state slots, 대기실 「닉네임 | 래더:1000」·티어 칩 표시용). 손님 = {guest:true},
-   * 계정 = {rating, w, l, tier, placement}(지금 시즌 래더, ranking.status 와 같은 값. 배치 중이어도 rating 숫자 그대로, tier = 배치 중 null·마스터 'master').
-   * rating·w·l = ranking.get(시즌 메모리 캐시 + ratings 기본키 한 줄). tier·placement = hostBadges(방 목록과 같은 키별 캐시: 쓰기 판번호·시즌·60초 TTL.
-   * 마스터 판정에 순위 계산이 필요해 빗나갈 때만 #standings 1회, 그 밖에는 메모리) -> 방 상태를 보낼 때마다 다시 읽어도 가볍고, 기록이 바뀌면 판번호로 바로 갱신
+   * 계정 = {rating, w, l, tier, placement}. rating·tier·placement = 지금 시즌 래더(ranking.status 와 같은 값. 배치 중이어도 rating 숫자 그대로, tier = 배치 중 null·마스터 'master'),
+   * w·l = 사람끼리 경기 누적 전적(pvp_records, 전체 랭킹 pvp_board 와 같은 값).
+   * 모두 hostBadges(방 목록과 같은 키별 캐시: 쓰기 판번호·시즌·60초 TTL. 마스터 판정에 순위 계산이 필요해 빗나갈 때만 #standings 1회, 그 밖에는 메모리)
+   * -> 방 상태를 보낼 때마다 다시 읽어도 가볍고, 기록(record·recordPvp)이 바뀌면 판번호로 바로 갱신
    */
   seatLadder(s) {
     if (!s.account) return { guest: true };
-    const now = this.now();
-    const p = this.ranking.get(s.key, s.nick, now), b = this.ranking.hostBadges([s.key], now).get(s.key);
-    return { rating: p.rating, w: p.w, l: p.l, tier: b.tier, placement: !!b.placing };
+    const b = this.ranking.hostBadges([s.key], this.now()).get(s.key);
+    return { rating: b.rating, w: b.w, l: b.l, tier: b.tier, placement: !!b.placing };
   }
 
   /** 래더 방 좌석의 현재 레이팅·표시 티어(PROTOCOL §11.2). placement = 시즌 배치 판수 미만(이때 tier:null), placementLeft = 배치 남은 판(완료 0). 손님 좌석 = {guest:true} */

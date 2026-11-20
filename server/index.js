@@ -7,6 +7,7 @@ import { WebSocketServer } from 'ws';
 import { loadData } from './engine/index.js';
 import { mono, loadLimits } from './net/limits.js';
 import { createStaticHandler } from './net/static.js';
+import { createInviteHandler } from './net/invite_og.js';
 import { Lobby } from './lobby/lobby.js';
 import { JsonlResultStore } from './store/results.js';
 import { SqliteProgressStore } from './store/progress.js';
@@ -44,6 +45,14 @@ export function createServer(opts = {}) {
   const lobby = new Lobby({ data, store, progress, leagues, flame, flameSeed: opts.flameSeed, db, requireAccount, leagueRand: opts.leagueRand, build: pkg.version, graceMs: opts.graceMs, limits, seed: opts.seed, log: opts.log, admins, noticePath });
   const publicDir = path.join(root, 'public');
   const serveStatic = createStaticHandler(publicDir, { cacheBytes: opts.staticCacheBytes });
+  const serveInvite = createInviteHandler(path.join(publicDir, 'index.html'), lobby, { perMin: limits.maxInvitePreviewPerMin });
+  const clientIp = (req) => {
+    if (process.env.TRUST_PROXY) { // 신뢰 프록시가 덧붙인 마지막 값을 사용
+      const xf = String(req.headers['x-forwarded-for'] ?? '').split(',').pop().trim();
+      if (xf) return xf;
+    }
+    return req.socket.remoteAddress ?? '';
+  };
 
   const server = http.createServer(async (req, res) => {
     try {
@@ -53,19 +62,14 @@ export function createServer(opts = {}) {
         res.end(JSON.stringify({ ok: true, build: pkg.version, ...lobby.stats() }));
         return;
       }
+      // 초대 링크 미리보기: `/?room=` 만(og 메타 주입·no-store, server/net/invite_og.js). 쿼리 없는 `/` 는 종전 정적 응답 그대로
+      if (u.pathname === '/' && u.searchParams.has('room')) { await serveInvite(req, res, u.searchParams.get('room'), clientIp(req)); return; }
       await serveStatic(req, res, u.pathname); // 압축·캐시 헤더·304·Range·차단 목록: server/net/static.js
     } catch { if (!res.headersSent) res.writeHead(400).end(); else res.destroy(); }
   });
 
   const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 4096 });
   const ipConns = new Map();
-  const clientIp = (req) => {
-    if (process.env.TRUST_PROXY) { // 신뢰 프록시가 덧붙인 마지막 값을 사용
-      const xf = String(req.headers['x-forwarded-for'] ?? '').split(',').pop().trim();
-      if (xf) return xf;
-    }
-    return req.socket.remoteAddress ?? '';
-  };
   wss.on('connection', (ws, req) => {
     const ip = clientIp(req);
     const conn = {

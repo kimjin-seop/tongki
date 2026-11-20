@@ -321,15 +321,17 @@ input[type=text]:focus-visible, input[type=password]:focus-visible { outline: va
 .seat-top { display: flex; align-items: center; gap: calc(var(--u) * 6); min-width: 0; }
 .seat-nick { flex: 1; min-width: 0; font: var(--f-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* 좌석 머리줄: 닉네임(길면 줄바꿈) + 오른쪽 정렬 뱃지 묶음(래더·승·패·게스트·방장/준비, 좁으면 뱃지 단위 줄바꿈) */
-.seat:has(.seat-tags) .seat-top { flex-wrap: wrap; row-gap: calc(var(--u) * 2); }
-.seat:has(.seat-tags) .seat-nick { flex: 1 1 8em; white-space: normal; overflow: visible; overflow-wrap: anywhere; } /* 닉네임이 길면 뱃지 묶음이 다음 줄(오른쪽 정렬)로 */
-.seat-tags { margin-left: auto; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: calc(var(--u) * 2); max-width: 100%; }
+.seat:has(.seat-tags) .seat-top { flex-wrap: wrap; row-gap: calc(var(--u) * 2); column-gap: calc(var(--u) * 4); }
+/* 닉네임 기본 폭 = 글자 폭: 들어가면 언제나 한 줄(닉네임 + 오른쪽 뱃지), 닉네임이 길어 안 들어갈 때만 뱃지 묶음이 다음 줄(오른쪽 정렬)로 */
+.seat:has(.seat-tags) .seat-nick { flex: 1 1 auto; white-space: normal; overflow: visible; overflow-wrap: anywhere; }
+.seat-tags { margin-left: auto; flex: none; display: flex; flex-wrap: nowrap; justify-content: flex-end; align-items: center; gap: calc(var(--u) * 2); max-width: 100%; }
 .seat-tags .tag { border-width: max(2px, var(--u)); }
 .tag.tier.t-num { --bc: var(--r-line); color: var(--r-white); }
 /* 승·패 칩: 채운 바탕 + 밝은 글자(빨강 글자 금지 규칙), 바탕은 팔레트 색을 검정과 섞어 대비 4.5 이상 */
-.tag.wl { color: var(--r-white); }
-.tag.wl.w { --bc: var(--r-up); background: color-mix(in srgb, var(--r-up) 35%, #000); }
-.tag.wl.l { --bc: var(--r-down); background: color-mix(in srgb, var(--r-red) 45%, #000); }
+.tag.wl { color: var(--r-white); display: inline-flex; align-items: stretch; padding: 0; }
+.tag.wl > span { display: inline-flex; align-items: center; padding: 0 calc(var(--u) * 2); }
+.tag.wl .w { background: color-mix(in srgb, var(--r-up) 35%, #000); box-shadow: inset 0 0 0 max(1px, calc(var(--u) / 2)) var(--r-up); }
+.tag.wl .l { background: color-mix(in srgb, var(--r-red) 45%, #000); box-shadow: inset 0 0 0 max(1px, calc(var(--u) / 2)) var(--r-down); }
 .seat-team { display: flex; align-items: center; gap: calc(var(--u) * 8); min-width: 0; }
 .seat-team .tn { flex: 1; min-width: 0; font: var(--f-head); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .chg { min-height: 44px; padding: 0 calc(var(--u) * 3); background: none; border: 0; color: var(--r-line); font: var(--f-cap); cursor: pointer; white-space: nowrap; }
@@ -344,6 +346,15 @@ input[type=text]:focus-visible, input[type=password]:focus-visible { outline: va
   background: var(--r-win); border: var(--frame) solid var(--r-line); border-image: var(--img-win) 8 fill / var(--frame) stretch; image-rendering: pixelated; }
 .cmds .btn { justify-content: center; font: var(--f-head); }
 .room-code { letter-spacing: .08em; }
+/* 초대 칩(버튼 「초대링크 복사」): 같은 이름판 위계, 글자+링크 아이콘 한 덩어리(줄바꿈 없음). 커서·누름 = 노랑 */
+.room-code.invite { gap: calc(var(--u) * 3); flex: none; cursor: pointer; letter-spacing: normal; }
+.room-code.invite .lnk-ic { display: block; flex: none; width: 1em; height: .5em; }
+.room-code.invite:hover, .room-code.invite:focus-visible { color: var(--c-yel); }
+.room-code.invite:focus-visible { outline: calc(var(--u) * 1) solid var(--c-yel); outline-offset: calc(var(--u) * 3); }
+.room-code.invite:active { transform: translateY(1px); color: var(--c-yel); }
+.room-code.invite.hit { animation: iv-hit .3s steps(2); }
+@keyframes iv-hit { 0%, 50% { color: var(--c-yel); border-color: var(--c-yel); } }
+@media (prefers-reduced-motion: reduce) { .room-code.invite.hit { animation: none; } }
 /* 준비 상태: 준비 완료 = 하늘색 채운 표식 + 체크 + 좌석 안쪽 줄, 준비 중 = 회색 */
 .tag.rdy { --bc: var(--r-grey); gap: calc(var(--u) * 4); grid-auto-flow: column; padding: 0 calc(var(--u) * 4); }
 .tag.rdy.on { --bc: var(--c-cyan); background: var(--c-cyan); color: #000; }

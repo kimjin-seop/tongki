@@ -14,6 +14,7 @@ import * as F from './flame/store.js';
 import { rankName, keepEmblem, keepGlyph } from './flame/ui.js';
 import { roomPanel } from '../chat.js';
 import { tierChip, placementGames } from './ladder.js';
+import * as Invite from '../invite.js';
 
 const PAGE_SPECIAL = [15, 16, 17, 18, 19, 20, 21, 22, 23, 24]; // 스토리 전용 팀(목록 유지)
 // 불꽃 팀 칸(PROTOCOL §13.20): 불꽃의 계승에서 키운 팀 슬롯. 칸의 id = set_team 에 보내는 값 그대로('flame:recent' | 'flame:best'), 원작 팀 칸은 숫자
@@ -65,7 +66,7 @@ export function mount(root, app) {
     const out = [];
     if (ladder && place) out.push(tierChip(null, { placement: true, left: s.placementLeft, games: placementGames(app) }));
     out.push(h('span.tag.tier.tabular' + (tn ? '.t-' + s.tier : place ? '.t-place' : '.t-num'), { 'aria-label': `래더 ${tn ?? ''} ${s.rating}`.replace(/\s+/g, ' ') }, `${tn ?? '래더'} ${s.rating}`));
-    if (Number.isInteger(s.w) && Number.isInteger(s.l)) out.push(h('span.tag.wl.w.tabular', `${s.w}승`), h('span.tag.wl.l.tabular', `${s.l}패`));
+    if (Number.isInteger(s.w) && Number.isInteger(s.l)) out.push(h('span.tag.wl.tabular', h('span.w', `${s.w}승`), h('span.l', `${s.l}패`))); // 한 칩 두 색 반쪽(승 초록·패 빨강): 좌석 머리줄 한 줄 유지
     return out;
   };
   /** 이번 판이 내 점수에 반영되는가: 계정 + 같은 상대 제한 아님(손님 상대도 반영, K 16 — PROTOCOL §11.1) */
@@ -154,7 +155,7 @@ export function mount(root, app) {
       h('header.room-head', h('h1.pix-title', r.ladder ? '래더 대전' : r.vsCpu || !r.host ? '대기실' : `${r.host}의 방`),
         r.ladder ? h('span.tag.ld-cnt' + (ladderCounted(r) ? '.on' : ''), ladderCounted(r) ? '반영' : app.account ? '미반영' : '미반영(손님)') : null, r.ladder ? cdEl : null,
         r.rules ? h('span.rules-line', '규칙 ', h('b', rulesText(r.rules))) : null,
-        h('span.spacer'), h('span.room-code', { title: '방 코드' }, r.code), h('span.nick-me', app.nick || '')),
+        h('span.spacer'), Invite.shareable(r) ? inviteBtn(r.code) : h('span.room-code', { title: '방 코드' }, r.code), h('span.nick-me', app.nick || '')),
       h('div.seats', seat(0), h('div.vs', { 'aria-hidden': 'true' }, 'VS'), seat(1)),
       chat ? h('div.room-foot', cmdsEl) : cmdsEl)); // 채팅이 있으면 아래 줄 = 왼쪽 채팅 + 오른쪽 명령 창
     if (chat) chat.mount(cmdsEl);
@@ -335,6 +336,24 @@ export function mount(root, app) {
   const onFlame = () => { if (selecting && root.querySelector('.tsel')) { if (!pageTeams(page).includes(cur)) cur = pageTeams(page)[0] ?? 0; paintSelect(false); } };
   return { update, onFlameState: () => { flPrefetch(); onFlame(); }, onFlameCatalog: onFlame,
     onError: (m) => { if (m?.code === 'FLAME_TEAM_NONE' && flWanted()) net.send('flame_get'); }, unmount: () => { clearInterval(cdTick); setNav(null); } };
+}
+
+// 초대 칩(사람끼리 일반 방만): 「초대링크 복사」, 누르면 초대 URL 복사(invite.js). 코드는 글자로 보이지 않고 data-code 로만. data-cmd = 재그리기 뒤 포커스 유지
+const SVG = 'http://www.w3.org/2000/svg';
+function linkIcon() {
+  const svg = document.createElementNS(SVG, 'svg');
+  svg.setAttribute('viewBox', '0 0 10 5'); svg.setAttribute('class', 'lnk-ic'); svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('shape-rendering', 'crispEdges'); svg.setAttribute('fill', 'currentColor');
+  for (const [x, y, w, hh] of [[1, 0, 3, 1], [0, 1, 1, 3], [1, 4, 3, 1], [6, 0, 3, 1], [9, 1, 1, 3], [6, 4, 3, 1], [3, 2, 4, 1]]) {
+    const q = document.createElementNS(SVG, 'rect'); q.setAttribute('x', x); q.setAttribute('y', y); q.setAttribute('width', w); q.setAttribute('height', hh); svg.append(q);
+  }
+  return svg;
+}
+function inviteBtn(code) {
+  const b = h('button.room-code.invite', { type: 'button', 'data-cmd': 'invite', 'data-code': code, 'aria-label': '초대링크 복사',
+    onclick: () => { b.classList.remove('hit'); void b.offsetWidth; b.classList.add('hit'); Invite.copy(code); } },
+  linkIcon(), h('span.iv-t', '초대링크 복사'));
+  return b;
 }
 
 /** 컴퓨터 대전 좌석 판정 (PROTOCOL 4: room.vsCpu / slot.cpu) */

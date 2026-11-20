@@ -350,7 +350,7 @@ test('방 목록 호스트 요약(2026-11-20): 계정 방장 = hostInfo{tier,rat
   } finally { a.ws.close(); g.ws.close(); v.ws.close(); await app.close(); }
 });
 
-test('대기실 좌석 래더 요약: 계정 = rating·w·l(지금 시즌), 손님 = guest:true, 컴퓨터 좌석 = 없음', async () => {
+test('대기실 좌석 래더 요약: 계정 = rating(지금 시즌)·w·l(사람끼리 누적), 손님 = guest:true, 컴퓨터 좌석 = 없음', async () => {
   const app = createServer({ store: new MemoryResultStore(), dbPath: ':memory:', limits: LIM, log: () => {} });
   const port = await app.listen(0);
   const a = client(port), g = client(port);
@@ -360,11 +360,13 @@ test('대기실 좌석 래더 요약: 계정 = rating·w·l(지금 시즌), 손�
     g.send({ t: 'hello', nickname: '손님S' }); await g.type('welcome');
     const S = app.lobby.ranking.season().season, now = Date.now();
     app.db.run('INSERT INTO ratings (key, season, nick, rating, w, l, games, tier, lock_until, last_game_at, updated_at) VALUES (?, ?, ?, 1112, 3, 1, 4, ?, 0, ?, ?)', '좌석a', S, '좌석A', 'bronze', now, now);
+    app.db.run('INSERT INTO pvp_records (key, nick, w, l, updated_at) VALUES (?, ?, 7, 2, ?)', '좌석a', '좌석A', now); // 시즌 래더(3승 1패)와 다른 누적
     a.send({ t: 'create_room' });
     const code = (await a.type('room_joined')).room.code;
     g.send({ t: 'join_room', code });
     const [s0, s1] = (await g.type('room_joined')).room.slots;
-    assert.deepEqual([s0.rating, s0.w, s0.l, s0.guest], [1112, 3, 1, undefined]); // 배치 중(4판)이어도 숫자 그대로
+    assert.deepEqual([s0.rating, s0.w, s0.l, s0.guest], [1112, 7, 2, undefined]); // rating = 시즌 래더(배치 중 4판이어도 숫자 그대로), w·l = 누적(전체 랭킹과 같은 값)
+    assert.deepEqual([s0.w, s0.l], [app.lobby.ranking.pvp('좌석a').w, app.lobby.ranking.pvp('좌석a').l]);
     assert.ok('tier' in s0); assert.deepEqual([s0.tier, s0.placement], [null, true]); // 배치 중 = 티어 숨김
     assert.equal(s1.guest, true); assert.equal('rating' in s1, false);
     g.send({ t: 'leave_room' }); await g.type('room_left');

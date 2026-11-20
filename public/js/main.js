@@ -23,6 +23,7 @@ import * as Ladder from './screens/ladder.js';
 import * as Flame from './screens/flame/index.js';
 import { setCatalog as setFlameCatalog } from './screens/flame/store.js';
 import * as Intro from './intro.js';
+import * as Invite from './invite.js';
 import { audio } from './audio.js';
 import { screenBgm, bindUiSfx } from './game/sfxmap.js';
 
@@ -103,6 +104,12 @@ function wire() {
     app.welcome = m; app.nick = m.nickname; app.account = !!m.account; app.admin = m.admin === true; Nick.remember(m); app.teams = (m.teams || []).map((t) => ({ ...t, name: teamName(t.id, t.name), label: teamLabel(t.id, t.name) }));
     if (m.location === 'lobby' && !['story', 'tutorial', 'league', 'ranking', 'ladder', 'flame'].includes(app.view)) app.go('lobby');
     else if (m.location === 'lobby') app.screen?.onWelcome?.();
+    // 초대 링크로 들어왔다(invite.js): 로비면 1회 참가, 이미 방·경기 중이면 버린다. 거절은 기존 오류 토스트, 로비에 머문다
+    if (Invite.pending()) {
+      const code = Invite.take();
+      if (m.location === 'lobby') { if (app.view !== 'lobby') app.go('lobby'); net.send('join_room', { code }); }
+      else toast('이미 방에 있어 초대로 참가하지 않았습니다', 'warn');
+    }
   });
   // 손님 → 계정 승격(토큰 교체는 net). 위치는 그대로
   net.on('account_ok', (m) => {
@@ -208,6 +215,7 @@ function uiFonts() {
 }
 
 async function boot() {
+  Invite.capture(); // ?room= 을 먼저 보관하고 주소창에서 지운다(새로고침 중복 참가 방지)
   const root = $('#app');
   root.innerHTML = '<div class="center-screen"><div class="muted">불러오는 중…</div></div>';
   try {

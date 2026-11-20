@@ -20,6 +20,7 @@ export function loadLimits(env = process.env, over = {}) {
     maxLeaguePerMin: num(env.MAX_LEAGUE_PER_MIN, 200), // 세션당 분당 league_* (6팀 9턴 135카드 즉시 판정을 막지 않게 캠페인 창과 분리)
     maxFlamePerMin: num(env.MAX_FLAME_PER_MIN, 300), // 세션당 분당 flame_* (장비·상점 조작이 잦아 리그 창과 분리)
     maxAuthPerMin: num(env.MAX_AUTH_PER_MIN, 10), // IP당 분당 register/login
+    maxInvitePreviewPerMin: num(env.MAX_INVITE_PREVIEW_PER_MIN, 30), // IP당 분당 초대 링크 미리보기(`/?room=`) 방 조회. 넘으면 일반 문구(server/net/invite_og.js)
     loginFailNick: num(env.LOGIN_FAIL_NICK, 5), // 15분 안 (닉네임, IP) 쌍 로그인 실패 n회 -> 잠금. 닉네임 단독(전 IP 합계)은 n회부터 응답 지연
     loginSlowStepMs: num(env.LOGIN_SLOW_STEP_MS, 1000), // 닉네임 단독 실패 누적 시 시도당 지연 증가분
     loginSlowMaxMs: num(env.LOGIN_SLOW_MAX_MS, 10000), // 위 지연 상한
