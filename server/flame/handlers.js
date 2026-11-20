@@ -9,6 +9,7 @@ import * as Items from './items.js';
 import * as Nodes from './nodes.js';
 import * as Run from './run.js';
 import { ERR } from '../net/protocol.js';
+import { loadData } from '../engine/data.js';
 
 const SAVE_TRIES = 3; // 경기 결과 저장 시도 횟수(P2 리뷰 L5)
 
@@ -19,7 +20,7 @@ export function initFlameCatalog(data, log) {
 }
 
 /** 클라이언트용 마스터 데이터(flame_catalog). 화면이 이름·효과·아이콘 경로를 그릴 때 쓴다. 수치 원본은 server/flame/data */
-export function catalogMsg(cat) {
+export function catalogMsg(cat, data = loadData()) {
   const R = cat.raw, M = cat.cfg.training.maxPerStat;
   return {
     t: 'flame_catalog', ver: cat.ver,
@@ -32,7 +33,9 @@ export function catalogMsg(cat) {
     rarity: { ...cat.rules.rarity, letters: cat.grade.letters }, slots: cat.slots, stats: cat.rules.stats, clamps: cat.rules.clamps, nodeTypes: R.nodes.types,
     // 필살기 부여 구조(D38, §13.21, 표시용). model = 'granted'(선수에게 필살기가 없고 아티팩트가 부여한다. 원작 선수만 고유 슛 보유) | 'legacy'(종전: 원래 필살기 + 아티팩트 해금),
     // artifactShots = {아티팩트 id: 대표 슛 ID}(끼면 필살기 없는 선수의 빈 주 슬롯에 들어가는 슛. 필살기 아티팩트만 싣는다), slotRule = 발동 슬롯 규칙(D1)
-    special: { model: cat.special.model, slotRule: cat.decisions.special.slotRule, artifactShots: Object.fromEntries([...cat.artifacts.keys()].map((a) => [a, grantShotOf(cat, a)]).filter(([, g]) => g !== null)) },
+    // power[슛 ID] = 슛별 기본 위력(server/data/specials.json power, 등급 가산 grade.spPow 등을 더하기 전 표값. 개정 19). 표값 255(일반 투구 계산값을 쓰는 ID)는 null.
+    //   투구 속도는 슛별 표가 없다(던진 선수의 구속·차지·공중/대시 + 등급 spSpd 로 정해지고, 궤적 핸들러가 배수만 바꾼다) -> speed 칸은 싣지 않는다
+    special: { model: cat.special.model, slotRule: cat.decisions.special.slotRule, artifactShots: Object.fromEntries([...cat.artifacts.keys()].map((a) => [a, grantShotOf(cat, a)]).filter(([, g]) => g !== null)), power: data.specials.power.map((v) => (v === 255 ? null : v)) },
     // 등급제(D39~D44, §13.22, 표시용). model 'v1' = 켜짐 | 'off' = 꺼짐(등급 아이템이 새로 나오지 않고 가산·상한·포메이션 아이템 규칙이 꺼진다). spPow = 등급별 필살 위력 가산(상한 밖, 전액), spOtherCap = 등급 가산을 뺀 그 밖의 필살 가산 합의 상한(null = 없음), spPowCap = 전체 안전 상한(표값 + 이 값, 캐치 직후 포함. D45), spSpd = 등급별 필살 투구 속도 가산(s6 단위 +4 = +0.25px/f, D52),
     // formation = {default: 기본 포메이션 패턴, stat: 등급별 팀 능력치 가산, tagPct: 태그 조건 보너스 배율 %, ampCapPct: 포메이션 강화 배율 합 상한}, drop = 출처별 등급 가중치·유형, price = 상점가·자동 판매가, equipmentLetters = 장비 등급 표기(rarity.letters 와 같다)
     grade: { model: cat.grade.model, grades: cat.grade.grades.slice(), spPow: cat.grade.spPow, spPowCap: cat.grade.spPowCap, spOtherCap: cat.grade.spOtherCap, spSpd: cat.grade.spSpd, formation: { default: cat.cfg.formation.default, ...cat.grade.formation }, drop: cat.grade.drop, price: cat.grade.price, equipmentLetters: cat.grade.letters },
@@ -151,7 +154,7 @@ export function makeFlameHandlers(fail) {
 
   return {
     flame_get(s) { const c = load(this, s); state(this, s, c); },
-    flame_catalog(s) { this.flameRate(s); this.sendTo(s, catalogMsg(this.flameCat ?? fail('FLAME_UNAVAILABLE'))); },
+    flame_catalog(s) { this.flameRate(s); this.sendTo(s, catalogMsg(this.flameCat ?? fail('FLAME_UNAVAILABLE'), this.o.data)); },
     // 새 도전. 진행 중인 도전이 있으면 포기로 정산하고(코인 지급, 37 §3-C24) 새로 만든다('처음부터' 확인은 클라이언트가 한다)
     flame_new(s, m) {
       if (m.diff !== undefined && !Number.isInteger(m.diff)) fail('BAD_MESSAGE');

@@ -3,7 +3,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadData } from '../server/engine/index.js';
 import { loadCatalog, roundHalfUp } from '../server/flame/catalog.js';
-import { freshProfile, sanitizeProfile, sanitizeRun, FlameError } from '../server/flame/save.js';
+import { freshProfile, sanitizeProfile, sanitizeRun, FlameError, unlockedOf } from '../server/flame/save.js';
+import * as Nodes from '../server/flame/nodes.js';
+import { catalogMsg } from '../server/flame/handlers.js';
 import { teamOfRun } from '../server/flame/stats.js';
 import * as Items from '../server/flame/items.js';
 import * as Run from '../server/flame/run.js';
@@ -65,4 +67,20 @@ test('옛 저장 포메이션 이관(off, 정검수 M1): 쓰던 패턴의 아이
   assert.equal(s1.pending[0].choices.length, 2);
   assert.ok(s1.pending[0].choices.every((c) => /^SP\d+-[CBAS]$/.test(c)));
   assert.deepEqual(s1.pending[0].choices, s2.pending[0].choices);
+});
+
+test('D65 상점(off): 아이템 칸 2개, 값은 등급별 상점가(C 120·B 200·A 320·S 600)', () => {
+  const run = fresh(), profile = freshProfile();
+  Nodes.openNode(cat, data, run, profile.perm, unlockedOf(cat, profile.perm), { id: 'd65s', type: 'shop' });
+  const arts = run.node.stock.filter((s) => s.kind === 'artifact');
+  assert.equal(cat.cfg.shop.artifactSlots, 2);
+  assert.equal(arts.length, 2);
+  assert.ok(arts.every((s) => s.price === cat.grade.price.shop[cat.artifacts.get(s.id).grade]));
+  assert.deepEqual(cat.grade.price.shop, { C: 120, B: 200, A: 320, S: 600 });
+});
+
+test('flame_catalog.special.power(개정 19): 슛별 기본 위력 = specials.json power, 표값 255 는 null', () => {
+  const p = catalogMsg(cat, data).special.power;
+  assert.equal(p.length, data.specials.power.length);
+  assert.deepEqual([p[22], p[0]], [data.specials.power[22], null]);
 });

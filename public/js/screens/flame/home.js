@@ -1,5 +1,6 @@
 // 불꽃의 계승: 모드 메인(§12.3) · 영구 성장(§10.3, 17항목) · 도감 3종(선수·장비·아티팩트) · 기록 및 업적 · 도전 종료(§12.9).
 import { h } from '../../util.js';
+import { toast } from '../../ui.js';
 import { fmNameKo } from '../../game/formation.js';
 import * as F from './store.js';
 import { icon, emptyIcon, pface, pname, pteam, isClone, tname, emblem, sprite, head, chip, btn, castFor, rarTag, artKindTag, rankName, KEEP_SLOTS, KEEP_LABEL, keepTag, keepNew, keepMark, keepRec } from './ui.js';
@@ -54,7 +55,7 @@ export function home(ctx) {
     top.append(h('section.pwin.kp-win', { 'aria-label': '보관 팀' }, h('span.kp-title', keepMark(), '보관 팀'),
       KEEP_SLOTS.map((k) => {
         const t = T[k];
-        if (!t) return h('span.kp-slot.empty', { 'data-k': 'keep-' + k, role: 'img', 'aria-label': `보관 팀 ${KEEP_LABEL[k]} 없음` }, keepTag(k));
+        if (!t) return h('button.kp-slot.empty', { type: 'button', 'data-k': 'keep-' + k, 'aria-label': `보관 팀 ${KEEP_LABEL[k]} 없음`, onclick: () => toast('도전을 마치면 팀이 보관됩니다', 'info') }, keepTag(k)); // 빈 칸: 누르면 토스트 한 줄(반응 없음 방지)
         const open = S.keepOpen === k, core = (Array.isArray(t.core) ? t.core : []).slice(0, 3).map(rankName).filter(Boolean);
         return h('button.kp-slot', { type: 'button', 'data-k': 'keep-' + k, 'aria-expanded': String(open), onclick: () => { S.keepOpen = open ? null : k; ctx.paint(); } },
           keepTag(k), h('span.tabular', keepRec(t)), open && core.length ? h('span.kp-core', core.join(' · ')) : null);

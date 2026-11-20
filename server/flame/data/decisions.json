@@ -12,7 +12,8 @@
       "[2026-11-19 D51, 팀장 결정(analysis/40 §20.4 안 (나))] grade.formation.stat.s7 C 0 -> 1(포메이션 C 아이템 단독의 「빈 보상」 해소: 팀 패스 속도 +1), B 1 -> 2(C 와 같아지지 않게 한 칸). A 2 · S 4 와 s6·s4 는 그대로(§20.4 에서 잰 A·S 효과를 바꾸지 않는다). 등급 순서는 s7+s6+s4 합 1/2/4/8 로 선다. 되돌리기: s7 C 0 · B 1.",
       "[2026-11-19 D52, 사용자 지시 「S등급으로 맞출때쯤이면 엄청나게 빠르고 쎄야됨」「같은 슛이라도 등급에 따라 속도나 파워가 달라야함」 + 팀장 결정] grade.spSpd = 등급별 필살 투구 속도 가산(투구 속도 s6 단위: +4 = +0.25px/f). 주 슬롯 슛을 주는 낀 등급 아이템의 등급 값을 그 선수의 엔진 fx.spSpd 로 넘긴다(고유 슛 단독·계열 아티팩트 = 0, 받아치기 공 = 승계 속도 그대로). 값은 0 이상 64 이하의 정수, 낮은 등급부터 줄지 않게. 키를 지우면 전 등급 0(종전 동작). [시작값 — 사람 체감으로 임밸런 조정]",
       "[2026-11-19 D58~D63, 사용자 지시 「아티팩트는 그냥 빼」「각각 선수마다 필살기가 적용되는 구조」, analysis/44] artifact.model = 팀 공용 아티팩트 스위치. 'off' = 아티팩트 3칸·A01~A30·시너지를 쓰지 않는다. 필살슛 아이템(SP<슛>-<등급>)은 선수마다 1칸(roster[i].spItem)에 끼고 그 선수에게만 슛·등급 가산이 붙는다, 포메이션 아이템(FM<패턴>-<등급>)은 팀 1칸(run.fmItem). 'team' = 종전(3칸 공용 아티팩트, D58 이전 동작). artifact.off = off 일 때만 쓰는 보상 유형(bossKinds = 보스 3지선다 유형, shopKinds = 상점 칸 유형 가중치, 낼 것이 없는 칸은 뺀다). refundPoints = 옛 도전 저장에 있던 손으로 쓴 아티팩트(A01~A30) 1개당 돌려주는 경기 포인트(읽을 때 한 번). hiddenPerm = off 일 때 영구 성장 상점에서 숨기고 이미 산 단계를 코인으로 한 번 돌려주는 항목. [시작값 — 임밸런 재측정 대기]",
-      "[2026-11-20 D64, 사용자 지시 「필살기가 없어도 상대가 필살슛 쏘고 반격할때 나도 필살슛 나가게」] special.counterAnyPlayer = true 이면 필살기 아이템·고유 슛이 없는 선수도 상대 필살 공을 잡아 받아치기 창 안에 던지면 받아치기 필살(잡은 공의 ID·위력·속력 승계, 원작 규칙)이 나간다. 서버가 엔진 caps.lockCounter 를 false 로 넘긴다(catalog.js engineCaps). false 또는 키 삭제 = 종전(engine.lockCounter 값 그대로 = 주 슬롯이 해금된 선수만). engine.lockCounter 값은 되돌리기용으로 그대로 둔다"
+      "[2026-11-20 D64, 사용자 지시 「필살기가 없어도 상대가 필살슛 쏘고 반격할때 나도 필살슛 나가게」] special.counterAnyPlayer = true 이면 필살기 아이템·고유 슛이 없는 선수도 상대 필살 공을 잡아 받아치기 창 안에 던지면 받아치기 필살(잡은 공의 ID·위력·속력 승계, 원작 규칙)이 나간다. 서버가 엔진 caps.lockCounter 를 false 로 넘긴다(catalog.js engineCaps). false 또는 키 삭제 = 종전(engine.lockCounter 값 그대로 = 주 슬롯이 해금된 선수만). engine.lockCounter 값은 되돌리기용으로 그대로 둔다",
+      "[2026-11-20 D65, 하플레이 M3(구간 1 상점 아이템 칸 3곳 중 3곳 모두 못 삼: 가격 180~420 대 보유 경기 포인트 160~200) + 임밸런 analysis/40 §23 권고 1안 중 상점 부분만] run_config.shop.artifactSlots 1 -> 2(상점 아이템 칸 수), grade.price.shop C 180 -> 120 · B 280 -> 200 · A 420 -> 320(S 600 그대로), artifact.off.shopKinds shot 60 -> 75 · formation 40 -> 25. 구간 2 보스 레벨·태그 보너스·보스 보상 구성·등급 가산·refundPoints 는 바꾸지 않는다(하플레이: 구간 2 보스는 벽이 아님). 되돌리기: artifactSlots 1, price.shop C 180 · B 280 · A 420, shopKinds shot 60 · formation 40. grade.price.sell 은 그대로다(C 40 등, 산 값보다 낮게 유지)"
     ]
   },
   "artifact": {
@@ -28,8 +29,8 @@
         "formation"
       ],
       "shopKinds": {
-        "shot": 60,
-        "formation": 40
+        "shot": 75,
+        "formation": 25
       },
       "startGrade": "firstWin",
       "eventGrade": "shop",
@@ -154,9 +155,9 @@
     },
     "price": {
       "shop": {
-        "C": 180,
-        "B": 280,
-        "A": 420,
+        "C": 120,
+        "B": 200,
+        "A": 320,
         "S": 600
       },
       "sell": {

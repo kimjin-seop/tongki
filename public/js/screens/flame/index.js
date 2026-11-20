@@ -42,7 +42,7 @@ export function mount(root, app, data = {}) {
   let mode = ['home', 'auto', 'run'].includes(data.mode) ? data.mode : 'home';
   if (app.flameEnd) mode = 'auto'; // 아직 보여 주지 않은 종료 요약이 남아 있으면 어디서 들어오든 그것부터 보인다(다음 도전 중에 뒤늦게 뜨지 않게)
   let sub = null, offNav = null, offView = null, busy = false, busyT = 0, alive = true, last = null, wantRun = false, healed = false;
-  let peek = false, req = null, seen = null; // peek = 휴식실에서 지도 보기 / req = 마지막으로 보낸 요청 / seen = 직전 상태 요약(획득·구매 토스트용)
+  let peek = false, req = null, reqMeta = null, seen = null; // peek = 휴식실에서 지도 보기 / req = 마지막으로 보낸 요청 / seen = 직전 상태 요약(획득·구매 토스트용)
   S.newAsk = false; S.abAsk = false; // 확인 창은 화면을 다시 열 때 닫힌 상태로
   const offPad = padNav();
   nodeIcons(); // 지도 노드 아이콘 manifest 경로 → CSS 변수(한 번)
@@ -53,10 +53,11 @@ export function mount(root, app, data = {}) {
     st, run: () => st()?.run ?? null, team: () => st()?.team ?? null, prof: () => st()?.profile ?? null,
     get sub() { return sub; },
     /** 서버 요청(응답 flame_state 가 올 때까지 겹쳐 보내지 않는다) */
-    send(t, d = {}) {
+    /** meta(화면 쪽 메모, 서버로 보내지 않는다): done = 성공 응답 뒤 확인 토스트 한 줄, auto = 자동 장착(장착 변화로 결과 문구를 고른다) */
+    send(t, d = {}, meta = null) {
       if (busy) return false;
       busy = true; clearTimeout(busyT); busyT = setTimeout(() => { busy = false; }, 4000);
-      net.send(t, d); req = t;
+      net.send(t, d); req = t; reqMeta = meta;
       return true;
     },
     go(m) { mode = m; sub = null; peek = false; if (m === 'rank') net.send('flame_ranking_get', {}); paint(true); }, // 순위는 들어갈 때마다 새로 받는다(응답 = flame_ranking, flame_state 가 아니라 busy 를 걸지 않는다)
@@ -120,9 +121,19 @@ export function mount(root, app, data = {}) {
     const fresh = first || name !== last;
     last = name;
     if (!fresh) for (const el of root.querySelectorAll('[data-sc]')) if (sc[el.dataset.sc]) el.scrollTop = sc[el.dataset.sc];
+    placeSubToast();
     const want = (!fresh && keep && root.querySelector(`[data-k="${CSS.escape(keep)}"]:not(:disabled)`)) || root.querySelector('[data-first]') || root.querySelector('button:not(:disabled)');
     setTimeout(() => { if (alive && want?.isConnected && !root.contains(document.activeElement)) want.focus({ preventScroll: !fresh }); }, 30);
   }
+
+  /** 관리 화면(선수·장비·필살기·포메이션·소모품)의 토스트 = 명령 줄 바로 위(머리줄 탭을 가리지 않게, css body.fl-subt #toasts). 그 밖의 화면은 종전 위치 */
+  function placeSubToast() {
+    const c = alive && SUBS.includes(last) ? root.querySelector('.screen.fl > .fl-cmds') : null, b = c?.getBoundingClientRect();
+    if (b?.height) document.body.style.setProperty('--fl-toast-sub', Math.max(8, Math.round(innerHeight - b.top + 6)) + 'px');
+    else document.body.style.removeProperty('--fl-toast-sub');
+    document.body.classList.toggle('fl-subt', !!b?.height);
+  }
+  addEventListener('resize', placeSubToast);
 
   /**
    * 경기 노드: 라인업(VS) → 내 팀 편성(최종 능력치) → flame_node. 혼합 로스터라 얼굴·이름·능력치를 출신 기준으로 넘긴다.
@@ -159,11 +170,15 @@ export function mount(root, app, data = {}) {
 
   /** 상태 요약: 요청 전후를 견줘 획득·구매·성장 완료를 토스트 한 줄로 알린다 */
   const digest = (s) => (s ? { run: s.run?.id ?? null, items: s.run?.items?.length ?? 0, arts: s.run?.artifactsOwned?.length ?? 0, artIds: s.run?.artifactsOwned ?? [],
-    sold: (s.run?.node?.stock ?? []).filter((g) => g.sold).length, perm: (s.profile?.permList ?? []).reduce((a, u) => a + (u.lv ?? 0), 0) } : null);
+    sold: (s.run?.node?.stock ?? []).filter((g) => g.sold).length, perm: (s.profile?.permList ?? []).reduce((a, u) => a + (u.lv ?? 0), 0),
+    worn: (s.run?.items ?? []).map((it) => `${it.inst}:${it.wearer ?? -1}`).join() } : null);
   function showDone(m) {
-    const was = seen, now = digest(m), r = req;
-    seen = now; req = null;
+    const was = seen, now = digest(m), r = req, meta = reqMeta;
+    seen = now; req = null; reqMeta = null;
     if (!was || !now || !r || m.note) return;
+    // 소모품 사용·휴식·자동 장착: 거절이면 flame_error(토스트)라 여기에 오지 않는다 → 응답 = 성공
+    if (meta?.done && now.run !== null && now.run === was.run) { toast(meta.done, 'ok'); return; }
+    if (meta?.auto && now.run !== null && now.run === was.run) { toast(now.worn !== was.worn ? '자동 장착 완료' : '바꿀 장비 없음', now.worn !== was.worn ? 'ok' : 'info'); return; }
     if (r === 'flame_perm') { if (now.perm > was.perm) toast('성장 완료', 'ok'); return; }
     if (now.run === null || now.run !== was.run) return;
     if (r === 'flame_buy' && now.sold > was.sold) toast('구매 완료', 'ok');
@@ -238,8 +253,8 @@ export function mount(root, app, data = {}) {
       if (req === 'flame_formation' && F.gradeOn()) return '장착한 포메이션 아이템만 고를 수 있습니다'; // 등급제(§13.22): 기본 + 낀 아이템의 패턴만
       return req === 'flame_special' && F.granted() ? '부여되지 않은 필살기입니다' : null;
     },
-    onError() { busy = false; wantRun = false; req = null; clearTimeout(busyT); F.catalogRetry(); const s = st(); if (!s || !F.catalogReady(s.catalogVer)) app.go('lobby'); },
+    onError() { busy = false; wantRun = false; req = null; reqMeta = null; clearTimeout(busyT); F.catalogRetry(); const s = st(); if (!s || !F.catalogReady(s.catalogVer)) app.go('lobby'); },
     onWelcome() { net.send('flame_get'); if (mode === 'rank') net.send('flame_ranking_get', {}); else askMyRank(); },
-    unmount() { alive = false; offView?.(); offNav?.(); offPad(); clearTimeout(busyT); },
+    unmount() { alive = false; offView?.(); offNav?.(); offPad(); clearTimeout(busyT); removeEventListener('resize', placeSubToast); document.body.style.removeProperty('--fl-toast-sub'); document.body.classList.remove('fl-subt'); },
   };
 }

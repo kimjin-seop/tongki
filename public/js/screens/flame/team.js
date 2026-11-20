@@ -59,7 +59,7 @@ export function team(ctx, name) {
     const cur = worn(sel.slot)?.stats ?? {};
     preview = Object.fromEntries(F.STAT_KEYS.map((k) => [k, (sel.stats[k] ?? 0) - (cur[k] ?? 0)]));
   }
-  const sp0 = r.sp?.[0] ?? null, G = F.granted();
+  const G = F.granted(), sp0 = G || F.artOff() ? F.effSp(run, T, S.selP)[0] : r.sp?.[0] ?? null; // 실제로 쓰이는 주 슬롯(서버 계산)
   // 필살기 줄. 부여 구조(§13.21): 주 슬롯이 비면 「필살기 없음」, 고유 슛이면 「고유」(「미습득」 상태는 없다). 종전: 아티팩트가 없는 슛 = 「미습득」
   // 등급제(§13.22, team.players[i].special = {id, grade, add, cut}): 등급 딱지 + 위력 가산, 위력 상한으로 잘렸으면 「상한 −n」
   const spx = F.gradeOn() && pl.special && pl.special.id === sp0 ? pl.special : null;
@@ -84,10 +84,10 @@ export function team(ctx, name) {
   }));
   // off(§13.26): 선수마다 필살기 아이템 1칸. 누르면 필살기 슬롯 탭(그 선수)
   if (F.artOff()) {
-    const sd = r.spItem ? F.artDef(r.spItem) : null;
+    const sd = r.spItem ? F.artDef(r.spItem) : null, it = F.itemShotOf(r), idle = it !== null && sp0 !== it; // idle = 아이템 슛이 예비(발동 안 함)
     slots.classList.add('sp5');
-    slots.append(h('button.fl-slot', { type: 'button', 'data-k': 'slot-sp', 'aria-label': `필살기 아이템 ${sd ? F.artName(sd) : '비어 있음'}`, onclick: () => { S.spP = S.selP; S.artTab = 'sp'; ctx.open('artifact'); } },
-      sd ? icon(sd) : emptyIcon(), h('span.fl-slot-m', h('i', '필살기'))));
+    slots.append(h('button.fl-slot' + (idle ? '.idle' : ''), { type: 'button', 'data-k': 'slot-sp', 'aria-label': `필살기 아이템 ${sd ? F.artName(sd) : '비어 있음'}${idle ? ' 예비' : ''}`, onclick: () => { S.spP = S.selP; S.artTab = 'sp'; ctx.open('artifact'); } },
+      sd ? icon(sd, idle ? { grade: null } : {}) : emptyIcon(), h('span.fl-slot-m', h('i', idle ? '예비' : '필살기'))));
   }
   const items = run.items.filter((it) => invMode || it.slot === S.selSlot)
     .sort((a, b) => F.catalog().slots.indexOf(a.slot) - F.catalog().slots.indexOf(b.slot) || F.rarityRank(b.rarity) - F.rarityRank(a.rarity) || a.inst - b.inst);
@@ -119,7 +119,7 @@ export function team(ctx, name) {
   const upOk = sel && sel.up?.cost !== null && sel.up?.cost !== undefined;
   const equipB = btn(sel && sel.wearer === S.selP ? '장착 중' : '장착', 'equip', () => sel && ctx.send('flame_equip', { p: S.selP, inst: sel.inst }), '.primary.center', { disabled: !sel || sel.wearer === S.selP });
   const cmds = h('div.fl-cmds',
-    btn('자동 장착', 'auto', () => ctx.send('flame_auto_equip', { p: S.selP }), '.center'),
+    btn('자동 장착', 'auto', () => ctx.send('flame_auto_equip', { p: S.selP }, { auto: true }), '.center'),
     equipB,
     btn(S.cmpOff ? '비교 꺼짐' : '비교', 'cmp', () => { S.cmpOff = !S.cmpOff; ctx.paint(); }, '.center', { 'aria-pressed': String(!S.cmpOff) }),
     btn('해제', 'unequip', () => ctx.send('flame_equip', { p: S.selP, inst: null, slot: sel?.wearer === S.selP ? sel.slot : S.selSlot }), '.center', { disabled: !worn(sel?.wearer === S.selP ? sel.slot : S.selSlot) }),
@@ -184,22 +184,35 @@ export function artifact(ctx) {
     if (S.spSlot !== 1) S.spSlot = 0;
     // 선택지. 부여 구조: 그 선수의 고유 슛(team.players[i].own) + 낀 아티팩트가 부여한 슛(team.grant) — 서버가 받는 집합 그대로다(그 밖은 FLAME_LOCKED).
     // 종전: 몸 주인의 원래 필살기 + 슬롯에 든 것 + team.allow
-    const r = run.roster[S.spP], gOwn = T.players[S.spP]?.own, own = G || OFF ? (Number.isInteger(gOwn) && gOwn >= 0 ? gOwn : null) : ownShotOf(r.from), sp = [r.sp?.[0] ?? null, r.sp?.[1] ?? null];
+    // 슬롯 = 실제로 쓰이는 값(F.effSp: 주 슬롯은 서버 계산 team.players[i].special.id). 저장값만 보면 맞바꾼 뒤 「필살기 없음」인데 경기에서는 아이템 슛이 나가는 어긋남이 있었다(하플레이 M1)
+    const r = run.roster[S.spP], gOwn = T.players[S.spP]?.own, own = G || OFF ? (Number.isInteger(gOwn) && gOwn >= 0 ? gOwn : null) : ownShotOf(r.from), sp = G || OFF ? F.effSp(run, T, S.spP) : [r.sp?.[0] ?? null, r.sp?.[1] ?? null];
     // off(§13.26): 넣을 수 있는 것 = 그 선수가 낀 아이템의 슛 + 그 선수의 고유 슛(서버 flame_special 규칙)
-    const itShot = OFF ? F.grantOf(F.artDef(r.spItem))?.key ?? null : null;
+    const itShot = F.itemShotOf(r);
     const opts = OFF ? [...new Set([own, itShot].filter((x) => x !== null))] : G ? [...new Set([...(own !== null ? [own] : []), ...teamShots])] : [...new Set([...(own !== null ? [own] : []), ...sp.filter((x) => x !== null), ...T.allow])];
     const usable = (id) => G || OFF || T.allow.includes(id); // 부여 구조에는 「슬롯에 있지만 발동하지 않는」 상태가 없다(서버가 비운다)
     const none0 = (id, i = 0) => ((G || OFF) && i === 0 && id === null ? F.NO_SHOT : null);
+    /** 슬롯 지정. 주 슬롯을 비우면 서버가 다시 채운다: 원작 선수 = 고유 슛(items.js setSpecial, 부여 구조), 그 밖 off = 낀 아이템의 슛(stats.js cleanSp)
+     *  → 서버와 같은 순서로 정리된 값을 보내고, 결과가 지금과 같으면 보내지 않고 토스트 */
+    const apply = (next) => {
+      const fill = next[0] === null && (G && own !== null || OFF && itShot !== null);
+      if (G && own !== null && next[0] === null) next = [own, next[1] === own ? null : next[1]];
+      if (OFF && itShot !== null && next[0] === null) next = [itShot, next[1] === itShot ? null : next[1]];
+      if (next[0] === sp[0] && next[1] === sp[1]) { if (fill) toast(G && own !== null ? '고유 필살은 주 슬롯을 비울 수 없습니다' : '아이템 필살은 주 슬롯을 비울 수 없습니다', 'info'); return; }
+      if (ctx.send('flame_special', { p: S.spP, sp: next }) && OFF && itShot !== null && sp[0] === itShot && next[0] !== itShot) toast(`${F.shotName(itShot)} 예비 · 발동 안 함`, 'warn');
+    };
     const set = (id) => {
       const next = sp.slice();
       if (id !== null && next[1 - S.spSlot] === id) next[1 - S.spSlot] = next[S.spSlot]; // 다른 칸에 있던 것이면 두 칸을 맞바꾼다
       next[S.spSlot] = id;
-      ctx.send('flame_special', { p: S.spP, sp: next });
+      apply(next);
     };
-    const prow = h('div.fl-prow', { role: 'group', 'aria-label': '선수' }, run.roster.map((x, i) =>
-      h('button.fl-pcell', { type: 'button', 'data-k': 'sp-p-' + i, 'aria-pressed': String(S.spP === i), 'aria-label': `${pname(x.from)} ${none0(x.sp?.[0] ?? null) ?? F.shotName(x.sp?.[0] ?? null)}`, onclick: () => { S.spP = i; ctx.paint(); } },
-        pface(x.from), h('span.nm', pname(x.from)), h('span.fl-sp-cur' + (x.sp?.[0] !== null && x.sp?.[0] !== undefined && usable(x.sp[0]) ? '.on' : ''), none0(x.sp?.[0] ?? null) ?? F.shotName(x.sp?.[0] ?? null)),
-        OFF && x.spItem && T.players[i]?.special?.grade ? gradeTag(T.players[i].special.grade) : null))); // off: 아이템을 낀 선수 = 등급 딱지(한눈에 구분)
+    // 선수 칸 둘째 줄 = 주 슬롯 슛(없으면 「없음」). 칸이 좁아 한 줄로 두고 넘치면 말줄임(css .fl-pcell .nm·.fl-sp-cur), 전체 이름은 읽기 이름·아래 슬롯 칸에
+    const prow = h('div.fl-prow', { role: 'group', 'aria-label': '선수' }, run.roster.map((x, i) => {
+      const m = G || OFF ? F.effSp(run, T, i)[0] : x.sp?.[0] ?? null;
+      return h('button.fl-pcell', { type: 'button', 'data-k': 'sp-p-' + i, 'aria-pressed': String(S.spP === i), 'aria-label': `${pname(x.from)} ${none0(m) ?? F.shotName(m)}`, title: `${pname(x.from)} · ${none0(m) ?? F.shotName(m)}`, onclick: () => { S.spP = i; ctx.paint(); } },
+        pface(x.from), h('span.nm', pname(x.from)), h('span.fl-sp-cur' + (m !== null && usable(m) ? '.on' : ''), m === null ? '없음' : F.shotName(m).replace(/(.{3,})슛$/, '$1')), // 칸용 축약: 끝의 「슛」을 뗀다(회오리슛 → 회오리)
+        OFF && x.spItem && T.players[i]?.special?.grade ? gradeTag(T.players[i].special.grade) : null); // off: 아이템 슛이 주 슬롯에서 발동하는 선수 = 등급 딱지(한눈에 구분)
+    }));
     // 슬롯 이름도 선택지와 같은 이름표를 쓴다(같은 이름의 슛이 둘이면 둘째에 순번이 붙는다: 불꽃슛 · 불꽃슛 2. 내부 ID 는 보이지 않는다)
     const optLabels = F.shotLabels(opts), spName = (id, i = 1) => (id === null ? none0(id, i) ?? F.shotName(null) : optLabels[opts.indexOf(id)] ?? F.shotName(id));
     const slotTag = (i) => (sp[i] === null ? null : !usable(sp[i]) ? h('span.tag.off', '미습득') : (G || OFF) && sp[i] === own ? h('span.tag.host', '고유') : i === 0 ? h('span.tag.ready', '발동') : null);
@@ -208,7 +221,7 @@ export function artifact(ctx) {
     const optB = h('div.fl-sp-opts', { 'data-sc': 'sp', role: 'group', 'aria-label': '필살기' },
       opts.map((id, i) => h('button.btn.small' + (usable(id) ? '' : '.dim'), { type: 'button', 'data-k': 'sp-o-' + id, 'aria-pressed': String(sp[S.spSlot] === id), onclick: () => { if (!usable(id)) learnTip(id); set(id); } }, optLabels[i], (G || OFF) && id === own ? h('span.tag.host', '고유') : null)),
       h('button.btn.small', { type: 'button', 'data-k': 'sp-o-none', 'aria-pressed': String(sp[S.spSlot] === null), onclick: () => set(null) }, '비움'));
-    const swapB = btn('맞바꾸기', 'sp-swap', () => ctx.send('flame_special', { p: S.spP, sp: [sp[1], sp[0]] }), '.center', { disabled: sp[0] === null && sp[1] === null });
+    const swapB = btn('맞바꾸기', 'sp-swap', () => apply([sp[1], sp[0]]), '.center', { disabled: sp[0] === null && sp[1] === null });
     if (OFF) {
       // 선수마다 필살기 아이템 1칸(§13.26 flame_sp_item). 목록 = 보유한 필살기 아이템, 다른 선수가 낀 것은 그 선수 얼굴 + 누르면 토스트(서버도 FLAME_EQUIPPED)
       const own2 = run.artifactsOwned.map((id) => ({ id, d: F.artDef(id) })).filter((x) => F.grantOf(x.d)?.kind === 'shot')
@@ -216,8 +229,10 @@ export function artifact(ctx) {
       // 고른 것이 없어졌거나 다른 선수가 낀 것이면(선수를 바꾼 경우) 이 선수가 낀 것으로
       if (!own2.some((x) => x.id === S.spiSel) || ![-1, S.spP].includes(F.spWearer(run, S.spiSel))) S.spiSel = r.spItem ?? null;
       const sel = own2.find((x) => x.id === S.spiSel) ?? null, sd = r.spItem ? F.artDef(r.spItem) : null;
-      const itemSlot = h('div.fl-slot.fl-sp-item', { 'data-k': 'sp-item', role: 'img', 'aria-label': `필살기 아이템 ${sd ? F.artName(sd) : '비어 있음'}` },
-        sd ? icon(sd) : emptyIcon(), h('span.fl-slot-m', h('i', '아이템'), h('b', sd ? F.artName(sd) : '-')));
+      // 아이템 슛이 주 슬롯이 아니면(고유 슛과 맞바꿔 예비로 내려감) 발동하지 않는다: 칸을 회색 톤 + 「예비」 딱지, 등급 딱지는 회색
+      const idle = itShot !== null && sp[0] !== itShot;
+      const itemSlot = h('div.fl-slot.fl-sp-item' + (idle ? '.idle' : ''), { 'data-k': 'sp-item', role: 'img', 'aria-label': `필살기 아이템 ${sd ? F.artName(sd) : '비어 있음'}${idle ? ' 예비' : ''}` },
+        sd ? icon(sd, idle ? { grade: null } : {}) : emptyIcon(), h('span.fl-slot-m', h('i', '아이템'), h('b', sd ? F.artName(sd) : '-')), idle ? h('span.tag.off', '예비') : null);
       const list = h('div.fl-art-own', { 'data-sc': 'spi', role: 'group', 'aria-label': '필살기 아이템' }, own2.length ? own2.map(({ id, d }) => {
         const wi = F.spWearer(run, id), mine = wi === S.spP, other = wi >= 0 && !mine ? run.roster[wi] : null;
         return h('button.fl-inv-row' + (other ? '.lock' : ''), { type: 'button', 'data-k': 'spi-' + id, 'aria-pressed': String(S.spiSel === id), ...(other ? { 'aria-disabled': 'true' } : {}),
@@ -306,7 +321,8 @@ export function formation(ctx) {
     // 등급 보너스(team.fmGrade): 태그 보너스 배율(flame_catalog.grade.formation.tagPct). 등급의 팀 능력치 가산은 아래 「기본 효과」에 이미 들어 있다(능력치 6단계)
     !OFF && GR && T.fmGrade && Number.isFinite(F.catalog().grade?.formation?.tagPct?.[T.fmGrade]) ? h('div.fl-art-sec', { 'data-k': 'fm-grade' }, h('h2.fl-sub', '등급 보너스'),
       h('div.fl-chipline', h('span.tag.ready', `태그 보너스 ${F.catalog().grade.formation.tagPct[T.fmGrade]}%`))) : null,
-    h('div.fl-art-sec', h('h2.fl-sub', '기본 효과'), fmFx.length ? h('div.fl-chipline', fmFx.map((t) => h('span.tag.ready', t))) : h('span.tag.off', '없음')),
+    // 「적용 효과」 = 선수 능력치에 실제로 더해진 포메이션 단계(steps 'formation': 태그 보너스 × 등급 배율 + 등급 가산). 아래 아이템 칸은 그 출처(태그 · 배율)만 적는다(하플레이 M5: 같은 값이 두 번 다른 수로 보였다)
+    h('div.fl-art-sec', h('h2.fl-sub', OFF ? '적용 효과' : '기본 효과'), fmFx.length ? h('div.fl-chipline', fmFx.map((t) => h('span.tag.ready', t))) : h('span.tag.off', '없음')),
     OFF ? fmItemSec(T, fmItem) : h('div.fl-art-sec', h('h2.fl-sub', '아티팩트 강화'),
       fmArts.length ? fmArts.map((a) => h('div.fl-syn', h('b', a.name), h('span', F.artSpec(a)))) : h('span.tag.off', '없음'),
       T.amp.formation ? h('div.fl-syn', h('b', '효과 강화'), h('span.fl-up', `+${T.amp.formation}%`)) : null),
@@ -324,14 +340,13 @@ export function formation(ctx) {
   return { esc: back };
 }
 
-/** off(§13.26) 포메이션 아이템 칸: 아이템 이름·등급 + 태그 보너스표(formationTags[].bonus) × 등급 배율(grade.formation.tagPct) */
+/** off(§13.26) 포메이션 아이템 칸: 아이템 이름·등급·태그 + 출처 한 줄(태그 보너스 % · 등급 가산 = 목록 카드와 같은 F.artLine). 적용된 수치는 위 「적용 효과」 한 곳에만 */
 function fmItemSec(T, fmItem) {
   const d = fmItem ? F.artDef(fmItem) : null, g = F.grantOf(d), tg = g ? F.tagOfFm(g.key) : null;
-  const pct = g ? F.catalog().grade?.formation?.tagPct?.[g.grade] : null;
-  const bonus = F.statTexts(Object.fromEntries((tg?.bonus ?? []).map((b) => [b.stat, b.value])));
+  const src = d ? F.artLine(d).split(' · ').filter((t) => t && t !== tg?.name) : [];
   return h('div.fl-art-sec', { 'data-k': 'fm-item-sec' }, h('h2.fl-sub', '포메이션 아이템'),
-    d ? [h('div.fl-syn', h('b', F.artName(d)), gradeTag(g.grade), tg ? h('span', tg.name) : null),
-      bonus.length ? h('div.fl-chipline', bonus.map((t) => h('span.tag.ready', t)), Number.isFinite(pct) ? h('span.fl-up.tabular', `× ${pct}%`) : null) : null]
+    d ? [h('div.fl-syn', h('b', F.artName(d)), gradeTag(g?.grade), tg ? h('span', tg.name) : null),
+      src.length ? h('div.fl-cx-line.tabular', src.join(' · ')) : null]
       : h('span.tag.off', '없음'));
 }
 
@@ -359,11 +374,14 @@ export function items(ctx) {
     return h('button.fl-pcell', { type: 'button', 'data-k': 'ip-' + i, 'aria-pressed': String(need && S.itemP === i), disabled: !need, 'aria-label': `${pname(r.from)} HP ${hp.hp}/${hp.max}`, onclick: () => { S.itemP = i; ctx.paint(); } },
       pface(r.from), h('span.nm', pname(r.from)), hpBar(hp.hp, hp.max, hp.up));
   }));
-  const use = btn(d ? (need ? `사용 · ${pname(run.roster[S.itemP].from)}` : '사용') : '사용', 'use', () => d && ctx.send('flame_use', need ? { c: d.id, p: S.itemP } : { c: d.id }), '.primary.center', { disabled: !d });
+  // 대상: 선수 1명용 = 고른 선수, 팀 전체용(target 'team') = 「팀 전체」(선수 줄은 HP 보기만), 대상 없는 것(보상·영입 추가 등) = 이름 없이
+  const teamWide = !!d && !need && (d.effects ?? []).some((e) => (e.params?.target ?? e.proposed?.target) === 'team');
+  const useLabel = !d ? '사용' : need ? `사용 · ${pname(run.roster[S.itemP].from)}` : teamWide ? '사용 · 팀 전체' : '사용';
+  const use = btn(useLabel, 'use', () => d && ctx.send('flame_use', need ? { c: d.id, p: S.itemP } : { c: d.id }, { done: `${d.name} 사용${need ? ` · ${pname(run.roster[S.itemP].from)}` : ''}` }), '.primary.center', { disabled: !d });
   ctx.root.append(h('div.screen.fl.fl-itemsv', head('소모품', back, chip('보유', `${total}/${C.economy?.consumables?.inventoryMax ?? 5}`)),
     h('div.fl-art', h('section.pwin.fl-art-l', list),
       h('section.pwin.fl-art-r', h('div.fl-art-sec', h('h2.fl-sub', '다음 경기 효과'), buffs.length ? h('div.fl-chipline', buffs) : h('span.tag.off', '없음')),
-        h('div.fl-art-sec', h('h2.fl-sub', '대상'), prow))),
+        h('div.fl-art-sec', h('h2.fl-sub', '대상', teamWide ? h('span.tag.ready.fl-tgt', '팀 전체') : null), prow))),
     h('div.fl-cmds', use)));
   (ctx.root.querySelector('.fl-inv-row') ?? ctx.root.querySelector('[data-k="back"]')).dataset.first = '1';
   return { esc: back };

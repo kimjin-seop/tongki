@@ -281,6 +281,9 @@ button.fl-card.rare[aria-pressed=true] { box-shadow: 0 0 0 calc(var(--u) * 2) va
 .fl-pcell { display: grid; justify-items: center; align-content: start; gap: calc(var(--u) * 2); padding: calc(var(--u) * 2); min-width: 0; background: none; border: calc(var(--u) * 2) solid transparent; color: var(--r-white); cursor: pointer; border-radius: 0; font: inherit; }
 .fl-pcell .face { --fk: var(--pk); }
 .fl-pcell .nm { font: var(--f-cap); max-width: 100%; text-align: center; word-break: keep-all; overflow-wrap: anywhere; line-height: 1.15; }
+/* 선수 칸 이름·슛 이름 = 한 줄(「윤이/음」「순간이/동슛」 줄바꿈 방지). 칸이 글자보다 좁으면 말줄임, 전체 이름은 읽기 이름·title·아래 슬롯 칸 */
+.fl-prow .fl-pcell { padding-inline: 0; }
+.fl-pcell .nm, .fl-pcell .fl-sp-cur { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; overflow-wrap: normal; }
 .fl-pcell .fl-hp { flex-direction: column; gap: var(--u); }
 .fl-pcell:hover:not(:disabled), .fl-pcell:focus-visible { border-color: var(--r-white); outline: none; }
 .fl-pcell[aria-pressed=true] { border-color: #fcfcfc; animation: r-glow2 .7s steps(1) infinite; }
@@ -419,6 +422,10 @@ button.fl-card.rare[aria-pressed=true] { box-shadow: 0 0 0 calc(var(--u) * 2) va
 .fl-sp-slots .fl-sp-item { --ik: 1; cursor: default; }
 .fl-sp-slots .fl-sp-item:is(:hover, :focus-visible) { border-color: var(--r-line3); }
 .fl-slots.sp5 { grid-template-columns: repeat(5, auto); }
+/* 필살기 아이템 슛이 예비로 내려가 발동하지 않음(team.js idle): 글자 회색 + 「예비」 딱지, 등급 딱지 없음 */
+.fl-slot.idle .fl-slot-m :is(i, b), .fl .fl-slot.idle .fl-slot-m :is(i, b) { color: var(--r-grey); }
+.fl-sp-slots .fl-sp-item.idle { border-color: var(--r-line3); background: #000; }
+.fl-sub .fl-tgt { margin-left: calc(var(--u) * 4); vertical-align: top; }
 .fl-inv-row.lock { cursor: not-allowed; }
 .fl-inv-row.lock .fl-inv-m b, .fl-inv-row.lock .fl-inv-s { color: var(--r-grey); }
 .fl-pcell .fl-gr, .fl-tm-l2 .fl-gr { justify-self: center; }
@@ -518,6 +525,9 @@ button.fl-card.rare[aria-pressed=true] { box-shadow: 0 0 0 calc(var(--u) * 2) va
 .fl-run .fl-map { padding-bottom: calc(var(--u) * 28); }
 :root:has(.fl-run) #toasts { top: auto; bottom: var(--fl-toast-bottom, calc(var(--u) * 48)); gap: calc(var(--u) * 2); }
 :root:has(.fl-run) .toast { padding: var(--u) calc(var(--u) * 6); }
+/* 관리 화면(선수·장비·필살기·포메이션·소모품) = 명령 줄 바로 위(머리줄 탭을 가리지 않게, index.js placeSubToast 가 --fl-toast-sub 를 잰다) */
+body.fl-subt #toasts { top: auto; bottom: var(--fl-toast-sub, calc(var(--u) * 48)); gap: calc(var(--u) * 2); }
+body.fl-subt .toast { padding: var(--u) calc(var(--u) * 6); }
 @media (max-width: 639px) {
   :root:has(.fl-reward) #toasts { top: auto; bottom: calc(var(--u) * 120); gap: 4px; }
   :root:has(.fl-reward) .toast { padding: 2px 8px; }

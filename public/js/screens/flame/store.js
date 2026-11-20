@@ -113,8 +113,11 @@ export function artLine(d) {
   if (!g) return artSpec(d);
   if (g.kind === 'shot') {
     const fam = (cat?.shotFamilies ?? []).find((f) => f.unlockedBy && !f.overlap && (f.shotIds ?? []).includes(g.key)) ?? (cat?.shotFamilies ?? []).find((f) => (f.shotIds ?? []).includes(g.key));
-    const pow = G?.spPow?.[g.grade] ?? 0, spd = G?.spSpd?.[g.grade] ?? 0; // 가산이 0 인 등급(C)은 「위력 +0」·「필살 속도 +0」을 내지 않는다(§13.24 spSpd)
-    return [fam?.name ? `${fam.name} 계열` : null, pow > 0 ? `위력 +${pow}` : null, spd > 0 ? `필살 속도 +${spd}` : null].filter(Boolean).join(' · ');
+    const pow = G?.spPow?.[g.grade] ?? 0, spd = G?.spSpd?.[g.grade] ?? 0; // 가산이 0 인 등급(C)은 「필살 속도 +0」을 내지 않는다(§13.24 spSpd)
+    // 위력 = 슛 기본 위력(§13.27 special.power[슛], 등급 가산 전) + 등급 가산 합계. 기본값이 null(표값 255)이면 위력은 내지 않는다. 칸이 없는 구 서버 = 종전 「위력 +가산」
+    const pw = cat?.special?.power, base = Array.isArray(pw) ? pw[g.key] : undefined;
+    const powTxt = Number.isFinite(base) ? `위력 ${base + pow}` : base === undefined && pow > 0 ? `위력 +${pow}` : null;
+    return [fam?.name ? `${fam.name} 계열` : null, powTxt, spd > 0 ? `필살 속도 +${spd}` : null].filter(Boolean).join(' · ');
   }
   return [tagOfFm(g.key)?.name, Number.isFinite(G?.formation?.tagPct?.[g.grade]) ? `태그 보너스 ${G.formation.tagPct[g.grade]}%` : null, ...fmGradeTexts(g.grade)].filter(Boolean).join(' · ');
 }
@@ -186,6 +189,19 @@ export function shotLabels(ids) {
 export function shotLabel(id) { const n = shotOrdinal(id); return n > 1 ? `${shotName(id)} ${n}` : shotName(id); }
 /** 필살기 이름 목록(보여 주기만 하는 칸용): 같은 이름은 한 번만 */
 export const shotNames = (ids) => [...new Set(ids.map(shotName))];
+/**
+ * 실제로 쓰이는 필살기 슬롯 [주, 예비](표시용). 서버는 경기·능력치 계산 때 슬롯을 정리한다(server/flame/stats.js cleanSp: 아이템을 낀 선수의 빈 주 슬롯 = 그 아이템의 슛).
+ * 저장된 run.roster[i].sp 는 정리 전 값일 수 있어(예: 맞바꾸기로 [null, 아이템 슛]) 주 슬롯은 서버 계산 결과 team.players[i].special.id 를 따른다
+ */
+export function effSp(run, T, i) {
+  const raw = [run?.roster?.[i]?.sp?.[0] ?? null, run?.roster?.[i]?.sp?.[1] ?? null], s = T?.players?.[i]?.special;
+  if (!s || !('id' in s) || s.id === raw[0]) return raw;
+  const m = s.id ?? null;
+  return [m, raw[1] === m ? null : raw[1]];
+}
+/** 그 선수가 낀 필살기 아이템의 슛 ID | null(off) */
+export const itemShotOf = (r) => (artOff() ? grantOf(artDef(r?.spItem))?.key ?? null : null);
+
 /** 선수의 원래 필살기 ID(ROM 표, 표시·선택지용. 최종 판정은 서버). 없으면 null */
 export function ownShot(from) {
   const t = Array.isArray(sprTeams) ? sprTeams.find((x) => x.team === from.team) ?? sprTeams[from.team] : sprTeams?.[from.team];

@@ -313,8 +313,9 @@ export function train(ctx) {
 export function rest(ctx) {
   const { S } = ctx, run = ctx.run(), R = F.catalog().rest ?? [];
   if (!(S.restP >= 0 && S.restP < run.roster.length)) S.restP = 0;
-  const bs = R.map((o, i) => btn(o.target === 'player' ? `${o.name} · ${pname(run.roster[S.restP].from)} HP +${o.healPct}%` : `${o.name} · HP +${o.healPct}%`, 'rest-' + i,
-    () => ctx.send('flame_choose', o.target === 'player' ? { i, p: S.restP } : { i }), '.center' + (i === 0 ? '.primary' : '')));
+  const label = (o) => (o.target === 'player' ? `${o.name} · ${pname(run.roster[S.restP].from)} HP +${o.healPct}%` : `${o.name} · HP +${o.healPct}%`);
+  const bs = R.map((o, i) => btn(label(o), 'rest-' + i,
+    () => ctx.send('flame_choose', o.target === 'player' ? { i, p: S.restP } : { i }, { done: label(o) }), '.center' + (i === 0 ? '.primary' : ''))); // done = 응답 뒤 확인 토스트(index.js showDone)
   if (bs[0]) bs[0].dataset.first = '1';
   ctx.root.append(h('div.screen.fl', h('header.fl-head', h('h1.pix-title.fl-title', '휴식실')),
     playerRow(ctx, S.restP, (i) => { S.restP = i; ctx.paint(); }),

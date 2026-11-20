@@ -48,8 +48,10 @@ const bad = (m) => { throw new Error('flame catalog: ' + m); };
  * 18 = artifact(팀 공용 아티팩트 스위치 D58~D63: model 'off'|'team'·refundPoints·hiddenPerm·permText) 추가 + formationTags[].bonus(태그 보너스표) + flame_state.run.roster[i].spItem·run.fmItem·team.players[i].spItem.
  *      model 'off' 에서는 flame_artifact 를 받지 않고(FLAME_INVALID) 새 요청 flame_sp_item·flame_fm_item 을 쓴다(PROTOCOL §13.26).
  *      model 'off' 이면 cat.ver 에 `.aoff` 가 든다(개정 번호는 그대로. team 이면 그 칸이 없다)
+ * 19 = special.power[슛 ID](슛별 기본 위력 = server/data/specials.json power, 표값 255 는 null. 하플레이 M2 의 C 등급 필살 카드 표시용) 추가.
+ *      슛별 투구 속도 표는 없어(던진 선수의 구속에서 계산) speed 칸은 없다. 같은 날 D65 로 상점 값(grade.price.shop)·shopKinds 도 바뀌었다(칸 모양은 그대로)
  */
-export const CATALOG_MSG_REV = 18;
+export const CATALOG_MSG_REV = 19;
 
 const pctOn = (v) => (Number.isFinite(v) && v > 0 ? v : 0);
 /**

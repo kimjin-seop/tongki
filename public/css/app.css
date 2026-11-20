@@ -849,7 +849,7 @@ body[data-title-enter] .title-follow { animation: title-follow .32s steps(4) .14
 .kp-slot { display: inline-flex; align-items: center; gap: calc(var(--u) * 4); min-height: 44px; min-width: 0; padding: 0 calc(var(--u) * 4); background: none; border: 0; color: var(--r-white); font: var(--f-cap); cursor: pointer; white-space: nowrap; }
 .kp-slot:is(:hover, :focus-visible) { color: var(--r-yel); outline: var(--o) solid var(--r-white); outline-offset: calc(var(--o) * -1); }
 .kp-slot .kp-core { color: var(--r-line); }
-.kp-slot.empty { cursor: default; border: calc(var(--u) * 4) solid transparent; border-image: var(--img-kp-empty, url("/assets/flame-legacy/keep/keep_slot_empty.png")) 4 fill / calc(var(--u) * 4) repeat; image-rendering: pixelated;
+.kp-slot.empty { cursor: pointer; border: calc(var(--u) * 4) solid transparent; border-image: var(--img-kp-empty, url("/assets/flame-legacy/keep/keep_slot_empty.png")) 4 fill / calc(var(--u) * 4) repeat; image-rendering: pixelated;
   min-height: calc(var(--u) * 24); padding: 0 calc(var(--u) * 4); }
 .kp-slot.empty > * { image-rendering: pixelated; }
 /* 도전 종료 결과: 갱신된 슬롯 딱지 + 구간·승수, 한 줄 안내 */

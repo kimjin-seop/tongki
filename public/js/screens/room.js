@@ -19,6 +19,8 @@ const FL_LABEL = { recent: '최근', best: '최고' };
 const isFl = (id) => typeof id === 'string';
 const cellId = (el) => { const v = el?.dataset?.team; return v == null ? null : v.startsWith('flame:') ? v : +v; };
 const RANK_MAX_TEAM = 21; // 랭크 방은 SPECIAL(15~21)까지, 22~24 는 서버가 TEAM_INVALID(PROTOCOL §11.2)
+// 팀 선택에서 한 번이라도 결정한 좌석('방코드:좌석'). 서버 좌석에는 「고른 적 있음」 표시가 없고(입장 기본값 = 좌석 번호 팀) 대기실은 규칙 창을 다녀오면 다시 마운트되므로 모듈 범위에 둔다
+const decided = new Set();
 
 export function mount(root, app) {
   let selecting = false, cur = null, page = 0, pdCur = null;
@@ -184,6 +186,10 @@ export function mount(root, app) {
     selecting = true;
     cur = selOf(app.room.slots[me]) ?? 0;
     if (isFl(cur) && !flCells().includes(cur)) cur = app.room.slots[me]?.team ?? 0; // 슬롯 요약을 아직 받지 못했다: 원작 팀 칸에서 시작
+    // 「불꽃 팀」 허용 방(사람끼리, §13.25): 아직 고른 적 없는 입장 기본값이면 보관 팀 칸(최근·최고)에서 시작한다(하플레이 M4: SPECIAL 쪽 끝이라 찾기 어려웠다).
+    // 고르기만, 결정은 종전처럼 누를 때. 이미 고른 팀이 있으면 그 칸(커서 = 현재 팀), 규칙이 불꽃 팀을 못 쓰는 모드면 옮기지 않는다(정검수 M)
+    const s0 = app.room.slots[me], fresh = !decided.has(`${app.room.code}:${me}`) && !s0?.flameTeam && s0?.team === me;
+    if (fresh && !isFl(cur) && app.room.rules?.flameTeams === true && flRuleOk() && flCells().length) cur = flCells()[0];
     page = PAGE_SPECIAL.includes(cur) || isFl(cur) ? 1 : 0;
     paintSelect(true);
   }
@@ -191,6 +197,7 @@ export function mount(root, app) {
   function confirm(team) {
     const s = app.room?.slots?.[myIdx()];
     if (isFl(team) && !flRuleOk()) { toast(ERR_CODE.FLAME_TEAM_RULES, 'warn'); return; }
+    if (s) decided.add(`${app.room.code}:${myIdx()}`);
     if (s && selOf(s) !== team) net.send('set_team', { team });
     closeSelect();
   }
@@ -213,9 +220,11 @@ export function mount(root, app) {
       h('span.cl.c0'), h('span.cl.c1'), isFl(id) ? [keepEmblem(), h('span.nm', keepGlyph(id.slice(6)), FL_LABEL[id.slice(6)])] : [emblem(id), h('span.ab', glyphs(abbrOf(id))), h('span.nm', shortName(id, teamText(id)))]));
     root.append(h('div.screen.tsel',
       h('header.tsel-head', h('h1.pix-title', '팀 선택'),
+        // 쪽 탭 = 글자 라벨(하플레이 M4). 보관 팀 칸이 있으면 「보관 팀」 탭(같은 SPECIAL 쪽의 보관 팀 칸으로 커서를 옮긴다)
         h('div.tpage', { role: 'group', 'aria-label': '팀 목록' },
-          h('button.btn.small', { type: 'button', 'aria-pressed': String(page === 0), onclick: () => setPage(0) }, '학교'),
-          h('button.btn.small', { type: 'button', 'aria-pressed': String(page === 1), 'aria-label': '스페셜 팀', onclick: () => setPage(1) }, glyphs('SPECIAL', page === 1))),
+          h('button.btn.small', { type: 'button', 'data-pg': '0', 'aria-pressed': String(page === 0), onclick: () => setPage(0) }, '학교'),
+          h('button.btn.small', { type: 'button', 'data-pg': '1', 'aria-pressed': String(page === 1 && !isFl(cur)), 'aria-label': '스페셜 팀', onclick: () => { if (page === 1 && isFl(cur)) move(pageTeams(1).find((id) => !isFl(id)) ?? cur); else setPage(1); } }, '스페셜'),
+          flCells().length ? h('button.btn.small.kp-tab', { type: 'button', 'data-pg': 'fl', 'aria-pressed': String(page === 1 && isFl(cur)), onclick: () => { const f = flCells()[0]; if (page !== 1) { page = 1; cur = f; paintSelect(true); } else if (!isFl(cur)) move(f); } }, keepGlyph('recent'), '보관 팀') : null),
         h('button.btn.small.back', { type: 'button', onclick: closeSelect }, '돌아가기')),
       h('div.tsel-body',
         h('section.pwin.tgrid-win', h('div.tgrid', { role: 'group', 'aria-label': '팀을 고르세요', onkeydown: gridKey }, cells)),
@@ -243,6 +252,7 @@ export function mount(root, app) {
       c1.textContent = at[1] ? (cpu[1] ? 'COM' : '2P') : '';
       c1.classList.toggle('com', cpu[1]);
     }
+    for (const b of root.querySelectorAll('.tpage [data-pg]')) b.setAttribute('aria-pressed', String(b.dataset.pg === '0' ? page === 0 : page === 1 && (b.dataset.pg === 'fl') === isFl(cur)));
     const slots = root.querySelectorAll('.tinfo-slot');
     slots.forEach((slot, i) => slot.replaceChildren(info(i)));
   }

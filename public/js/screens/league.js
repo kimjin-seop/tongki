@@ -122,7 +122,7 @@ export function mount(root, app, data = {}) {
       h('header.tsel-head', h('h1.pix-title', '팀 선택'), h('span.lg-count.tabular', `${picked.length}/${draft.n}`),
         sp ? h('div.tpage', { role: 'group', 'aria-label': '팀 목록' },
           h('button.btn.small', { type: 'button', 'data-k': 'pg-0', 'aria-pressed': String(tpage === 0), onclick: () => { tpage = 0; paint(); } }, '학교'),
-          h('button.btn.small', { type: 'button', 'data-k': 'pg-1', 'aria-pressed': String(tpage === 1), 'aria-label': '스페셜 팀', onclick: () => { tpage = 1; paint(); } }, glyphs('SPECIAL', tpage === 1))) : null,
+          h('button.btn.small', { type: 'button', 'data-k': 'pg-1', 'aria-pressed': String(tpage === 1), 'aria-label': '스페셜 팀', onclick: () => { tpage = 1; paint(); } }, '스페셜')) : null, // 쪽 탭 = 글자 라벨(대기실 팀 선택과 같게)
         h('button.btn.small.back', { type: 'button', 'data-k': 'back', onclick: () => go('setup') }, '돌아가기')),
       h('div.tsel-body',
         h('section.pwin.tgrid-win', h('div.tgrid', { role: 'group', 'aria-label': tpage ? '스페셜 팀' : '팀' }, list.map(cell))),

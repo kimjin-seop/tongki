@@ -71,7 +71,7 @@
   "shop": {
     "equipmentSlots": 3,
     "consumableSlots": 3,
-    "artifactSlots": 1,
+    "artifactSlots": 2,
     "artifactPrice": 280,
     "upgradeHere": true
   },
