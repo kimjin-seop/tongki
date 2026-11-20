@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { WebSocket } from 'ws';
 import { createServer } from '../server/index.js';
 import { MemoryResultStore } from '../server/store/results.js';
+import { mono } from '../server/net/limits.js';
 
 function client(port) {
   const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
@@ -360,5 +361,48 @@ test('방 목록: 로비 사용자에게 새 방이 푸시되고 항목에 규�
     b.send({ t: 'leave_room' }); await b.type('room_left');
     assert.equal((await b.wait((m) => m.t === 'room_list' && m.rooms[0]?.players === 1)).rooms[0].code, code);
     a.ws.close(); b.ws.close();
+  } finally { await app.close(); }
+});
+
+test('봇 방어: 컴퓨터 대전 방은 목록에 없고, 경기 없는 방은 유휴 시간이 지나면 닫혀 로비로 간다(경기 중인 방은 그대로)', async () => {
+  const app = createServer({ store: new MemoryResultStore(), log: () => {}, limits: { idleRoomMs: 30 * 60000 } });
+  const port = await app.listen(0);
+  try {
+    const a = client(port), b = client(port), c = client(port), d = client(port);
+    await Promise.all([a.open, b.open, c.open, d.open]);
+    for (const [x, n] of [[a, '유휴대기'], [b, '유휴컴'], [c, '경기중컴'], [d, '구경']]) { x.send({ t: 'hello', nickname: n }); await x.type('welcome'); }
+    a.send({ t: 'create_room' }); const ca = (await a.type('room_joined')).room.code;
+    b.send({ t: 'create_room', vsCpu: true }); const cb = (await b.type('room_joined')).room;
+    assert.equal(cb.vsCpu, true); // 본인 방 상태에는 그대로 실린다
+    c.send({ t: 'create_room', vsCpu: true }); await c.type('room_joined');
+    c.send({ t: 'start' }); await c.type('game_start');
+    d.send({ t: 'list_rooms' });
+    const list = await d.wait((m) => m.t === 'room_list' && m.rooms.length === 1);
+    assert.deepEqual(list.rooms.map((r) => r.code), [ca]); // 컴퓨터 대전 방(대기·경기 중) 없음
+    app.lobby.sweepIdleRooms(mono() + 29 * 60000); // 아직 이르다
+    assert.equal(app.lobby.rooms.size, 3);
+    app.lobby.sweepIdleRooms(mono() + 31 * 60000);
+    assert.equal((await a.type('room_left')).reason, 'idle');
+    assert.equal((await b.type('room_left')).reason, 'idle');
+    assert.deepEqual([app.lobby.rooms.size, app.lobby.rooms.has(ca), app.lobby.roomOf(app.lobby.byNick.get('경기중컴'))?.game ? 'playing' : null], [1, false, 'playing']);
+    for (const x of [a, b, c, d]) x.ws.close();
+  } finally { await app.close(); }
+});
+
+test('봇 방어: IP당 분당 방 만들기 상한(create_room·컴퓨터 대전 start)을 넘으면 RATE_LIMITED', async () => {
+  const app = createServer({ store: new MemoryResultStore(), log: () => {}, limits: { maxRoomCreatePerMin: 3 } });
+  const port = await app.listen(0);
+  try {
+    const a = client(port);
+    await a.open;
+    a.send({ t: 'hello', nickname: '방남용' }); await a.type('welcome');
+    a.send({ t: 'create_room' }); await a.type('room_joined');
+    a.send({ t: 'create_room' }); assert.equal((await a.type('error')).code, 'ALREADY_IN_ROOM'); // 세션당 동시 방 1개
+    a.send({ t: 'leave_room' }); await a.type('room_left');
+    a.send({ t: 'create_room', vsCpu: true }); await a.type('room_joined'); // 2번째(거절된 ALREADY_IN_ROOM 은 창 검사 전이라 세지 않는다)
+    a.send({ t: 'start' }); assert.equal((await a.wait((m) => m.t === 'error' || m.t === 'game_start')).t, 'game_start'); // 3번째
+    a.send({ t: 'leave_room' }); await a.type('room_left');
+    a.send({ t: 'create_room' }); assert.equal((await a.type('error')).code, 'RATE_LIMITED');
+    a.ws.close();
   } finally { await app.close(); }
 });

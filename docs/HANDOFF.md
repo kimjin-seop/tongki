@@ -1019,3 +1019,36 @@
 - 되돌리기: `_backup/og_invite_before/`(server/index.js·net/limits.js·net/static.js·test/static_serve.test.js·HANDOFF) 덮고 `server/net/invite_og.js`·`test/invite_og.test.js`·`public/assets/og/invite.png` 삭제. static.js·static_serve.test.js 는 고치지 않았다(사본만).
 - 남은 위험: ① 운영 nginx 헤더 전달 미확인(위 주의). ② 카카오톡 등은 og 결과를 자체 캐시하므로 같은 URL 은 방이 닫혀도 예전 제목이 보일 수 있다(코드 재사용 시 다른 방장 이름이 보일 가능성은 낮음: 최근 64개 코드 재발급 회피). ③ `index.html` 의 고정 og(`og_1200x630.png`, `tongki.oddplay.kr`)는 그대로라 쿼리 없는 공유는 종전 미리보기.
 - 2026-11-20 윤프론 초대 링크(클라이언트): 대기실 코드 칩 → 버튼 「초대링크 복사」(사람끼리 일반 방만, 링크 아이콘, aria-label 동일) = `${origin}/?room=<CODE>` 복사(clipboard → textarea+execCommand 폴백 → 실패 토스트). 진입 시 `public/js/invite.js` 가 room 쿼리(서버 CODE_RE 형식만)를 sessionStorage `dd.invite` 에 두고 주소창에서 지움 → welcome(lobby) 때 join_room 1회(거절은 기존 오류 토스트, 방·경기 중이면 버림+토스트). 서버·PROTOCOL 변경 없음. 검증 `_verify/invite_link_20261120/v.mjs`(포트 3427), 사본 `_backup/invite_link_before/`.
+
+## 18. 서버 봇 방어: 컴퓨터 대전 방 목록 제외·방 만들기 빈도 제한·유휴 방 정리 (2026-11-21, 박백엔, 미커밋)
+- 배경: 운영 방 목록에 「측정봇517의 방 · 컴퓨터 대결 2/2」가 계속 남아 있었다(우리 도구 `tools/*` 에 없는 닉네임 = 외부 자동 접속 봇으로 판단).
+- 동작 (`server/lobby/lobby.js`):
+  - 방 목록(`roomListMsg`)에서 컴퓨터 대전 방(`vsCpu`)을 뺀다. 아무도 참가할 수 없는 방(`join_room` = `ROOM_FULL`)이라 보일 이유가 없고 전송량도 준다. 본인 `room_joined`/`room_state` 의 `vsCpu`·`cpuLevel`, 초대 링크(원래 컴퓨터전 제외), 방 입장 규칙은 그대로.
+  - 세션당 동시 방 1개는 원래부터 보장된다(`create_room`·`campaign_start`·`training_start`·`flame_*` 모두 `s.roomCode` 검사 = `ALREADY_IN_ROOM`). 대신 한 IP 에서 세션을 여러 개 열 수 있어 IP 단위 창을 더했다.
+  - **IP당 분당 방 만들기** `checkRoomRate`: `create_room`(일반·컴퓨터), `campaign_start`, `training_start`, 일반 컴퓨터 대전 방의 `start` 가 같은 창(60초)을 쓴다. 넘으면 기존 코드 `RATE_LIMITED`(「요청이 너무 빠릅니다」, 토스트). `ALREADY_IN_ROOM`·형식 오류처럼 창 검사 앞에서 거절된 요청은 세지 않는다. 리그·불꽃 경기 방은 각자 세션 창(`MAX_LEAGUE_PER_MIN`·`MAX_FLAME_PER_MIN`)만 그대로.
+  - **유휴 방 정리** `sweepIdleRooms(now)`: 경기 없는 방(대기 중 일반 방·컴퓨터 대전 방·경기 끝난 스토리 방)이 방 안 메시지 없이 `IDLE_ROOM_MINUTES` 지나면 앉은 사람마다 `removeFromRoom(s,'idle')` → `room_left{reason:'idle'}` + `room_list`(로비로). 경기 중인 방·래더 방(자체 120초 시한)은 건드리지 않는다. 활동 = 그 방에 앉은 세션이 보낸 아무 메시지(`onMessage` 에서 `room.lastActive` 갱신, `ping` 은 연결 수준이라 제외), 방 생성·경기 종료 시각도 갱신. 기존 게임 루프 `tickGames` 안에서 1분마다 한 번 돈다(새 타이머 없음, 시계 = `mono()`, 시험은 `now` 주입).
+  - 클라이언트 `i18n.js ROOM_LEFT` 에 `idle` 문구는 없다(토스트 없이 로비로 이동만). 문구가 필요하면 윤프론이 한 줄 추가.
+- 환경변수 (`server/net/limits.js`): `MAX_ROOM_CREATE_PER_MIN`(기본 20), `IDLE_ROOM_MINUTES`(기본 30).
+- 봇 대응 운영 팁:
+  - 의심 IP 확인: 서버 로그의 `[idle] 방 닫음 <코드> (<닉네임>)` 으로 닉네임을 찾고, nginx access log 에서 `/ws` 업그레이드 IP 를 센다. 예 `grep ' /ws ' /var/log/nginx/access.log | awk '{print $1}' | sort | uniq -c | sort -rn | head`. `/health` 의 `rooms`·`sessions` 가 접속자 수에 비해 크면 의심.
+  - nginx: `limit_req_zone $binary_remote_addr zone=ws:10m rate=30r/m;` + `/ws` location 에 `limit_req zone=ws burst=20 nodelay;`, `limit_conn` 으로 IP당 동시 연결 상한. 특정 IP 차단은 `deny 1.2.3.4;`.
+  - fail2ban: nginx `limit_req` 거절 로그(`limiting requests`)를 `nginx-limit-req` 필터로 걸어 반복 IP 를 일정 시간 차단.
+  - 서버가 프록시 뒤면 `TRUST_PROXY=1` 이어야 IP 제한(접속·hello·방 만들기)이 실제 클라이언트 IP 로 걸린다.
+- 시험 `test/lobby.test.js` +2(컴퓨터 대전 방 목록 제외 + 29분 유지·31분 정리·경기 중 방 유지 / 상한 3 에서 create·컴퓨터 start 합산 후 RATE_LIMITED, 세션당 1방 ALREADY_IN_ROOM). 전체 180/180.
+- 되돌리기: `_backup/bot_guard_before/`(lobby.js·limits.js·lobby.test.js·HANDOFF.md·PROTOCOL.md) 덮기.
+- 남은 위험: ① 같은 NAT(학교·회사) 사용자들이 분당 20회 넘게 방을 만들면 거절될 수 있다(환경변수로 올림). ② 봇이 30분 안에 방 안에서 아무 메시지나 보내면 방은 유지된다(목록에는 안 보이므로 다른 사용자 영향은 방 수 상한 정도). ③ 운영 반영은 서버 재시작 필요(미배포).
+
+## 19. 서버 봇 탐지·임시 차단 botguard (2026-11-21, 박백엔, 미커밋) — §18 위에 얹음
+- 목적: 서비스를 분석·수집·자동 플레이하는 봇 차단. 신호는 세 가지만: ① 기계적 입력 간격 ② 한 IP 다계정 ③ 브라우저 아닌 클라이언트 지문. 코드 `server/net/botguard.js`(시계 주입), 연결 `server/index.js`, 판정 지점 `server/lobby/lobby.js`(`bgGate`·`judgeInputs`·`input`·`hello`·`login`·`register`).
+- 점수: IP(`ip:…`)·계정 닉네임 키(`k:…`)별 의심 점수. 사유마다 한 줄 로그 `[botguard] ip=… reason=… score=…`(차단 시 `… blocked minutes=… strikes=…`). 분당 `BOTGUARD_DECAY_PER_MIN`(1) 감쇠. `BOTGUARD_THRESHOLD`(100)를 넘으면 차단 `BLOCK_MINUTES`(30분), 24시간 안에 다시 걸리면 2배씩(최대 24시간).
+  - ① 기계적 입력(`mechanicalInput` 순수 함수): 사람끼리 경기(래더·사람끼리 일반 방)에서 좌석별 입력 비트가 **바뀐** 간격(재전송 제외, 2초 초과 간격 제외)을 경기를 넘어 누적, 경기 끝에 표본 `BOTGUARD_MECH_SAMPLES`(120) 이상이면 판정. 변동계수 < `BOTGUARD_MECH_CV`(0.08) 또는 한 틱 칸 비율 ≥ `BOTGUARD_MECH_MODE_SHARE`(0.85) 면 의심 → 계정 키 +`BOTGUARD_MECH_PTS`(70), IP 는 계정 세션이면 x`BOTGUARD_ACCOUNT_WEIGHT`(0.5). 즉 2회 반복이면 그 닉네임 차단. 차단에 걸리면 **경기 결과를 보낸 뒤** 그 좌석 연결만 `RATE_LIMITED` + 종료(경기 도중엔 끊지 않음).
+  - ② 다계정(`noteNick`): 한 IP 에서 서로 다른 닉네임(손님 신규 hello·가입·로그인 성공)이 10분 `BOTGUARD_NICKS_PER_10MIN`(40)·하루 `BOTGUARD_NICKS_PER_DAY`(200) 초과 시 새 닉네임마다 +`BOTGUARD_MULTI_PTS`(20)(계정 로그인은 x0.5). 같은 닉네임 재접속은 세지 않는다.
+  - ③ 지문(`headerSignals`, WS 업그레이드 헤더): Origin 없음·Accept-Language 없음·Sec-WebSocket-Extensions 없음(각 1단위), User-Agent 없음 또는 도구 UA(node/python/aiohttp/curl/go-http/okhttp 등, 2단위). 합 1=5점, 2=25점, 3 이상=60점(브라우저 기본이면 0). `ALLOWED_ORIGINS`(콤마, 예 `https://tongki.example.com,https://www.tongki.example.com`)를 설정하면 Origin 없음·목록 밖은 점수 + 오류 없이 close 1008. 기본 비어 있음 = Origin 검사 끔(개발·시험·도메인 변경 영향 없음).
+- 차단 효과: 차단 중 IP 의 새 WebSocket 접속 = `RATE_LIMITED` + close 1008, 이미 붙은 연결의 hello/register/login(차단 IP 또는 차단 닉네임) = `RATE_LIMITED`. 그 닉네임 세션이 경기 중이면 재접속 hello 는 통과(경기 보호). 새 오류 코드 없음.
+- 면제: `BOTGUARD_ALLOW_IPS`(콤마, 127.0.0.1·::1 은 항상 포함 → 로컬·기존 시험 영향 없음). 재시작 없이 면제·해제: `BOTGUARD_ALLOW_FILE`(기본 `data/botguard_allow.txt`, `node --test` 중에는 없음)에 한 줄씩 `1.2.3.4` 또는 `nick:닉네임` 을 적으면 10초 안에 다시 읽어 그 IP/닉네임의 점수·차단을 지우고 이후 검사를 면제한다(`#` 주석 가능). 전부 끄기 `BOTGUARD_ENABLED=0`(재시작). 차단 상태는 메모리라 서버 재시작으로도 풀린다.
+- 관찰: `/health` 에 `botguard:{enabled, blockedIps, blockedNicks, reasons:{fingerprint, origin, multi_account, mechanical_input}}`(IP·닉네임 원문 없음, 원문은 로그에만).
+- 운영 켜는 법: nginx 뒤면 `TRUST_PROXY=1`(없으면 모든 접속이 프록시 IP 하나로 보여 한꺼번에 차단될 수 있음 — 반드시 확인), 실제 서비스 도메인을 `ALLOWED_ORIGINS` 에 넣고 초대 링크 도메인이 바뀌면 같이 고친다. 로그 `grep '\[botguard\]'` 로 사유 확인.
+- 오탐 대응: 학교·회사 NAT 에서 막히면 그 IP 를 allow 파일에 적고(즉시) 필요하면 `BOTGUARD_NICKS_PER_10MIN`·`BOTGUARD_THRESHOLD` 를 올린다. 정상 계정이 기계적 입력으로 걸리면 `nick:닉네임` 을 allow 파일에 적고 로그의 `cv=…share=…` 값을 보고 `BOTGUARD_MECH_CV`(낮춤)·`BOTGUARD_MECH_MODE_SHARE`(높임)를 조정.
+- 한계: 헤더(UA·Origin·Accept-Language)를 브라우저처럼 위조한 봇, 실제 브라우저 자동화(Puppeteer 등), 입력 간격에 무작위 지연을 넣은 봇, IP 를 계속 바꾸는 봇은 못 막는다. 서버 수신 시각 기준이라 네트워크 지연 흔들림이 큰 봇은 사람처럼 보일 수 있다(보수적 = 오탐보다 미탐 쪽). 차단은 단일 프로세스 메모리.
+- 시험 `test/botguard.test.js` 4건(누적·차단·해제·2배·감쇠·허용 IP / Origin 허용·거절·다계정 / 기계적 입력 사람 통과·상수·틱 주기 걸림·표본 부족 / 실서버(:memory:, 임시 포트) 차단 IP RATE_LIMITED+1008·Origin 1008·/health 에 IP 없음). 전체 184/184.
+- 되돌리기: `_backup/botguard_before/`(index.js·limits.js·lobby.js·HANDOFF.md·PROTOCOL.md) 덮고 `server/net/botguard.js`·`test/botguard.test.js` 삭제.

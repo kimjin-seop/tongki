@@ -43,6 +43,9 @@ export class Lobby {
     this.limits = o.limits ?? loadLimits();
     this.helloWin = new Map(); // ip -> {start,count}
     this.authWin = new Map(); // ip -> {start,count} (register/login)
+    this.roomWin = new Map(); // ip -> {start,count} (방 만들기·컴퓨터 대전 시작)
+    this.botguard = o.botguard ?? null; // 봇 탐지·임시 차단(server/net/botguard.js). 없으면 검사 안 함
+    this.idleSweepAt = 0; // 유휴 방 정리 마지막 시각(mono). tickGames 안에서 1분마다
     this.loginGuard = o.loginGuard ?? new LoginGuard({ failNick: this.limits.loginFailNick, failIp: this.limits.loginFailIp, lockMs: this.limits.loginLockMs, slowStepMs: this.limits.loginSlowStepMs, slowMaxMs: this.limits.loginSlowMaxMs });
     this.log = o.log ?? ((...a) => console.error(...a));
     this.flame = o.flame ?? new MemoryFlameStore(); // 불꽃의 계승 저장소(getProfile/getRun/save, PROTOCOL §13)
@@ -109,6 +112,8 @@ export class Lobby {
       if (!s) fail('NOT_LOGGED_IN');
       const h = Object.hasOwn(this.handlers, msg.t) ? this.handlers[msg.t] : null;
       if (!h) fail('UNKNOWN_TYPE');
+      const room = this.roomOf(s);
+      if (room) room.lastActive = mono(); // 유휴 방 정리 기준(sweepIdleRooms): 방 안의 어떤 메시지든 활동
       h.call(this, s, msg);
     } catch (e) {
       if (e instanceof LobbyError) this.err(conn, e.code, ref, e.params);
@@ -127,6 +132,7 @@ export class Lobby {
         // 메모리 세션이 없으면(유예 만료·서버 재시작) 계정 로그인 토큰인지 본다(§2.1). 맞으면 비밀번호 없이 로그인
         const acct = this.accounts.tokenAccount(msg.token);
         if (!acct) fail('TOKEN_INVALID');
+        this.bgGate(conn, acct.key);
         this.attachAccount(conn, acct, msg.token);
         return;
       }
@@ -136,6 +142,7 @@ export class Lobby {
         try { old.send({ t: 'error', code: 'SESSION_REPLACED', msg: ERR.SESSION_REPLACED }); old.close(); } catch { /* ignore */ }
         s.conn = null;
       }
+      this.bgGate(conn, s.key, s);
       clearTimeout(s.graceTimer);
       resumed = true;
     } else {
@@ -144,6 +151,7 @@ export class Lobby {
       if (this.requireAccount) fail('ACCOUNT_REQUIRED');
       const key = nick.toLowerCase();
       if (this.accounts.has(key)) fail('NICK_REGISTERED'); // 가입된 닉네임은 비밀번호(login) 또는 로그인 토큰으로만
+      this.bgGate(conn, key);
       const ex = this.byNick.get(key);
       if (ex) {
         if (ex.conn || this.roomOf(ex)) fail('NICK_TAKEN');
@@ -154,13 +162,24 @@ export class Lobby {
       s = { token: randomBytes(18).toString('base64url'), nick, key, account: false, conn: null, roomCode: null, graceTimer: null };
       this.sessions.set(s.token, s);
       this.byNick.set(key, s);
+      this.botguard?.noteNick(conn.ip, key, false); // 다계정: 손님 신규 닉네임
     }
     this.welcome(conn, s, resumed);
   }
 
+  /**
+   * 봇 차단 중인 IP·계정 키면 RATE_LIMITED. 그 닉네임 세션이 경기 중이면(재접속) 통과시킨다(진행 중 경기를 끊지 않음).
+   * s = 이어받을 세션(없으면 byNick 으로 찾는다)
+   */
+  bgGate(conn, key, s = key ? this.byNick.get(key) : null) {
+    if (!this.botguard?.blocked(conn.ip, key)) return;
+    if (s && this.roomOf(s)?.game) return;
+    fail('RATE_LIMITED');
+  }
+
   /** 세션에 연결을 붙이고 welcome + 현재 위치 상태 전송(hello·login·register 공통) */
   welcome(conn, s, resumed) {
-    s.conn = conn; conn.session = s;
+    s.conn = conn; conn.session = s; s.lastIp = conn.ip;
     const room = this.roomOf(s);
     this.sendTo(s, {
       t: 'welcome', protocol: PROTOCOL, token: s.token, nickname: s.nick, resumed, account: !!s.account, requireAccount: this.requireAccount,
@@ -235,6 +254,7 @@ export class Lobby {
     const nick = cleanNick(msg.nickname);
     if (!NICK_RE.test(nick)) fail('NICK_INVALID');
     if (conn.authBusy) fail('AUTH_BUSY');
+    this.bgGate(conn, null);
     this.checkHelloRate(conn.ip);
     this.checkAuthRate(conn.ip);
     return { nick, key: nick.toLowerCase() };
@@ -281,6 +301,7 @@ export class Lobby {
       return;
     }
     this.attachAccount(conn, acct, () => this.accounts.issueToken(key));
+    this.botguard?.noteNick(conn.ip, key, true);
   }
 
   /**
@@ -312,7 +333,9 @@ export class Lobby {
     this.loginGuard.success(key, conn.ip);
     if (conn.closed) return; // 확인을 토큰 발급 앞에 둔다(거절·끊김 때 고아 토큰 행이 남지 않게)
     if (conn.session) fail('ALREADY_LOGGED_IN');
+    this.bgGate(conn, key);
     this.attachAccount(conn, acct, () => this.accounts.issueToken(key));
+    this.botguard?.noteNick(conn.ip, key, true); // 다계정: 계정 로그인(점수 배율 낮음)
   }
 
   /** 로그아웃: 로그인 토큰 폐기 + 세션 종료(방·경기 중이면 퇴장 = 기권). 연결은 남겨 두고 logged_out 을 보낸다 */
@@ -371,6 +394,33 @@ export class Lobby {
     let w = this.helloWin.get(ip);
     if (!w || now - w.start >= 60000) { w = { start: now, count: 0 }; this.helloWin.set(ip, w); }
     if (++w.count > this.limits.maxHelloPerMin) fail('HELLO_RATE_LIMITED');
+  }
+
+  /** IP당 분당 방 만들기(봇 남용 방어). 거절된 요청도 횟수에 든다. 세션당 동시 방은 s.roomCode 검사(ALREADY_IN_ROOM)로 1개 */
+  checkRoomRate(s) {
+    const ip = s.conn?.ip;
+    if (!ip) return;
+    const now = mono();
+    if (this.roomWin.size > 5000) for (const [k, v] of this.roomWin) if (now - v.start >= 60000) this.roomWin.delete(k);
+    let w = this.roomWin.get(ip);
+    if (!w || now - w.start >= 60000) { w = { start: now, count: 0 }; this.roomWin.set(ip, w); }
+    if (++w.count > this.limits.maxRoomCreatePerMin) fail('RATE_LIMITED');
+  }
+
+  /**
+   * 유휴 방 정리: 경기 없는 방(대기 중 일반 방·컴퓨터 대전 방·끝난 스토리 방)이 idleRoomMs 동안 방 안 메시지가 없으면 닫는다.
+   * 앉은 사람은 room_left{reason:'idle'} + room_list 로 로비로 간다. 경기 중인 방·래더 방(자체 시작 시한)은 건드리지 않는다. now = mono 시계(시험에서 주입)
+   */
+  sweepIdleRooms(now = mono()) {
+    const ms = this.limits.idleRoomMs ?? 30 * 60000;
+    for (const room of [...this.rooms.values()]) {
+      if (room.game || room.ladder || now - (room.lastActive ?? now) < ms) continue;
+      this.log(`[idle] 방 닫음 ${room.code} (${room.seats.filter(Boolean).map((m) => m.s.nick).join(',')})`);
+      try {
+        for (const m of [...room.seats]) if (m && this.roomOf(m.s) === room) this.removeFromRoom(m.s, 'idle');
+      } catch (e) { this.log('[idle]', e); }
+      if (this.rooms.get(room.code) === room && !room.seats.some(Boolean)) this.rooms.delete(room.code);
+    }
   }
 
   // ---------- 방 ----------
@@ -488,7 +538,7 @@ export class Lobby {
 
   makeRoom(code, vsCpu = false, cpuLevel = 2, campaign = null, rules = this.defaultRules()) {
     const room = {
-      code, vsCpu, cpuLevel, campaign, rules, cpuTeam: campaign ? this.o.data.campaign[campaign.k].teamOpp : vsCpu ? this.pickCpuTeam(0) : 0, seats: [null, null], game: null, createdAt: Date.now(),
+      code, vsCpu, cpuLevel, campaign, rules, cpuTeam: campaign ? this.o.data.campaign[campaign.k].teamOpp : vsCpu ? this.pickCpuTeam(0) : 0, seats: [null, null], game: null, createdAt: Date.now(), lastActive: mono(),
       seatOf(s) { return this.seats.findIndex((m) => m && m.s === s); },
     };
     this.rooms.set(code, room);
@@ -519,7 +569,8 @@ export class Lobby {
   }
 
   roomListMsg() {
-    const list = [...this.rooms.values()].filter((r) => !r.campaign && !r.training && !r.league && !r.flame && !r.ladder).sort((a, b) => b.createdAt - a.createdAt);
+    // 컴퓨터 대전 방(vsCpu)은 아무도 참가할 수 없어 목록에서 뺀다(2026-11-21). 스토리·특훈·리그·불꽃 방도 vsCpu 라 함께 빠진다
+    const list = [...this.rooms.values()].filter((r) => !r.vsCpu && !r.campaign && !r.training && !r.league && !r.flame && !r.ladder).sort((a, b) => b.createdAt - a.createdAt);
     const acctHost = (r) => (r.seats[0]?.s.account === true ? r.seats[0].s.key : null); // 손님 호스트 = 생략
     const badges = this.ranking.hostBadges([...new Set(list.map(acctHost).filter(Boolean))], this.now()); // 호스트 티어·전적(캐시, RankingStore.hostBadges)
     const rooms = list.map((r) => ({
@@ -556,6 +607,7 @@ export class Lobby {
       list_rooms(s) { this.sendTo(s, this.roomListMsg()); },
       create_room(s, m) {
         if (s.roomCode) fail('ALREADY_IN_ROOM');
+        this.checkRoomRate(s);
         if (this.rooms.size >= this.limits.maxRooms) fail('TOO_MANY_ROOMS');
         if (m.vsCpu !== undefined && typeof m.vsCpu !== 'boolean') fail('BAD_MESSAGE');
         const vsCpu = m.vsCpu === true;
@@ -670,6 +722,7 @@ export class Lobby {
         if (room.seatOf(s) !== 0) fail('NOT_HOST');
         const c = this.startCheck(room);
         if (!c.ok) fail(c.code);
+        if (room.vsCpu && !room.campaign) this.checkRoomRate(s); // 컴퓨터 대전 시작도 방 만들기 창에 넣는다
         if (room.ranked) for (const mm of room.seats) if (mm) this.rankedGate(mm.s); // 방에 든 뒤 잠긴 사람(이 방의 앞 경기 기권 등)
         if (room.ladder) { if (room.ladder.played) fail('LADDER_ONLY'); clearTimeout(room.ladder.timer); } // 래더 방은 한 판만(끝나면 해산되므로 보통 닿지 않는다)
         this.startGame(room);
@@ -709,6 +762,7 @@ export class Lobby {
       },
       campaign_start(s, m) {
         this.campaignRate(s);
+        this.checkRoomRate(s);
         const chs = this.o.data.campaign;
         if (!isInt(m.k, 0, chs.length - 1)) fail('BAD_MESSAGE');
         // 상대·스테이지·내 팀은 클라이언트가 보내도 무시한다(서버 표만 사용)
@@ -734,8 +788,9 @@ export class Lobby {
         if (!TRAINING_KINDS.includes(m.kind)) fail('BAD_MESSAGE');
         if (!TRAINING_READY.includes(m.kind)) fail('TRAINING_UNAVAILABLE');
         if (s.roomCode) fail('ALREADY_IN_ROOM');
+        this.checkRoomRate(s);
         if (this.rooms.size >= this.limits.maxRooms) fail('TOO_MANY_ROOMS');
-        const T = this.o.data.training;
+        const T =this.o.data.training;
         const room = this.makeRoom(this.newCode(), true, this.o.data.rules.cpu.defaultLevel, null, { mode: 'knockout', time: 0 });
         room.training = { kind: m.kind }; room.cpuTeam = T.teams[1];
         this.join(s, room, T.teams[0]);
@@ -754,6 +809,10 @@ export class Lobby {
         const room = this.roomOf(s);
         if (!room?.game || !isInt(m.bits, 0, 255)) return; // 게임 종료 직후 입력은 조용히 무시
         room.game.setInput(room.seatOf(s), m.bits);
+        if (room.bgTrack) { // 기계적 입력 판정용: 사람끼리 경기에서 비트가 바뀐 간격만 모은다(재전송은 제외, 최근 600개)
+          const t = mono(), b = (s.bgIn ??= { bits: 0, at: 0, iv: [] });
+          if (m.bits !== b.bits) { if (b.at) b.iv.push(t - b.at); if (b.iv.length > 600) b.iv.splice(0, b.iv.length - 600); b.bits = m.bits; b.at = t; }
+        }
       },
     };
   }
@@ -929,6 +988,7 @@ export class Lobby {
     const human2 = !room.ranked && !room.vsCpu && !ch && !room.training && !room.league && !room.flame && room.seats[0] && room.seats[1];
     room.pvpPlayers = human2 ? room.seats.map((m) => ({ key: m.s.key, nick: m.s.nick, account: !!m.s.account && !this.guestOfAccount(m.s) })) : null;
     room.rankOut = null;
+    room.bgTrack = !!(this.botguard && (room.ranked || human2)); // 사람끼리 경기만 기계적 입력 판정
     room.game = new RoomGame({
       roomCode: room.code, seats, data: this.o.data, stage: ch?.stage ?? room.league?.stage ?? room.flame?.stage ?? 0, league: room.league ? { i: room.league.i, j: room.league.j } : null,
       rules: { mode: room.rules.mode, timeMin: room.rules.time, limitFrames: room.rules.time * 60 * this.o.data.rules.tickRate }, campaign: room.campaign, training: room.training ?? null, store: this.o.store, build: this.o.build, seed: this.o.seed, limits: this.limits,
@@ -951,6 +1011,8 @@ export class Lobby {
 
   onGameEnd(room, res) {
     room.game = null;
+    room.lastActive = mono(); // 유휴 시간은 경기가 끝난 때부터 센다
+    if (room.bgTrack) this.judgeInputs(room);
     for (const [i, m] of room.seats.entries()) if (m) this.sendTo(m.s, { ...res, you: i });
     if (room.rankOut) { // 랭크 방: game_end 바로 뒤 좌석별 레이팅 변동
       const o = room.rankOut; room.rankOut = null;
@@ -976,6 +1038,25 @@ export class Lobby {
     this.markListDirty();
   }
 
+  /**
+   * 경기 끝: 좌석별 누적 입력 간격으로 기계적 입력 판정(표본이 모자라면 다음 경기까지 누적). 차단에 걸리면 결과 전송 뒤 그 연결만 닫는다
+   */
+  judgeInputs(room) {
+    const bg = this.botguard;
+    for (const m of room.seats) {
+      const s = m?.s, b = s?.bgIn;
+      if (!b || b.iv.length < bg.cfg.mechMinSamples) continue;
+      const ip = s.conn?.ip ?? s.lastIp;
+      const r = bg.noteMechanical(ip, s.key, !!s.account && !this.guestOfAccount(s), b.iv);
+      if (r.res.reason === 'few') continue; // 2초 넘는 간격을 빼면 아직 모자람 -> 계속 누적
+      b.iv = [];
+      if (r.blocked && s.conn) {
+        const conn = s.conn;
+        setImmediate(() => { this.err(conn, 'RATE_LIMITED'); try { conn.close(); } catch { /* ignore */ } });
+      }
+    }
+  }
+
   /** 특훈 종료: training_end 를 보내고 방을 없앤 뒤 로비로 돌려보낸다(재도전은 training_start 를 다시 보낸다). 진행·결과는 저장하지 않는다 */
   trainingEnd(room, res) {
     const s = room.seats[0]?.s;
@@ -999,6 +1080,7 @@ export class Lobby {
 
   // ---------- 게임 루프 (서버에서 주기 호출) ----------
   tickGames(now = mono()) {
+    if (now - this.idleSweepAt >= 60000) { this.idleSweepAt = now; try { this.sweepIdleRooms(now); } catch (e) { this.log('[idle]', e); } } // 유휴 방 정리(1분마다, 새 타이머 없음)
     for (const room of this.rooms.values()) {
       const g = room.game;
       if (!g) continue;

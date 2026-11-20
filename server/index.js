@@ -8,6 +8,7 @@ import { loadData } from './engine/index.js';
 import { mono, loadLimits } from './net/limits.js';
 import { createStaticHandler } from './net/static.js';
 import { createInviteHandler } from './net/invite_og.js';
+import { BotGuard, loadBotguardConfig } from './net/botguard.js';
 import { Lobby } from './lobby/lobby.js';
 import { JsonlResultStore } from './store/results.js';
 import { SqliteProgressStore } from './store/progress.js';
@@ -42,7 +43,12 @@ export function createServer(opts = {}) {
   // 채팅·공지(PROTOCOL §14): 관리자 = ADMIN_ACCOUNTS(쉼표 목록, 빈 값 = 공지 꺼짐). 공지 기록 = NOTICE_PATH, 기본 data/notices.jsonl(node --test 안에서는 실데이터 보호로 기록하지 않는다)
   const admins = opts.admins ?? limits.adminAccounts;
   const noticePath = opts.noticePath !== undefined ? opts.noticePath : limits.noticePath ? path.resolve(root, limits.noticePath) : process.env.NODE_TEST_CONTEXT ? null : path.join(root, 'data/notices.jsonl');
-  const lobby = new Lobby({ data, store, progress, leagues, flame, flameSeed: opts.flameSeed, db, requireAccount, leagueRand: opts.leagueRand, build: pkg.version, graceMs: opts.graceMs, limits, seed: opts.seed, log: opts.log, admins, noticePath });
+  // 봇 탐지·임시 차단(server/net/botguard.js, HANDOFF §19). 재시작 없이 면제 = BOTGUARD_ALLOW_FILE, 기본 data/botguard_allow.txt(node --test 안에서는 없음)
+  const bgCfg = loadBotguardConfig(process.env, opts.botguardCfg);
+  if (!bgCfg.allowFile && !process.env.NODE_TEST_CONTEXT) bgCfg.allowFile = path.join(root, 'data/botguard_allow.txt');
+  else if (bgCfg.allowFile) bgCfg.allowFile = path.resolve(root, bgCfg.allowFile);
+  const botguard = opts.botguard ?? new BotGuard(bgCfg, { log: opts.log });
+  const lobby = new Lobby({ botguard, data, store, progress, leagues, flame, flameSeed: opts.flameSeed, db, requireAccount, leagueRand: opts.leagueRand, build: pkg.version, graceMs: opts.graceMs, limits, seed: opts.seed, log: opts.log, admins, noticePath });
   const publicDir = path.join(root, 'public');
   const serveStatic = createStaticHandler(publicDir, { cacheBytes: opts.staticCacheBytes });
   const serveInvite = createInviteHandler(path.join(publicDir, 'index.html'), lobby, { perMin: limits.maxInvitePreviewPerMin });
@@ -59,7 +65,7 @@ export function createServer(opts = {}) {
       const u = new URL(req.url, 'http://x');
       if (u.pathname === '/health') {
         res.writeHead(200, { 'content-type': 'application/json' });
-        res.end(JSON.stringify({ ok: true, build: pkg.version, ...lobby.stats() }));
+        res.end(JSON.stringify({ ok: true, build: pkg.version, ...lobby.stats(), botguard: botguard.summary() }));
         return;
       }
       // 초대 링크 미리보기: `/?room=` 만(og 메타 주입·no-store, server/net/invite_og.js). 쿼리 없는 `/` 는 종전 정적 응답 그대로
@@ -92,7 +98,9 @@ export function createServer(opts = {}) {
       loginTimer = setTimeout(() => { loginTimer = null; if (!conn.session) reject('LOGIN_TIMEOUT'); }, ms);
       loginTimer.unref?.();
     };
+    const bg = n > limits.maxConnPerIp ? { ok: true } : botguard.checkUpgrade(ip, req.headers); // 차단 중 IP = RATE_LIMITED, Origin 불일치(ALLOWED_ORIGINS) = 오류 없이 close 1008
     if (n > limits.maxConnPerIp) { reject('TOO_MANY_CONNECTIONS'); conn.rejected = true; }
+    else if (!bg.ok) { if (bg.why === 'blocked') reject('RATE_LIMITED'); else ws.close(1008); conn.rejected = true; }
     else conn.armLoginTimer(limits.loginTimeoutMs);
     ws.on('message', (raw) => {
       if (conn.rejected) return;
@@ -125,7 +133,7 @@ export function createServer(opts = {}) {
   loop.unref?.(); ping.unref?.();
 
   return {
-    server, wss, lobby, db,
+    server, wss, lobby, db, botguard,
     listen: (port = Number(process.env.PORT ?? 3100)) => new Promise((r) => server.listen(port, () => r(server.address().port))),
     close: () => new Promise((r) => {
       clearInterval(loop); clearInterval(ping);

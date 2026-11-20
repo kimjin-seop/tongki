@@ -6,6 +6,7 @@
 ## 0. 전송
 - WebSocket `ws://<host>:<PORT>/ws` (기본 PORT 3100, 환경변수 `PORT`). 텍스트 프레임 1개 = JSON 객체 1개, 항상 `{t:'종류', ...}`.
 - 최대 4KB. 연결당 초당 240개 초과 시 `RATE_LIMITED` 오류(연결 유지). 서버는 15초마다 WS ping을 보낸다.
+- 연결 거절(봇 차단, HANDOFF §19): 차단 중인 IP 의 새 연결은 `RATE_LIMITED` 오류 뒤 close 1008. 서버가 `ALLOWED_ORIGINS` 를 설정했으면 Origin 이 없거나 목록 밖인 연결은 오류 없이 close 1008. 차단 중인 IP·닉네임의 `hello`/`register`/`login` 도 `RATE_LIMITED`.
 - 요청에 선택 필드 `ref`(아무 값)를 달면 실패 시 `error.ref`로 돌아온다.
 - HTTP: `/` -> `public\` 정적 서빙(있을 때만), `/health` -> `{ok:true, ...}`. ROM·`analysis\` 는 서빙하지 않는다.
 - 시간 값은 서버 epoch ms. 클라이언트 시계는 판정에 쓰이지 않는다.
@@ -115,7 +116,7 @@
 ## 3. 로비
 - `{t:'list_rooms'}` -> `room_list`. 로비에 있는 사용자에게는 방 생성/삭제/인원/상태 변화·규칙 변경(`set_rules` 로 `mode`·`time`·`flameTeams` 가 실제로 바뀐 때, 2026-11-19) 시 서버가 `room_list`를 푸시한다(최대 250ms 단위로 합쳐서 전체 목록).
 ```js
-{ t:'room_list', rooms:[{ code, host:'방장닉네임', players:1|2, max:2, status:'waiting'|'playing', rules:{mode, time} }] }  // 최근 생성 순. rules = 추가 필드(하위 호환, 방 목록 행의 규칙 요약용)
+{ t:'room_list', rooms:[{ code, host:'방장닉네임', players:1|2, max:2, status:'waiting'|'playing', rules:{mode, time} }] }  // 최근 생성 순. rules = 추가 필드(하위 호환, 방 목록 행의 규칙 요약용). 컴퓨터 대전(vsCpu) 방은 목록에 없다(2026-11-21)
 ```
 - **호스트 요약 `hostInfo`**(추가 필드, 2026-11-20, 하위 호환): 방장이 계정이면 `rooms[i].hostInfo = { tier, rating, w, l }`, 배치 중이면 `{ tier:null, placing:true, rating, w, l }`. 방장이 손님이면 키 자체가 없다. (`host` 는 종전대로 방장 닉네임 문자열이라 이름을 따로 둔다.)
   - `tier` = `ladder_status.me.tier` 와 같은 계산(지금 시즌 표시 티어, 순위 조건을 채우면 `'master'`, 배치 5판 미만이면 `null` + `placing:true`). `rating` = 지금 시즌 레이팅(배치 중에도 실린다, `ladder_matched.opp.rating` 과 같은 공개 값).
@@ -162,7 +163,7 @@ room = { code, status:'waiting'|'playing', host:'방장닉네임', serverTime,
 - 시작 조건(서버 판정, 2026-11-18 클라이언트 표시 정리): 방장은 준비가 없다(`HOST_NO_READY`). 2명이 모이고 방장이 아닌 사람이 `ready:true` 일 때만 `start.ok`. 클라이언트는 조건 미달이어도 `시작` 버튼을 누를 수 있게 두고(흐리게), 누르면 `start.msg`(START_NEED_PLAYERS / START_NOT_READY 문구)를 토스트로 낸다. 로비는 방 코드 입력 없이 `room_list` 행을 눌러 그 `code` 로 `join_room` 을 보낸다(메시지 불변).
 - **컴퓨터 대전(`vsCpu:true`)** [추가 필드, 하위 호환]
   - 좌석 1은 서버 AI 좌석: `slots[1] = { seat:1, nick:'컴퓨터', ready:true, team, host:false, connected:true, cpu:true }`(접속 세션 없음). `room`에 `vsCpu:true, cpuLevel` 추가. 컴퓨터 팀은 방 생성 시 무작위.
-  - `room.start.ok`는 항상 true: 방장이 준비 없이 바로 `start`. 다른 사람은 `join_room` 불가(`ROOM_FULL`). `transfer_host`는 `START_NEED_PLAYERS`. `room_list` 항목에 `vsCpu:true`, `players:2`.
+  - `room.start.ok`는 항상 true: 방장이 준비 없이 바로 `start`. 다른 사람은 `join_room` 불가(`ROOM_FULL`). `transfer_host`는 `START_NEED_PLAYERS`. 컴퓨터 대전 방은 `room_list`에 나오지 않는다(2026-11-21, 종전에는 `vsCpu:true`, `players:2` 항목으로 나왔다).
   - 컴퓨터 쪽은 조작 선수 포함 전원을 AI가 움직인다. `game_start.you`는 항상 0. 컴퓨터 좌석은 끊김·일시정지·기권 대상이 아니며, 일시정지/재접속/유예는 사람 한 명 기준으로 동작한다. 방장이 나가면 기권패(`winnerNick:'컴퓨터'`).
   - `cpuLevel` 1(쉬움)~3(어려움): AI 투구 지연·조준 정확도·방어 반응 시점/실수율. 현재 값(`rules.cpu.levels`, [추정]): 1 = 지연 +45f/반응 -6/정면조준 130/실수 130(/256), 2 = +30/-4/150/90(기본, `defaultLevel` 2), 3 = +20/-2/180/60. 임밸런 조정으로 레벨 1~3 이 이전 값보다 한 단계씩 약해졌다(같은 숫자의 컴퓨터가 더 쉬워짐). 캠페인도 이 레벨 표를 쓴다. **CPU 반응 개선(2026-11-17, analysis/15, [추정])**: 레벨별 플래그 `dash`(공 추격 시 AI 대시, 레벨2=진입 64px·상한 1.6px/f, 레벨3=56px·2.0px/f, 절대 상한 `cpu.dashCapPx` 3.5), `outChase`(외야 AI 가 예상 정지 지점이 자기 구역이면 선행 이동), `outReach`(외야 AI 줍기 반경 레벨2=24px, 레벨3=28px, 기본 12; 코트 안쪽 띠 근처에 멈춘 공도 접근해 줍는다). `catch256`(방어 캐치 행동 선택 확률 보정 /256: L1 20, L2 50, L3 80), `catchShift`(캐치 버튼 시점 가산 프레임: -4/-1/0, trigShift 와 분리). **레벨1(캠페인 초반)은 대시·외야 추격을 꺼서 기존 동작 유지(캐치 보정만 약하게).** 대시는 기존 `st`=2(DASH)·이벤트 `dash{p}` 를 그대로 쓰므로 클라이언트 변경 없음.
   - 결과 레코드: 최상위 `vsCpu:true`, `cpuLevel`, `players[1]`에 `cpu:true, cpuLevel`(사람 대전 레코드에는 없음).
