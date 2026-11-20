@@ -997,3 +997,6 @@
   - L1: 장면 진입 페이드(맞대면 8f 등) 중 Esc 가 페이드를 끊고 장면을 끝낸다.
   - L2: `story_after.js winFadeBgmOff(6)=false` 라 k=6 승리 끝만 `bgm(null)` 을 생략한다(7번째 승리 이벤트 미구현) — 0x98 도입 시 재검토.
   - L3: `story_match.js frames()` 가 시작 때 `f(0)` 을 즉시 한 번 부르고 첫 틱에서 다시 `f(0)` 을 불러 0 프레임이 두 번 계산된다(결과 같음).
+- 채팅 위치 왼쪽 아래(2026-11-20, 윤프론, 미커밋): 표시 방식(chat.js KEEP·GAME_LINES·IDLE_LINES·HOLD_MS·FADE_MS)은 그대로, 대기실은 아래 줄 `.room-foot` = 왼쪽 채팅 + 오른쪽 명령 창(room.js·app.css), 경기 중은 `gameChat.place()` 가 화면 왼쪽 아래(PC 도움말·조작 안내 위, 터치는 방향 패드 위)에 둔다. 서버 변경 없음. 검증 `_verify/chat_pos_20261120/v.mjs`(포트 3422) 23/23, 캡처 `Works/_asset_samples/tongki_chat_pos/`, 되돌리기 `_backup/chat_pos_before/`.
+- 캐치 알림 말풍선(2026-11-20, 윤프론, 미커밋): 중앙 배너 `showBanner('캐치!')` 제거 → `ShoutFx.say(pid, '캐치!', f, 42틱)`(game/shout.js)로 잡은 선수 머리 위, 매 프레임 보간 위치를 따라간다. 필살 말풍선이 떠 있으면 덮지 않음(필살을 잡은 순간엔 「캐치!」 없음), 말풍선 옵션 꺼짐이면 안 보임, 특훈은 내 캐치만(규칙 유지). 되돌리기 `_backup/chat_pos_before/`(game.js·shout.js).
+- 경기 화면 「채팅 ↵」 버튼(2026-11-20, 윤프론, 미커밋): 하단 줄(조작·설정·기권) 맨 앞에 같은 크기의 `.chat-btn`(글자 「채팅」 + 도트 엔터 SVG, aria-label 채팅, aria-expanded = 입력줄 열림). 누르기 = Enter 와 같음(열기 / 열려 있으면 보내고 닫기), 터치에서도 열린다(터치 입력줄은 위쪽: 세로 = 도움말 줄 아래, 가로 = 화면 위). room.chat 이 없는 경기(컴퓨터·특훈 등)·대기실에는 만들지 않음. 검증 `_verify/chat_pos_20261120/v2.mjs`(포트 3424) 23/23, 되돌리기 `_backup/chat_btn_before/`.

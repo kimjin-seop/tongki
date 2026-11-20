@@ -144,20 +144,21 @@ export function roomPanel(app) {
 // ---------------- 경기 중: 받은 줄(최근 5줄, 8초 뒤 3단계 흐림) + PC 입력창(Enter) ----------------
 /**
  * @param {{app, wrap:HTMLElement, stage:HTMLElement, help:HTMLElement, guide:HTMLElement, input:{down:Set, update:Function}, pad:()=>any}} o
- * 터치(가상 패드)면 받은 줄만. 위치는 캔버스(.stage)·--k·패드·하단 줄 사각형으로 계산(wrap 기준 좌표)
+ * 터치(가상 패드)면 받은 줄만. 위치 = 화면 왼쪽 아래(패드·도움말 줄·조작 안내 위), wrap 기준 좌표
  */
-export function gameChat({ app, wrap, stage, help, guide, input, pad }) {
+export function gameChat({ app, wrap, stage, help, guide, input, pad, onToggle }) {
   const layer = h('div.cm-game');
   const log = h('div.cm-log.cm-ol', { 'aria-live': 'polite' });
   let open = false, fadeT = 0;
   const close = () => {
     if (!open) return;
-    open = false; box.hidden = true;
+    open = false; box.hidden = true; onToggle?.(false);
     if (document.activeElement === p.tx) p.tx.blur();
     input.update();
     render();
   };
-  const p = inputParts(app, { cls: 'game', onEnter: () => { const v = p.tx.value; if (send(app, v)) { p.tx.value = ''; p.sync(); } close(); }, onEsc: () => { p.tx.value = ''; p.sync(); close(); } }); // Esc = 취소(쓰던 글 버림)
+  const enter = () => { const v = p.tx.value; if (send(app, v)) { p.tx.value = ''; p.sync(); } close(); };
+  const p = inputParts(app, { cls: 'game', onEnter: () => enter(), onEsc: () => { p.tx.value = ''; p.sync(); close(); } }); // Esc = 취소(쓰던 글 버림)
   const box = h('div.cm-in', { hidden: true }, p.tg, p.to, p.tx, p.cnt);
   p.tx.addEventListener('blur', () => { setTimeout(() => { if (open && document.activeElement !== p.tx) close(); }, 0); });
   layer.append(log, box);
@@ -184,32 +185,37 @@ export function gameChat({ app, wrap, stage, help, guide, input, pad }) {
     const k = parseFloat(stage.style.getPropertyValue('--k')) || 1;
     const touch = !!pad(), land = wrap.classList.contains('land');
     layer.classList.toggle('t-land', touch && land); layer.classList.toggle('t-port', touch && !land);
-    if (touch && open) close();
     const ls = log.style; ls.left = ls.top = ls.bottom = ls.maxWidth = '';
-    if (!touch) {
-      const left = st.left + 4 * k - W0.left, maxW = Math.min(140 * k, W0.width * 0.4);
-      let bottom = st.bottom - 4 * k;
-      // 조작 안내가 캔버스 왼쪽 아래에 펼쳐져 있으면 그 위로
-      if (!guide.hidden && !guide.classList.contains('side') && guide.isConnected) bottom = Math.min(bottom, guide.getBoundingClientRect().top - 4 * k);
-      const bH = W0.bottom - bottom;
-      Object.assign(ls, { left: left + 'px', maxWidth: maxW + 'px' });
-      if (open) {
-        const ih = box.offsetHeight || 36;
-        Object.assign(box.style, { left: left + 'px', width: maxW + 'px', bottom: bH + 'px' });
-        ls.bottom = bH + ih + 8 + 'px';
-      } else ls.bottom = bH + 'px';
-    } else if (land) {
-      const d = wrap.querySelector('.tp-dir')?.getBoundingClientRect(), b = wrap.querySelector('.tp-btns')?.getBoundingClientRect(), hp = help.getBoundingClientRect();
-      if (!d || !b) return;
-      Object.assign(ls, { left: d.right + 8 - W0.left + 'px', maxWidth: Math.max(0, Math.min(b.left - d.right - 16, W0.width * 0.4)) + 'px', bottom: W0.bottom - (hp.top - 6) + 'px' });
-    } else {
-      const hp = help.getBoundingClientRect();
-      Object.assign(ls, { left: '12px', maxWidth: Math.min(W0.width - 24, W0.width * 0.4) + 'px', top: hp.bottom + 12 - W0.top + 'px' });
+    // 화면 왼쪽 아래 고정. 같은 세로 줄에 걸치는 아래쪽 요소(도움말 줄·펼친 조작 안내·가상 패드) 위로 올린다
+    const left = touch ? 8 : Math.max(8, Math.min(st.left - W0.left, 8) + 4 * k);
+    const d = touch ? wrap.querySelector('.tp-dir')?.getBoundingClientRect() : null, b = touch ? wrap.querySelector('.tp-btns')?.getBoundingClientRect() : null;
+    if (touch && (!d || !b)) return;
+    const maxW = !touch ? Math.min(140 * k, W0.width * 0.4) : land ? Math.max(0, Math.min(b.left - 16 - left - W0.left, W0.width * 0.4)) : W0.width - 24;
+    const x0 = W0.left + left, x1 = x0 + maxW;
+    let bottom = touch ? Math.min(d.top, land ? d.top : b.top) - 8 : W0.bottom - 4 * k;
+    for (const el of [help, guide]) {
+      if (el.hidden || !el.isConnected || !el.offsetParent) continue;
+      for (const r of [...el.children].map((c) => c.getBoundingClientRect()).concat(el.children.length ? [] : [el.getBoundingClientRect()])) {
+        if (r.width && r.height && r.left < x1 && r.right > x0 && r.top < bottom && r.bottom > bottom - 60) bottom = Math.min(bottom, r.top - 4 * k);
+      }
     }
+    const bH = W0.bottom - bottom;
+    Object.assign(ls, { left: left + 'px', maxWidth: maxW + 'px' });
+    if (open && touch) {
+      // 터치: OS 키보드가 아래를 덮으므로 입력줄을 위에(세로 = 도움말 줄 아래, 가로 = 화면 위), 받은 줄은 그 아래
+      const top = land ? 8 : help.getBoundingClientRect().bottom - W0.top + 8, w = land ? Math.min(W0.width - 16, 420) : W0.width - 16;
+      Object.assign(box.style, { left: '8px', width: w + 'px', bottom: '', top: top + 'px' });
+      Object.assign(ls, { left: '8px', maxWidth: w + 'px', bottom: '', top: top + (box.offsetHeight || 36) + 6 + 'px' });
+    } else if (open) {
+      const ih = box.offsetHeight || 36;
+      box.style.top = '';
+      Object.assign(box.style, { left: left + 'px', width: maxW + 'px', bottom: bH + 'px' });
+      ls.bottom = bH + ih + 8 + 'px';
+    } else ls.bottom = bH + 'px';
   }
   function openInput() {
-    if (open || pad()) return;
-    open = true;
+    if (open) return;
+    open = true; onToggle?.(true);
     input.down.clear(); input.update(); // 눌려 있던 방향·버튼 비트를 비운다(선수가 계속 달리지 않게)
     box.hidden = false; paintMode(); render();
     p.tx.focus({ preventScroll: true });
@@ -225,6 +231,8 @@ export function gameChat({ app, wrap, stage, help, guide, input, pad }) {
   paintMode(); render();
   return {
     place, isOpen: () => open,
+    /** 채팅 버튼: 닫혀 있으면 입력줄 열기, 열려 있으면 Enter 와 같다(쓴 글이 있으면 보내고 닫기) */
+    press() { if (open) enter(); else openInput(); },
     destroy() { clearTimeout(fadeT); removeEventListener('keydown', onKey); store.subs.delete(render); modeSubs.delete(paintMode); if (open) { open = false; input.update(); } layer.remove(); },
   };
 }

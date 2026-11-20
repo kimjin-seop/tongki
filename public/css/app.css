@@ -498,7 +498,9 @@ body[data-view=game] { background: #000; }
 .ctl-guide .dim { color: var(--r-line); }
 .game.touch .ctl-guide { display: none; }
 /* 「조작」 명령 칸(하단 줄): 펼침 = 노랑. 겹친 배치(.ov)에서 펼친 안내는 하단 줄 위로 올려 버튼을 가리지 않는다 */
-.ctl-btn[aria-expanded=true] { --bc: var(--r-yel); color: var(--r-yel); }
+.ctl-btn[aria-expanded=true], .chat-btn[aria-expanded=true] { --bc: var(--r-yel); color: var(--r-yel); }
+.chat-btn { display: inline-flex; align-items: center; gap: .3em; }
+.chat-btn .ent-ic { display: block; flex: none; width: .9em; height: .7em; }
 .game.touch .ctl-btn { display: none; }
 .game.ov .ctl-guide:not(.side) { bottom: calc(var(--u) * 8 + 52px); }
 /* 낮은 화면: 겹친 조작 안내는 글자 1배(모바일 토큰과 같은 크기) */
@@ -880,6 +882,7 @@ body[data-title-enter] .title-follow { animation: title-follow .32s steps(4) .14
   --cm-fs: calc(10px * var(--rk)); --cm-lh: calc(12px * var(--rk)); --cm-ff: "RT 9", "RT 11", var(--sys); --cm-px: calc(3px * var(--rk)); --cm-b: max(2px, var(--u)); --cm-ih: calc(18px * var(--rk)); }
 .cm-game.t-land { --cm-fs: 12px; --cm-lh: 15px; --cm-ff: "RT 11", var(--sys); --cm-px: 4px; }
 .cm-game.t-port { --cm-fs: 14px; --cm-lh: 18px; --cm-ff: "RT 14", "RT 11", var(--sys); --cm-px: 4px; }
+.cm-game:is(.t-land, .t-port) .cm-in { --cm-ih: 40px; font-size: 16px; } /* 터치 입력줄: 누르기 쉬운 높이, 16px 미만이면 iOS 가 확대 */
 .cm-log { position: absolute; display: flex; flex-direction: column; align-items: flex-start; font: var(--cm-fs) / var(--cm-lh) var(--cm-ff); color: var(--r-white); }
 .cm-line { max-width: 100%; padding: 0 var(--cm-px); background: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cm-log:not(.open) .cm-line { opacity: .75; animation: cm-fade .6s steps(3, end) forwards; }
@@ -935,6 +938,13 @@ input[type=text].cm-tx::placeholder { color: var(--r-grey); }
 .rchat.kb .rc-in { position: fixed; left: 8px; right: 8px; bottom: calc(var(--kb, 0px) + 8px); z-index: 70; }
 @media (max-width: 640px), (max-height: 560px) { .rchat { --rc-fs: 12px; --rc-lh: 15px; --rc-ff: "RT 11", var(--sys); --rc-n: 3; } }
 @media (max-height: 560px) { .rchat { --rc-n: 2; margin-top: calc(var(--u) * 2); } }
+/* 대기실 아래 줄(채팅이 있을 때): 왼쪽 아래 채팅 + 오른쪽 명령 창. 채팅 로그는 줄 높이를 채우되 글이 늘어도 커지지 않는다(contain: size) */
+.room-foot { flex: none; margin-top: auto; padding-top: calc(var(--u) * 4); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: calc(var(--u) * 4); align-items: stretch; }
+.room-foot .rchat { margin: 0; grid-template-rows: minmax(0, 1fr) auto; }
+.room-foot .rc-log { height: auto; min-height: calc(var(--rc-n) * var(--rc-lh)); contain: size; }
+.room-foot .cmds { margin-top: 0; align-content: center; }
+@media (max-height: 560px) { .room-foot .cmds { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 640px) { .room-foot { grid-template-columns: minmax(0, 1fr) auto; } .room-foot .cmds { grid-template-columns: 1fr; padding: 0 calc(var(--u) * 4); } }
 /* 채팅 패널이 있는 대기실: 선수 얼굴 줄을 7칸 한 줄(48px = 24x2)로 줄여 패널 높이를 확보. 세로 모바일은 4칸 2줄 유지 */
 .room:has(.rchat) .seat .roster { --fsz: 48px; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px 2px; }
 @media (max-width: 640px) { .room:has(.rchat) .seat .roster { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px 4px; } }

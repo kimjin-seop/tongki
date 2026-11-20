@@ -49,7 +49,15 @@ export class ShoutFx {
   /** special 이벤트 수신. start = 이벤트가 실린 스냅 틱 */
   special(pid, id, start) {
     if (!on || !Number.isInteger(pid) || pid < 0 || pid >= 14) return;
-    this.cur = { pid, id, start, text: this.textFor(pid, id) };
+    this.cur = { pid, id, start, text: this.textFor(pid, id), total: TOTAL };
+  }
+
+  /** 짧은 외침(캐치 등). 필살 말풍선이 떠 있는 동안은 덮지 않는다. ticks = 표시 틱(60틱 = 1초) */
+  say(pid, text, start, ticks = 42) {
+    if (!on || !Number.isInteger(pid) || pid < 0 || pid >= 14) return;
+    const c = this.cur;
+    if (c && c.id != null && start - c.start < c.total && start >= c.start) return;
+    this.cur = { pid, id: null, start, text, total: ticks };
   }
 
   clear() { this.cur = null; this.last = null; }
@@ -108,9 +116,10 @@ export class ShoutFx {
     if (!cur) return;
     if (!on) { this.clear(); return; }
     const age = Math.floor(o.tick - cur.start);
-    if (age >= TOTAL || age < -60) { this.clear(); return; } // 끝남, 또는 재접속 등 틱 되감기
+    const total = cur.total ?? TOTAL;
+    if (age >= total || age < -60) { this.clear(); return; } // 끝남, 또는 재접속 등 틱 되감기
     if (age < 0) return; // 이벤트 틱이 보간 그리기 틱보다 앞선다
-    const left = TOTAL - age;
+    const left = total - age;
     if (left <= T_BLINK && ((T_BLINK - left) >> 1) & 1) return; // 끝: 깜빡이며 사라짐
     const p = o.at(cur.pid);
     if (!p) return;

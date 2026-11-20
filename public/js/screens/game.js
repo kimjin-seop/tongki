@@ -54,6 +54,17 @@ async function loadStage(st, renderer) {
 /** 그 경기의 최대 HP(game_start.teams[].players[].hp 가운데 가장 큰 값). 칸이 없으면 0 */
 const hpCapOf = (start) => Math.max(0, ...(start.teams ?? []).flatMap((t) => (t?.players ?? []).map((p) => (Number.isFinite(p?.hp) ? p.hp : 0))));
 
+/** 도트풍 엔터(↵) 아이콘(9x7, currentColor) */
+function enterIcon() {
+  const NS = 'http://www.w3.org/2000/svg', svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 9 7'); svg.setAttribute('class', 'ent-ic'); svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('shape-rendering', 'crispEdges'); svg.setAttribute('fill', 'currentColor');
+  for (const [x, y, w, hh] of [[7, 0, 1, 5], [2, 4, 6, 1], [0, 4, 1, 1], [1, 3, 1, 3], [2, 2, 1, 5]]) {
+    const r = document.createElementNS(NS, 'rect'); r.setAttribute('x', x); r.setAttribute('y', y); r.setAttribute('width', w); r.setAttribute('height', hh); svg.append(r);
+  }
+  return svg;
+}
+
 export function mount(root, app, { start }) {
   const campaign = start.campaign && Number.isInteger(start.campaign.k) ? start.campaign : null;
   const training = start.training?.kind ? start.training : null; // 특훈(혼자 하기, PROTOCOL §9): {kind, step, balls, pass, steps, gauge?}
@@ -166,10 +177,15 @@ export function mount(root, app, { start }) {
   addEventListener('keydown', onGuideKey);
   const input = new InputSender((bits) => net.send('input', { bits }));
   // 채팅 받은 줄·Enter 입력창(chat.js): 서버가 room.chat 을 준 방(사람끼리)에서만 만든다. 경기 입력·캔버스는 그대로(DOM 층만)
-  let chatUi = null;
+  // 하단 줄 맨 앞 「채팅 ↵」 칸: 채팅이 있는 방에서만. 누르기 = Enter 와 같다(열기 / 열려 있으면 보내고 닫기), 터치에서도 연다
+  let chatUi = null, chatBtn = null;
   const chatOn = (on) => {
-    if (on && !chatUi) chatUi = gameChat({ app, wrap, stage, help, guide, input, pad: () => pad });
-    else if (!on && chatUi) { chatUi.destroy(); chatUi = null; }
+    if (on && !chatUi) {
+      chatBtn = h('button.btn.small.chat-btn', { type: 'button', 'aria-label': '채팅', title: '채팅 (Enter)', 'aria-keyshortcuts': 'Enter', 'aria-expanded': 'false',
+        onpointerdown: (e) => e.preventDefault(), onclick: () => chatUi?.press() }, '채팅', enterIcon());
+      help.insertBefore(chatBtn, guideBtn);
+      chatUi = gameChat({ app, wrap, stage, help, guide, input, pad: () => pad, onToggle: (o) => chatBtn?.setAttribute('aria-expanded', String(o)) });
+    } else if (!on && chatUi) { chatUi.destroy(); chatUi = null; chatBtn?.remove(); chatBtn = null; }
   };
   // 터치 기기: 가상 패드(마우스 환경에서는 만들지 않음) + 스크롤·확대·길게 눌러 메뉴 방지
   const coarse = matchMedia(COARSE_MQ);
@@ -359,7 +375,7 @@ export function mount(root, app, { start }) {
       }
       case 'catch': {
         const q = pos(e.p); if (q) renderer.flash(q[0], q[1], q[2], 'catch', s.f);
-        if (!training || (e.p < 7) === (you === 0)) showBanner('캐치!', 700); // 특훈: 연습 상대는 내 공을 언제나 잡는다 → 내 캐치만 알린다
+        if (!training || (e.p < 7) === (you === 0)) renderer.shout.say(e.p, '캐치!', s.f, 42); // 머리 위 말풍선 약 700ms(필살 말풍선 우선·옵션 꺼짐이면 무시). 특훈: 내 캐치만
         break;
       }
       case 'special': {

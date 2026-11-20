@@ -146,7 +146,7 @@ export function mount(root, app) {
         r.rules ? h('span.rules-line', '규칙 ', h('b', rulesText(r.rules))) : null,
         h('span.spacer'), h('span.room-code', { title: '방 코드' }, r.code), h('span.nick-me', app.nick || '')),
       h('div.seats', seat(0), h('div.vs', { 'aria-hidden': 'true' }, 'VS'), seat(1)),
-      cmdsEl));
+      chat ? h('div.room-foot', cmdsEl) : cmdsEl)); // 채팅이 있으면 아래 줄 = 왼쪽 채팅 + 오른쪽 명령 창
     if (chat) chat.mount(cmdsEl);
     for (const n of old) n.remove();
     paintCd();
