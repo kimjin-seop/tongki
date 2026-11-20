@@ -1,0 +1,416 @@
+{
+ "schema": "tongki.story_dialogue_ko/1",
+ "notes": "원작 대사 번역. 이름 표기·용어집·미확정 목록은 analysis/49_story_translation_notes.md",
+ "rules": {
+  "lines": "lines_ko 개수 = 원문 lines 개수(페이지 줄 수 동일). 둘째 줄부터 앞 공백 1칸 = 원문과 같은 들여쓰기(「 다음 칸 맞춤)",
+  "pause": "원문 。(49프레임 쉼) 자리에는 '.' 하나를 둔다. 쉼 판정: 앞뒤가 '.' 이 아니고 다음 글자가 공백·줄끝·」·문자열 끝인 '.' 만. '...' 같은 말줄임과 '이.기' 같은 더듬기 점은 쉼 아님. 페이지별 쉼 개수 = 원문 pages[].puncPauses",
+  "typing": "한글 음절 1자 = 가나 1자로 보고 타이핑음·입 움직임. 공백·문장부호(,.!?「」-)는 무음. 페이지 음절 수는 원문 가나 수 이하",
+  "lineLength": "줄 길이(앞 들여쓰기 공백 제외, 「」·공백·부호 포함) 목표 14자 이하, 상한 16자"
+ },
+ "speakers": [
+  { "id": 0, "nameKo": "통키", "rosterName": "통키" },
+  { "id": 1, "nameKo": "남타이거", "rosterName": "남타이거" },
+  { "id": 2, "nameKo": "민대풍", "rosterName": "민대풍" },
+  { "id": 3, "nameKo": "태백산", "rosterName": "태백산" },
+  { "id": 4, "nameKo": "다이치", "rosterName": "기타노 다이치" },
+  { "id": 5, "nameKo": "마사키", "rosterName": "고쇼 마사키" },
+  { "id": 6, "nameKo": "신", "rosterName": "이시가키 신" },
+  { "id": 7, "nameKo": "하야토", "rosterName": "미타카 하야토" },
+  { "id": 8, "nameKo": "레이판", "rosterName": "레이판" },
+  { "id": 9, "nameKo": "오라데노프", "rosterName": "오라데노프" },
+  { "id": 10, "nameKo": "아바도라", "rosterName": "아바도라" },
+  { "id": 11, "nameKo": "제우스", "rosterName": "제우스" },
+  { "id": 12, "nameKo": "골도르", "rosterName": "골도르" },
+  { "id": 13, "nameKo": "세프시온", "rosterName": "세프시온" },
+  { "id": 14, "nameKo": "캐서린", "rosterName": "캐서린" },
+  { "id": 15, "nameKo": "남타이거", "rosterName": "남타이거" },
+  { "id": 16, "nameKo": "김미화", "rosterName": null },
+  { "id": 17, "nameKo": "황금산", "rosterName": "황금산" },
+  { "id": 18, "nameKo": "권총탄", "rosterName": "권총탄" },
+  { "id": 19, "nameKo": "모두", "rosterName": null },
+  { "id": 20, "nameKo": "권총탄", "rosterName": "권총탄" },
+  { "id": 21, "nameKo": "손미나", "rosterName": null },
+  { "id": 22, "nameKo": "", "rosterName": null }
+ ],
+ "matches": [
+  {
+   "k": 0,
+   "title_ko": { "number": "제1전", "subtitle": "「타이거에게 도전」" },
+   "blocks": {
+    "pre": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 1, "nameKo": "남타이거", "lines_ko": ["「드디어 승부구나, 통키」"] } ] },
+     { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「바라던 바다!」"] } ] }
+    ] } ] },
+    "faceoff": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「간다, 타이거!」"] } ] }
+    ] } ] },
+    "win": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 1, "nameKo": "남타이거", "lines_ko": ["「좋은 시합 고마워, 통키.", " 그런데, 백아 국민학교라는", " 팀을 알고 있니?」"] } ] },
+     { "runs": [ { "speaker": 1, "nameKo": "남타이거", "lines_ko": ["「꽤 실력이 있는 팀이래.", " 한번 시합을 신청해 보는 게", " 어때?」"] } ] },
+     { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「그래, 그렇게 해 볼게」"] } ] },
+     { "runs": [ { "speaker": 1, "nameKo": "남타이거", "lines_ko": ["「...실은 통키한테", " 해 둘 말이 있어.", " 나는 유럽으로", " 유학을 가게 됐어」"] } ] },
+     { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「엣, 그럼 이제 너랑은", " 피구 못 하는 거야?」"] } ] },
+     { "runs": [ { "speaker": 1, "nameKo": "남타이거", "lines_ko": ["「아니, 꼭 또 만날 거야!」"] } ] },
+     { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「그렇구나...", " 그럼 그때를 기다릴게!", " 고마워, 타이거. 또 보자!」"] } ] }
+    ] } ] },
+    "lose": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 1, "nameKo": "남타이거", "lines_ko": ["「다음 도전을 기다릴게,", " 통키」"] } ] }
+    ] } ] }
+   }
+  },
+  {
+   "k": 1,
+   "title_ko": { "number": "제2전", "subtitle": "「타도! 백아 국민학교」" },
+   "blocks": {
+    "pre": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 2, "nameKo": "민대풍", "lines_ko": ["「태동에 통키라는", " 좀 쓸 만한 놈이 있다더니,", " 네놈이냐?", " 건방져 보이는 꼬맹이로군」"] } ] }
+    ] } ] },
+    "faceoff": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「시끄러! 날려 버릴 테다!」"] } ] }
+    ] } ] },
+    "win": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 2, "nameKo": "민대풍", "lines_ko": ["「이번엔 우리가 졌지만,", " 다음에 붙을 때는", " 봐주지 않을 거다!」"] } ] },
+     { "runs": [ { "speaker": 2, "nameKo": "민대풍", "lines_ko": ["「그리고 하나 알려 주지.", " 암산 놈들이 너희와", " 시합하고 싶다고 하더라.", " 뭐, 열심히 해 보라고」"] } ] },
+     { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「그래...그럼,", " 그 녀석들한테 가 볼까」"] } ] }
+    ] } ] },
+    "lose": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 2, "nameKo": "민대풍", "lines_ko": ["「결국 태동의 실력이란 게", " 그 정도란 거지」"] } ] }
+    ] } ] }
+   }
+  },
+  {
+   "k": 2,
+   "title_ko": { "number": "제3전", "subtitle": "「태백산과의 대결」" },
+   "blocks": {
+    "pre": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 3, "nameKo": "태백산", "lines_ko": ["「오, 통키냐, 잘 왔다.", " 백아를 쓰러뜨렸다던데,", " 뭐, 그 정도 놈들이라면", " 별것 아니니까」"] } ] },
+     { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「뭐라고오-!」"] } ] }
+    ] } ] },
+    "faceoff": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 3, "nameKo": "태백산", "lines_ko": ["「그 실력을 우리가 보마.", " 간다, 통키!」"] } ] },
+     { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「덤벼라, 태백산!」"] } ] }
+    ] } ] },
+    "win": { "segments": [
+     { "pages": [
+      { "runs": [ { "speaker": 3, "nameKo": "태백산", "lines_ko": ["「역시 대단하군, 통키.", " 아무래도 운으로 이겨 온 건", " 아닌 모양이군」"] } ] },
+      { "runs": [ { "speaker": 3, "nameKo": "태백산", "lines_ko": ["「그만한 힘이 있다면", " 이런 데서 썩지 말고", " 전국의 강호 팀들과", " 싸워 보는 게 어떠냐?」"] } ] },
+      { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「전국의 강호 팀?」"] } ] },
+      { "runs": [ { "speaker": 3, "nameKo": "태백산", "lines_ko": ["「그래」"] } ] },
+      { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「그거 굉장한데,", " 왠지 힘이 솟는다고!", " 이렇게 된 거, 슈퍼 피구로", " 일본 최고를 노리자, 다들!」"] } ] }
+     ] },
+     { "pages": [
+      { "runs": [ { "speaker": 19, "nameKo": "모두", "lines_ko": ["「좋아!」"] } ] }
+     ] }
+    ] },
+    "lose": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 3, "nameKo": "태백산", "lines_ko": ["「아직 멀었군, 통키.", " 다음 도전을 기다리마!」"] } ] }
+    ] } ] }
+   }
+  },
+  {
+   "k": 3,
+   "title_ko": { "number": "제4전", "subtitle": "「대자연 속의 싸움」" },
+   "blocks": {
+    "pre": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 4, "nameKo": "다이치", "lines_ko": ["「잘 왔다, 통키.", " 이 대지에서 단련한", " 우리를 보여 주마!」"] } ] }
+    ] } ] },
+    "faceoff": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「봐주지 않는다, 다이치!」"] } ] }
+    ] } ] },
+    "win": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 4, "nameKo": "다이치", "lines_ko": ["「너희한텐 못 당해, 졌어.", " 우리보다 강한 녀석은", " 많지만 힘내라고」"] } ] }
+    ] } ] },
+    "lose": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 4, "nameKo": "다이치", "lines_ko": ["「거봐, 말했지, 또 오라고」"] } ] }
+    ] } ] }
+   }
+  },
+  {
+   "k": 4,
+   "title_ko": { "number": "제5전", "subtitle": "「석양의 결전」" },
+   "blocks": {
+    "pre": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 5, "nameKo": "마사키", "lines_ko": ["「어지간해선 안 물러선데이.", " 알고 있겠제!」"] } ] }
+    ] } ] },
+    "faceoff": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「본때를 보여 주마!」"] } ] }
+    ] } ] },
+    "win": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 5, "nameKo": "마사키", "lines_ko": ["「졌다, 졌뿟다 마.", " 담에 또 한판 하재이」"] } ] }
+    ] } ] },
+    "lose": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 5, "nameKo": "마사키", "lines_ko": ["「분하겠지만 우리가 이깄다.", " 그래선 일본 최고 몬 된다」"] } ] }
+    ] } ] }
+   }
+  },
+  {
+   "k": 5,
+   "title_ko": { "number": "제6전", "subtitle": "「류큐의 달인들」" },
+   "blocks": {
+    "pre": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 6, "nameKo": "신", "lines_ko": ["「이런 곳까지 오다니...", " 각오는 돼 있겠지!」"] } ] }
+    ] } ] },
+    "faceoff": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「우리를 얕보지 마!」"] } ] }
+    ] } ] },
+    "win": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 6, "nameKo": "신", "lines_ko": ["「졌다...너희라면", " 전국 정상에", " 설 수 있을지도 모르겠군」"] } ] }
+    ] } ] },
+    "lose": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 6, "nameKo": "신", "lines_ko": ["「그러니까 말했잖아,", " 아쉽게 됐군, 통키」"] } ] }
+    ] } ] }
+   }
+  },
+  {
+   "k": 6,
+   "title_ko": { "number": "제7전", "subtitle": "「일본 최강의 자리는 여기에」" },
+   "blocks": {
+    "pre": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 7, "nameKo": "하야토", "lines_ko": ["「우리는 못 이길 거다...", " 너희의 실력이라는 걸", " 보여 줘 봐라!」"] } ] }
+    ] } ] },
+    "faceoff": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「너희를 쓰러뜨리고", " 일본 최고가 되고 말겠어!」"] } ] }
+    ] } ] },
+    "win": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 7, "nameKo": "하야토", "lines_ko": ["「너희의 투지에 졌다.", " 태동 피구부야말로", " 일본 최강이다」"] } ] }
+    ] } ] },
+    "lose": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 7, "nameKo": "하야토", "lines_ko": ["「미안하군...", " 너희에겐 무리였던 거다.", " 처음부터 다시 와라」"] } ] }
+    ] } ] }
+   }
+  },
+  {
+   "k": 7,
+   "title_ko": { "number": "제8전", "subtitle": "「세계 첫 도전, 중국으로」" },
+   "blocks": {
+    "pre": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 8, "nameKo": "레이판", "lines_ko": ["「네가 통키인가...", " 우리를 이길 생각인가?」"] } ] }
+    ] } ] },
+    "faceoff": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「세계 최고는 우리 거다.", " 간다!」"] } ] }
+    ] } ] },
+    "win": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 8, "nameKo": "레이판", "lines_ko": ["「질 리 없다 여겼는데...", " 하지만 다음 승부는 이긴다!」"] } ] }
+    ] } ] },
+    "lose": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 8, "nameKo": "레이판", "lines_ko": ["「우리한테 질 정도라면", " 아직 멀었군」"] } ] }
+    ] } ] }
+   }
+  },
+  {
+   "k": 8,
+   "title_ko": { "number": "제9전", "subtitle": "「불꽃도 언다! 영하의 싸움」" },
+   "blocks": {
+    "pre": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 9, "nameKo": "오라데노프", "lines_ko": ["「너희가 이 추위를", " 견딜 수 있을 리 없지...", " 게다가 이 언 땅에서", " 우리를 이길 수 있을까...」"] } ] }
+    ] } ] },
+    "faceoff": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「으...부르르...」"] } ] }
+    ] } ] },
+    "win": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 9, "nameKo": "오라데노프", "lines_ko": ["「역시, 잘 단련해 왔군.", " 졌다」"] } ] }
+    ] } ] },
+    "lose": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 9, "nameKo": "오라데노프", "lines_ko": ["「뭘 얼어 있나, 그래서야", " 세계 최고는 무리다」"] } ] }
+    ] } ] }
+   }
+  },
+  {
+   "k": 9,
+   "title_ko": { "number": "제10전", "subtitle": "「스핑크스를 쳐라!」" },
+   "blocks": {
+    "pre": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 10, "nameKo": "아바도라", "lines_ko": ["「추운 데서 더운 데로 온", " 소감이 어때?", " 이 걷기 힘든 사막에서", " 우리랑 승부하겠다는 거냐?」"] } ] }
+    ] } ] },
+    "faceoff": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「더, 더워...", " 그래도 이깟 걸로 질쏘냐!」"] } ] }
+    ] } ] },
+    "win": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 10, "nameKo": "아바도라", "lines_ko": ["「너희의 투지에 손들었다.", " 무슨 일이 있어도", " 세계 최고가 되어 줘」"] } ] }
+    ] } ] },
+    "lose": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 10, "nameKo": "아바도라", "lines_ko": ["「역시 더위는", " 못 당한 모양이군...", " 처음부터 다시 해라」"] } ] }
+    ] } ] }
+   }
+  },
+  {
+   "k": 10,
+   "title_ko": { "number": "제11전", "subtitle": "「신전에서의 대결」" },
+   "blocks": {
+    "pre": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 11, "nameKo": "제우스", "lines_ko": ["「너희와 싸우긴 싫지만...", " 할 수밖에 없군...」"] } ] }
+    ] } ] },
+    "faceoff": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「얕보다간 큰코다칠걸!」"] } ] }
+    ] } ] },
+    "win": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 11, "nameKo": "제우스", "lines_ko": ["「우리는 강하다...", " 하지만, 그 이상으로", " 너희는 강했다...」"] } ] }
+    ] } ] },
+    "lose": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 11, "nameKo": "제우스", "lines_ko": ["「그래서 싸우기 싫었지...」"] } ] }
+    ] } ] }
+   }
+  },
+  {
+   "k": 11,
+   "title_ko": { "number": "제12전", "subtitle": "「정글의 결전」" },
+   "blocks": {
+    "pre": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 12, "nameKo": "골도르", "lines_ko": ["「아마존에서 단련한 이 몸으로", " 너희를 박살 내 주마!」"] } ] }
+    ] } ] },
+    "faceoff": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「아마존인지 뭔지 모르지만,", " 이겨 주겠어!」"] } ] }
+    ] } ] },
+    "win": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 12, "nameKo": "골도르", "lines_ko": ["「세계 최고는 이제 곧이다.", " 절대 지지 마라!」"] } ] }
+    ] } ] },
+    "lose": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 12, "nameKo": "골도르", "lines_ko": ["「우리 파워를 똑똑히 봤냐!」"] } ] }
+    ] } ] }
+   }
+  },
+  {
+   "k": 12,
+   "title_ko": { "number": "제13전", "subtitle": "「이스터섬의 전율」" },
+   "blocks": {
+    "pre": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 13, "nameKo": "세프시온", "lines_ko": ["「이 고요한 성역에...", " 때려눕혀 주마!」"] } ] }
+    ] } ] },
+    "faceoff": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「너흴 못 쓰러뜨리면...", " 세계 최고가 될 수 없어!」"] } ] }
+    ] } ] },
+    "win": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 13, "nameKo": "세프시온", "lines_ko": ["「우리를...", " 이.기..다...니....」"] } ] }
+    ] } ] },
+    "lose": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 13, "nameKo": "세프시온", "lines_ko": ["「어리석은 것...당장", " 여기서 떠나라...」"] } ] }
+    ] } ] }
+   }
+  },
+  {
+   "k": 13,
+   "title_ko": { "number": "제14전", "subtitle": "「최강 팀에 도전」" },
+   "blocks": {
+    "pre": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 14, "nameKo": "캐서린", "lines_ko": ["「.....여기까지 잘 왔네.", " 너희 소문은 들었어.", " 하지만, 우린 못 이겨...」"] } ] }
+    ] } ] },
+    "faceoff": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「우리도 여기까지 왔어,", " 붙어 봐야 아는 거라고!」"] } ] }
+    ] } ] },
+    "win": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 14, "nameKo": "캐서린", "lines_ko": ["「분하지만 우리가 졌어.", " 정말 좋은 시합, 고마워.", " 하지만 다음에 싸울 땐", " 절대 안 질 거야!」"] } ] }
+    ] } ] },
+    "lose": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 14, "nameKo": "캐서린", "lines_ko": ["「그러니까 말했잖아.", " 우리는 못 이긴다고...」"] } ] }
+    ] } ] }
+   }
+  },
+  {
+   "k": 14,
+   "title_ko": { "number": "제15전", "subtitle": "「사투! 마지막 대결」" },
+   "blocks": {
+    "pre": { "segments": [
+     { "pages": [
+      { "runs": [ { "speaker": 14, "nameKo": "캐서린", "lines_ko": ["「참, 너희에게 우리", " 코치를 소개할게」"] } ] }
+     ] },
+     { "pages": [
+      { "runs": [ { "speaker": 15, "nameKo": "남타이거", "lines_ko": ["「통키...」"] } ] },
+      { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「엣...타이거...?!」"] } ] },
+      { "runs": [ { "speaker": 15, "nameKo": "남타이거", "lines_ko": ["「한층 강해졌구나, 통키.", " 내가 키운 팀을 꺾다니...」"] } ] },
+      { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「왜 타이거가 여기에...」"] } ] },
+      { "runs": [ { "speaker": 15, "nameKo": "남타이거", "lines_ko": ["「누구보다 강한 선수가 되려고", " 세계 곳곳에서 싸워 왔어」"] } ] },
+      { "runs": [ { "speaker": 15, "nameKo": "남타이거", "lines_ko": ["「통키, 나랑 한 번 더", " 승부해 보지 않을래?」"] } ] },
+      { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「승부라니...」"] } ] },
+      { "runs": [ { "speaker": 15, "nameKo": "남타이거", "lines_ko": ["「일대일 피구다, 통키!」"] } ] },
+      { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「재밌겠다, 해 보자고!」"] } ] }
+     ] }
+    ] },
+    "faceoff": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 15, "nameKo": "남타이거", "lines_ko": ["「간다, 통키!」"] } ] },
+     { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「덤벼라, 타이거!」"] } ] }
+    ] } ] },
+    "win": { "segments": [
+     { "pages": [
+      { "runs": [ { "speaker": 15, "nameKo": "남타이거", "lines_ko": ["「너는 내 생각 이상으로", " 강해져 있었구나.", " 역시 내 영원한 라이벌이야!」"] } ] },
+      { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「타이거, 너도 말이야!」"] } ] },
+      { "runs": [ { "speaker": 15, "nameKo": "남타이거", "lines_ko": ["「참,", " 너한테 소개할 사람이 있어」"] } ] },
+      { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「어.....?」"] } ] }
+     ] },
+     { "pages": [
+      { "runs": [ { "speaker": 16, "nameKo": "김미화", "lines_ko": ["「통키야...」"] } ] },
+      { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「어떻게", " 엄마가 여기에...」"] } ] },
+      { "runs": [ { "speaker": 16, "nameKo": "김미화", "lines_ko": ["「엄마는 언제나", " 네 곁에 있단다」"] } ] },
+      { "runs": [ { "speaker": 15, "nameKo": "남타이거", "lines_ko": ["「통키, 앞으로도", " 그 근성과 파이팅을 잊지 말고", " 서로 힘내자!」"] } ] },
+      { "runs": [ { "speaker": 16, "nameKo": "김미화", "lines_ko": ["「좋은 시합이었단다.", " 엄마는...", " 정말 기쁘단다!」"] } ] },
+      { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「나, 슈퍼 피구 하길", " 정말 잘했어!", " 전 세계의 끝내주는 녀석들과", " 만날 수 있었으니까」"] } ] },
+      { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「그리고 타이거,", " 너를 만난 게", " 제일 기쁘다고!」"] } ] }
+     ] }
+    ] },
+    "lose": { "segments": [ { "pages": [
+     { "runs": [ { "speaker": 15, "nameKo": "남타이거", "lines_ko": ["「그 실력으로 용케 내 팀을", " 이겼구나, 통키!」"] } ] }
+    ] } ] }
+   }
+  }
+ ],
+ "extras": [
+  {
+   "id": "intro_narration",
+   "note": "public/assets/rom/story/story_cuts.json 의 현행 한글 문장과 같다(레코드 단위로 나눔)",
+   "records": [
+    { "text_ko": "여기는 역사의 도시, 가마쿠라." },
+    { "text_ko": "이 마을에 슈퍼 피구에 불타는" },
+    { "text_ko": "소년이 있었다." },
+    { "text_ko": "이름은 나통키." },
+    { "text_ko": "태동 국민학교 1학년이다." },
+    { "text_ko": "그런 통키의 앞에," },
+    { "text_ko": "수수께끼의 소년이 나타났다." },
+    { "text_ko": "그 소년이 돌을 던지는 컨트롤과 스피드에" },
+    { "text_ko": "통키는 놀랐다." },
+    { "text_ko": "그 소년의 이름은 남타이거." },
+    { "text_ko": "상아 국민학교 피구부의 주장이다." },
+    { "text_ko": "타이거는 통키의 피구 센스를 꿰뚫어 보고," },
+    { "text_ko": "시합을 신청했다..." }
+   ]
+  },
+  {
+   "id": "win7_narration",
+   "records": [
+    { "text_ko": "마침내 통키는" },
+    { "text_ko": "일본 최고의 자리에 올랐다..." },
+    { "text_ko": "그로부터 몇 달이 지났다...." },
+    { "text_ko": "어느 날, 통키에게 한 통의" },
+    { "text_ko": "편지가 도착했다." },
+    { "text_ko": "그것은 타이거에게서 온 것이었다." }
+   ]
+  },
+  {
+   "id": "win7_letter_graduation",
+   "segments": [
+    { "pages": [
+     { "runs": [ { "speaker": 1, "nameKo": "남타이거", "lines_ko": ["「통키, 잘 지내니?」"] } ] }
+    ] },
+    { "pages": [
+     { "runs": [ { "speaker": 1, "nameKo": "남타이거", "lines_ko": ["「런던에서도 슈퍼 피구는", " 인기라서, 세계에는 우리 따위", " 발밑에도 못 미치는 팀이", " 많다는 걸 알게 됐어」"] } ] },
+     { "runs": [ { "speaker": 1, "nameKo": "남타이거", "lines_ko": ["「어때, 통키, 그 기세로", " 세계에 도전해 보는 건?", " 기대하고 있을게」"] } ] }
+    ] },
+    { "pages": [
+     { "runs": [ { "speaker": 1, "nameKo": "통키", "speakerNote": "원문에 화자 바이트가 없어 직전 화자(1)가 이어지지만 내용은 통키의 대사. 이름 줄 처리는 화면 담당 판단", "lines_ko": ["「야호-!! 신나는 얘기야,", " 역시 타이거라니까!」"] } ] }
+    ] },
+    { "pages": [
+     { "runs": [ { "speaker": 17, "nameKo": "황금산", "lines_ko": ["「통키, 아쉽지만", " 우리는 졸업이다.", " 너희 후배들의 활약을", " 기대하고 있겠다!」"] } ] },
+     { "runs": [ { "speaker": 18, "nameKo": "권총탄", "lines_ko": ["「투지와 근성을", " 잊지 마라.", " 응원하고 있다고!」"] } ] },
+     { "runs": [ { "speaker": 0, "nameKo": "통키", "lines_ko": ["「주장, 총탄이 형, 모두.", " 우리는 세계 최고의", " 피구 선수를", " 노릴 거야! 지켜봐 줘!」"] } ] }
+    ] }
+   ]
+  },
+  {
+   "id": "k15_lose_tail",
+   "segments": [
+    { "pages": [
+     { "runs": [ { "speaker": null, "nameKo": "통키", "speakerNote": "원문 화자 없음(블록 밖 세그먼트). 내용상 통키", "lines_ko": ["「다시 승부다, 타이거!」"] } ] },
+     { "runs": [ { "speaker": 15, "nameKo": "남타이거", "lines_ko": ["「좋아, 통키!」"] } ] }
+    ] }
+   ]
+  }
+ ]
+}

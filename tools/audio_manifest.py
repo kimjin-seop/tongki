@@ -57,6 +57,11 @@ for k, t in (('fireball', 'b0'), ('impact', 'b1'), ('flame', 'b2'), ('sublogo', 
 SFX['sfx.player.run'] = ('a9', '대시+공 보유 6프레임마다(analysis/data/footsteps.json)', 'rom', 1.0, 'stage', '0x8BBA 표 0x8BDE [코드+실측]')
 SFX['sfx.player.run_alt'] = ('c5', '위와 같음, romStage 5·9(웹 stage 8·4)', 'rom', 1.0, 'stage', '0x8BDE 표 [코드], 바닥 재질 의미 [추정]')
 
+# 스토리 대사 타이핑음(48 §2-2·§10): 화자별 표 0x7528A, 가나(변환 타일 0x60~0xD0) 한 글자마다. 화면 연결은 2단계(윤프론). 건너뛰기 0xA0 = sfx.ui.cursor
+SFX['sfx.story.type_b6'] = ('b6', '대사 타이핑(だんぺい, 화자 0x00)', 'rom', 1.0, 'menu', '48 §2-2 표 0x7528A [코드+실측]')
+SFX['sfx.story.type_a7'] = ('a7', '대사 타이핑(대부분 화자)', 'rom', 1.0, 'menu', '48 §2-2 표 0x7528A [코드+실측]')
+SFX['sfx.story.type_a8'] = ('a8', '대사 타이핑(キャサリン·はるか·みさと)', 'rom', 1.0, 'menu', '48 §2-2 표 0x7528A [코드+실측]')
+
 # BGM: 원작 곡만(합성 사용 안 함). 루프가 확정(loop_confident)된 곡만 키를 만든다.
 STAGES = json.load(open(os.path.join(ROOT, 'server', 'data', 'stages.json'), encoding='utf-8'))['stages']
 T50D2 = ROM.get('stage_bgm_table_0x50D2', [])

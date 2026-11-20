@@ -1,0 +1,167 @@
+{
+ "schema": "tongki.story_extras/1",
+ "generatedBy": "tools/story_remaining_extract.py",
+ "source": "ROM 정적 디코드(타일 0x1126·배치표·팔레트). 원작 실행 대조 전(analysis/53 §3 근거 부족 목록)",
+ "romSha256_16": "0d476b9f1c7245d4",
+ "check_opp01": {
+  "pixels": 1600,
+  "opaqueMaskMismatch": 0,
+  "colorsOurs": 9,
+  "colorMapOneToOne": true
+ },
+ "frames": {
+  "team3.closed": {
+   "x": 0,
+   "y": 0,
+   "w": 80,
+   "h": 40
+  },
+  "team3.mouthA": {
+   "x": 80,
+   "y": 0,
+   "w": 80,
+   "h": 40
+  },
+  "team3.mouthB": {
+   "x": 160,
+   "y": 0,
+   "w": 80,
+   "h": 40
+  },
+  "mom15.closed": {
+   "x": 0,
+   "y": 40,
+   "w": 40,
+   "h": 40
+  },
+  "mom15.mouthA": {
+   "x": 80,
+   "y": 40,
+   "w": 40,
+   "h": 40
+  },
+  "mom15.mouthB": {
+   "x": 160,
+   "y": 40,
+   "w": 40,
+   "h": 40
+  }
+ },
+ "sets": {
+  "team3": {
+   "screen": {
+    "x": 224,
+    "y": 160,
+    "w": 80,
+    "h": 40
+   },
+   "info": {
+    "tiles": 58,
+    "tilePtr": "0x63192",
+    "palPtr": "0x74cce"
+   },
+   "objects": {
+    "body": {
+     "attr": "0xa0dc",
+     "x": "0x160",
+     "y": "0x120",
+     "map": "0x13dbe"
+    },
+    "mouth1": {
+     "attr": "0xa0dc",
+     "x": "0x170",
+     "y": "0x130",
+     "anim": {
+      "anim": "0x26",
+      "hold": 4,
+      "frames": [
+       "0x73002",
+       "0x7300a"
+      ]
+     },
+     "slot": "C800"
+    },
+    "mouth2": {
+     "attr": "0xa0dc",
+     "x": "0x198",
+     "y": "0x138",
+     "anim": {
+      "anim": "0x28",
+      "hold": 4,
+      "frames": [
+       "0x73012",
+       "0x7301a"
+      ]
+     },
+     "slot": "CA80"
+    }
+   }
+  },
+  "mom15": {
+   "screen": {
+    "x": 224,
+    "y": 160,
+    "w": 40,
+    "h": 40
+   },
+   "info": {
+    "tiles": 25,
+    "mouthTiles": 2,
+    "mouthVram": "0xf5",
+    "tilePtr": "0x62fa0",
+    "mouthPtr": "0x63f94",
+    "palPtr": "0x74cae"
+   },
+   "objects": {
+    "body": {
+     "attr": "0xc0dc",
+     "x": "0x160",
+     "y": "0x120",
+     "map": "0x72d8a"
+    },
+    "mouth": {
+     "attr": "0xc0f5",
+     "x": "0x170",
+     "y": "0x138",
+     "anim": {
+      "anim": "0x20",
+      "hold": 4,
+      "frames": [
+       "0x72fca",
+       "0x72fd2"
+      ]
+     },
+     "slot": "CA80"
+    }
+   }
+  }
+ },
+ "ending_01": {
+  "file": "ending_01.png",
+  "screen": {
+   "x": 32,
+   "y": 32,
+   "w": 248,
+   "h": 128
+  },
+  "canvas": [
+   320,
+   224
+  ],
+  "tiles": "0x6B888",
+  "palette": "0x74D0E(48색)",
+  "planes": [
+   {
+    "map": "0x73c34",
+    "base": "0x20dc",
+    "words": 496
+   },
+   {
+    "map": "0x73be2",
+    "base": "0xdc",
+    "words": 496
+   }
+  ],
+  "note": "면 위치 = VRAM 0xC208/0xE208(칸 4,4). 스크롤 값은 0 으로 가정(미측정)"
+ }
+}

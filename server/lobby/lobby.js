@@ -12,7 +12,9 @@ import { mono, loadLimits } from '../net/limits.js';
 import { openDb } from '../store/db.js';
 import { AccountStore, LoginGuard, passwordOk } from '../store/accounts.js';
 import { RankingStore } from '../store/ranking.js';
-import { RANK, RANK_NORMAL, RANK_FORFEIT } from '../ranking/elo.js';
+import { LADDER, RANK_FORFEIT, validResult } from '../ranking/elo.js';
+import { LadderQueue } from '../ranking/queue.js';
+import { makeChatHandlers, initChat, chatRoom, isAdmin } from '../chat/chat.js';
 import { ERR, PROTOCOL, GRACE_MS, NICK_RE, CODE_RE, CODE_CHARS, isInt, normRules, TRAINING_KINDS, TRAINING_READY } from '../net/protocol.js';
 import { RULE_TIMES } from '../engine/consts.js';
 
@@ -52,7 +54,13 @@ export class Lobby {
     this.rooms = new Map(); // code -> room
     this.recentCodes = []; // 최근 발급 코드(재사용 회피, 최대 RECENT_CODES개)
     this.listTimer = null;
+    initChat(this, o); // 채팅·공지(PROTOCOL §14): o.admins(ADMIN_ACCOUNTS)·o.noticePath·o.chatBadwords
     this.handlers = this.makeHandlers();
+    // 래더 대기열(PROTOCOL §11): 메모리. 짝 찾기는 가입 때 1회 + 주기(LADDER.queue.tickMs). now = 벽시계(시즌·같은 상대 제한과 같은 시계, 시험에서 바꿀 수 있다)
+    this.now = o.now ?? Date.now;
+    this.ladder = new LadderQueue();
+    this.ladderTimer = o.ladderTick === false ? null : setInterval(() => { try { this.tickLadder(); } catch (e) { this.log('[ladder]', e); } }, LADDER.queue.tickMs);
+    this.ladderTimer?.unref?.();
   }
 
   // ---------- 전송 ----------
@@ -69,6 +77,7 @@ export class Lobby {
     const s = conn.session;
     if (!s || s.conn !== conn) return;
     s.conn = null;
+    this.ladderLeave(s, 'disconnect'); // 끊긴 사람은 대기열에서 뺀다(짝이 지어져도 받을 수 없다). 다시 붙으면 ladder_join 을 다시 보낸다
     const room = this.roomOf(s);
     if (room?.game) room.game.setConnected(room.seatOf(s), false);
     if (room) this.broadcastRoom(room);
@@ -80,6 +89,7 @@ export class Lobby {
 
   expire(s) {
     if (s.conn) return;
+    this.ladderLeave(s, 'disconnect');
     try {
       if (this.roomOf(s)) this.removeFromRoom(s, 'grace');
     } catch (e) { this.log('[expire]', e); }
@@ -157,6 +167,7 @@ export class Lobby {
       location: room ? (room.game ? 'game' : 'room') : 'lobby', serverTime: Date.now(),
       build: this.o.build, rulesVersion: this.o.data.rules.version, tickRate: this.o.data.rules.tickRate, graceMs: this.graceMs,
       teams: this.o.data.teams.map((t) => ({ id: t.id, name: t.name })),
+      ...(isAdmin(this, s) ? { admin: true } : {}), // 관리자 계정만(PROTOCOL §14)
     });
     if (!room) this.sendTo(s, this.roomListMsg());
     else {
@@ -242,6 +253,7 @@ export class Lobby {
     if (cur && (cur.account || cur.key !== key)) fail('ALREADY_LOGGED_IN');
     if (!passwordOk(msg.password)) fail('PASSWORD_INVALID');
     if (this.accounts.has(key)) fail('ACCOUNT_EXISTS');
+    if (this.adminNames?.has(key)) fail('NICK_TAKEN'); // ADMIN_ACCOUNTS 에 적힌 닉네임은 가입 불가(미가입 항목 선점·승격 방지, PROTOCOL §14.2)
     if (!cur) {
       const ex = this.byNick.get(key);
       if (ex && (ex.conn || this.roomOf(ex))) fail('NICK_TAKEN');
@@ -262,9 +274,10 @@ export class Lobby {
     if (cur) {
       const token = this.accounts.issueToken(key);
       this.sessions.delete(cur.token);
+      this.ladderLeave(cur, 'account'); // 손님으로 줄 선 채 가입: 계정 레이팅으로 다시 서게 뺀다
       cur.token = token; cur.account = true;
       this.sessions.set(token, cur);
-      this.sendTo(cur, { t: 'account_ok', token, nickname: cur.nick });
+      this.sendTo(cur, { t: 'account_ok', token, nickname: cur.nick, ...(isAdmin(this, cur) ? { admin: true } : {}) });
       return;
     }
     this.attachAccount(conn, acct, () => this.accounts.issueToken(key));
@@ -305,6 +318,7 @@ export class Lobby {
   /** 로그아웃: 로그인 토큰 폐기 + 세션 종료(방·경기 중이면 퇴장 = 기권). 연결은 남겨 두고 logged_out 을 보낸다 */
   logout(s) {
     if (s.account) this.accounts.revokeToken(s.token);
+    this.ladderLeave(s, 'logout');
     const conn = s.conn;
     if (this.roomOf(s)) this.removeFromRoom(s, 'leave');
     clearTimeout(s.graceTimer);
@@ -401,6 +415,8 @@ export class Lobby {
       ...(room.league ? { league: { i: room.league.i, j: room.league.j } } : {}),
       ...(room.flame ? { flame: { node: room.flame.node, type: room.flame.type } } : {}),
       ...(room.ranked ? { ranked: true } : {}),
+      ...(room.ladder ? { ladder: { counted: room.ladder.counted, startBy: room.ladder.startBy } } : {}),
+      ...(chatRoom(room) ? { chat: true } : {}), // 읽기 전용(PROTOCOL §14): 이 방에서 chat 을 보낼 수 있다
       rules: { ...room.rules },
       evade: evadeOf(room), // 읽기 전용(PROTOCOL §4): 'track' = 사람끼리 일반 멀티 경기라 필살슛 유도(추적)가 항상 적용, 'rom' = 원작. 바꾸는 요청은 없다
       start: st.ok ? { ok: true } : { ok: false, code: st.code, msg: ERR[st.code] },
@@ -409,11 +425,11 @@ export class Lobby {
     };
   }
 
-  /** 랭크 방 좌석의 현재 레이팅(PROTOCOL §11.2). placement = 순위표 기준 경기 수 미만(ranking_list.me.placement 와 같은 기준) */
+  /** 래더 방 좌석의 현재 레이팅·표시 티어(PROTOCOL §11.2). placement = 시즌 배치 판수 미만(이때 tier:null), placementLeft = 배치 남은 판(완료 0). 손님 좌석 = {guest:true} */
   seatRating(s) {
-    if (!s.account) return {}; // 손님 좌석은 레이팅 없음
-    const r = this.ranking.get(s.key, s.nick);
-    return { rating: r.rating, placement: r.games < RANK.boardMinGames };
+    if (!s.account) return { guest: true };
+    const r = this.ranking.status(s.key, s.nick, this.now());
+    return { rating: r.rating, placement: r.placement, placementLeft: r.placementLeft, tier: r.tier };
   }
 
   startCheck(room) {
@@ -481,16 +497,22 @@ export class Lobby {
       for (const m of room.seats) if (m) m.ready = false;
       room.closing = false;
     }
-    if (!room.seats[0]) this.rooms.delete(room.code);
-    else this.broadcastRoom(room);
+    if (!room.seats[0]) { this.rooms.delete(room.code); clearTimeout(room.ladder?.timer); }
+    else if (!room.ladder) this.broadcastRoom(room);
     if (s.conn) { this.sendTo(s, { t: 'room_left', reason }); this.sendTo(s, this.roomListMsg()); }
     this.markListDirty();
+    // 래더 방은 두 사람 전용 한 판: 한 사람이 나가면(경기 전 취소·경기 중 기권·경기 뒤) 남은 사람도 내보내고 방을 없앤다(재경기 없음 = 다시 줄 선다)
+    if (room.ladder && room.seats[0] && !room.closing) this.removeFromRoom(room.seats[0].s, room.ladder.closeReason ?? (room.ladder.played ? 'ladder_end' : 'ladder_cancel'));
   }
 
   roomListMsg() {
-    const rooms = [...this.rooms.values()].filter((r) => !r.campaign && !r.training && !r.league && !r.flame).sort((a, b) => b.createdAt - a.createdAt).map((r) => ({
+    const list = [...this.rooms.values()].filter((r) => !r.campaign && !r.training && !r.league && !r.flame && !r.ladder).sort((a, b) => b.createdAt - a.createdAt);
+    const acctHost = (r) => (r.seats[0]?.s.account === true ? r.seats[0].s.key : null); // 손님 호스트 = 생략
+    const badges = this.ranking.hostBadges([...new Set(list.map(acctHost).filter(Boolean))], this.now()); // 호스트 티어·전적(캐시, RankingStore.hostBadges)
+    const rooms = list.map((r) => ({
       code: r.code, host: r.seats[0]?.s.nick ?? '', players: r.vsCpu ? 2 : r.seats.filter(Boolean).length, max: 2, ...(r.vsCpu ? { vsCpu: true } : {}), ...(r.ranked ? { ranked: true } : {}), status: r.game ? 'playing' : 'waiting',
       rules: { ...r.rules }, // 방 목록 행의 규칙 요약용(추가 필드, 하위 호환)
+      ...(badges.has(acctHost(r)) ? { hostInfo: badges.get(acctHost(r)) } : {}),
     }));
     return { t: 'room_list', rooms };
   }
@@ -506,6 +528,7 @@ export class Lobby {
   }
 
   join(s, room, team) {
+    this.ladderLeave(s, 'room'); // 방에 들어가면(일반 방·스토리·리그·불꽃 등) 래더 대기에서 빠진다
     const idx = room.seats[0] ? 1 : 0;
     room.seats[idx] = { s, ready: false, team: team ?? idx };
     s.roomCode = room.code;
@@ -526,10 +549,7 @@ export class Lobby {
         if (m.cpuLevel !== undefined && !isInt(m.cpuLevel, 1, 3)) fail('BAD_MESSAGE');
         const cpuLevel = m.cpuLevel ?? this.o.data.rules.cpu.defaultLevel;
         if (m.ranked !== undefined && typeof m.ranked !== 'boolean') fail('BAD_MESSAGE');
-        const ranked = m.ranked === true;
-        if (ranked && vsCpu) fail('BAD_MESSAGE'); // 랭크는 사람끼리만
-        if (ranked && !s.account) fail('ACCOUNT_REQUIRED');
-        if (ranked) this.rankedGate(s);
+        if (m.ranked === true) fail('LADDER_ONLY'); // 랭크 방은 래더 대기열로 바뀌었다(2026-11-20, PROTOCOL §11). 래더 경기는 ladder_join 으로만
         let code;
         if (m.code !== undefined && m.code !== null && m.code !== '') {
           code = typeof m.code === 'string' ? m.code.toUpperCase() : '';
@@ -540,18 +560,12 @@ export class Lobby {
         // 규칙 「불꽃 팀」(D53): 사람끼리 일반 방에서만 받는다. 랭크 방은 켤 수 없고, 공식 규칙과는 함께 켤 수 없다. 데이터 스위치가 꺼져 있거나 컴퓨터 대전 방이면 키를 버린다(1차와 같다)
         const ft = m.rules?.flameTeams;
         if (ft !== undefined && typeof ft !== 'boolean') fail('RULES_INVALID');
-        if (ft === true && ranked) fail('RANKED_RULES_FIXED');
         if (ft === true && !vsCpu && this.flameHumansOn()) {
           if (rules.mode !== VERSUS_RULE_MODE) fail('FLAME_TEAM_RULES');
           rules = { ...rules, flameTeams: true };
         }
-        if (ranked) {
-          if (m.rules !== undefined && (rules.mode !== RANK.rules.mode || rules.time !== RANK.rules.time)) fail('RANKED_RULES_FIXED');
-          rules = { ...RANK.rules };
-        }
         this.rememberCode(code);
         const room = this.makeRoom(code, vsCpu, cpuLevel, null, rules);
-        if (ranked) room.ranked = true;
         this.join(s, room);
       },
       join_room(s, m) {
@@ -561,8 +575,7 @@ export class Lobby {
         const room = this.rooms.get(code);
         if (!room) fail('ROOM_NOT_FOUND');
         if (room.game) fail('ROOM_IN_GAME');
-        if (room.vsCpu || (room.seats[0] && room.seats[1])) fail('ROOM_FULL');
-        if (room.ranked) this.rankedGate(s);
+        if (room.vsCpu || room.ladder || (room.seats[0] && room.seats[1])) fail('ROOM_FULL'); // 래더 방은 매칭된 두 사람 전용
         this.join(s, room);
       },
       leave_room(s) {
@@ -597,7 +610,7 @@ export class Lobby {
           return;
         }
         if (!isInt(m.team, 0, this.o.data.teams.length - 1)) fail('TEAM_INVALID');
-        if (room.ranked && m.team > RANK.maxTeam) fail('TEAM_INVALID'); // 랭크: SPECIAL(15~21)까지, 22~24 금지
+        if (room.ranked && m.team > LADDER.maxTeam) fail('TEAM_INVALID'); // 랭크: SPECIAL(15~21)까지, 22~24 금지
         if (mem.team !== m.team) { mem.team = m.team; mem.ready = false; }
         if (mem.flameTeam && !room.vsCpu) { mem.ready = false; if (room.seatOf(s) === 0 && room.seats[1]) room.seats[1].ready = false; } // 사람끼리 방(D53 (6)): 불꽃 팀에서 원작 팀으로 바꿔도 선택이 바뀐 것이다
         delete mem.flameTeam; // 원작 팀을 고르면 불꽃 팀 선택은 풀린다
@@ -645,15 +658,37 @@ export class Lobby {
         const c = this.startCheck(room);
         if (!c.ok) fail(c.code);
         if (room.ranked) for (const mm of room.seats) if (mm) this.rankedGate(mm.s); // 방에 든 뒤 잠긴 사람(이 방의 앞 경기 기권 등)
+        if (room.ladder) { if (room.ladder.played) fail('LADDER_ONLY'); clearTimeout(room.ladder.timer); } // 래더 방은 한 판만(끝나면 해산되므로 보통 닿지 않는다)
         this.startGame(room);
       },
-      // 순위표(PROTOCOL §11). top = 1~50(생략 50). me = 계정이면 내 줄, 손님이면 null
-      ranking_list(s, m) {
+      // 래더 순위표(PROTOCOL §11.3). top = 1~50(생략 50). me = 계정이면 내 줄, 손님이면 null. ranking_list 는 종전 이름(같은 내용, 응답 t 만 다르다)
+      ladder_board(s, m) { this.sendTo(s, { t: 'ladder_board', ...this.ladderBoard(s, m) }); },
+      ranking_list(s, m) { this.sendTo(s, { t: 'ranking_list', ...this.ladderBoard(s, m) }); },
+      // 전체 랭킹(PROTOCOL §11.6, 시즌 무관 누적 승). top = 1~50(생략 50), 빈도 제한은 ladder_board 와 같다. me = 계정이면 내 줄, 손님이면 null
+      pvp_board(s, m) {
         this.campaignRate(s);
-        if (m.top !== undefined && !isInt(m.top, 1, RANK.boardTop)) fail('BAD_MESSAGE');
-        const b = this.ranking.board(m.top ?? RANK.boardTop, s.account ? s.key : null, s.nick);
-        this.sendTo(s, { t: 'ranking_list', top: b.top, me: b.me });
+        if (m.top !== undefined && !isInt(m.top, 1, LADDER.boardTop)) fail('BAD_MESSAGE');
+        this.sendTo(s, { t: 'pvp_board', ...this.ranking.pvpBoard(m.top ?? LADDER.boardTop, s.account ? s.key : null, s.nick) });
       },
+      // 래더 대기열(PROTOCOL §11.2). 계정만(2026-11-20 사용자 결정: 손님 참가 불가 = ACCOUNT_REQUIRED, 가입 승격 뒤에는 가능). 방·경기 중이면 ALREADY_IN_ROOM, 잠긴 계정은 RANKED_LOCKED
+      ladder_join(s) {
+        this.campaignRate(s);
+        if (s.account !== true) fail('ACCOUNT_REQUIRED');
+        if (s.roomCode) fail('ALREADY_IN_ROOM');
+        this.rankedGate(s);
+        const now = this.now();
+        if (!this.ladder.get(this.ladderKey(s))) {
+          // guest·guestRating 분기는 손님 거절 뒤로 도달 불가(미래 대비로 남긴다, 회귀 시험 = 저장 계층 손님 K16)
+          this.ladder.join({ key: this.ladderKey(s), nick: s.nick, guest: !s.account, rating: s.account ? this.ranking.get(s.key, s.nick, now).rating : LADDER.guestRating, at: now, s });
+        }
+        this.sendTo(s, this.ladderQueueMsg(s, now));
+        this.tickLadder(now);
+      },
+      ladder_cancel(s) {
+        const was = this.ladderLeave(s, 'cancel', false);
+        this.sendTo(s, { t: 'ladder_queue', queued: false, reason: was ? 'cancel' : 'none' });
+      },
+      ladder_status(s) { this.campaignRate(s); this.sendTo(s, this.ladderStatusMsg(s)); },
       logout(s) { this.logout(s); },
       campaign_list(s) {
         this.campaignRate(s);
@@ -701,6 +736,7 @@ export class Lobby {
       },
       ...makeLeagueHandlers(fail), // league_get/new/config/abandon/play (server/league/handlers.js)
       ...makeFlameHandlers(fail), // flame_* (server/flame/handlers.js, PROTOCOL §13)
+      ...makeChatHandlers(fail), // chat·notice_send (server/chat/chat.js, PROTOCOL §14)
       input(s, m) {
         const room = this.roomOf(s);
         if (!room?.game || !isInt(m.bits, 0, 255)) return; // 게임 종료 직후 입력은 조용히 무시
@@ -710,30 +746,119 @@ export class Lobby {
   }
 
   /**
-   * 랭크 입장 조건: 기권 잠금 아님(계정만 검사). 손님도 랭크 방에 들어와 계정의 상대가 될 수 있다(2026-11-20 사용자 결정):
-   * 경기 결과는 계정 쪽에만 반영되고 손님은 레이팅·전적이 없다(RankingStore.record). 랭크 방 만들기는 계정만(create_room)
+   * 래더 입장 조건: 기권 잠금 아님(계정만 검사). 손님도 래더 대기열에 서서 계정의 상대가 될 수 있다(2026-11-20 사용자 결정, 손님끼리는 짝짓지 않음):
+   * 경기 결과는 계정 쪽에만 반영되고(그 판 K 16) 손님은 레이팅·전적이 없다(RankingStore.record)
    */
   rankedGate(s) {
     if (!s.account) return;
-    const until = this.ranking.lockedUntil(s.key);
+    const until = this.ranking.lockedUntil(s.key, this.now());
     if (until) fail('RANKED_LOCKED', { until });
   }
 
   /**
-   * 랭크 경기 판정(RoomGame.finish 가 결과 레코드 쓰기 전에 1회 부른다). 반영 = GO 이후의 정상 종료·기권(기권 쪽 패배).
-   * draw_cap·error·GO 이전 종료는 무효(VOID, 변동 없음). 같은 상대 24시간 3경기 초과는 PAIR_LIMIT(변동 없음)
+   * 래더 경기 판정(RoomGame.finish 가 결과 레코드 쓰기 전에 1회 부른다). 반영 = GO 이후의 정상 종료·기권(기권 쪽 패배).
+   * draw_cap·error·GO 이전 종료는 무효(VOID, 변동 없음). 같은 상대 24시간 3경기 초과는 PAIR_LIMIT(레이팅 변동 없음, 사람끼리 전적은 오른다)
    */
   rankedResult(room, { matchId, winner, reason, wentGo }) {
-    const players = room.rankPlayers;
-    const valid = wentGo && (winner === 0 || winner === 1) && (RANK_NORMAL.includes(reason) || RANK_FORFEIT.includes(reason));
+    const players = room.rankPlayers, now = this.now();
+    if (room.ladder) room.ladder.played = true;
     let out;
-    if (!valid) {
-      const before = players.map((p) => (p.account ? this.ranking.get(p.key).rating : RANK.init));
-      out = { counted: false, why: 'VOID', before, after: before, delta: [0, 0] };
-    } else out = this.ranking.record({ matchId, players, winner, forfeit: RANK_FORFEIT.includes(reason) ? 1 - winner : null });
+    if (!validResult({ winner, reason, wentGo })) {
+      const st = players.map((p) => (p.account ? this.ranking.status(p.key, p.nick, now) : null));
+      const before = st.map((x) => x?.rating ?? LADDER.guestRating), tier = st.map((x) => x?.tier ?? null);
+      out = { counted: false, why: 'VOID', before, after: before, delta: [0, 0], tierBefore: tier, tier, placement: st.map((x) => x?.placement ?? null),
+        placementLeft: st.map((x) => x?.placementLeft ?? null), season: this.ranking.season(now).season };
+    } else out = this.ranking.record({ matchId, players, winner, forfeit: RANK_FORFEIT.includes(reason) ? 1 - winner : null, now });
     out.acct = players.map((p) => p.account); // 손님 좌석에는 ranking_result 를 보내지 않는다(onGameEnd)
     room.rankOut = out;
     return out;
+  }
+
+  /** 사람끼리 일반 멀티 경기(래더 아님) 전적(2026-11-20 사용자 결정: 모든 사람 대 사람 멀티 경기는 전적에 반영). 레이팅은 바뀌지 않는다 */
+  pvpResult(room, r) {
+    if (validResult(r)) this.ranking.recordPvp({ players: room.pvpPlayers, winner: r.winner, now: this.now() });
+  }
+
+  // ---------- 래더 대기열 ----------
+  /** 대기열·같은 상대 제한 키(계정 = 키, 손님 = 'guest:<키>', rank_games 와 같다) */
+  ladderKey(s) { return s.account ? s.key : `guest:${s.key}`; }
+
+  /** 대기열에서 빼기. notify = 빠졌다는 ladder_queue{queued:false, reason} 를 보낼지. 반환 = 줄에 있었는가 */
+  ladderLeave(s, reason, notify = true) {
+    const was = this.ladder.leave(this.ladderKey(s));
+    if (was && notify) this.sendTo(s, { t: 'ladder_queue', queued: false, reason });
+    return was;
+  }
+
+  ladderQueueMsg(s, now = this.now()) {
+    const e = this.ladder.get(this.ladderKey(s));
+    if (!e) return { t: 'ladder_queue', queued: false, reason: 'none' };
+    const w = this.ladder.window(e, now);
+    e.pushSig = `${w}|${this.ladder.size}`; // 마지막으로 알린 허용 차·줄 인원(tickLadder 푸시는 이 값이 바뀔 때만)
+    return { t: 'ladder_queue', queued: true, since: e.at, waitSec: Math.floor((now - e.at) / 1000), window: Number.isFinite(w) ? w : null, rating: e.rating, waiting: this.ladder.size, serverTime: now };
+  }
+
+  /** ladder_status: 시즌·규칙 값·내 상태(계정)·대기 상태 */
+  ladderStatusMsg(s) {
+    const now = this.now(), S = this.ranking.season(now);
+    return {
+      t: 'ladder_status', serverTime: now,
+      season: { n: S.season, startedAt: S.startedAt, endsAt: S.endsAt },
+      config: { tierBounds: { ...LADDER.tierBounds }, tierDemoteBuffer: LADDER.tierDemoteBuffer, placementGames: LADDER.placementGames, master: { ...LADDER.master },
+        queue: { ...LADDER.queue }, rules: { ...LADDER.rules }, maxTeam: LADDER.maxTeam, pairLimit: LADDER.pairLimit, inactiveDays: LADDER.inactiveDays },
+      me: s.account ? this.ranking.status(s.key, s.nick, now) : null,
+      queue: this.ladderQueueMsg(s, now),
+    };
+  }
+
+  ladderBoard(s, m) {
+    this.campaignRate(s);
+    if (m.top !== undefined && !isInt(m.top, 1, LADDER.boardTop)) fail('BAD_MESSAGE');
+    return this.ranking.board(m.top ?? LADDER.boardTop, s.account ? s.key : null, s.nick, this.now());
+  }
+
+  /**
+   * 짝 찾기 1회(주기 타이머·ladder_join). 짝마다 래더 방을 만들어 두 사람을 앉힌다: 먼저 기다린 사람이 좌석 0(방장).
+   * 이후 흐름은 일반 대기실과 같다(팀 고르기 -> 좌석 1 준비 -> 방장 시작). startTimeoutSec 안에 시작하지 않으면 해산(벌점 없음)
+   */
+  tickLadder(now = this.now()) {
+    this.ranking.season(now); // 시즌 종료 시각이 지났으면 여기서 넘긴다
+    if (this.ladder.size >= 2) this.matchLadder(now);
+    // 남은 대기자에게 허용 차(창 확장)·줄 인원이 바뀌었을 때만 ladder_queue 를 다시 보낸다(PROTOCOL §11.2). 끊긴 세션은 건너뛴다
+    for (const e of this.ladder.map.values()) {
+      if (e.s?.conn && e.pushSig !== `${this.ladder.window(e, now)}|${this.ladder.size}`) this.sendTo(e.s, this.ladderQueueMsg(e.s, now));
+    }
+  }
+
+  matchLadder(now) {
+    const blocked = (a, b) => this.ranking.pairCount(a.key, b.key, now) >= LADDER.pairLimit;
+    for (const { a, b, blocked: lim } of this.ladder.match(now, blocked)) {
+      const ok = (e) => e.s.conn && e.s.account === true && !e.s.roomCode && this.sessions.get(e.s.token) === e.s && this.ladderKey(e.s) === e.key;
+      if (!ok(a) || !ok(b) || this.rooms.size >= this.limits.maxRooms) { // 그 사이 상태가 바뀐 사람은 빼고, 멀쩡한 사람은 원래 순번으로 다시 세운다
+        for (const e of [a, b]) if (ok(e)) this.ladder.join(e);
+        continue;
+      }
+      this.ladderRoom(a, b, !lim, now);
+    }
+  }
+
+  ladderRoom(a, b, counted, now) {
+    const room = this.makeRoom(this.newCode(), false, 2, null, { ...LADDER.rules });
+    room.ranked = true;
+    room.ladder = { counted, matchedAt: now, startBy: now + LADDER.room.startTimeoutSec * 1000, played: false, timer: null };
+    room.ladder.timer = setTimeout(() => {
+      if (this.rooms.get(room.code) !== room || room.game || room.ladder.played) return;
+      room.ladder.closeReason = 'ladder_timeout'; // 남은 사람도 같은 사유로(removeFromRoom 의 래더 해산)
+      try { if (room.seats[0]) this.removeFromRoom(room.seats[0].s, 'ladder_timeout'); } catch (e) { this.log('[ladder timeout]', e); }
+    }, LADDER.room.startTimeoutSec * 1000);
+    room.ladder.timer.unref?.();
+    for (const [i, e] of [a, b].entries()) { room.seats[i] = { s: e.s, ready: false, team: i }; e.s.roomCode = room.code; }
+    for (const [i, e] of [a, b].entries()) {
+      const o = i ? a : b;
+      this.sendTo(e.s, { t: 'ladder_matched', code: room.code, you: i, counted, opp: { nick: o.nick, ...this.seatRating(o.s) }, startBy: room.ladder.startBy });
+      this.sendTo(e.s, { t: 'room_joined', you: i, room: this.roomView(room) });
+    }
+    this.markListDirty();
   }
 
   campaignRate(s) {
@@ -787,6 +912,9 @@ export class Lobby {
     if (room.vsCpu) seats[1] = { nick: CPU_NICK, team: room.cpuTeam, cpu: true, level: room.cpuLevel, ...(ch ? { special256: ch.specialChance256 } : {}) };
     for (const m of room.seats) if (m) m.ready = false;
     if (room.ranked) room.rankPlayers = room.seats.map((m) => ({ key: m.s.key, nick: m.s.nick, account: !!m.s.account })); // 시작 시점 두 사람(종료 때 좌석이 비어도). account=false = 손님(반영 없음)
+    // 사람끼리 일반 멀티 경기(래더 아님, 컴퓨터·스토리·특훈·리그·불꽃 도전 제외, 불꽃 팀 허용 방 포함): 전적만 기록(pvp_records)
+    const human2 = !room.ranked && !room.vsCpu && !ch && !room.training && !room.league && !room.flame && room.seats[0] && room.seats[1];
+    room.pvpPlayers = human2 ? room.seats.map((m) => ({ key: m.s.key, nick: m.s.nick, account: !!m.s.account && !this.guestOfAccount(m.s) })) : null;
     room.rankOut = null;
     room.game = new RoomGame({
       roomCode: room.code, seats, data: this.o.data, stage: ch?.stage ?? room.league?.stage ?? room.flame?.stage ?? 0, league: room.league ? { i: room.league.i, j: room.league.j } : null,
@@ -795,6 +923,7 @@ export class Lobby {
       send: (seat, obj) => this.sendTo(room.seats[seat]?.s, obj),
       onEnd: (res) => this.onGameEnd(room, res),
       ...(room.ranked ? { onRanked: (r) => this.rankedResult(room, r) } : {}),
+      ...(room.pvpPlayers ? { onPvp: (r) => this.pvpResult(room, r) } : {}),
       ...(room.flame?.practice ? { noRecord: true } : {}), // 연습 경기(PROTOCOL §13.15): 결과 레코드를 남기지 않는다
       ...(room.flame ? { flame: room.flame.opts, flameCast: room.flame.cast ?? null } : {}), // 엔진 flame 옵션(저장된 도전 상태에서 서버가 조립한 값, PROTOCOL §12.1·§13) + 표시용 정의(game_start.flameCast, 엔진에는 넘기지 않는다)
       // 키운 팀 대전(§13.20): 같은 엔진 옵션 경로지만 도전 경기가 아니다 -> game_start 에는 flame 대신 flameVs 가 실리고(roomGame.js), 결과 레코드를 남기지 않으며, 끝나면 일반 방처럼 대기실로 돌아간다(flameEnd 를 타지 않는다)
@@ -813,8 +942,17 @@ export class Lobby {
     if (room.rankOut) { // 랭크 방: game_end 바로 뒤 좌석별 레이팅 변동
       const o = room.rankOut; room.rankOut = null;
       for (const [i, m] of room.seats.entries()) {
-        if (m && o.acct?.[i] !== false) this.sendTo(m.s, { t: 'ranking_result', matchId: res.matchId, counted: o.counted, ...(o.why ? { why: o.why } : {}), before: o.before[i], after: o.after[i], delta: o.delta[i], oppBefore: o.before[1 - i] });
+        if (m && o.acct?.[i] !== false) {
+          this.sendTo(m.s, { t: 'ranking_result', matchId: res.matchId, ladder: true, season: o.season, counted: o.counted, ...(o.why ? { why: o.why } : {}),
+            before: o.before[i], after: o.after[i], delta: o.delta[i], oppBefore: o.before[1 - i], vsGuest: o.acct[1 - i] === false,
+            tierBefore: o.tierBefore?.[i] ?? null, tier: o.tier?.[i] ?? null, placement: o.placement?.[i] ?? null, placementLeft: o.placementLeft?.[i] ?? null });
+        }
       }
+    }
+    if (room.ladder) { // 래더 방: 결과를 보낸 뒤 해산(두 사람 모두 room_left{reason:'ladder_end'}). 퇴장·유예 만료로 끝난 경기는 removeFromRoom 이 마저 정리한다
+      room.ladder.played = true;
+      if (!room.closing && room.seats[0]) this.removeFromRoom(room.seats[0].s, 'ladder_end');
+      return;
     }
     if (room.campaign && room.seats[0]) this.campaignEnd(room, res);
     if (room.training) { this.trainingEnd(room, res); return; }

@@ -62,14 +62,17 @@ export const SCREEN_BGM = {
   tutorial: () => ['bgm.menu'], // 튜토리얼 고르기: 로비 곡 유지
   league: () => ['bgm.menu'],
   flame: () => ['bgm.menu'], // 불꽃의 계승 메뉴·도전 화면: 로비 곡 유지
-  ranking: () => ['bgm.menu'], // 순위표: 로비 곡 유지 // 리그 화면들: 리그 곡은 후속(analysis/33 A), 로비 곡 유지
+  ranking: () => ['bgm.menu'], // 랭킹보드: 로비 곡 유지 // 리그 화면들: 리그 곡은 후속(analysis/33 A), 로비 곡 유지
   room: () => ['bgm.menu'], // 팀 선택: 새 곡 명령 없음(0x8C 유지)
   prematch: () => ['bgm.vs'], // 라인업(VS)·편성 0x8B
-  rules: (d) => (d?.silent ? [] : ['bgm.menu']), // 규칙 창: 새 곡 명령 없음(0x8C 유지). silent = 스토리 흐름(곡 미확정 → 무음)
-  lineup: (d) => (d?.silent ? [] : ['bgm.vs']), // 라인업(VS) 0x8B
-  story: () => [], // 스토리 막간(0x90/0x91/0x92/0x98 계열): 장면 대응 미확정 → 무음
+  rules: (d) => (d?.silent ? keepScene() : ['bgm.menu']), // 규칙 창: 새 곡 명령 없음(0x8C 유지). silent = 스토리 흐름: 0x91 유지(곡을 끊지 않음)
+  lineup: (d) => (d?.silent ? keepScene() : ['bgm.vs']), // 라인업(VS) 0x8B. 스토리는 0x8B 를 틀지 않고 0x91 유지(0x14872, analysis/53 §6-1)
+  // 스토리: 목록·제목 카드 진입 = 0xE0(카드가 0x91 을 연다), launch(라인업 뒤 맞대면) = 0x91 유지, 경기 후·엔딩은 화면 안에서 처리(53 §6-4)
+  story: (d) => (d?.mode === 'launch' ? keepScene() : []),
   game: () => [], // 매치 진입 0xE0(페이드). 곡은 matchBgm 이 이벤트로 재생
 };
+/** 스토리 장면 곡 0x91 이 요청돼 있을 때만 유지(그 밖의 곡은 유지하지 않는다 → 다른 모드 영향 없음) */
+function keepScene() { return audio.wantBgm === 'bgm.story.scene' ? ['bgm.story.scene'] : []; }
 
 /** 원작 심판: FIGHT(토스) 20f + 제자리 복귀 33f 뒤 관전 상태(0x14)로 바뀌는 순간 경기 곡 명령(0xDC6C -> 0x509C). 08 §1 실측 f388 -> f441 */
 const MATCH_BGM_DELAY_MS = 53 * 1000 / 60;

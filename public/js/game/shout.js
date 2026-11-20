@@ -121,13 +121,15 @@ export class ShoutFx {
     const probe = this.img(cur.text, 0), bw = probe.width, ch = probe.height;
     const bx = Math.max(1, Math.min(W - 1 - bw, sx - (bw >> 1)));
     const c = this.img(cur.text, sx - bx);
-    const by = Math.max(0, head - GAP - ch); // 위로 잘리지 않게
+    // 세로는 가두지 않는다(2026-11-20): 예전 by = max(0, ..) 는 머리가 화면 위 26px 안(높은 점프·위쪽 라인)이면 상자를 아래로 밀어
+    // 꼬리 끝이 머리 top 아래 = 선수 몸 위에 겹쳤다. 꼬리 끝은 언제나 머리 top 위 GAP 이고, 위로 넘치면 상자 윗부분만 화면 밖으로 나간다
+    const by = head - GAP - ch;
     const tipX = bx + c.tip, tipY = by + ch;
     this.last = { x: bx, y: by, w: bw, h: ch, tipX, tipY, head, z, age, sx };
     const k = age < T_IN ? POP[age] : 1;
     if (k === 1) { g.drawImage(c, bx, by); return; }
     const dw = Math.max(1, Math.round(bw * k)), dh = Math.max(1, Math.round(ch * k));
-    const dx = Math.round(tipX - c.tip * k), dy = Math.max(0, tipY - dh);
+    const dx = Math.round(tipX - c.tip * k), dy = tipY - dh;
     g.drawImage(c, 0, 0, bw, ch, Math.max(0, Math.min(W - dw, dx)), dy, dw, dh);
   }
 }

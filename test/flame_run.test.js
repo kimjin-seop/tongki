@@ -110,7 +110,7 @@ test('flame 도전 한 판(결과 주입 시뮬, 엔드리스 끔 = 종전): 12�
 
 test('flame 패배: 3번째 경기 패배 -> 도전 종료 정산(일반 2승 = 40코인), 코인·영구 성장은 남고 도전(장비·아티팩트·포인트)은 사라진다. 저장 후 복구', () => {
   const store = new SqliteFlameStore(openDb(':memory:'));
-  assert.equal(schemaVersion(store.db), 2); // 엔드리스·순위표는 DB 스키마를 바꾸지 않는다
+  assert.equal(schemaVersion(store.db), 3); // 엔드리스·순위표는 DB 스키마를 바꾸지 않는다(v3 = 래더 표, 2026-11-20. flame 표는 v2 그대로)
   const profile = freshProfile();
   profile.coins = 950; Run.buyPerm(cat, profile, 'PA03'); // 투구 훈련 1단계 700(D50) -> 250 남는다
   // 도중 저장 -> 읽기(sanitize) -> 같은 상태로 이어진다

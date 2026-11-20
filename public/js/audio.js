@@ -378,12 +378,28 @@ export const audio = new SoundManager();
 /** 소리 버튼(로비·경기 공용). 화면이 사라지면 구독도 자동 정리 */
 export function soundButton(h, cls = 'button.btn.small.snd') {
   const b = h(cls, { type: 'button', title: '소리 (M)', onclick: () => { audio.cycle(); b.blur(); } });
+  // 도트풍 스피커 아이콘(이미지 파일 없음): 켜짐=파동 2줄, 작게=1줄, 끔=X
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 14 10'); svg.setAttribute('class', 'snd-ic'); svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('shape-rendering', 'crispEdges'); svg.setAttribute('fill', 'currentColor');
+  const R = (x, y, w, hh) => { const r = document.createElementNS(NS, 'rect'); r.setAttribute('x', x); r.setAttribute('y', y); r.setAttribute('width', w); r.setAttribute('height', hh); svg.append(r); return r; };
+  R(0, 3, 2, 4); R(2, 3, 1, 4); R(3, 2, 1, 6); R(4, 1, 1, 8); R(5, 0, 1, 10); // 본체+콘
+  const w1 = [R(8, 3, 1, 4)], w2 = [R(10, 1, 1, 8)]; // 파동
+  const xs = [R(8, 2, 1, 1), R(9, 3, 1, 1), R(10, 4, 1, 2), R(11, 6, 1, 1), R(12, 7, 1, 1), R(12, 2, 1, 1), R(11, 3, 1, 1), R(9, 6, 1, 1), R(8, 7, 1, 1)];
+  b.append(svg);
   const paint = () => {
     if (!b.isConnected && b.dataset.mounted) { off(); return; }
     const { muted, vol } = audio.prefs;
+    const low = vol < VOLS[0] - 0.01;
     b.dataset.mounted = '1';
     b.setAttribute('aria-pressed', String(!muted));
-    b.textContent = muted ? '소리 끔' : vol < VOLS[0] - 0.01 ? '소리 작게' : '소리';
+    const label = muted ? '소리 끔' : low ? '소리 작게' : '소리';
+    b.setAttribute('aria-label', label);
+    b.title = `${label} (M)`;
+    for (const r of w1) r.style.display = muted ? 'none' : '';
+    for (const r of w2) r.style.display = muted || low ? 'none' : '';
+    for (const r of xs) r.style.display = muted ? '' : 'none';
   };
   const off = audio.on(paint);
   paint();

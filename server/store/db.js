@@ -57,10 +57,38 @@ export const MIGRATIONS = [
    CREATE TABLE flame_runs (
      key TEXT PRIMARY KEY, nick TEXT NOT NULL, data TEXT NOT NULL, ver INTEGER NOT NULL, updated_at INTEGER NOT NULL
    );`,
+  // v3: 래더(2026-11-20, PROTOCOL §11). 시즌 1 = 전원 1000(사용자 결정): 종전 ratings(key 기본키, 시즌 없음)는 지우지 않고 보관 표로 이름만 바꾼다.
+  // 새 ratings 는 (key, season) 기본키 + 표시 티어(강등 완충 상태) + 마지막 경기 시각(비활동 판정). 시즌 표·사람끼리 전적 표 추가. rank_games 에 시즌 열.
+  // 한 트랜잭션(migrate 의 db.tx)이라 중간 실패 시 전부 되돌아가고, schema_version 으로 한 번만 적용된다. 되돌리기 SQL 은 docs/HANDOFF.md 래더 절
+  `ALTER TABLE ratings RENAME TO ratings_v2_archive;
+   DROP INDEX IF EXISTS ratings_board;
+   CREATE TABLE ratings (
+     key TEXT NOT NULL, season INTEGER NOT NULL, nick TEXT NOT NULL,
+     rating INTEGER NOT NULL, w INTEGER NOT NULL DEFAULT 0, l INTEGER NOT NULL DEFAULT 0,
+     games INTEGER NOT NULL DEFAULT 0,          -- 이 시즌 반영 판수(배치·K48 판정)
+     tier TEXT NOT NULL,                        -- 표시 티어(완충 반영). 배치 중에는 숨긴다(값은 시즌 시작 레이팅 기준)
+     lock_until INTEGER NOT NULL DEFAULT 0, last_game_at INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL,
+     PRIMARY KEY (key, season)
+   );
+   CREATE INDEX ratings_board ON ratings(season, games, rating);
+   CREATE TABLE ladder_seasons (
+     season INTEGER PRIMARY KEY, started_at INTEGER NOT NULL, ends_at INTEGER NOT NULL,
+     closed_at INTEGER, final TEXT              -- 종료 때 확정값 JSON {players, masters:[{key,nick,rating}]}
+   );
+   CREATE TABLE pvp_records (
+     key TEXT PRIMARY KEY, nick TEXT NOT NULL, w INTEGER NOT NULL, l INTEGER NOT NULL, updated_at INTEGER NOT NULL
+   );
+   ALTER TABLE rank_games ADD COLUMN season INTEGER NOT NULL DEFAULT 0;`,
 ];
 
-/** @param {string} file DB 파일 경로 또는 ':memory:' */
-export function openDb(file) {
+// 운영자 승인이 필요한 마이그레이션(버전 -> 환경변수). 기존 DB(schema_version >= 1)에 이 버전을 적용하려면 그 변수 = '1'(또는 openDb 의 opts.allow).
+// 새 DB(버전 0, :memory: 포함)는 게이트 없이 최신까지 만든다. 게이트에 걸리면 아무것도 적용하지 않고 오류로 시작을 멈춘다(docs/HANDOFF.md §12 래더 절)
+export const GATED = { 3: 'LADDER_MIGRATE' };
+export const gateMessage = (v, env, cur) => `DB 스키마 v${cur} -> v${v} 마이그레이션(래더)은 운영자 승인 뒤 ${env}=1 로 한 번 기동해야 적용됩니다. 적용하지 않고 시작을 멈춥니다(docs/HANDOFF.md §12).\n` +
+  `DB schema v${cur} -> v${v} migration (ladder) needs ${env}=1 for one start after operator approval. Nothing was applied; refusing to start.`;
+
+/** @param {string} file DB 파일 경로 또는 ':memory:' @param {{allow?: Record<number, boolean>}} [opts] 게이트 마이그레이션 허용(생략 = 환경변수) */
+export function openDb(file, opts = {}) {
   if (!sqliteAvailable()) throw new Error(SQLITE_MISSING);
   if (file !== ':memory:') mkdirSync(path.dirname(file), { recursive: true, mode: 0o700 }); // mode 는 새로 만드는 폴더에만 적용
   const raw = new sqlite.DatabaseSync(file);
@@ -85,7 +113,7 @@ export function openDb(file) {
     },
     close() { cache.clear(); try { raw.close(); } catch { /* ignore */ } },
   };
-  migrate(db);
+  try { migrate(db, opts.allow); } catch (e) { db.close(); throw e; }
   return db;
 }
 
@@ -101,9 +129,15 @@ function restrictPerms(file) {
   }
 }
 
-function migrate(db) {
+function migrate(db, allow) {
   db.exec('CREATE TABLE IF NOT EXISTS schema_version (version INTEGER NOT NULL)');
   const cur = db.get('SELECT MAX(version) AS v FROM schema_version')?.v ?? 0;
+  if (cur > 0) { // 기존 DB: 게이트 버전이 남아 있고 허용이 없으면 하나도 적용하지 않는다
+    for (let v = cur + 1; v <= MIGRATIONS.length; v++) {
+      const env = GATED[v];
+      if (env && !(allow?.[v] ?? process.env[env] === '1')) { const e = new Error(gateMessage(v, env, cur)); e.code = 'MIGRATION_GATED'; throw e; }
+    }
+  }
   for (let v = cur + 1; v <= MIGRATIONS.length; v++) {
     db.tx(() => { db.exec(MIGRATIONS[v - 1]); db.run('INSERT INTO schema_version (version) VALUES (?)', v); });
   }

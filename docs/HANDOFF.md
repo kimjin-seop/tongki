@@ -91,6 +91,7 @@
   - ③ 고음 차이의 주된 원인 확정: 기준 에뮬(BizHawk GPGX) 출력 저역 통과 `y[n] = a·y[n−1] + (1−a)·x[n]`, a = 0x6666/0x10000(필터 끈 녹음에 이 식을 걸면 켠 녹음과 표본 단위로 같음). 비교 렌더 `public/assets/rom/bgm_lpf/`(14곡, manifest 미교체). 필터를 걸어도 4~6k +0.6dB → 16~20k +5dB 남음(리샘플러·합성기 차이, 미분리). 효과음 비교 렌더는 없음.
   - ④ 효과음의 곡 채널 가로채기 규칙 판독(효과음 38개는 FM5 또는 FM5+FM6 만 사용, 가로채인 곡 트랙은 진행은 계속하고 쓰기만 막힘, 끝나면 음색만 복구·다음 음표부터 들림, 우선순위 0x70/0x75/0x78/0x79, 새 곡 명령·음성은 효과음까지 전부 끊음). 설계안 2개(줄기 렌더 / 실시간 합성), 구현 없음. **발견: 0xE0 페이드 때 원작은 PSG·드럼 트랙을 즉시 끊고 FM 선율만 내린다 — 웹의 전체 페이드와 다름(미수정).**
   - **결정 대기(35 문서 §12)**: 0x85 를 한 바퀴 루프(권고)/전체 주기/무음 중 무엇으로, 0x82 처리(무음 유지/근사/재생 구조 변경), `bgm_lpf` 청취 뒤 교체 여부(교체 시 효과음도 재렌더), 가로채기·페이드 재현 방식.
+- **스토리 장면 곡 0x91 manifest 등록(2026-11-20, 박백엔, 근거 53 §6-3)**: `build_manifest.py` `PENDING` → `SCENES` 로 `bgm.story.scene` 만 옮겨 실행 → manifest 키 1개 추가(`rom/bgm/91.ogg`, verified·loop 4.701~14.793초, 길이 10.093초 = 672틱), `bgm_loops.json` allow 에 91 추가, 나머지 항목 값 불변(bgm.* 키가 파일 끝으로 이동한 순서 차이만). 이후 윤프론 스토리 잔여 구현(§16)에서 `story_intro.js` `SCENE_BGM_ON=true` + sfxmap 곡 유지 → manifest `bgm.story.scene` verified 로 지금 재생된다(53 §6-4 반영 현황은 §16). 0x98·0x90·0x92 는 PENDING 유지. 사본 `_backup/bgm_manifest_before/`. npm test 174/174.
 - **인트로 소리 깨짐 신고 조사(2026-11-18, 윤프론, 상세 27 문서 §11)**: 인트로 출력 피크 0.83·1.0 초과 0 으로 클리핑은 아니었고 원작에 없는 소리·중복 발화도 없었다. 기준 에뮬레이터 녹음(BizHawk) 대비 4~6dB 컸다 → `audio.js` 출력 이득 `MIX_TRIM`(−4.28dB) + 소프트 리미터, 1회 곡 늦은 시작 위치 보정, 인트로 효과음 한 번에 하나. 백업 `_backup/intro_audio_before/`, 자료 `_verify/round34_intro_audio/`. 직접 원인 미확정, **사용자 청취 재확인 필요**(27 §11-5).
 - **정검수 BGM 리뷰 반영(2026-11-18, 윤프론, 상세 27 문서 §5·§6·§7)**: 백업 `_backup/bgm_review_before/`. `public/js/audio.js`, `public/js/game/sfxmap.js`, `test/bgm.test.js`.
   - 탭 숨김 중 받은 곡 명령이 복귀 뒤 반영되지 않던 문제 수정(`syncBgm`, 1회 곡 종료 시 남은 명령 시작). 정검수 재현 C·D 해소.
@@ -893,7 +894,7 @@
 - 백업 `_backup/evade_before/`(match.js·special.js·rules.json·protocol.js·lobby.js·elo.js·roomGame.js·PROTOCOL.md·HANDOFF.md). 되돌리기: 그 안의 match.js·rules.json·roomGame.js·lobby.js 를 같은 경로에 덮고 `test/evade_track.test.js`·`tools/evade_track_measure.mjs` 를 지우고 `test/lobby.test.js` 의 evade 단언 2줄과 PROTOCOL §4 `evade` 줄·§5.8, 이 절을 지운다.
 - 측정(최종 엔진 eff5d6b5, `tools/evade_track_measure.mjs`, 반응 12f, 1구 N=100/칸, 거리 100·140px, 값 = 원작 → 추적 대상 피격%): **자연 필살(실제 경기에서 나가는 필살)** 대각 80→100·54→100, 웅크림 86→100·88→100, 점프 81→100·58→100, 웅크림 스팸 88→100·85→100, 점프 스팸 61→100·50→100, 캐치(±4f) 성공 80→80·74→75(변화 0~+1%p), 가만히 선 대상 100→100(궤적 차 최대 2px 남짓 = 각도 정수 양자화). 강제 ID 19종(핸들러별 대표): 회피 3종·스팸의 대상 또는 수비편(뒤 팀원 포함) 피격이 거의 전부 87~100%, 캐치율은 모든 종류에서 원작과 같거나 +1~8%p(accel2 140px 20→28, curveR 140px 71→75 = 원래 빗나가던 공이 잡힘). 85% 미만은 원작에서도 가만히 선 대상을 다 맞히지 못하는 궤적뿐: drop16 100px 웅크림 12→68(서기 78), accel2 100px 대각 0→76·웅크림 0→44·점프 80→84(서기 0 = 머리 위로 지나가는 궤적). 12f 안 도착 비율(추적, 서기 기준): 자연 필살 100px 73%·140px 38%, straight15 100px 100% — 빠른 공도 스팸 회피(71→100, 22→100)는 막는다. 한 경기(봇 대 봇 100경기, 필살 50% 투구): 캐치 ±4f 대 회피 스팸 73→95%, **캐치 ±12f 대 회피 스팸 37→77%**(analysis/45 기준 ≥75% 충족), 회피 스팸 대 가만히 98→74%, 평균 경기 시간 195~215초 → 133~138초.
 - 남은 것: 정검수 독립 리뷰, 윤프론 대기실 안내 한 줄(`room.evade`), 3300 재시작(승인 뒤), 하플레이 체감(필살이 휘는 모습·캐치 못 하는 사람의 무력감). 짝 규칙(추적 경기 캐치 자세 최소 8f)은 만들지 않았다 — 캐치율이 원작과 같아 지금 근거로는 권하지 않는다(s5 낮은 선수 체감은 하플레이 확인 필요).
-- FE 대기실 안내(2026-11-20, 윤프론, 미커밋): `public/js/screens/room.js` 머리줄 규칙 판 옆에 `room.evade==='track'` 일 때만 「필살슛 유도 — 받아내야 막힙니다」(`.rules-line.evade-note`, 머리줄 남는 폭만 쓰고 넘치면 말줄임·전문 title, `public/css/app.css` 3줄). 컴퓨터 대전 등 'rom' 방·경기/결과 화면은 표시 없음. 검증: `node --test` 154/154, 임시 서버 3392 + 임시 프로필 headless Edge 1366x768 사람 2명 방(표시, 말줄임 없음)·컴퓨터 대전 방(미표시) 캡처 `_verify/evade_note_20261120/`, 콘솔 오류 0.
+- FE 대기실 안내 문구(「필살슛 유도 — …」): 대기실 문구 제거됨(2026-11-20, 사용자 지시). `room.evade` 필드·유도 로직은 그대로.
 
 ## 10. 차지 공 색(하얀 공 신호) 복원 (2026-11-20, 윤프론, 미커밋) — 상세 analysis/47_special_input_timing.md §7
 - 수정안 C 만(표시 전용, `server/` 불변): ROM 0x362E6 표를 `public/js/game/special.js` `CHARGE_PAL` 로, `render.js` 가 보유자 스냅 CHARGING·charge 로 공 4색 치환(차지 13~15 순백, 16 복귀). `node --test` 154/154, 실화면 캡처 `_verify/charge_pal_20261120/`. 받아치기 창 하양·로컬 예측(D)은 별도 승인.
@@ -905,3 +906,94 @@
 - 검증(2026-11-20 실행): `tools/diff/run.mjs --no-report` 73 PASS + 종전 FAIL `rng_roll_180`(전후 바이트 동일). 47 §3.1 원작 트레이스 대조 103/132 → **132/132**(정규 70/70, 점프 후반 37/37). `DB_PATH=:memory:` + 임시 PROGRESS/LEAGUE/RESULTS/JSON_BACKUP `node --test test/*.test.js` **156/156**(종전 154 + 새 2, 로비·필살 추적·불꽃·컴퓨터 시험 포함). `data/tongki.db` 앞16 `2fb9e76bc8b8bb82` 불변. 3000/3300/3410/8765 미사용, 3300 은 재시작하지 않았다(서빙 중 서버에 미반영).
 - 되돌리기: `_backup/special_input_before/` 의 `match.js`·`roomGame.js` 를 같은 경로에 덮고(`PROTOCOL.md`·`HANDOFF.md`·`47_special_input_timing.md` 는 이 작업 직전본), `test/special_input.test.js` 를 지운다.
 - 남은 것: 정검수 리뷰, 하플레이 체감(대시 더블탭·점프 탭 손맛), 서버 틱 흔들림(타이머) 별도 안건, 착지 뒤 투구 동작 중 하얀 공 표시(47 §7 ①).
+
+## 12. 래더(랭크 대체) 서버 (2026-11-20, 박백엔, 미커밋) — 계약 PROTOCOL §11, 수치 analysis/46 §6
+- 사용자 결정: 계정만 래더(레이팅·티어·순위표)에 오르고, 손님도 대기열에 서서 계정과 붙을 수 있다(손님끼리 매칭 없음). 손님-계정 판은 계정 쪽만 반영하며 그 판 K 16, 손님 1000 고정·저장 없음. 시즌 1 = 전원 1000(종전 랭크 점수는 보관 표로). 모든 사람 대 사람 멀티 경기는 전적(`pvp_records`)에 반영(일반 방은 레이팅 불변). 필살슛 유도는 래더 경기에도 그대로(`isHumanVsHuman` 통과).
+- **종전 랭크 방은 없앴다**: `create_room{ranked:true}` = `LADDER_ONLY`. 래더 경기는 `ladder_join` -> 서버가 짝을 지어 래더 방(`ranked:true` + `ladder`, 목록에 없음·입장 불가)을 만들고 한 판 뒤 해산(`room_left{reason:'ladder_end'}`). `ranking_list` 는 같은 이름으로 남겨 래더 순위표를 돌려준다(`top`·`me` 키 유지 + `season`·`tier`·`pvp` 등 추가). **지금 클라이언트의 랭크 탭 「방 만들기」는 서버 재시작 뒤 `LADDER_ONLY` 토스트가 된다** — 래더 화면(윤프론) 전에 3300 을 재시작하면 랭크 경기를 할 방법이 화면에 없다.
+- 파라미터 한 곳: `server/ranking/elo.js` `LADDER`(티어 경계 950/1050/1150/1250·강등 완충 25·배치 5판·K 32/48(첫 10판)/손님 16·큐 ±100/15초/60초·max 판정·시즌 28일·resetFactor 0.5·마스터 topN 5/pct 0.05/minPlayers 20/minRating 1250/minGames 20·비활동 14일·PAIR_LIMIT 3/24h·기권 3/10 -> 30분·매칭 뒤 시작 제한 120초). 46 §6 의 `placement.games 5` 와 `kPlacementGames 10` 을 따로 뒀다.
+- 바꾼 파일: `server/ranking/elo.js`(RANK -> LADDER + 티어·창·리셋·마스터 함수), 새 `server/ranking/queue.js`(대기열, 순수), `server/store/ranking.js`(시즌·티어·마스터·pvp·순위표), `server/store/db.js`(MIGRATIONS v3 추가), `server/lobby/lobby.js`(ladder_* 처리기·짝 찾기 주기 1초·래더 방 해산·LADDER_ONLY·일반 방 pvp 훅), `server/game/roomGame.js`(`onPvp` 훅 4줄, 결과 레코드 형식 불변), `server/net/protocol.js`(`LADDER_ONLY`), 시험 `test/ladder.test.js`(새 6개), `test/accounts.test.js`(랭크 시험 3개 -> 래더 2개), `test/flame_versus_team.test.js`·`test/flame_pvp_team.test.js`(랭크 방 단언 1줄씩 -> `LADDER_ONLY`), `test/flame_run.test.js`(스키마 버전 단언 2 -> 3), `docs/PROTOCOL.md`(§1 표·§11 전면·§13.25 한 줄), 이 절, analysis/46 머리 구현 상태. 엔진(`server/engine/`)·`public/`·data 불변.
+- 해시(sha256 앞 8): `elo.js` 1749a11b -> c36b2a3c, `ranking.js` 7638596b -> a7e2fe74, `db.js` 6f526278 -> 0b12e95c, `lobby.js` eb1a3fed -> ca03616e, `roomGame.js` 94fc66ac -> 01ae3d4b, `protocol.js` 4959668e -> d6db47b2, 새 `queue.js` b4f5c228, 새 `test/ladder.test.js` 7a135751.
+- **마이그레이션 v3**(`server/store/db.js` MIGRATIONS[2], `schema_version` 으로 한 번만, 한 트랜잭션): `ALTER TABLE ratings RENAME TO ratings_v2_archive` · `DROP INDEX IF EXISTS ratings_board` · 새 `ratings`(기본키 (key, season), `tier`·`last_game_at` 추가) + `ratings_board` 색인 · `ladder_seasons` · `pvp_records` · `ALTER TABLE rank_games ADD COLUMN season INTEGER NOT NULL DEFAULT 0`. 서버가 v3 코드로 처음 뜰 때 자동 적용된다. 시즌 1 시작 시각 = 그 뒤 처음 래더 상태를 읽은 때(서버 시작 후 1초 안 짝 찾기 주기).
+- **운영 DB(`data/tongki.db`)에는 실행하지 않았다**(팀장이 사용자 승인 뒤). **게이트(리뷰 M2, 2026-11-20)**: 기존 DB 에 v3 는 `LADDER_MIGRATE=1` 일 때만 적용된다. 없으면 아무것도 바꾸지 않고 `MIGRATION_GATED` 오류 두 줄을 남기고 서버가 시작을 멈춘다(종료 1). 「래더만 끄고 v2 로 계속 뜨기」는 고르지 않았다: 새 코드는 래더 요청뿐 아니라 일반 사람끼리 방 경기 종료(`recordPvp` -> `pvp_records`)에서도 v3 표를 써서, 끄려면 기존 경로 여러 곳에 분기가 필요하고 빠뜨리면 경기 결과 저장 중 오류가 난다 — 시작 거부가 데이터 쪽으로 안전하다. 새 DB·`:memory:`(시험)는 게이트 없이 최신.
+  운영 적용 절차: ① 3300 을 포함해 `data/tongki.db` 를 연 **모든 프로세스 정지**(pm2 목록 확인) ② `data/tongki.db`·`-wal`·`-shm` **세 파일을 함께 복사**해 보관 ③ `LADDER_MIGRATE=1` 을 넣고 **1회 기동**(자동 적용, 로그 확인) ④ `SELECT MAX(version) FROM schema_version` = 3·`ratings_v2_archive` 행 수 = 종전 `ratings` 행 수 확인 ⑤ 그 뒤 재시작부터는 `LADDER_MIGRATE` 를 빼도 된다(이미 v3 라 게이트 없음) ⑥ 문제가 있으면 아래 되돌리기(②의 사본 복원 우선, 데이터를 살려야 하면 SQL).
+- **되돌리기**: 가장 안전한 것은 ②의 사본으로 세 파일을 되돌리고 코드를 `_backup/ladder_before/` 로 되돌리는 것. v3 뒤 쌓인 데이터를 살려야 하면(래더 기록은 잃는다) 서버를 멈추고 아래 SQL(임시 사본에서 실행·재적용 확인함):
+  ```sql
+  BEGIN;
+  DROP TABLE ratings;
+  ALTER TABLE ratings_v2_archive RENAME TO ratings;
+  CREATE INDEX ratings_board ON ratings(season, games, rating);
+  DROP TABLE ladder_seasons;
+  DROP TABLE pvp_records;
+  ALTER TABLE rank_games DROP COLUMN season;   -- SQLite 3.35+. 남겨도 옛 코드는 열 이름을 지정해 쓰므로 무해
+  DELETE FROM schema_version WHERE version = 3;
+  COMMIT;
+  ```
+  **v3 DB 를 옛 코드로 열면 안 된다**(옛 코드의 `ON CONFLICT(key)` 가 새 기본키와 맞지 않아 랭크 저장이 실패한다). 코드와 DB 는 함께 되돌린다.
+- 검증(2026-11-20 실행): `DB_PATH=:memory:` + 임시 `PROGRESS_PATH`·`LEAGUE_PATH`·`RESULTS_DIR`·`RESULTS_PATH`·`JSON_BACKUP_DIR` 로 `node --test test/*.test.js` **161/161**(종전 156 − 랭크 3 + 래더 2 + 새 6). 운영 DB 임시 사본(mktemp, 본 파일·wal·shm 복사)에 v3 적용 -> 표 생성·`ratings_v2_archive` 0행·재열기 재적용 없음 -> 위 되돌리기 SQL -> v2 스키마 복원 -> 다시 v3 적용 확인. `data/tongki.db` sha256 앞 16 `2fb9e76bc8b8bb82` 전후 같음. 3000/3300/3410/8765 접속·재시작 없음.
+- 남은 위험: ① 손님은 닉네임만 바꾸면 새 상대가 되어 같은 상대 제한을 피하고 기권 잠금도 없다(K 16 으로 줄였지만 다른 창 손님으로 자기 계정 점수 올리기는 못 막는다). ② 대기열·래더 방은 메모리(서버 재시작 = 줄 사라짐, 진행 중 경기는 종전처럼 사라짐). ③ 순위표·좌석 표시가 시즌 전원 행을 읽어 정렬한다(마스터 계산) — 인원 수천 명이면 캐시 필요. ④ 매칭 뒤 대기실 흐름(좌석 1 준비 -> 방장 시작)은 일반 방 그대로라 한쪽이 안 누르면 120초 해산까지 기다린다. ⑤ 시즌 종료는 시각 기준 자동(수동 종료 도구 없음), 시즌 보상 없음. ⑥ 일반 방 전적은 같은 상대 제한이 없다(전적은 표시용). ⑦ 정검수 리뷰·실화면 전.
+- **래더 = 계정만(2026-11-20 사용자 결정, 박백엔)**: 손님 `ladder_join` = `ACCOUNT_REQUIRED`(가입 승격 뒤 가능), 짝 찾기 계정 세션만. 이전 결정 「손님과 한 판도 계정 점수 반영(K16)」은 래더 한정 폐기 — K16·`guest:` 키·`vsGuest` 코드는 도달 불가로 남김(회귀 시험 `test/accounts.test.js`). 일반 사람끼리 방의 손님 판은 계정 쪽 전적만(레이팅 불변, `test/ladder.test.js`). 같은 회차 윤프론 요청: 좌석·`ladder_matched.opp` 에 `placementLeft`, 대기 중 `ladder_queue` 푸시(창·인원 변화 때만). PROTOCOL §11.1·§11.2, analysis/46 §10.
+- **전체 랭킹 `pvp_board`(2026-11-20, 박백엔)**: 순위표 두 가지 = 래더 랭킹(`ladder_board`, 시즌별 초기화) + 전체 랭킹(`pvp_board`, 래더+일반 사람끼리 합산 누적 승·시즌 무관). 정렬 승 -> 승률 천분율 정수 -> 판수 -> 닉네임, 동점 같은 rank, 손님 me=null, 새 색인 없음(근거 PROTOCOL §11.6). 계약 PROTOCOL §11.6, 시험 `test/pvp_board.test.js`. 같은 회차 리뷰 반영: L4 `ranking_result.tierBefore/tier` 에 마스터 반영(ladder_status 와 일치), M2 v3 게이트(위). 사본 `_backup/pvp_board_before/`.
+- 윤프론 화면이 쓸 데이터: `ladder_status`(시즌 번호·종료 시각, 내 레이팅·티어·배치 남은 판·순위·마스터·잠금·전적, 티어 경계·배치 판수 config), `ladder_queue`(대기 중·대기 초·허용 차·줄 인원), `ladder_matched`(상대 닉네임·레이팅·티어·손님 여부, 이번 판 반영 여부 counted, 시작 기한 startBy), 래더 방 `room.ladder`·`slots[i].tier/guest`, `ranking_result`(전후 레이팅·delta·tierBefore/tier 로 승급·강등 연출, placementLeft, vsGuest, why), `ladder_board`(시즌·top 의 tier·pvp, 내 줄 placement/inactive, total·masterQuota), `room_left.reason` `ladder_end|ladder_cancel|ladder_timeout`. 티어 이름 키 6개(bronze…master) 번역·아이콘은 화면 몫.
+
+## 13. 채팅·관리자 공지 서버 (2026-11-20, 박백엔, 미커밋) — 계약 PROTOCOL §14, 설계 analysis/49_chat_admin_notice.md
+- 사용자 결정: 채팅은 사람끼리 방(대기실·경기 중, 래더·불꽃 팀 허용 방 포함)의 두 사람끼리만, 로비 전체 채팅 없음, 화면 로그 최대 5줄. 공지는 관리자 계정만, 접속 중 전원에게 중앙 표시.
+- 서버: 새 `server/chat/chat.js`(`chat`·`notice_send` 처리기, 글 정리·빈도·욕설 가림·관리자 판정·공지 기록), 새 `server/data/chat_badwords.json`(최소 목록), `server/lobby/lobby.js`(import 1줄·`initChat` 1줄·`welcome`/`account_ok` 의 `admin`·`roomView.chat`·처리기 펼치기 1줄), `server/net/protocol.js`(ERR 6개), `server/net/limits.js`(환경변수 8개), `server/index.js`(`admins`·`noticePath` 전달), 새 시험 `test/chat.test.js`(5개), `docs/PROTOCOL.md`(§1 표 5줄·§2.1 한 줄·§14 새 절). 엔진(`server/engine/`)·`server/game/roomGame.js`·`public/`·data 불변.
+- 해시(sha256 앞 8): `lobby.js` ca03616e -> 040db858, `protocol.js` d6db47b2 -> 20000932, `limits.js` 39e10c1f -> 4eadd08b, `index.js` e8d05a17 -> c8294261, 새 `chat.js` 8a8b256f, 새 `chat_badwords.json` 80700638, 새 `test/chat.test.js` 34de1898.
+- 운영 켜기(확정 닉네임 `운영자`, 리뷰 M1 반영 2026-11-20): **목록에는 반드시 먼저 가입한 계정만 넣는다.** ① `ADMIN_ACCOUNTS` 없이 떠 있는 3300 에서 사용자가 직접 `운영자` 계정을 가입(비밀번호는 사용자가 정한다. 서버·에이전트는 비밀번호를 다루지 않는다) ② 3300 을 `ADMIN_ACCOUNTS=운영자` 로 재시작 ③ 시작 로그 `[admin] 관리자 계정 확인: 운영자 (가입 <ISO 시각>)` 의 가입 시각이 ①의 시각과 맞는지 확인(다르면 다른 사람이 먼저 가입한 계정이므로 목록에서 빼고 재시작). 시작 때 가입되지 않은 항목은 경고 로그 + 그 실행 동안 비활성(뒤에 가입돼도 승격 없음), 목록 닉네임의 `register` 는 `NICK_TAKEN`. 빈 값이면 공지 꺼짐, 채팅은 환경변수 없이 켜진다. 공지 기록은 `data/notices.jsonl`(gitignored). DB 스키마 변경 없음.
+- 검증(2026-11-20 실행): `DB_PATH=:memory:` + 임시 `PROGRESS_PATH`·`LEAGUE_PATH`·`RESULTS_DIR`·`RESULTS_PATH`·`JSON_BACKUP_DIR`·`NOTICE_PATH` 로 `node --test test/*.test.js` **166/166**(종전 161 + 새 5). `data/tongki.db` 앞16 `2fb9e76bc8b8bb82` 전후 같음, `data/notices.jsonl` 생기지 않음. 3000/3300/3410/8765 접속·재시작 없음.
+- 되돌리기: `_backup/chat_before/` 의 `lobby.js`·`protocol.js`·`limits.js`·`index.js`·`PROTOCOL.md`·`HANDOFF.md` 를 제자리에 덮고 `server/chat/`·`server/data/chat_badwords.json`·`test/chat.test.js`·`analysis/49_chat_admin_notice.md` 를 지운다.
+- **화면 반영 전 서버만 재시작해도 안전**: 새 메시지는 구 클라이언트가 보내지 않고, 추가 필드(`admin`·`room.chat`)·`notice` 는 모르는 클라이언트가 무시한다(구 화면은 공지를 못 보여 준다).
+- 정검수 리뷰(래더·채팅) 반영(2026-11-20): M1·M2·L4 수정(위·§12). 아래 L1~L3·L5 는 **알려진 한계로만 남김**(코드 변경 없음).
+  - **L1 매칭 직후 회피에 벌점 없음**: 래더 매칭 뒤 시작 전에 나가면(상대 레이팅·티어를 보고 고르기) 벌점이 없다. 남은 사람은 대기 순번을 잃고 다시 줄을 서야 하며, 같은 사람이 반복하면 괴롭힘 수단이 될 수 있다. 시작 전 퇴장 무벌점은 설계 결정이다.
+  - **L2 성능**: `tickLadder` 가 매초 허용 창 안의 후보 쌍마다 `pairCount` SQL 을 부른다(O(n²)). `roomView`/`seatRating` -> `status()` 는 배치를 마친 계정마다 시즌 전원 `#standings` 정렬을 다시 한다. 지금 규모에서는 문제없고, 인원이 많아지면 캐시가 필요하다.
+  - **L3 글 정리·욕설 목록 빈틈**: `cleanText` 가 U+061C·U+2060·U+00AD·한글 채움 문자 U+3164·결합 문자 누적을 거르지 않는다(길이 상한 60 코드포인트로 피해는 제한된다). 욕설 목록의 「새끼」「ㅂㅅ」가 「새끼손가락」 같은 정상 단어도 가린다.
+  - **L5 원문 전달 전제**: 서버는 채팅·공지 원문(HTML 포함)을 이스케이프 없이 그대로 보낸다. 클라이언트는 반드시 `textContent`(또는 캔버스 텍스트)로만 그려야 하고 `innerHTML` 을 쓰면 XSS 가 된다(PROTOCOL §14.1).
+- 남은 위험: ① 욕설 목록이 최소라 띄어쓰기·자모 분리·초성 변형은 못 가린다(신고·차단·뮤트 없음). ② 공지 번호·빈도 창은 메모리(재시작 = 1부터). ③ 채팅 기록을 서버가 남기지 않는다(신고 대응 근거 없음). ④ 래더 경기 중 채팅은 상대 도발 수단이 될 수 있다(차단 기능 없음). ⑤ 정검수 리뷰·윤프론 화면·실화면 전.
+
+## 14. 래더 화면 + 순위표 2탭 (2026-11-20, 윤프론, 미커밋) — 계약 PROTOCOL §11(pvp_board 는 서버 코드 `server/store/ranking.js pvpBoard` 기준, rate = 천분율)
+- 종전 랭크 방 UI 제거: 로비 「랭크」 토글·방 목록 전체/랭크 탭·랭크 태그 삭제, `create_room` 은 `{}` 만 보낸다. 방 목록 줄에 로비 「래더 대전」(계정만, 손님은 흐림 + 토스트). **(2026-11-20 사용자 A안) 「순위표」는 「랭킹보드」로 이름을 바꿔 로비 왼쪽 큰 메뉴 맨 아래(컴퓨터 대결 다음)로 옮겼다**(`app.go('ranking')` 그대로, 방 목록 창에는 래더 대전만).
+- 새 화면 `public/js/screens/ladder.js`(view `ladder`): 내 현황(티어 칩·레이팅·순위·승패·배치 n/5·시즌 남은 시간) + 대기열(대기 시간·허용 점수 차·대기 인원·취소). 허용 차는 `ladder_status.config.queue` 로 클라이언트가 계산, 대기 인원은 15초마다 `ladder_status`. 끊겼다 붙으면 `ladder_join` 다시 보냄.
+- 래더 방 = 기존 대기실(room.js): 제목 「래더 대전」, 「반영/미반영/미반영(손님)」, `startBy` 카운트다운(30초 이하 빨강), 좌석 티어 칩·레이팅·「손님」 칩. 결과 카드(game.js): `점수 전 → 후 (±)` + `배치 n/5`·`배치 완료 · 티어`·`승급/강등 A → B`, 해산(room_left ladder_end) 뒤에도 카드 유지 → 「래더로」. `room_left` ladder_cancel/ladder_timeout = 토스트 + 래더 화면.
+- 순위표(ranking.js): 「래더 랭킹」(ladder_board, 시즌 줄) / 「전체 랭킹」(pvp_board, 「시즌과 무관한 누적 기록」). 내 줄 강조, 목록에 없으면 아래 고정, 손님 내 줄 없음.
+- 문구: i18n `TIER`·`ROOM_LEFT.ladder_*`·`ERR_CODE.RANKED_LOCKED(남은 분)·LADDER_ONLY·RANKED_RULES_FIXED`·`RANK_WHY.SAME_KEY`. CSS 끝 「래더」 절(티어 색 = 팔레트 토큰).
+- 랭킹보드 3번째 탭 「불꽃의 계승」(2026-11-20, 윤프론, 미커밋): `ranking.js paintFlame`(순위·닉네임+고난도 칩·구간·승·핵심 3명, `flame_ranking_get` → `app.flameRank`), `main.js` 의 `flame_ranking` 을 `ranking` 뷰에도 전달, CSS `.rk-wide`(불꽃 탭만 창 넓힘, 900px 이하·낮은 화면은 핵심 열 숨김). 서버·DB 변경 없음(analysis/52). 검증 `_verify/flame_tab_20261120/v.mjs`(포트 3404, 서버 프로세스 안에서 기록 주입) 16/16, 캡처 `Works/_asset_samples/tongki_flame_tab/`. 되돌리기 `_backup/flame_tab_before/`(ranking.js·main.js·app.css).
+- 로비 오른쪽 창 탭화(2026-11-20, 윤프론, 미커밋): 「일반 경기 / 래더 경기」 탭(`.rl-tab`, 선택 `dd.lobbyTab` 기억). 래더 탭 = 래더 요약(티어·레이팅·승패·시즌·잠금 남은 분) + 큰 「래더 대전」, 방 만들기·방 목록 숨김, 서버 푸시 중 방 목록 미그림. `lobby.js`·`app.css`(`.lobby-ld` 몇 줄) 만 변경, 검증 `_verify/lobby_tabs_20261120/v.mjs`(포트 3406), 캡처 `Works/_asset_samples/tongki_lobby_tabs/`, 되돌리기 `_backup/lobby_tabs_before/`.
+- 정검수 클라이언트 리뷰 반영(2026-11-20, 윤프론, 미커밋): M1 공지 중복 키 `id|at`(notice.js), L2 래더 돌아가기 want 시 ladder_cancel, L4 대기실 좌석 `placementLeft`, L6 로그아웃·TOKEN_INVALID·SESSION_REPLACED 시 래더·순위 캐시 비움(main.js), L1 로비 래더 탭 5초 내 ladder_status 재전송 안 함. 검증 `_verify/review_fix_20261120/v.mjs`(포트 3415, 임시 파일 DB) 13/13, 되돌리기 `_backup/review_fix_before/`.
+- 알려진 한계(정검수 리뷰, 코드 미수정):
+- L3: 거절된 래더 참가(RANKED_LOCKED·ALREADY_IN_ROOM) 뒤 ladder.js `want` 가 true 로 남아, 재접속 시 onWelcome 이 ladder_join 을 다시 보내 같은 거절 토스트가 반복된다(ladder.js 에 onError 없음).
+- L5: 래더 대기열 허용 점수 차를 클라이언트(ladder.js 86-87행)가 다시 계산하며 서버 푸시 `Q.window` 를 쓰지 않는다. 15초 폴링도 서버 푸시가 있어 프로토콜상 불필요.
+- L7: RANKED_LOCKED 의 `lockText(until)` 가 `net.now()` 가 아닌 `Date.now()` 를 쓴다(분 단위라 영향 작음).
+- L8: 스토리 제목 카드가 떠 있는 동안 capture keydown 이 수정키·F키를 뺀 모든 키를 stopPropagation 해 M(소리) 같은 전역 단축키가 막힌다(의도라면 무시). `window.__storyIntro` 디버그 참조가 끝난 장면 클로저를 붙잡는다.
+- L9: chat.js 한도 자르기가 IME 한글 조합 중 글자를 input 이벤트에서 잘라 조합이 끊길 수 있다(서버가 최종 판정, 기능 문제 아님).
+- L10: notice.js 공지 표시 시간(8초/10초)은 처음 띄운 시점의 화면 기준이며, 경기↔비경기 전환 시 다시 그리기만 하고 시간은 바꾸지 않는다.
+- 검증: `_verify/ladder_ui_20261120/v.mjs`(포트 3401, `DB_PATH=:memory:`) 52/55 — 실패 3 은 상아 팀 선수 이름 말줄임(기존 대기실 로스터, 이번 변경 무관). 콘솔 오류 0(AudioContext 자동재생 경고만). 캡처 `Works/_asset_samples/tongki_ladder_ui/`. 되돌리기: `_backup/ladder_ui_before/` 7개 파일 덮고 `screens/ladder.js` 삭제.
+
+## 15. 정적 파일 압축·캐시·Range·서빙 차단 (2026-11-20, 박백엔, 미커밋) — 근거 analysis/51_traffic_measure.md §3
+- 정적 처리를 `server/index.js` 에서 `server/net/static.js`(`createStaticHandler`)로 옮겼다. 경기·로비·WS 코드는 그대로. public/ 은 바꾸지 않았다.
+- 압축: js·css·json·html·svg·webmanifest·txt·ttf·ico(512B~8MB)만 `Accept-Encoding` 에 따라 br(품질 5) > gzip(레벨 6). png·woff2·ogg·mp3·wav·jpg 는 압축 안 함. 결과는 메모리 LRU(기본 64MB, `createServer({ staticCacheBytes })`), 키 = 경로+인코딩, mtime+size 가 바뀌면 다시 압축(개발 중 수정 즉시 반영). 압축은 비동기(zlib 스레드 풀)라 게임 루프를 막지 않는다. 압축 대상에는 `Vary: Accept-Encoding`.
+- 캐시 헤더: 모든 정적 파일에 약한 `ETag`(`W/"size-mtime"` 16진)·`Last-Modified`, `If-None-Match`(우선)·`If-Modified-Since` 일치 시 304. `Cache-Control` = `assets/rom/**.{wav,png,woff2,ogg,mp3,jpg}` 만 `public, max-age=3600`, 나머지(index.html·js·css·manifest·글꼴 assets/fonts 등) `no-cache`(매번 재검증 304). 해시 경로가 아니므로 rom 자산을 고치면 최대 1시간 옛 파일이 보일 수 있다.
+- Range: 압축하지 않는 형식만 단일 범위 `bytes=a-b`·`a-`·`-n` -> 206 + `Content-Range`, `Accept-Ranges: bytes`. 여러 범위·해석 불가·범위 밖·`If-Range` 불일치는 200 전체로 폴백(416 없음). HEAD 는 본문 없이 같은 헤더.
+- **서빙 차단 목록**(`server/net/static.js` `BLOCKED` 상수 한 곳, 파일은 삭제하지 않음, 404): 판정은 `realpath` 실제 경로 기준이라 대소문자·8.3 짧은 이름(`BGM_CA~1`)·`::$DATA` 우회도 막힌다. 근거 = 2026-11-20 `public/js`·`public/css`·`index.html`·`assets/manifest.json` 에서 참조 0 확인(분석 데이터 `analysis/data/35_bgm_oracle/*` 는 디스크에서 읽는 오프라인 자료).
+  | 패턴 | 크기 | 비고 |
+  |---|---|---|
+  | `assets/rom/_cache/` · 모든 `*.pkl` | 307~321MB(53개) | 파이썬 피클 캐시 |
+  | `assets/rom/bgm_lpf/` | 33MB | BGM 저역 필터 시안 |
+  | `assets/rom/bgm_cand*/`(bgm_cand·bgm_cand_lap) | 30MB | BGM 후보 |
+  | `assets/manifest.backup*` | 71KB | 백업 manifest |
+  | `assets/fonts/Galmuri7.ttf`·`Galmuri11.ttf` | 9MB | woff2 교체 후 보존만 |
+- **BlackHanSans-Regular.ttf(998KB)는 차단하지 않았다**: `assets/manifest.json` `font.title`('DD Title') 이 참조하고 `public/js/game/assets.js loadFonts()` 가 모든 `font.*` 를 받는다. 'DD Title' 패밀리를 쓰는 코드·CSS 는 없다. 서빙만 막으면 접속마다 404 + 콘솔 경고가 나므로, public/ 수정이 가능할 때 manifest 의 `font.title` 항목을 빼는 것이 맞다(그러면 br 259KB 전송도 0).
+- 실측(포트 3416, `DB_PATH=:memory:`, analysis/51 Edge 로그의 첫 화면+첫 경기 URL 82개 + BGM 83.ogg 1곡을 node http 로 재현, 본문 바이트): 화면 자산 4,286KB -> 2,317KB(-46%), BGM 3,672KB 그대로. 재방문(조건부 요청) 본문 0B(83개 전부 304, 그중 18개는 max-age 안이라 브라우저는 요청도 안 함).
+- 시험 `test/static_serve.test.js`(br/gzip 복원·Vary·304·차단 404·순회 방어·Range 206·다중 범위 200 폴백). 되돌리기: `_backup/static_before/server/index.js` 덮고 `server/net/static.js`·`test/static_serve.test.js` 삭제.
+- 정검수 리뷰 반영(2026-11-20): [High] `pipeFile` 을 `stream.pipeline` 으로 바꿔 클라이언트가 중간에 끊어도 ReadStream 이 닫힌다(종전 `s.pipe(res)` 는 fd 누수, 시험 추가). [Medium] 압축 캐시는 읽은 뒤 다시 stat 해 mtime+size 가 같을 때만 저장(다르면 그 응답은 무압축). 파일은 차단 판정에 쓴 realpath 로 연다. 8.3 짧은 이름(`/assets/MANIFE~2.JSO`) 차단 시험 추가. 되돌리기 사본 `_backup/static_before2/`(반영 전 static.js·시험·HANDOFF).
+- 알려진 한계(Low, 코드 미수정): 범위 밖 Range 는 416 대신 200 전체. `.txt` 는 MIME 표에 없어 `application/octet-stream`(br 압축은 됨). GET·HEAD 외 메서드(POST 등)도 종전처럼 정적 파일을 준다.
+- 남은 위험: ① 앞단 nginx/CDN 이 있으면 압축·ETag 를 다시 바꿀 수 있다(운영 앞단 미확인). ② ETag 는 mtime 기반이라 다른 서버에 배포하면(mtime 달라짐) 첫 재검증은 200. ③ 압축 대상 첫 요청은 압축 시간만큼 늦다(DoHyeon 880KB br5 실측 23ms, 이후 캐시). ④ 사전 압축(br 11)·해시 경로·장기 캐시는 하지 않았다.
+
+## 16. 스토리 잔여 구현 — 경기 후 대사·맞대면·컨티뉴·엔딩 그림 (2026-11-20, 윤프론, 미커밋) — 근거 analysis/53_story_remaining_spec.md
+- 범위: `public/js/screens/story_scene.js`(경기 전·맞대면·경기 후 공통 대사 엔진, 3전 팀 그림 8f/8f·15전 엄마 32f), `story_match.js`(맞대면 8f 페이드 인·끝 전환 32f 코트 상승+검은 띠, 승리 끝 화면 페이드 32f), `story_after.js`(컨티뉴 문구·`continueTo`·`winFadeBgmOff`), `story_end.js`(엔딩 그림 `ending_01.png` 64/481/64f, 넘김 없음), `story.js`(경기 후 원작 대사 → 승리 자동 진행 / 패배 컨티뉴 창: 예 = k<14 제목 카드부터·k=14 맞대면만, 아니오 = 챕터 목록; 라인업 뒤 맞대면 → 끝 전환 → `campaign_start`; 목록 부제 = `title_ko.subtitle`), `story_intro.js`, `game/sfxmap.js`, `css/app.css`. 에셋 `public/assets/rom/story/story_extras.{json,png}`·`ending_01.png`.
+- BGM(53 §6-4): #2 `SCENE_BGM_ON=true` / #3 규칙 창·라인업 `silent` = 0x91 유지(`keepScene`) / #4 `SCREEN_BGM.story` = launch 만 유지, 패배 진입 `app.bgmStop()`(0xE1) / #5 맞대면 끝 `app.bgm(null)` → `campaign_start` / #6 승리 끝 `app.bgm(null)`(k=6 제외) / #8 엔딩 그림 시작 `app.bgm('bgm.story.ending')`(0x92 manifest 미등록 → 무음). **#7(0x98 미리 받기) 미적용**: 0x98 자체를 쓰지 않기로 해(팀장 결정) 받을 곡이 없다.
+- 되돌리기: `_backup/story_remaining_before/`(story.js·story_intro.js·sfxmap.js·app.css) 덮고 새 파일 4개(story_scene·story_match·story_after·story_end) 삭제.
+- 정검수 리뷰 반영(2026-11-20, 사본 `_backup/story_review_fix_before/`): [M1] 초상(portraits.json/png) 실패 시 대사를 통째로 건너뛰던 것 → 초상 없이 글자로 진행. [M2] 3전 팀 그림 전환에서 상대 초상 8f 페이드 아웃이 안 보이던 것(세그먼트가 먼저 바뀌어 초상 null) → 앞 8f 는 이전 세그먼트 초상 유지, 끝나면 `bright.R=1`. 15전 엄마는 같은 초상이라 해당 없음. [R1] 맞대면 끝 `campaign_start` 뒤 응답이 8초 없거나 오류·끊김·재접속(onWelcome)이면 숨긴 창을 「경기 준비 중…」 + `챕터 목록` 으로 복구(시간 초과는 기존 토스트 `ERR.UNKNOWN`). [R2] 15전 컨티뉴 `예` 뒤 숨긴 버튼 포커스 해제. [L4] 공개 `story_dialogue_ko.json`(두 사본 동일) `mirrors` 필드(비공개 경로) 삭제 — 읽는 코드·시험·도구 0 확인.
+- 알려진 한계(Low, 코드 미수정):
+  - L1: 장면 진입 페이드(맞대면 8f 등) 중 Esc 가 페이드를 끊고 장면을 끝낸다.
+  - L2: `story_after.js winFadeBgmOff(6)=false` 라 k=6 승리 끝만 `bgm(null)` 을 생략한다(7번째 승리 이벤트 미구현) — 0x98 도입 시 재검토.
+  - L3: `story_match.js frames()` 가 시작 때 `f(0)` 을 즉시 한 번 부르고 첫 틱에서 다시 `f(0)` 을 불러 0 프레임이 두 번 계산된다(결과 같음).

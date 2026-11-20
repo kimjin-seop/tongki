@@ -42,14 +42,20 @@
 | TRAINING_UNAVAILABLE | 아직 준비되지 않은 튜토리얼입니다 (서버가 닫아 둔 `training_start.kind`, §9.1. 지금은 닫힌 종류가 없다) |
 | NOT_IN_TRAINING | 튜토리얼 중이 아닙니다 (`training_quit`) |
 | GAME_ABORTED | 경기가 서버 오류로 중단되었습니다 (아래 toast로만 전달) |
-| ACCOUNT_REQUIRED | 계정으로 로그인해야 합니다 (`REQUIRE_ACCOUNT=1` 서버의 닉네임 `hello`, 손님의 랭크 방 만들기(입장은 2026-11-20 부터 허용), §2.1·§11) |
+| ACCOUNT_REQUIRED | 계정으로 로그인해야 합니다 (`REQUIRE_ACCOUNT=1` 서버의 닉네임 `hello`, §2.1) |
 | ACCOUNT_EXISTS / NICK_REGISTERED | 이미 가입된 닉네임입니다 (`register`) / 가입된 닉네임입니다. 비밀번호로 로그인하세요 (닉네임만 보낸 `hello`) |
 | PASSWORD_INVALID | 비밀번호는 6~64자로 정하세요 (`register`) |
 | LOGIN_FAILED / LOGIN_LOCKED | 닉네임 또는 비밀번호가 맞지 않습니다 / 로그인 실패가 많아 잠시 막혔습니다 (`login`) |
 | AUTH_RATE_LIMITED / AUTH_BUSY | 가입·로그인 시도가 너무 잦습니다 (IP당 분당 10회) / 처리 중입니다 (같은 연결에서 앞 요청 처리 중) |
 | ACCOUNT_CREATED_RELOGIN | 가입은 되었습니다. 비밀번호로 다시 로그인하세요 (`register` 처리 중에 그 연결이 로그아웃·교체·다른 닉네임 접속으로 바뀐 경우. 계정은 만들어졌고 토큰은 발급하지 않았다) |
-| RANKED_LOCKED | 기권이 잦아 잠시 랭크 경기를 할 수 없습니다 (`params.until` = 풀리는 시각 epoch ms, §11) |
-| RANKED_RULES_FIXED | 랭크 방은 규칙을 바꿀 수 없습니다 (랭크 방 `set_rules`, 고정값과 다른 `create_room.rules`) |
+| RANKED_LOCKED | 기권이 잦아 잠시 랭크 경기를 할 수 없습니다 (`params.until` = 풀리는 시각 epoch ms, `ladder_join`·래더 방 `start`, §11) |
+| RANKED_RULES_FIXED | 랭크 방은 규칙을 바꿀 수 없습니다 (래더 방 `set_rules`) |
+| LADDER_ONLY | 랭크 경기는 래더 대기열에서만 할 수 있습니다 (`create_room{ranked:true}` — 2026-11-20 래더로 대체, §11) |
+| CHAT_EMPTY / CHAT_TOO_LONG | 보낼 내용을 입력하세요 / 너무 깁니다 (`chat`·`notice_send`, 정리 후 길이. TOO_LONG 은 `params.max`, §14) |
+| CHAT_RATE_LIMITED | 채팅이 너무 빠릅니다. 잠시 후 다시 보내세요 (세션당 최소 간격·10초 상한·같은 내용 연속 3회째, §14) |
+| CHAT_UNAVAILABLE | 여기서는 채팅할 수 없습니다 (사람끼리 방이 아닌 곳의 `chat`, §14) |
+| NOT_ADMIN | 관리자만 할 수 있습니다 (관리자 계정이 아닌 세션의 `notice_send`, §14) |
+| NOTICE_RATE_LIMITED | 공지를 너무 자주 보냈습니다. 잠시 후 다시 보내세요 (3초에 1개·분당 10개, §14) |
 
 정의 위치는 `server/net/protocol.js`의 `ERR`이며 이 표와 일치한다. `NOT_IN_GAME`은 정의만 있고 현재 서버가 보내지 않는다.
 서버 주도 알림은 `{t:'toast', code, msg, params?}` (예: 한 방에서 엔진 오류로 경기가 중단됨 `GAME_ABORTED`, 이때 `game_end.reason='error'`).
@@ -96,6 +102,7 @@
 | `{t:'logout'}` (로그인 후) | 로그인 토큰 폐기 + 세션 종료(방·경기 중이면 퇴장 = 기권) -> `{t:'logged_out'}`. 연결은 유지(다시 `hello`/`login` 가능). 로그인 타이머를 로그아웃 시점부터 새로 건다: 5분(`LOGOUT_LOGIN_TIMEOUT_MS`) 안에 다시 로그인하지 않으면 `LOGIN_TIMEOUT` 후 close |
 
 - `welcome` 추가 필드: `account:boolean`(계정 세션인가), `requireAccount:boolean`(서버가 계정 필수인가 = 클라이언트가 닉네임만 입력 칸을 숨길지).
+- `welcome`·`account_ok` 의 `admin:true` — 관리자 계정 세션에만 있다(없으면 일반). 공지 입력 UI 를 그릴지만 정한다. 권한은 서버가 요청마다 다시 판정한다(§14).
 - **토큰**: 계정 세션의 `welcome.token` = 로그인 토큰(랜덤 32바이트 base64url, 30일). 세션 재접속 토큰을 겸하므로 클라이언트는 지금처럼 하나만 저장한다. 서버 DB 에는 sha256 해시만 저장한다. 손님(닉네임만) 세션의 토큰은 종전처럼 메모리 전용(유예 30초).
 - **닉네임 보호**: 가입된 닉네임은 `REQUIRE_ACCOUNT` 값과 무관하게 닉네임만 보낸 `hello` 로 쓸 수 없다(`NICK_REGISTERED`). 가입하지 않은 닉네임은 종전 그대로(손님).
 - **단계 정책**: 서버 환경변수 `REQUIRE_ACCOUNT=1` 이면 닉네임만 보낸 `hello` 를 `ACCOUNT_REQUIRED` 로 거절(계정 필수). **기본 0 = 종전 방식 유지**(기존 클라이언트가 그대로 동작). 기본값 전환은 사용자 승인 뒤.
@@ -109,6 +116,16 @@
 - `{t:'list_rooms'}` -> `room_list`. 로비에 있는 사용자에게는 방 생성/삭제/인원/상태 변화·규칙 변경(`set_rules` 로 `mode`·`time`·`flameTeams` 가 실제로 바뀐 때, 2026-11-19) 시 서버가 `room_list`를 푸시한다(최대 250ms 단위로 합쳐서 전체 목록).
 ```js
 { t:'room_list', rooms:[{ code, host:'방장닉네임', players:1|2, max:2, status:'waiting'|'playing', rules:{mode, time} }] }  // 최근 생성 순. rules = 추가 필드(하위 호환, 방 목록 행의 규칙 요약용)
+```
+- **호스트 요약 `hostInfo`**(추가 필드, 2026-11-20, 하위 호환): 방장이 계정이면 `rooms[i].hostInfo = { tier, rating, w, l }`, 배치 중이면 `{ tier:null, placing:true, rating, w, l }`. 방장이 손님이면 키 자체가 없다. (`host` 는 종전대로 방장 닉네임 문자열이라 이름을 따로 둔다.)
+  - `tier` = `ladder_status.me.tier` 와 같은 계산(지금 시즌 표시 티어, 순위 조건을 채우면 `'master'`, 배치 5판 미만이면 `null` + `placing:true`). `rating` = 지금 시즌 레이팅(배치 중에도 실린다, `ladder_matched.opp.rating` 과 같은 공개 값).
+  - `w`·`l` = 사람끼리 누적 전적(`pvp_records`, 시즌 무관) = 전체 랭킹(§11.6 `pvp_board`)과 같은 값. 승률 표시는 클라이언트가 `w/(w+l)` 로 계산(판수 0 이면 표시 생략 권장).
+  - 공개 값만 싣는다(계정 키·토큰·비밀번호 관련 값 없음).
+  - 서버 비용: 호스트별 값은 `RankingStore.hostBadges` 메모리 캐시(래더·전적 기록·시즌 넘김마다 무효화, TTL 60초)에서 꺼내고, 캐시가 빗나간 호스트가 여럿이어도 시즌 순위 계산은 목록 1회당 한 번만 한다.
+```js
+{ code:'AB12', host:'철수', players:1, max:2, status:'waiting', rules:{…}, hostInfo:{ tier:'gold', rating:1180, w:12, l:7 } }
+{ code:'CD34', host:'영희', players:1, max:2, status:'waiting', rules:{…}, hostInfo:{ tier:null, placing:true, rating:1000, w:0, l:0 } }
+{ code:'EF56', host:'손님', players:1, max:2, status:'waiting', rules:{…} }   // 손님 방장 = hostInfo 없음
 ```
 - 입장 불가 표시는 클라이언트가 `status==='playing'` 또는 `players>=max`로 한다. 최종 판정은 서버(`ROOM_IN_GAME`, `ROOM_FULL`).
 
@@ -148,7 +165,7 @@ room = { code, status:'waiting'|'playing', host:'방장닉네임', serverTime,
   - `cpuLevel` 1(쉬움)~3(어려움): AI 투구 지연·조준 정확도·방어 반응 시점/실수율. 현재 값(`rules.cpu.levels`, [추정]): 1 = 지연 +45f/반응 -6/정면조준 130/실수 130(/256), 2 = +30/-4/150/90(기본, `defaultLevel` 2), 3 = +20/-2/180/60. 임밸런 조정으로 레벨 1~3 이 이전 값보다 한 단계씩 약해졌다(같은 숫자의 컴퓨터가 더 쉬워짐). 캠페인도 이 레벨 표를 쓴다. **CPU 반응 개선(2026-11-17, analysis/15, [추정])**: 레벨별 플래그 `dash`(공 추격 시 AI 대시, 레벨2=진입 64px·상한 1.6px/f, 레벨3=56px·2.0px/f, 절대 상한 `cpu.dashCapPx` 3.5), `outChase`(외야 AI 가 예상 정지 지점이 자기 구역이면 선행 이동), `outReach`(외야 AI 줍기 반경 레벨2=24px, 레벨3=28px, 기본 12; 코트 안쪽 띠 근처에 멈춘 공도 접근해 줍는다). `catch256`(방어 캐치 행동 선택 확률 보정 /256: L1 20, L2 50, L3 80), `catchShift`(캐치 버튼 시점 가산 프레임: -4/-1/0, trigShift 와 분리). **레벨1(캠페인 초반)은 대시·외야 추격을 꺼서 기존 동작 유지(캐치 보정만 약하게).** 대시는 기존 `st`=2(DASH)·이벤트 `dash{p}` 를 그대로 쓰므로 클라이언트 변경 없음.
   - 결과 레코드: 최상위 `vsCpu:true`, `cpuLevel`, `players[1]`에 `cpu:true, cpuLevel`(사람 대전 레코드에는 없음).
 - **규칙(`room.rules`)** [추가 필드, 하위 호환]: `create_room` 에 선택 필드 `rules:{mode?, time?}` 를 실으면 그 값으로 방을 만든다(생략 시 기본). 경기 시작 때 서버가 `Match` 옵션으로 넘긴다: `limitFrames = time * 60 * tickRate`(0 = 무제한), `ruleMode = mode`. **`official`(원작 こうしき) 은 2026-11-18 엔진에 이식됐다**(§5.7, analysis/29 §3·§4-1-1). 클라이언트 규칙 창에서 `공식` 을 고르면 `무제한` 이 회색(고를 수 없음)이 되고 시간이 무제한이었다면 3분으로 바뀐다. 캠페인·특훈 방은 언제나 `knockout`.
-- **필살슛 유도(`room.evade`)** [추가 필드, 읽기 전용, 2026-11-20]: 선택지가 아니다. 서버가 방 종류로 정하고 바꾸는 요청은 없다(`set_rules`·`create_room` 의 `rules` 에 `evade` 키를 실어도 쓰지 않는다 — 규칙 키·화이트리스트에 추가하지 않았다). `'track'` 이면 대기실에 안내 한 줄을 둘 수 있다(문구 제안: 「필살슛 유도: 피할 수 없음 — 받아내기만」 또는 짧게 「필살슛 유도 적용」). 규칙은 §5.8.
+- **필살슛 유도(`room.evade`)** [추가 필드, 읽기 전용, 2026-11-20]: 선택지가 아니다. 서버가 방 종류로 정하고 바꾸는 요청은 없다(`set_rules`·`create_room` 의 `rules` 에 `evade` 키를 실어도 쓰지 않는다 — 규칙 키·화이트리스트에 추가하지 않았다). 대기실 안내 문구는 표시하지 않는다(대기실 문구 제거됨, 2026-11-20). 규칙은 §5.8.
 - 방장이 나가면 상대가 방장이 되고 좌석 0으로 이동한다. 사람이 0명이면 방은 삭제된다.
 
 ## 5. 대전
@@ -539,41 +556,83 @@ table = [{idx, team, com, w, l, rate, left, rank}]  // 순위 목록 순서(rank
 - 저장 계층은 `get(key)` / `set(key, nick, league|null)` / `flush()` 세 함수뿐이다. **2026-11-18 운영 기본이 SQLite(`SqliteLeagueStore`, `data/tongki.db` 의 `leagues` 표)로 바뀌었다**(위 JSON 설명은 `JsonLeagueStore` = 테스트·폴백용). 기존 `league.json` 은 첫 시작 때 한 번 가져온다(§11.5). 인증 범위는 §8.3 과 같다(가입한 닉네임은 보호, §2.1).
 - 원작과 다른 점: 사람 팀 최대 1(사람끼리 카드는 2P 패드가 필요해 없음), 사람 경기 기권 = 패배, 즉시 판정 K 고정(원작은 경기마다 쓰레기 값이 들어올 수 있다), 컴-컴 관전(`しあいをみる`)·개막식은 후속.
 
-## 11. 온라인 랭킹(래더) — 서버 2026-11-18 박백엔, [자작]. 기준 analysis/33 §B, 클라이언트(랭크 탭·결과 변동·순위표) 2026-11-18 윤프론(docs/HANDOFF §4-18)
-구현 `server/ranking/elo.js`(규칙 상수·Elo), `server/store/ranking.js`(SQLite `ratings`·`rank_games`), `server/lobby/lobby.js`(랭크 방·판정).
+## 11. 래더(랭크 대체) — 서버 2026-11-20 박백엔, [자작]. 수치 analysis/46 §6(시작값), 화면은 후속(윤프론)
+구현 `server/ranking/elo.js`(규칙 값 `LADDER` 한 곳 + 순수 함수), `server/ranking/queue.js`(대기열), `server/store/ranking.js`(SQLite v3), `server/lobby/lobby.js`(대기열·래더 방·판정). 종전 랭크 방(2026-11-18, `create_room{ranked:true}`)은 **없어졌다**(`LADDER_ONLY`).
 
 ### 11.1 규칙
-- Elo: 초기 1000, K 32, 자기 첫 10경기(배치)는 K 48, 하한 100. 각자 자기 K 를 쓴다(1000 대 1000 승리 = +16/−16, 둘 다 배치 중 = +24/−24). 시즌 없음(`season` 1 고정 열만).
-- 반영: GO 이후의 정상 종료(`annihilation`/`timeup`/`sudden_death`)와 기권(`forfeit_leave`/`forfeit_disconnect`, 기권한 쪽 패배). `draw_cap`·`error`·GO 이전 종료(입장 연출 중 퇴장 등)는 무효(`why:'VOID'`, 변동 없음).
-- 같은 상대와 24시간 안에 반영된 경기가 3번이면 4번째부터 `counted:false, why:'PAIR_LIMIT'`(변동 없음, 기권 기록은 남는다).
-- 최근 랭크 경기 10판(반영 여부 무관) 중 자기 기권이 3번이 되면 30분 랭크 입장 잠금(`RANKED_LOCKED{params.until}`): `create_room{ranked}`·랭크 방 `join_room`·랭크 방 `start`(두 사람 모두 검사)를 거절.
-- 같은 IP 두 세션 미반영은 넣지 않았다(`TRUST_PROXY` 설정에 달려 있어 배포 환경 확인 뒤).
-- 컴퓨터 대전·캠페인·특훈(튜토리얼)·리그는 랭킹에 영향 없음. **일반(비랭크) 사람끼리 방도 랭킹에 영향 없음**(랭크 방만 집계).
-- **계정 대 손님(2026-11-20 사용자 결정)**: 손님도 랭크 방에 들어올 수 있다. 손님은 레이팅 1000·저장 없음으로 계산되고 **계정 쪽만** 레이팅·승·패가 바뀐다(양쪽 계정이면 양쪽). 손님은 `ratings` 행·`ranking_result` 가 없다. `rank_games` 의 손님 키는 `guest:<소문자 닉네임>`(같은 상대 제한은 이 키 기준, 손님 기권은 잠금 없음). 같은 키끼리는 반영하지 않는다(`why:'SAME_KEY'`), 두 좌석 모두 손님이면 `why:'NO_ACCOUNT'`(둘 다 손님이라 보낼 곳 없음).
+- **누가**: **계정만**(2026-11-20 사용자 결정). 손님 세션의 `ladder_join` = `ACCOUNT_REQUIRED`(같은 연결에서 가입해 계정으로 올라가면 가능), 짝 찾기도 계정 세션만 고른다. 이전 규칙 「계정 대 손님 래더 판은 계정만 K 16 반영」은 래더 한정으로 폐기 — 서버 코드(K 16·`guest:` 키·`vsGuest`·좌석 `guest:true`)는 도달 불가 상태로 남아 있다(미래 대비). 일반 사람끼리 방은 점수가 없으므로 K 16 과 무관하고, 손님이 낀 판은 계정 쪽 전적(`pvp`)만 오른다.
+- **Elo**: 시작 1000, 하한 100, K 32, 시즌 첫 10판 K 48(시즌마다 다시), 각자 자기 K·반올림. 1000 대 1000 승 = +16(배치 +24, 손님 상대 +8).
+- **배치**: 시즌 5판 미만 = 배치 중(티어·순위 숨김, 순위표 제외). 5판째에 레이팅으로 티어를 바로 정한다.
+- **티어**: `bronze` < 950 ≤ `silver` < 1050 ≤ `gold` < 1150 ≤ `platinum` < 1250 ≤ `diamond`. 승급 = 위 티어 하한에 닿으면 바로, 강등 = 지금 티어 하한 − 25 아래로 내려가면(내려간 칸에도 같은 완충). 표시 티어는 저장한다(레이팅만으로 계산되지 않는다).
+- **마스터**: 순위 조건(실시간). 시즌 순위표 인원(배치 완료·최근 14일 안 경기) ≥ 20 일 때 레이팅 ≥ 1250·시즌 20판 이상인 계정 중 상위 `min(5, max(1, floor(인원 × 0.05)))` 명. 마스터는 완충을 쓰지 않는다. 시즌 종료 때 확정값을 저장한다.
+- **비활동**: 마지막 래더 경기 14일 지나면 순위표·마스터 자격에서 빠진다(레이팅·티어는 그대로, 내 줄 `inactive:true`).
+- **시즌**: 28일. 시즌 1 = 전원 1000(종전 랭크 기록은 보관 표 `ratings_v2_archive`). 종료 시각이 지나면 서버가 시즌을 닫고(마스터 확정) 다음 시즌을 연다: 레이팅 `round(1000 + (r − 1000) × 0.5)`, 판수·승·패 0(배치·K 48 다시), 기권 잠금 유지, 지난 시즌 행은 남긴다. 다음 시즌 시작 = 지난 시즌 종료 시각(28일 단위 고정, 서버가 꺼져 있던 동안 지난 시즌 수만큼 넘긴다).
+- **반영되는 종료**: GO 이후의 정상 종료(`annihilation`/`timeup`/`sudden_death`)와 기권(`forfeit_leave`/`forfeit_disconnect`, 기권한 쪽 패배). `draw_cap`·`error`·GO 이전 종료는 무효(`why:'VOID'`).
+- **같은 상대 제한**: 같은 두 키(손님 = `guest:<키>`)가 24시간 안에 반영된 경기 3번이면 4번째부터 `counted:false, why:'PAIR_LIMIT'`(레이팅·래더 승패 불변, 사람끼리 전적은 오른다). 대기열은 이런 짝을 다른 후보가 있으면 고르지 않고, 먼저 선 쪽 대기가 60초를 넘었을 때만 짝짓는다(`ladder_matched.counted:false` 로 미리 알린다).
+- **기권 잠금**: 최근 래더 경기 10판(반영 여부 무관) 중 자기 기권 3번 = 30분 잠금(`RANKED_LOCKED{params.until}`): `ladder_join`·래더 방 `start` 를 거절(계정만, 손님은 잠금 없음).
+- **자기 대전 불가**: 같은 키끼리는 짝짓지 않고 기록하지도 않는다(`SAME_KEY`). 같은 IP 두 세션 미반영은 없다(`TRUST_PROXY` 의존).
+- **사람끼리 전적(`pvp`)**: 사람 두 명이 한 모든 멀티 경기(래더 + 일반 사람끼리 방, 불꽃 팀 허용 방 포함. 컴퓨터 대전·스토리·특훈·리그·불꽃 도전 제외)의 승·패를 계정별로 센다(시즌 무관, 손님 저장 없음). 일반 방 경기는 레이팅을 바꾸지 않는다. 반영 조건은 위 「반영되는 종료」와 같다.
+- 래더 경기 규칙 고정: 녹아웃·5분, 팀 0~21(SPECIAL 허용, 22~24 `TEAM_INVALID`), 필살슛 유도 적용(§5.8, `room.evade:'track'`).
 
-### 11.2 랭크 방
-- `create_room{ranked:true}`: **계정 세션만**(`REQUIRE_ACCOUNT` 와 무관, 손님은 `ACCOUNT_REQUIRED`). `vsCpu:true` 와 함께 보내면 `BAD_MESSAGE`. 규칙은 녹아웃·5분 고정(`rules` 를 보내면 같은 값만 허용, 다르면 `RANKED_RULES_FIXED`).
-- `room_list` 항목과 `room_state.room` 에 `ranked:true`(추가 필드). 랭크 방 `join_room` 은 손님도 가능(2026-11-20, 종전 `ACCOUNT_REQUIRED`), 계정은 `RANKED_LOCKED` 검사.
-- 랭크 방의 `room_joined.room.slots[i]`·`room_state.room.slots[i]`(사람 좌석)에 **`rating`(정수, 현재 레이팅, 배치 중이어도 값) · `placement`(boolean, 경기 수 < 5 = 순위표 `ranking_list.me.placement` 와 같은 기준)** 추가(2026-11-18). 비랭크 방 좌석과 랭크 방의 손님 좌석에는 두 필드가 없다(하위 호환). 보낼 때마다 저장소에서 읽으므로 상대 입장·퇴장·경기 종료 뒤 `room_state`(반영 후 값)에도 최신이다. 경기 전 레이팅을 얻으려 `ranking_list` 로 보완할 필요 없음.
-- 랭크 방 `set_rules` = `RANKED_RULES_FIXED`. `set_team` 은 0~21 만(SPECIAL 허용, 22~24 = `TEAM_INVALID`). 준비·시작·방장 위임·재경기는 일반 방과 같다.
+### 11.2 대기열·래더 방
+| 요청 | 설명 |
+|---|---|
+| `{t:'ladder_join'}` | 대기열에 선다(이미 서 있으면 그대로). 손님 `ACCOUNT_REQUIRED`, 방·경기 중이면 `ALREADY_IN_ROOM`, 잠긴 계정 `RANKED_LOCKED`. -> `ladder_queue{queued:true}`. 세션당 분당 30회(캠페인 창과 공유) |
+| `{t:'ladder_cancel'}` | 줄에서 빠진다 -> `ladder_queue{queued:false, reason:'cancel'}`(서 있지 않았으면 `reason:'none'`) |
+| `{t:'ladder_status'}` | -> `ladder_status`(시즌·규칙 값·내 상태·대기 상태) |
+| `{t:'ladder_board', top?:1~50}` | -> `ladder_board`(순위표). 종전 `ranking_list` 는 같은 내용을 `t:'ranking_list'` 로 돌려준다(하위 호환) |
+| `{t:'pvp_board', top?:1~50}` | -> `pvp_board`(전체 랭킹, 시즌 무관 누적 승). §11.6 |
 
-### 11.3 요청·응답
+- **대기 상태 푸시**(2026-11-20): 줄에 선 동안 1초 짝 찾기 주기마다, 허용 차(`window`, 15초마다 넓어짐)나 줄 인원(`waiting`)이 마지막으로 보낸 값과 다르면 서버가 `ladder_queue{queued:true}` 를 다시 보낸다(같으면 보내지 않는다, 끊긴 세션 제외). `waitSec` 은 화면이 `since`·`serverTime` 으로 센다. 폴링은 필요 없다(`ladder_status` 를 쓰더라도 분당 30회 상한 안).
+- 짝 찾기: 줄을 설 때 1회 + 1초마다. 허용 레이팅 차 = `100 × (1 + floor(대기초 / 15))`, 60초 이상 무제한, 두 사람 중 넓은 창으로 판정(`windowRule:'max'`). 오래 기다린 사람부터, 허용 범위 안에서 레이팅 차가 가장 작은 상대. 손님은 1000 으로 본다.
+- 줄에서 자동으로 빠지는 때: 연결 끊김(`reason:'disconnect'`, 다시 붙으면 `ladder_join` 을 다시 보낸다 — 끊긴 연결에는 알림이 가지 않는다), 로그아웃(`logout`), 다른 방 입장·스토리·리그·불꽃 등(`room`), 손님 세션에서 가입 승격(`account`, 계정 레이팅으로 다시 선다).
+- 짝이 지어지면 서버가 **래더 방**을 만들어 두 사람을 앉힌다: 먼저 선 사람이 좌석 0(방장). 두 사람에게 `ladder_matched` 다음 `room_joined`. 이후는 일반 대기실과 같다(팀 고르기 -> 좌석 1 `ready` -> 방장 `start`).
+- 래더 방: `room.ranked:true` + `room.ladder:{counted, startBy}`, 방 목록에 없다, 다른 사람 `join_room` = `ROOM_FULL`, `set_rules` = `RANKED_RULES_FIXED`, 불꽃 팀 = `FLAME_TEAM_ROOM`. 좌석(`slots[i]`)에 계정은 `rating`·`placement`·`placementLeft`(배치 남은 판, 완료 0 — 「배치 n/5」 표시용)·`tier`(배치 중 `null`, `'master'` 가능). `ladder_matched.opp` 에도 같은 키. 손님 좌석 `guest:true` 는 도달 불가(래더 = 계정만).
+- **한 판만**: 경기가 끝나면(`game_end` -> `ranking_result`) 방을 없애고 두 사람 모두 `room_left{reason:'ladder_end'}` -> `room_list`. 재경기는 다시 `ladder_join`. 경기 전에 한 사람이 나가거나 유예 만료로 빠지면 남은 사람도 `room_left{reason:'ladder_cancel'}`(벌점 없음). `startBy`(매칭 뒤 120초)까지 시작하지 않으면 두 사람 모두 `room_left{reason:'ladder_timeout'}`. 경기 중 퇴장은 종전대로 기권패.
+
+### 11.3 서버 -> 클라이언트
 ```js
-{ t:'ranking_list', top?:1~50 }   // 생략 50. 세션당 분당 30회(캠페인 창과 공유)
--> { t:'ranking_list',
-     top:[{ rank, nick, rating, w, l }],       // 5경기 이상만, rating 내림차순(같으면 같은 rank, 그다음 승 많은 순)
-     me: { rank|null, nick, rating, w, l, games, placement:boolean } | null }   // 계정이면 내 줄(5경기 미만 = placement:true·rank:null = '배치 중'), 손님이면 null
-{ t:'ranking_result', matchId, counted:boolean, why?:'VOID'|'PAIR_LIMIT'|'SAME_KEY', before, after, delta, oppBefore }   // 랭크 경기 game_end 바로 뒤, 계정 좌석별(내 값). 손님 좌석에는 보내지 않는다. 상대가 손님이면 oppBefore = 1000
+{ t:'ladder_queue', queued:true, since, waitSec, window:number|null, rating, waiting, serverTime }  // window = 지금 허용 차(null = 무제한), waiting = 줄 인원(나 포함), rating = 짝 찾기에 쓰는 값(손님 1000)
+{ t:'ladder_queue', queued:false, reason:'cancel'|'none'|'logout'|'room'|'account'|'disconnect' }
+{ t:'ladder_matched', code, you:0|1, counted:boolean, startBy, opp:{ nick, rating?, placement?, placementLeft?, tier?, guest? } }  // counted:false = 같은 상대 제한으로 이번 판은 반영 안 됨
+{ t:'ladder_status', serverTime, season:{ n, startedAt, endsAt },
+  config:{ tierBounds:{silver,gold,platinum,diamond}, tierDemoteBuffer, placementGames, master:{topN,pct,minPlayers,minRating,minGames}, queue:{expandStep,expandSec,maxWaitSec,windowRule,tickMs}, rules, maxTeam, pairLimit, inactiveDays },
+  me: { rating, tier:string|null, games, w, l, placement, placementLeft, rank:number|null, inactive, master, lockUntil, pvp:{w,l} } | null,   // 손님 null
+  queue: <ladder_queue 와 같은 꼴> }
+{ t:'ladder_board' /* 또는 'ranking_list' */, season:{ n, startedAt, endsAt }, total, masterQuota,
+  top:[{ rank, nick, rating, w, l, tier, pvp:{w,l} }],     // 시즌 배치 완료·활동 중만, rating 내림차순(같으면 같은 rank, 그다음 승 많은 순). tier 에 'master' 포함
+  me:{ rank|null, nick, rating, w, l, games, placement, placementLeft, tier|null, inactive, pvp:{w,l} } | null }   // 손님 null
+{ t:'ranking_result', matchId, ladder:true, season, counted, why?:'VOID'|'PAIR_LIMIT'|'SAME_KEY',
+  before, after, delta, oppBefore, vsGuest, tierBefore, tier, placement, placementLeft }   // 래더 경기 game_end 바로 뒤, 계정 좌석별(내 값). 손님 좌석에는 보내지 않는다. 상대가 손님이면 oppBefore = 1000
 ```
-- 결과 레코드(§6)에 `ranked:true, ratingCounted, ratingDelta:[좌석0, 좌석1]` 추가.
+- `tier`·`tierBefore` 키: `bronze|silver|gold|platinum|diamond|master`, 배치 중 `null`. 승급·강등 = 두 값 비교(마스터는 순위표·`ladder_status` 에서만 보인다 — `ranking_result.tier` 는 저장 티어).
+- 결과 레코드(§6)에 `ranked:true, ratingCounted, ratingDelta:[좌석0, 좌석1]`(종전과 같다).
 
-### 11.4 저장(SQLite `data/tongki.db`)
-- `ratings(key, nick, rating, w, l, games, season, lock_until, updated_at)`, `rank_games(match_id, a_key, b_key, winner_key, forfeit_key, counted, at)`. 한 경기 판정은 트랜잭션 하나.
+### 11.4 저장(SQLite `data/tongki.db`, 스키마 v3)
+- `ratings(key, season, nick, rating, w, l, games, tier, lock_until, last_game_at, updated_at)` 기본키 (key, season). `ladder_seasons(season, started_at, ends_at, closed_at, final)`(final = 종료 확정 JSON `{players, masters:[{key,nick,rating}]}`). `pvp_records(key, nick, w, l, updated_at)`. `rank_games(…, season)`(종전 행 = 0). 보관 `ratings_v2_archive`(v2 의 ratings 그대로). 한 경기 판정·시즌 전환은 트랜잭션 하나.
+- **v3 게이트(2026-11-20 리뷰 M2)**: 기존 DB(`schema_version` ≥ 1)에 v3 를 적용하려면 환경변수 `LADDER_MIGRATE=1` 로 기동해야 한다. 없으면 아무것도 적용하지 않고 `MIGRATION_GATED` 오류(한국어·영어 두 줄)를 남기고 **서버 시작을 멈춘다**(종료 코드 1). 새 DB(버전 0, `:memory:`·시험 포함)는 게이트 없이 최신까지 만든다.
+- 마이그레이션 v3·되돌리기 SQL: docs/HANDOFF.md 「래더」 절. v3 DB 는 옛 코드로 열 수 없다(ratings 기본키가 달라 랭크 저장이 실패) — 코드를 되돌리면 DB 도 되돌린다.
 
 ### 11.5 저장 계층·이전(계정·진행·리그·랭킹 공통)
 - `server/store/db.js` 한 파일만 `node:sqlite`(Node 22.5 이상 내장)를 쓴다(better-sqlite3 로 바꿀 때 이 파일만). WAL, `schema_version` 표 + `MIGRATIONS` 배열(끝에 추가만). SQL 은 언제나 바인드 파라미터.
 - 표: `accounts`, `auth_tokens`(토큰 해시), `progress`, `leagues`, `ratings`, `rank_games`, `meta`.
 - JSON 가져오기(`server/store/migrate.js`): 서버 시작 때 `PROGRESS_PATH`·`LEAGUE_PATH`(기본 `data/progress/*.json`)를 가져온다. 파일별 `meta` 표식(크기·수정 시각)이 같으면 건너뛰고, 파일이 바뀌었으면 다시 합친다. 합치기 규칙(코드와 같다): (a) 키마다 **처음 가져올 때만 새 행을 넣고** `meta` 에 `json_imported:<progress|league>:<키>` 로 기록한다. (b) 가져온 적 있는 키는 DB 에 행이 남아 있을 때만 고치고, 행이 없으면 다시 넣지 않는다(리그 포기·손님 데이터 분리 보존 뒤 부활 없음). (c) 고치는 조건: 진행은 JSON `clearedMax` 가 더 클 때만, 리그는 JSON `updatedAt` 이 DB `updated_at` 보다 새로울 때만(그때는 리그 전체를 JSON 값으로 바꾼다). (d) 가입된 계정 키는 처음이든 아니든 건너뛴다(계정 데이터는 DB 에서만 바뀐다). 처음 가져올 때 원본 사본을 `<DB 폴더>/backup/json_before_sqlite/`(환경변수 `JSON_BACKUP_DIR`)에 두고, 원본 JSON 은 지우거나 바꾸지 않는다. 수동 실행: `node server/store/migrate.js --db <파일> --progress <json> --league <json> [--backup <폴더>]`. 한계: 키별 표식이 생기기 전 버전으로 이미 가져온 DB 에는 `json_imported:*` 표식이 없어, 그 DB 에서 지워진 행(리그 포기·분리 보존)은 JSON 이 바뀐 뒤 첫 재가져오기에서 한 번 다시 들어올 수 있다(그 뒤로는 표식이 남는다. (d) 계정 키 건너뛰기는 그대로).
+
+### 11.6 전체 랭킹 `pvp_board` — 서버 2026-11-20 박백엔, 화면은 후속(윤프론)
+순위표는 두 가지다. **래더 랭킹**(`ladder_board`, §11.3) = 래더전 레이팅으로만 순위, **시즌별 초기화**. **전체 랭킹**(`pvp_board`, 이 절) = 래더전 + 일반 사람끼리 방 경기를 합산한 **시즌과 무관한 누적** 전적(`pvp_records`, §11.1 「사람끼리 전적」)으로 순위. 구현 `server/store/ranking.js` `pvpBoard`, 처리기 `server/lobby/lobby.js` `pvp_board`.
+
+| 요청 | 설명 |
+|---|---|
+| `{t:'pvp_board', top?:1~50}` | -> `pvp_board`. top 생략 50, 범위 밖·정수 아님 `BAD_MESSAGE`. 빈도 = `ladder_board` 와 같다(세션당 분당 30회, 캠페인 창 공유). 위치 무관 |
+
+```js
+{ t:'pvp_board', total,                                   // 전적 1판 이상인 계정 수
+  top:[{ rank, nick, w, l, games, rate }],                // 1~top 위. games = w + l(플레이 횟수), rate = 승률 천분율 정수 floor(w*1000/games) (0~1000, 예 750 = 75.0%)
+  me:{ rank:number|null, nick, w, l, games, rate } | null } // 계정 = 내 줄(목록 밖이어도 rank 계산, 전적 없으면 rank:null·0), 손님 = null
+```
+- 정렬: 승 `w` 내림차순 -> 승률 `rate` 내림차순 -> 판수 `games` 내림차순 -> 닉네임(코드포인트 순). **승·승률·판수가 모두 같으면 같은 rank**(1,1,3 식, 닉네임은 같은 rank 안 표시 순서만 정한다). 최소 판수 필터 없음(1판 이상 전부).
+- 대상: `pvp_records` 중 `accounts` 에 있는 계정만(손님은 저장 자체가 없다). `nick` = 계정 표의 닉네임.
+- 조회 비용·색인 결정: **새 색인 없음**. 근거 — ① 정렬 열 `rate` 가 계산값이라 `pvp_records(w)` 색인으로는 정렬기를 없애지 못하고(같은 `w` 안에서 다시 정렬), ② 행 수 = 사람끼리 경기를 한 계정 수(지금 운영 계정 0~수십), ③ 측정(메모리 DB, 계정 20,000행): 계획 `SCAN p | SEARCH a USING INDEX (key=?) | USE TEMP B-TREE FOR ORDER BY`(LIMIT 상위 N 정렬기), `pvpBoard` 1회(목록·전체 수·내 줄·내 순위 COUNT 4문) **약 33ms**, ④ v3 는 정검수 리뷰 대상이고 `db.js` 규칙이 「배열 끝에 추가만」이라 v3 정의를 고치지 않는다. 계정이 수만을 넘어 느려지면 v4 로 `CREATE INDEX IF NOT EXISTS`(표현식 색인 또는 순위 캐시)를 추가한다.
 
 ## 12. 불꽃의 계승(flame_legacy) — 엔진 flame 옵션 (P1, 2026-11-19 박백엔)
 
@@ -1146,7 +1205,7 @@ flame 경기 방은 특훈·리그 방과 같은 비공개 방이다: 방 목록
 **(2) 방 규칙 `rules.flameTeams`** — `create_room{rules:{…, flameTeams:true}}`·`set_rules{rules:{flameTeams:true|false}}`(방장만, 대기 중. 다른 규칙 칸과 함께 보내도 된다. 생략 = 지금 값).
 
 - 켜진 방에만 `room.rules.flameTeams:true` 가 실린다(`room_state.room.rules`·`room_list.rooms[].rules` 둘 다 — 방 목록 표시용). 꺼져 있으면 키가 없다(종전 모양).
-- 거절: 랭크 방(`create_room{ranked:true, rules:{flameTeams:true}}` 포함) `RANKED_RULES_FIXED`, 공식 규칙과 함께 `FLAME_TEAM_RULES`(허용 방에서 `mode:'official'` 로 바꾸려 해도 같다. 먼저 허용을 끈다 — `{mode:'official', flameTeams:false}` 한 번에 보내도 된다), boolean 이 아닌 값 `RULES_INVALID`. 컴퓨터 대전 방·스토리 방에서는 키를 버린다(컴퓨터 대전 방은 1차대로 언제나 고를 수 있다).
+- 거절: 랭크 방 만들기(`create_room{ranked:true, …}`)는 2026-11-20 부터 `LADDER_ONLY`(래더 방은 `set_rules` 자체가 `RANKED_RULES_FIXED`), 공식 규칙과 함께 `FLAME_TEAM_RULES`(허용 방에서 `mode:'official'` 로 바꾸려 해도 같다. 먼저 허용을 끈다 — `{mode:'official', flameTeams:false}` 한 번에 보내도 된다), boolean 이 아닌 값 `RULES_INVALID`. 컴퓨터 대전 방·스토리 방에서는 키를 버린다(컴퓨터 대전 방은 1차대로 언제나 고를 수 있다).
 - 바뀌면 상대 준비가 풀린다(종전 규칙 창과 같다). **끄면** 불꽃 팀을 고른 사람(양쪽 모두)의 선택을 풀고 준비를 해제한 뒤 그 사람에게 `toast{code:'FLAME_TEAM_CLEARED'}` 를 1회 보낸다. 좌석 `team` 번호는 주장 칸 몸 출처 팀 그대로 남는다(원작 팀으로 고른 상태).
 
 **(3) 고르기** — 1차와 같은 `set_team{team:'flame:recent'|'flame:best'}`. 허용 방에서는 **두 좌석 모두**(방장·손님) 고를 수 있다. `room_state.slots[i].flameTeam` = 그 사람 슬롯 요약(양쪽에 보인다).
@@ -1244,3 +1303,37 @@ flame 경기 방은 특훈·리그 방과 같은 비공개 방이다: 방 목록
 **(3) `CATALOG_MSG_REV` 18 → 19** — `cat.ver` 끝이 `.m19`(예 `1.1.1.7.o3.p2.e1.aoff.m19`). 캐시된 카탈로그는 종전대로 문자열 비교로 다시 받는다.
 
 화면 구현됨(artLine, 윤프론): `store.js artLine` 에서 C 등급 필살 카드의 기본 위력 = `cat.special.power[grant.shot]`(+ 등급 가산), `null` 이면 표시하지 않는다.
+
+## 14. 채팅·관리자 공지 — 서버 2026-11-20 박백엔. 설계 analysis/49_chat_admin_notice.md, 화면은 후속(윤프론, 시안 `Works/_asset_samples/tongki_chat_mock/`)
+
+구현 `server/chat/chat.js`(처리기·정리·빈도·판정, `makeChatHandlers` 를 `lobby.js` 처리기 사전에 펼침), 욕설 목록 `server/data/chat_badwords.json`. 경기 엔진·입력 프로토콜은 바뀌지 않는다(채팅은 경기 틱 메시지에 섞이지 않는 별도 메시지).
+
+### 14.1 채팅
+- 요청 `{t:'chat', text}`. **사람끼리 방에서만**(대기실·경기 중 모두): 일반 방, 불꽃 팀 허용 방, 래더 방(경기 전·중). 판정 = 방에 있고 `vsCpu`·`campaign`·`training`·`league`·`flame` 이 아님. 그 밖(로비, 컴퓨터 대전, 스토리, 특훈, 리그, 불꽃의 계승 도전)은 `CHAT_UNAVAILABLE`. **로비 전체 채팅은 없다.**
+- 받는 사람 = 그 방 좌석 두 사람(보낸 본인 포함, 혼자 기다리는 중이면 본인만): `{t:'chat', from:<닉네임>, text:<정리된 글>, at:<서버 epoch ms>, admin?:true}`. `admin:true` = 보낸 사람이 관리자 계정. 화면에 그린 순서 = 받은 순서. 지난 채팅 재전송(재접속·입장 때)은 없다.
+- `room_joined.room`·`room_state.room` 의 `chat:true`(읽기 전용) = 이 방에서 채팅할 수 있다. 없으면 입력창을 숨긴다.
+- 글 정리(서버, 공지도 같다): 문자열이 아니면 `BAD_MESSAGE`. 제어 문자 U+0000~001F·U+007F~009F, 0폭·방향 표식 U+200B~200F, 양방향 U+202A~202E·U+2066~2069, U+FEFF, 짝 없는 대리 문자를 공백으로 -> NFC -> 연속 공백(줄바꿈 포함)을 하나로 -> 앞뒤 공백 제거. 그 뒤 코드포인트 수 0 = `CHAT_EMPTY`, `CHAT_MAX`(기본 60) 초과 = `CHAT_TOO_LONG{params:{max}}`.
+- 욕설: 목록 단어가 들어 있으면 그 글자를 `*` 로 바꿔 보낸다(거절하지 않는다, 대소문자 무시). 공지에는 적용하지 않는다.
+- 빈도(세션당, 통과한 글만 센다): 직전 글과 `CHAT_MIN_GAP_MS`(1000) 미만, `CHAT_WINDOW_MS`(10000) 안 `CHAT_BURST`(5)개 초과, 같은 글 연속 3번째 = `CHAT_RATE_LIMITED`.
+- 손님: 기본 허용. `CHAT_GUEST=0` 이면 손님 `chat` = `ACCOUNT_REQUIRED`.
+- **서버는 HTML 이스케이프를 하지 않는다**(`<`·`&` 등 원문 그대로). 화면은 반드시 `textContent`(또는 캔버스 텍스트)로 그린다. `innerHTML` 금지.
+
+### 14.2 관리자 공지
+- **목록에는 반드시 먼저 가입한 계정만 넣는다**(2026-11-20 리뷰 M1, 확정 닉네임 `운영자` = `ADMIN_ACCOUNTS=운영자`): 서버 시작 때 목록의 각 닉네임이 `accounts` 에 있는지 확인해, 있으면 로그 `[admin] 관리자 계정 확인: <닉네임> (가입 <ISO 시각>)`(운영자가 본인이 가입한 시각인지 확인), 없으면 경고 로그를 남기고 **그 항목은 이번 실행 동안 비활성**(뒤에 계정이 생겨도 재시작 전에는 관리자가 아니다). 목록에 있는 닉네임의 `register` 는 `NICK_TAKEN` 으로 거절한다(미가입 관리자 닉네임 선점 방지 — 가입은 목록에 넣기 전, 목록 없이 띄운 서버에서 한다).
+- 관리자 = 서버 환경변수 `ADMIN_ACCOUNTS`(쉼표 목록, 시작 때 NFC·소문자로 정리) 안의 **비밀번호 계정** 세션(위 확인을 통과한 항목만). 손님 세션은 같은 닉네임이어도 관리자가 아니다(가입된 닉네임의 손님 `hello` 는 원래 `NICK_REGISTERED`). 빈 값 = 공지 꺼짐(누구나 `NOT_ADMIN`). 판정은 `notice_send` 마다 서버가 다시 하고 클라이언트가 보낸 값은 보지 않는다.
+- 요청 `{t:'notice_send', text}` — 위치 무관(로비·대기실·경기 중). 관리자가 아니면 `NOT_ADMIN`(아무에게도 가지 않는다). 글 정리는 §14.1 과 같고 상한 `NOTICE_MAX`(100), 욕설 가림 없음. 빈도 3초에 1개·분당 10개 초과 = `NOTICE_RATE_LIMITED`.
+- 전달 `{t:'notice', id, text, at}` — 그 순간 **연결된 세션 전원**(보낸 관리자 포함, 로비·대기실·사람끼리 경기·컴퓨터 경기·스토리·특훈·리그·불꽃 도전 중 모두). 끊겨 유예 중인 세션·로그인 전 연결은 받지 않고, 나중에 접속한 사람에게 다시 보내지 않는다. `id` 는 서버 시작부터 1씩 는다(재시작하면 1부터) — 같은 `id` 를 두 번 그리지 않는 데만 쓴다. 화면은 중앙(시안 D2/D5/D8)에 `textContent` 로 표시.
+- 기록: 서버 로그 `[notice] #id key: "text"` + `NOTICE_PATH`(기본 `data/notices.jsonl`) 한 줄 `{at, by:<계정 키>, text}` 추가. 기록 실패는 로그만 남기고 공지는 보낸다. `node --test` 안에서 `NOTICE_PATH` 가 없으면 파일에 쓰지 않는다.
+
+### 14.3 환경변수 (`server/net/limits.js`)
+| 이름 | 기본 | 뜻 |
+|---|---|---|
+| `ADMIN_ACCOUNTS` | (빈 값) | 관리자 계정 닉네임 쉼표 목록. 빈 값 = 공지 꺼짐 |
+| `CHAT_GUEST` | 1 | 0 이면 손님 채팅 거절(`ACCOUNT_REQUIRED`) |
+| `CHAT_MAX` / `NOTICE_MAX` | 60 / 100 | 정리 후 최대 글자(코드포인트) |
+| `CHAT_MIN_GAP_MS` / `CHAT_BURST` / `CHAT_WINDOW_MS` | 1000 / 5 / 10000 | 채팅 빈도 |
+| `NOTICE_PATH` | `data/notices.jsonl` | 공지 기록 파일(프로젝트 루트 기준 상대 경로 가능) |
+
+### 14.4 화면 메모(윤프론)
+- 채팅 로그는 **최대 5줄**(오래된 줄부터 밀어낸다). 방을 나가면(`room_left`) 비운다. 경기 중 입력창은 경기 입력과 겹치지 않게(Enter 로 열고 닫기 등, 시안 참조).
+- 관리자(`welcome.admin`/`account_ok.admin`)만 공지 입력(로비 입력줄·채팅 입력창의 공지 토글)을 그린다. 오류는 전부 토스트.

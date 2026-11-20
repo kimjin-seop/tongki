@@ -1,0 +1,724 @@
+{
+ "schema": "tongki.story_portraits/1",
+ "generatedBy": "analysis/scripts/t48_story_scene.py + t48_story_portraits.py",
+ "source": "원작 실행(자작 에뮬, 디버그 라운드 선택 → 서브 3) VRAM 타일 + CRAM 팔레트 직접 합성. 48 문서 §10",
+ "cell": {
+  "w": 40,
+  "h": 40
+ },
+ "frames": {
+  "danpei.closed": {
+   "x": 0,
+   "y": 0,
+   "w": 40,
+   "h": 40
+  },
+  "danpei.mouthA": {
+   "x": 40,
+   "y": 0,
+   "w": 40,
+   "h": 40
+  },
+  "danpei.mouthB": {
+   "x": 80,
+   "y": 0,
+   "w": 40,
+   "h": 40
+  },
+  "danpei.blink1": {
+   "x": 120,
+   "y": 0,
+   "w": 40,
+   "h": 40
+  },
+  "danpei.blink2": {
+   "x": 160,
+   "y": 0,
+   "w": 40,
+   "h": 40
+  },
+  "opp_01.closed": {
+   "x": 0,
+   "y": 40,
+   "w": 40,
+   "h": 40
+  },
+  "opp_01.mouthA": {
+   "x": 40,
+   "y": 40,
+   "w": 40,
+   "h": 40
+  },
+  "opp_01.mouthB": {
+   "x": 80,
+   "y": 40,
+   "w": 40,
+   "h": 40
+  },
+  "opp_02.closed": {
+   "x": 0,
+   "y": 80,
+   "w": 40,
+   "h": 40
+  },
+  "opp_02.mouthA": {
+   "x": 40,
+   "y": 80,
+   "w": 40,
+   "h": 40
+  },
+  "opp_02.mouthB": {
+   "x": 80,
+   "y": 80,
+   "w": 40,
+   "h": 40
+  },
+  "opp_03.closed": {
+   "x": 0,
+   "y": 120,
+   "w": 40,
+   "h": 40
+  },
+  "opp_03.mouthA": {
+   "x": 40,
+   "y": 120,
+   "w": 40,
+   "h": 40
+  },
+  "opp_03.mouthB": {
+   "x": 80,
+   "y": 120,
+   "w": 40,
+   "h": 40
+  },
+  "opp_04.closed": {
+   "x": 0,
+   "y": 160,
+   "w": 40,
+   "h": 40
+  },
+  "opp_04.mouthA": {
+   "x": 40,
+   "y": 160,
+   "w": 40,
+   "h": 40
+  },
+  "opp_04.mouthB": {
+   "x": 80,
+   "y": 160,
+   "w": 40,
+   "h": 40
+  },
+  "opp_05.closed": {
+   "x": 0,
+   "y": 200,
+   "w": 40,
+   "h": 40
+  },
+  "opp_05.mouthA": {
+   "x": 40,
+   "y": 200,
+   "w": 40,
+   "h": 40
+  },
+  "opp_05.mouthB": {
+   "x": 80,
+   "y": 200,
+   "w": 40,
+   "h": 40
+  },
+  "opp_06.closed": {
+   "x": 0,
+   "y": 240,
+   "w": 40,
+   "h": 40
+  },
+  "opp_06.mouthA": {
+   "x": 40,
+   "y": 240,
+   "w": 40,
+   "h": 40
+  },
+  "opp_06.mouthB": {
+   "x": 80,
+   "y": 240,
+   "w": 40,
+   "h": 40
+  },
+  "opp_07.closed": {
+   "x": 0,
+   "y": 280,
+   "w": 40,
+   "h": 40
+  },
+  "opp_07.mouthA": {
+   "x": 40,
+   "y": 280,
+   "w": 40,
+   "h": 40
+  },
+  "opp_07.mouthB": {
+   "x": 80,
+   "y": 280,
+   "w": 40,
+   "h": 40
+  },
+  "opp_08.closed": {
+   "x": 0,
+   "y": 320,
+   "w": 40,
+   "h": 40
+  },
+  "opp_08.mouthA": {
+   "x": 40,
+   "y": 320,
+   "w": 40,
+   "h": 40
+  },
+  "opp_08.mouthB": {
+   "x": 80,
+   "y": 320,
+   "w": 40,
+   "h": 40
+  },
+  "opp_09.closed": {
+   "x": 0,
+   "y": 360,
+   "w": 40,
+   "h": 40
+  },
+  "opp_09.mouthA": {
+   "x": 40,
+   "y": 360,
+   "w": 40,
+   "h": 40
+  },
+  "opp_09.mouthB": {
+   "x": 80,
+   "y": 360,
+   "w": 40,
+   "h": 40
+  },
+  "opp_10.closed": {
+   "x": 0,
+   "y": 400,
+   "w": 40,
+   "h": 40
+  },
+  "opp_10.mouthA": {
+   "x": 40,
+   "y": 400,
+   "w": 40,
+   "h": 40
+  },
+  "opp_10.mouthB": {
+   "x": 80,
+   "y": 400,
+   "w": 40,
+   "h": 40
+  },
+  "opp_11.closed": {
+   "x": 0,
+   "y": 440,
+   "w": 40,
+   "h": 40
+  },
+  "opp_11.mouthA": {
+   "x": 40,
+   "y": 440,
+   "w": 40,
+   "h": 40
+  },
+  "opp_11.mouthB": {
+   "x": 80,
+   "y": 440,
+   "w": 40,
+   "h": 40
+  },
+  "opp_12.closed": {
+   "x": 0,
+   "y": 480,
+   "w": 40,
+   "h": 40
+  },
+  "opp_12.mouthA": {
+   "x": 40,
+   "y": 480,
+   "w": 40,
+   "h": 40
+  },
+  "opp_12.mouthB": {
+   "x": 80,
+   "y": 480,
+   "w": 40,
+   "h": 40
+  },
+  "opp_13.closed": {
+   "x": 0,
+   "y": 520,
+   "w": 40,
+   "h": 40
+  },
+  "opp_13.mouthA": {
+   "x": 40,
+   "y": 520,
+   "w": 40,
+   "h": 40
+  },
+  "opp_13.mouthB": {
+   "x": 80,
+   "y": 520,
+   "w": 40,
+   "h": 40
+  },
+  "opp_14.closed": {
+   "x": 0,
+   "y": 560,
+   "w": 40,
+   "h": 40
+  },
+  "opp_14.mouthA": {
+   "x": 40,
+   "y": 560,
+   "w": 40,
+   "h": 40
+  },
+  "opp_14.mouthB": {
+   "x": 80,
+   "y": 560,
+   "w": 40,
+   "h": 40
+  },
+  "opp_15.closed": {
+   "x": 0,
+   "y": 600,
+   "w": 40,
+   "h": 40
+  },
+  "opp_15.mouthA": {
+   "x": 40,
+   "y": 600,
+   "w": 40,
+   "h": 40
+  },
+  "opp_15.mouthB": {
+   "x": 80,
+   "y": 600,
+   "w": 40,
+   "h": 40
+  },
+  "taiga_15.closed": {
+   "x": 0,
+   "y": 640,
+   "w": 40,
+   "h": 40
+  },
+  "taiga_15.mouthA": {
+   "x": 40,
+   "y": 640,
+   "w": 40,
+   "h": 40
+  },
+  "taiga_15.mouthB": {
+   "x": 80,
+   "y": 640,
+   "w": 40,
+   "h": 40
+  }
+ },
+ "screen": {
+  "left": {
+   "x": 16,
+   "y": 160
+  },
+  "right": {
+   "x": 264,
+   "y": 160
+  },
+  "size": 320,
+  "note": "원작 화면(320x224) 위 초상 상자 좌상단. 왼쪽 = 통키, 오른쪽 = 상대"
+ },
+ "matches": [
+  {
+   "k": 0,
+   "chapter": 1,
+   "right": [
+    {
+     "seg": 2,
+     "portrait": "opp_01"
+    }
+   ]
+  },
+  {
+   "k": 1,
+   "chapter": 2,
+   "right": [
+    {
+     "seg": 2,
+     "portrait": "opp_02"
+    }
+   ]
+  },
+  {
+   "k": 2,
+   "chapter": 3,
+   "right": [
+    {
+     "seg": 2,
+     "portrait": "opp_03"
+    }
+   ]
+  },
+  {
+   "k": 3,
+   "chapter": 4,
+   "right": [
+    {
+     "seg": 2,
+     "portrait": "opp_04"
+    }
+   ]
+  },
+  {
+   "k": 4,
+   "chapter": 5,
+   "right": [
+    {
+     "seg": 2,
+     "portrait": "opp_05"
+    }
+   ]
+  },
+  {
+   "k": 5,
+   "chapter": 6,
+   "right": [
+    {
+     "seg": 2,
+     "portrait": "opp_06"
+    }
+   ]
+  },
+  {
+   "k": 6,
+   "chapter": 7,
+   "right": [
+    {
+     "seg": 2,
+     "portrait": "opp_07"
+    }
+   ]
+  },
+  {
+   "k": 7,
+   "chapter": 8,
+   "right": [
+    {
+     "seg": 2,
+     "portrait": "opp_08"
+    }
+   ]
+  },
+  {
+   "k": 8,
+   "chapter": 9,
+   "right": [
+    {
+     "seg": 2,
+     "portrait": "opp_09"
+    }
+   ]
+  },
+  {
+   "k": 9,
+   "chapter": 10,
+   "right": [
+    {
+     "seg": 2,
+     "portrait": "opp_10"
+    }
+   ]
+  },
+  {
+   "k": 10,
+   "chapter": 11,
+   "right": [
+    {
+     "seg": 2,
+     "portrait": "opp_11"
+    }
+   ]
+  },
+  {
+   "k": 11,
+   "chapter": 12,
+   "right": [
+    {
+     "seg": 2,
+     "portrait": "opp_12"
+    }
+   ]
+  },
+  {
+   "k": 12,
+   "chapter": 13,
+   "right": [
+    {
+     "seg": 2,
+     "portrait": "opp_13"
+    }
+   ]
+  },
+  {
+   "k": 13,
+   "chapter": 14,
+   "right": [
+    {
+     "seg": 2,
+     "portrait": "opp_14"
+    }
+   ]
+  },
+  {
+   "k": 14,
+   "chapter": 15,
+   "right": [
+    {
+     "seg": 2,
+     "portrait": "opp_15"
+    },
+    {
+     "seg": 3,
+     "portrait": "taiga_15"
+    }
+   ]
+  }
+ ],
+ "mouth": {
+  "object": "0x118 (처리 0x15146 → 공용 애니 0x19EC, 애니 표 0x72DCA)",
+  "framesPerAnim": 2,
+  "holdFrames": 5,
+  "cycleFrames": 10,
+  "order": "애니 스크립트 2칸(칸당 대기 바이트 4 = 5f). 객체가 처음 켜지면 같은 프레임에 1틱 진행해 칸1(mouthA)부터 보인다 → mouthA 5f → mouthB 5f → 반복. 객체 꺼짐 = closed(바탕). 인물에 따라 mouthA/mouthB 중 하나가 closed 와 같은 그림(evidence.equalsClosed), 둘 다 다른 인물도 있다",
+  "displayLag": "VRAM 스프라이트 표는 1프레임 늦게 화면에 반영(기록으로 확인)",
+  "pause": "가나 아닌 글자·」 앞·페이지 끝에서 객체만 끄고(닫힘 그림) 애니 위상은 유지, 다음 가나에서 이어서 진행(재시작 아님)",
+  "evidence": "t48_story_scene.py 15라운드 기록: 연속 구간 5프레임 422회, 끊긴 구간 1~5f, 재개 시 프레임·카운터가 리셋되지 않음"
+ },
+ "blink": {
+  "object": "0x12C ($C780, 처리 0x116BE)",
+  "who": "통키(왼쪽)만, 통키가 말하지 않을 때($C700==0)",
+  "rule": "대기 $E43A 를 매 프레임 1 감소, 0 아래면 난수 하위 바이트(8 미만이면 8)로 다시 채움. $E43A<=7 인 동안 애니 0x22(3칸 0x72FDA·0x72FE2·0x72FEA, 칸마다 3f) 진행. 실측 화면: blink1(0x72FE2) 3f → blink2(0x72FEA) 3f → 평소(0x72FDA) 난수 간격(실측 3~139f)",
+  "evidence": "코드 0x116BE~0x11722 [판독] + 기록의 $C780 스프라이트 변화 [실측]"
+ },
+ "evidence": {
+  "opp_01": {
+   "closed": "r00_f00181.png (_Rb)",
+   "mouthA": "r00_f00141.png",
+   "mouthB": "r00_f00146.png",
+   "mouthAnim": "0x2",
+   "mouthSlot": "C800",
+   "mouthA_sprite": "0x72ee2",
+   "mouthB_sprite": "0x72eda",
+   "equalsClosed": [
+    "mouthB"
+   ]
+  },
+  "opp_02": {
+   "closed": "r01_f00175.png (_Rb)",
+   "mouthA": "r01_f00139.png",
+   "mouthB": "r01_f00144.png",
+   "mouthAnim": "0x4",
+   "mouthSlot": "C800",
+   "mouthA_sprite": "0x72f02",
+   "mouthB_sprite": "0x72efa",
+   "equalsClosed": [
+    "mouthB"
+   ]
+  },
+  "opp_03": {
+   "closed": "r02_f00147.png (_Rb)",
+   "mouthA": "r02_f00139.png",
+   "mouthB": "r02_f00144.png",
+   "mouthAnim": "0x6",
+   "mouthSlot": "C800",
+   "mouthA_sprite": "0x72ef2",
+   "mouthB_sprite": "0x72eea",
+   "equalsClosed": [
+    "mouthB"
+   ]
+  },
+  "opp_04": {
+   "closed": "r03_f00163.png (_Rb)",
+   "mouthA": "r03_f00143.png",
+   "mouthB": "r03_f00148.png",
+   "mouthAnim": "0x8",
+   "mouthSlot": "C800",
+   "mouthA_sprite": "0x72f22",
+   "mouthB_sprite": "0x72f1a",
+   "equalsClosed": [
+    "mouthB"
+   ]
+  },
+  "opp_05": {
+   "closed": "r04_f00178.png (_Rb)",
+   "mouthA": "r04_f00138.png",
+   "mouthB": "r04_f00143.png",
+   "mouthAnim": "0xa",
+   "mouthSlot": "C800",
+   "mouthA_sprite": "0x72f32",
+   "mouthB_sprite": "0x72f2a",
+   "equalsClosed": [
+    "mouthB"
+   ]
+  },
+  "opp_06": {
+   "closed": "r05_f00173.png (_Rb)",
+   "mouthA": "r05_f00141.png",
+   "mouthB": "r05_f00146.png",
+   "mouthAnim": "0xc",
+   "mouthSlot": "C800",
+   "mouthA_sprite": "0x72f42",
+   "mouthB_sprite": "0x72f3a",
+   "equalsClosed": [
+    "mouthB"
+   ]
+  },
+  "opp_07": {
+   "closed": "r06_f00163.png (_Rb)",
+   "mouthA": "r06_f00139.png",
+   "mouthB": "r06_f00144.png",
+   "mouthAnim": "0xe",
+   "mouthSlot": "C800",
+   "mouthA_sprite": "0x72f52",
+   "mouthB_sprite": "0x72f4a",
+   "equalsClosed": [
+    "mouthB"
+   ]
+  },
+  "opp_08": {
+   "closed": "r07_f00149.png (_Rb)",
+   "mouthA": "r07_f00137.png",
+   "mouthB": "r07_f00142.png",
+   "mouthAnim": "0x10",
+   "mouthSlot": "C800",
+   "mouthA_sprite": "0x72f62",
+   "mouthB_sprite": "0x72f5a",
+   "equalsClosed": [
+    "mouthB"
+   ]
+  },
+  "opp_09": {
+   "closed": "r08_f00162.png (_Rb)",
+   "mouthA": "r08_f00138.png",
+   "mouthB": "r08_f00143.png",
+   "mouthAnim": "0x12",
+   "mouthSlot": "C800",
+   "mouthA_sprite": "0x72f72",
+   "mouthB_sprite": "0x72f6a",
+   "equalsClosed": [
+    "mouthB"
+   ]
+  },
+  "opp_10": {
+   "closed": "r09_f00172.png (_Rb)",
+   "mouthA": "r09_f00140.png",
+   "mouthB": "r09_f00145.png",
+   "mouthAnim": "0x14",
+   "mouthSlot": "C800",
+   "mouthA_sprite": "0x72f82",
+   "mouthB_sprite": "0x72f7a",
+   "equalsClosed": [
+    "mouthB"
+   ]
+  },
+  "opp_11": {
+   "closed": "r10_f00166.png (_Rb)",
+   "mouthA": "r10_f00142.png",
+   "mouthB": "r10_f00147.png",
+   "mouthAnim": "0x16",
+   "mouthSlot": "C800",
+   "mouthA_sprite": "0x72f92",
+   "mouthB_sprite": "0x72f8a",
+   "equalsClosed": [
+    "mouthB"
+   ]
+  },
+  "opp_12": {
+   "closed": "r11_f00162.png (_Rb)",
+   "mouthA": "r11_f00142.png",
+   "mouthB": "r11_f00147.png",
+   "mouthAnim": "0x18",
+   "mouthSlot": "C800",
+   "mouthA_sprite": "0x72fa2",
+   "mouthB_sprite": "0x72f9a",
+   "equalsClosed": [
+    "mouthB"
+   ]
+  },
+  "opp_13": {
+   "closed": "r12_f00148.png (_Rb)",
+   "mouthA": "r12_f00140.png",
+   "mouthB": "r12_f00145.png",
+   "mouthAnim": "0x1a",
+   "mouthSlot": "C800",
+   "mouthA_sprite": "0x72f12",
+   "mouthB_sprite": "0x72f0a",
+   "equalsClosed": []
+  },
+  "opp_14": {
+   "closed": "r13_f00166.png (_Rb)",
+   "mouthA": "r13_f00158.png",
+   "mouthB": "r13_f00163.png",
+   "mouthAnim": "0x1c",
+   "mouthSlot": "C800",
+   "mouthA_sprite": "0x72fb2",
+   "mouthB_sprite": "0x72faa",
+   "equalsClosed": [
+    "mouthB"
+   ]
+  },
+  "opp_15": {
+   "closed": "r14_f00150.png (_Rb)",
+   "mouthA": "r14_f00138.png",
+   "mouthB": "r14_f00143.png",
+   "mouthAnim": "0x1c",
+   "mouthSlot": "C800",
+   "mouthA_sprite": "0x72fb2",
+   "mouthB_sprite": "0x72faa",
+   "equalsClosed": [
+    "mouthB"
+   ]
+  },
+  "taiga_15": {
+   "closed": "r14_f00431.png (_Rb)",
+   "mouthA": "r14_f00409.png",
+   "mouthB": "r14_f00407.png",
+   "mouthAnim": "0x1e",
+   "mouthSlot": "C800",
+   "mouthA_sprite": "0x72ee2",
+   "mouthB_sprite": "0x72eda",
+   "equalsClosed": [
+    "mouthB"
+   ]
+  },
+  "danpei": {
+   "closed": "r14_f00525.png",
+   "mouthA": "r14_f00517.png",
+   "mouthB": "r14_f00522.png",
+   "mouthAnim": "0x0",
+   "mouthSlot": "C700",
+   "mouthA_sprite": "0x72ed2",
+   "mouthB_sprite": "0x72eca",
+   "equalsClosed": [
+    "mouthB"
+   ],
+   "blink1": "r14_f00698.png (0x72FE2)",
+   "blink2": "r14_f00730.png (0x72FEA)"
+  }
+ },
+ "notExtracted": [
+  "3번째 경기 승리 후 이어지는 팀 그림(0x60FB6, 서브 9 0x128AC)",
+  "15번째 경기 승리 후 엄마 그림(0x60FB2+0x6385E, 0x127DC)",
+  "맞대면(서브 7) 화면 배치"
+ ]
+}

@@ -25,6 +25,15 @@ export function loadLimits(env = process.env, over = {}) {
     loginSlowMaxMs: num(env.LOGIN_SLOW_MAX_MS, 10000), // 위 지연 상한
     loginFailIp: num(env.LOGIN_FAIL_IP, 20), // IP별 15분 안 로그인 실패 n회 -> 잠금
     loginLockMs: num(env.LOGIN_LOCK_MS, 15 * 60000), // 잠금 시간
+    // 채팅·공지(PROTOCOL §14)
+    adminAccounts: String(env.ADMIN_ACCOUNTS ?? ''), // 쉼표 목록(계정 닉네임). 빈 값 = 공지 꺼짐. 정리(NFC·소문자)는 server/chat/chat.js parseAdmins
+    chatGuest: env.CHAT_GUEST !== '0', // 손님 채팅 허용(기본 1). '0' 이면 계정만(ACCOUNT_REQUIRED)
+    chatMax: num(env.CHAT_MAX, 60), // 채팅 한 줄 최대 글자(코드포인트, 정리 후)
+    noticeMax: num(env.NOTICE_MAX, 100), // 공지 최대 글자
+    chatMinGapMs: num(env.CHAT_MIN_GAP_MS, 1000), // 세션당 채팅 최소 간격
+    chatBurst: num(env.CHAT_BURST, 5), // CHAT_WINDOW_MS 안 채팅 상한
+    chatWindowMs: num(env.CHAT_WINDOW_MS, 10000),
+    noticePath: env.NOTICE_PATH || null, // 공지 기록 jsonl. 비면 server/index.js 가 data/notices.jsonl(테스트 실행 중이면 기록 안 함)
     ...over,
   };
 }

@@ -12,16 +12,17 @@ import { rulesText } from './rules.js';
 import { emblem, roster, glyphs, abbrOf, shortName, GRID_MAIN, arrowNav } from '../pix.js';
 import * as F from './flame/store.js';
 import { rankName, keepEmblem, keepGlyph } from './flame/ui.js';
+import { roomPanel } from '../chat.js';
+import { tierChip, guestChip, placementGames } from './ladder.js';
 
 const PAGE_SPECIAL = [15, 16, 17, 18, 19, 20, 21, 22, 23, 24]; // 스토리 전용 팀(목록 유지)
 // 불꽃 팀 칸(PROTOCOL §13.20): 불꽃의 계승에서 키운 팀 슬롯. 칸의 id = set_team 에 보내는 값 그대로('flame:recent' | 'flame:best'), 원작 팀 칸은 숫자
 const FL_LABEL = { recent: '최근', best: '최고' };
 const isFl = (id) => typeof id === 'string';
 const cellId = (el) => { const v = el?.dataset?.team; return v == null ? null : v.startsWith('flame:') ? v : +v; };
-const RANK_MAX_TEAM = 21; // 랭크 방은 SPECIAL(15~21)까지, 22~24 는 서버가 TEAM_INVALID(PROTOCOL §11.2)
+const RANK_MAX_TEAM = 21; // 래더 방은 SPECIAL(15~21)까지, 22~24 는 서버가 TEAM_INVALID(PROTOCOL §11.2)
 // 팀 선택에서 한 번이라도 결정한 좌석('방코드:좌석'). 서버 좌석에는 「고른 적 있음」 표시가 없고(입장 기본값 = 좌석 번호 팀) 대기실은 규칙 창을 다녀오면 다시 마운트되므로 모듈 범위에 둔다
 const decided = new Set();
-const EVADE_NOTE = '필살슛 유도 — 받아내야 막힙니다'; // room.evade==='track'(사람끼리 일반 방) 대기실 안내 한 줄
 
 export function mount(root, app) {
   let selecting = false, cur = null, page = 0, pdCur = null;
@@ -53,25 +54,20 @@ export function mount(root, app) {
   const flPrefetch = () => { if (app.room && !app.room.ranked && app.flame) F.ensureCatalog(app.flame.catalogVer); };
   flPrefetch();
 
-  // 랭크 방(PROTOCOL §11.2): 좌석마다 레이팅. 서버가 좌석에 rating(정수)·placement 를 주면 그 값이 우선,
-  // 없으면(구 서버) 순위표(ranking_list) 값으로 보완 — 내 줄(me)은 언제나, 상대는 상위 50명 안에 있을 때만. 상대가 바뀔 때만 다시 묻는다(분당 상한 공유)
-  let askedFor = null;
-  function askRatings() {
-    const r = app.room; if (!r?.ranked) return;
-    const s = r.slots?.[1 - myIdx()];
-    if (Number.isInteger(s?.rating)) return;
-    const opp = s?.nick ?? '';
-    if (opp === askedFor) return;
-    askedFor = opp; net.send('ranking_list', {});
-  }
-  function ratingOf(s) {
-    if (Number.isInteger(s?.rating)) return s.placement === true ? '배치 중' : String(s.rating);
-    const nick = s?.nick;
-    const b = app.rankBoard; if (!b || !nick) return null;
-    if (b.me && b.me.nick === nick) return b.me.placement ? '배치 중' : String(b.me.rating);
-    const row = b.top?.find((x) => x.nick === nick);
-    return row ? String(row.rating) : null;
-  }
+  // 래더 방(PROTOCOL §11.2): 좌석마다 티어 칩 + 레이팅(slots[i].tier·rating·placement), 손님 좌석은 「손님」 칩.
+  // 머리줄 = 「반영」/「미반영」(내가 손님이거나 같은 상대 제한 room.ladder.counted:false) + 시작 기한(startBy) 카운트다운
+  const ladderSeat = (s) => (s.guest ? guestChip() : [tierChip(s.tier, { placement: s.placement === true, left: s.placementLeft, games: placementGames(app) }),
+    Number.isInteger(s.rating) ? h('span.tag.rate.tabular', { title: '레이팅' }, String(s.rating)) : null]);
+  /** 이번 판이 내 점수에 반영되는가: 계정 + 같은 상대 제한 아님(손님 상대도 반영, K 16 — PROTOCOL §11.1) */
+  const ladderCounted = (r) => !!r?.ladder && r.ladder.counted !== false && !!app.account;
+  const cdEl = h('span.tag.ld-cd.tabular', { title: '시작 기한' });
+  const paintCd = () => {
+    const by = app.room?.ladder?.startBy; if (!by || app.room.status !== 'waiting') { cdEl.hidden = true; return; }
+    const left = Math.max(0, Math.ceil((by - net.now()) / 1000));
+    cdEl.hidden = false; cdEl.textContent = `시작 ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
+    cdEl.classList.toggle('warn', left <= 30);
+  };
+  const cdTick = setInterval(paintCd, 500);
 
   // 준비 완료였는데 서버가 풀었을 때(규칙 변경·내 팀 변경·방장의 불꽃 팀 변경) 한 번 알린다. 내가 누른 준비 취소·경기 종료는 알리지 않는다
   let prev = null;
@@ -90,7 +86,6 @@ export function mount(root, app) {
   function update() {
     const r = app.room; if (!r) return;
     noteReady();
-    askRatings();
     if (selecting && myIdx() >= 0 && r.status === 'waiting') {
       // 방장이 「불꽃 팀」 허용을 바꾸면 격자 칸(최근·최고)이 생기거나 사라진다: 칸 목록이 달라졌을 때만 격자를 다시 그린다
       const shown = [...root.querySelectorAll('.tcell')].map((el) => el.dataset.team).join(), want = pageTeams(page).join();
@@ -105,7 +100,9 @@ export function mount(root, app) {
     const me = myIdx();
     const mine = r.slots[me];
     const had = document.activeElement?.dataset?.cmd;
-    clear(root);
+    // 채팅 패널(room.chat, 사람끼리 방): 재그리기 밖에 두고 같은 요소를 옮겨 입력 중 글자·스크롤·포커스를 지킨다
+    const chat = r.chat === true ? roomPanel(app) : null;
+    const old = [...root.childNodes];
     const seat = (i) => {
       const s = r.slots[i];
       const cpu = isCpuSeat(r, i);
@@ -115,10 +112,9 @@ export function mount(root, app) {
       const tag = cpu ? h('span.tag.cpu', `난이도 ${cpuLevel(r, s)}`)
         : s.host ? h('span.tag.host', '방장') : h('span.tag.rdy' + (rdy ? '.on' : ''), rdy ? '준비 완료' : '준비 중');
       const team = s?.team, ft = s?.flameTeam ?? null; // ft = 고른 불꽃 팀 요약(그때 team 은 주장 칸의 몸 출처 팀)
-      const rate = r.ranked && s ? ratingOf(s) : null;
       return h('section.seat.s' + i + (i === me ? '.me' : '') + (rdy ? '.is-ready' : ''), { 'aria-label': `${i ? '오른쪽' : '왼쪽'} 좌석` },
         h('div.seat-top', lab, h('span.seat-nick', cpu ? '컴퓨터' : s.nick), s && !s.connected && !cpu ? h('span.tag.off', '연결 끊김') : null,
-          rate ? h('span.tag.rate.tabular', { title: '레이팅' }, rate) : null, tag),
+          r.ladder && s && !cpu ? ladderSeat(s) : null, tag),
         ft ? [
           h('div.seat-team.fl', keepEmblem(), keepGlyph(ft.slot), h('span.tn', flCore(ft).join(' · ') || '불꽃 팀'),
             i === me ? h('button.chg', { type: 'button', 'data-cmd': 'chg', onclick: openSelect }, '변경 ▶') : null),
@@ -132,7 +128,7 @@ export function mount(root, app) {
     const cmds = [];
     if (mine) cmds.push(h('button.btn', { type: 'button', 'data-cmd': 'team', onclick: openSelect }, '팀 변경'));
     if (mine?.host) {
-      // 랭크 방은 녹아웃·5분 고정: 흐리게 두고 누르면 사유 토스트(서버 RANKED_RULES_FIXED 와 같은 문구)
+      // 래더 방은 녹아웃·5분 고정: 흐리게 두고 누르면 사유 토스트(서버 RANKED_RULES_FIXED 와 같은 문구)
       cmds.push(r.ranked ? h('button.btn.dim', { type: 'button', 'data-cmd': 'rules', 'aria-disabled': 'true', onclick: () => toast(ERR.RANKED_RULES_FIXED, 'warn') }, '규칙')
         : h('button.btn', { type: 'button', 'data-cmd': 'rules', onclick: openRules }, '규칙'));
       // 조건 미달이어도 누를 수 있게 둔다(disabled 가 아니라 aria-disabled): 누르면 사유 토스트
@@ -143,14 +139,17 @@ export function mount(root, app) {
         mine.ready ? '준비 취소' : '준비 완료'));
     }
     cmds.push(h('button.btn', { type: 'button', 'data-cmd': 'leave', onclick: () => net.send('leave_room') }, '나가기'));
+    const cmdsEl = h('div.cmds', { style: { '--n': cmds.length } }, cmds);
     root.append(h('div.screen.room',
-      h('header.room-head', h('h1.pix-title', r.vsCpu || !r.host ? '대기실' : `${r.host}의 방`), r.ranked ? h('span.tag.rank', '랭크') : null,
+      h('header.room-head', h('h1.pix-title', r.ladder ? '래더 대전' : r.vsCpu || !r.host ? '대기실' : `${r.host}의 방`),
+        r.ladder ? h('span.tag.ld-cnt' + (ladderCounted(r) ? '.on' : ''), ladderCounted(r) ? '반영' : app.account ? '미반영' : '미반영(손님)') : null, r.ladder ? cdEl : null,
         r.rules ? h('span.rules-line', '규칙 ', h('b', rulesText(r.rules))) : null,
-        // 읽기 전용(PROTOCOL §4 room.evade, §5.8). 사람끼리 일반 방만 'track'. 머리줄이 넘치면 줄바꿈 대신 말줄임(전문은 title)
-        r.evade === 'track' ? h('span.rules-line.evade-note', { title: EVADE_NOTE }, h('span', EVADE_NOTE)) : null,
         h('span.spacer'), h('span.room-code', { title: '방 코드' }, r.code), h('span.nick-me', app.nick || '')),
       h('div.seats', seat(0), h('div.vs', { 'aria-hidden': 'true' }, 'VS'), seat(1)),
-      h('div.cmds', { style: { '--n': cmds.length } }, cmds)));
+      cmdsEl));
+    if (chat) chat.mount(cmdsEl);
+    for (const n of old) n.remove();
+    paintCd();
     setNav(root);
     const want = root.querySelector(`[data-cmd="${had ?? (mine?.host ? 'start' : 'ready')}"]:not(:disabled)`) ?? root.querySelector('[data-cmd="team"]');
     if (had || document.activeElement === document.body || !root.contains(document.activeElement)) want?.focus({ preventScroll: true });
@@ -324,8 +323,8 @@ export function mount(root, app) {
   update();
   // 슬롯 요약·카탈로그가 뒤늦게 오면 팀 선택 화면의 불꽃 팀 칸을 다시 맞춘다. 슬롯이 없다는 거절이면 요약을 새로 받는다(칸이 사라진다)
   const onFlame = () => { if (selecting && root.querySelector('.tsel')) { if (!pageTeams(page).includes(cur)) cur = pageTeams(page)[0] ?? 0; paintSelect(false); } };
-  return { update, onRankingList: () => { if (!selecting && app.room?.ranked) paintRoom(); }, onFlameState: () => { flPrefetch(); onFlame(); }, onFlameCatalog: onFlame,
-    onError: (m) => { if (m?.code === 'FLAME_TEAM_NONE' && flWanted()) net.send('flame_get'); }, unmount: () => setNav(null) };
+  return { update, onFlameState: () => { flPrefetch(); onFlame(); }, onFlameCatalog: onFlame,
+    onError: (m) => { if (m?.code === 'FLAME_TEAM_NONE' && flWanted()) net.send('flame_get'); }, unmount: () => { clearInterval(cdTick); setNav(null); } };
 }
 
 /** 컴퓨터 대전 좌석 판정 (PROTOCOL 4: room.vsCpu / slot.cpu) */

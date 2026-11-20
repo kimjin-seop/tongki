@@ -1,6 +1,7 @@
 /* 레트로 UI(2026-11-19 1단계, 시안 _asset_samples/retro_ui/style_guide.json): 밝은 원작 DODGE 배경 + 짙은 녹색 9-slice 창(테두리 8 논리px) + 검정 이름판 + 공 커서 메뉴 줄 + 글로우 커서 틀.
    글자 = Galmuri 도트 글꼴('RT 9/11/11B/14', OFL) 네이티브 크기의 정수배만. 모든 치수 = 논리 1px * --rk(정수 배율: 기본 2, 1900x1000 이상 3, 모바일 1).
    금지: 둥근 모서리·그라디언트·흐림·반투명 겹침·ease/페이드/확대 전환·비정수 배율 도트(터치 패드 .tp-* 는 예외). 빨강 글자는 검정 칸 위에서만.
+   예외(사용자 요구): 경기 중 채팅 로그(.cm-log)·공지 띠(.cm-nb)는 반투명 검정 바탕, 받은 줄은 8초 뒤 steps 3단계 흐려짐(ease 없음) — 파일 끝 「채팅·공지」 절.
    2단계(2026-11-19): 경기 DOM·스토리·리그·순위표·튜토리얼까지 적용. 3단계(2026-11-19): 인트로 퇴장 셔터·안내 글자 불투명·비정수 rem 정리·긴 이름 줄바꿈. 불꽃 전용(flame.css)은 rem·옛 규칙이 남아 있다(4단계). 이미지 = pix.js 가 manifest 키로 넣는 --img-* 변수 */
 @font-face { font-family: "RT 9";   src: url("/assets/fonts/Galmuri9.woff2") format("woff2"); font-display: block; }
 @font-face { font-family: "RT 11";  src: url("/assets/fonts/Galmuri11.woff2") format("woff2"); font-display: block; }
@@ -261,7 +262,9 @@ input[type=text]:focus-visible, input[type=password]:focus-visible { outline: va
 .lobby-menu .cpu-row .lv[aria-pressed=true] { color: var(--c-yel); text-decoration: underline; text-decoration-thickness: calc(var(--u) * 2); text-underline-offset: calc(var(--u) * 3); }
 .lobby-menu .cpu-row .lv:is(:hover, :focus-visible) { color: var(--c-yel); outline: var(--o) solid var(--r-white); outline-offset: calc(var(--o) * -1); }
 .nick-line { display: flex; justify-content: flex-end; align-items: center; gap: calc(var(--u) * 6); min-height: calc(var(--u) * 20); white-space: nowrap; }
-.nick-line .nick-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; display: block; line-height: calc(var(--u) * 16); }
+.snd .snd-ic { display: block; height: 1.1em; width: 1.54em; margin: 0 auto; }
+.nick-line .snd { flex: none; min-width: calc(var(--u) * 20); }
+.nick-line .nick-t { box-sizing: border-box; box-shadow: none; border-width: var(--o); align-self: stretch; padding-block: 0; min-height: max(44px, calc(var(--u) * 16)); min-width: 0; overflow: hidden; text-overflow: ellipsis; display: block; line-height: calc(max(44px, var(--u) * 16) - var(--o) * 2); }
 .room-panel { flex: 1; min-height: calc(var(--u) * 120); display: flex; flex-direction: column; padding: calc(var(--u) * 4) calc(var(--u) * 8) calc(var(--u) * 8); }
 .room-panel h1, .panel-t { font: var(--f-head); color: var(--c-yel); padding: calc(var(--u) * 2) 0; }
 /* 방 목록 머리: 제목 + 방 만들기. 행 = 방 이름(아래 규칙 요약) / 인원 / 상태 */
@@ -271,6 +274,11 @@ input[type=text]:focus-visible, input[type=password]:focus-visible { outline: va
 .rr-name { font-weight: normal; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rr-rules { font: var(--f-cap); color: var(--r-line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rr-st { text-align: right; }
+.rr-host { display: flex; align-items: center; gap: calc(var(--u) * 4); font: var(--f-cap); color: var(--r-line); white-space: nowrap; overflow: hidden; }
+.rr-host .tag { flex: none; }
+.rr-wl { overflow: hidden; text-overflow: ellipsis; }
+.room-row:hover:not(.off) .rr-wl, .room-row:focus-visible .rr-wl { color: var(--c-yel); }
+@media (max-width: 760px), (max-height: 560px) { .rr-wl { display: none; } }
 .empty-hint { margin-top: calc(var(--u) * 4); font: var(--f-cap); }
 /* 방 목록 = 원작 승패표처럼 연보라 1 논리px 격자 줄 */
 .room-list { display: grid; gap: 0; overflow: auto; min-height: 0; flex: 1; align-content: start; padding: calc(var(--u) * 4) 0 0; }
@@ -326,9 +334,6 @@ input[type=text]:focus-visible, input[type=password]:focus-visible { outline: va
   background: var(--r-win); border: var(--frame) solid var(--r-line); border-image: var(--img-win) 8 fill / var(--frame) stretch; image-rendering: pixelated; }
 .cmds .btn { justify-content: center; font: var(--f-head); }
 .room-code { letter-spacing: .08em; }
-/* 필살슛 유도 안내(room.evade='track'): 남는 폭까지만 차지(basis 0 + max-content 상한)해 머리줄을 줄바꿈시키지 않고, 모자라면 말줄임 */
-.room-head .evade-note { flex: 999 1 0; min-width: 0; max-width: max-content; } /* grow 999 = 남는 폭을 .spacer 보다 먼저 받는다 */
-.room-head .evade-note > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 /* 준비 상태: 준비 완료 = 하늘색 채운 표식 + 체크 + 좌석 안쪽 줄, 준비 중 = 회색 */
 .tag.rdy { --bc: var(--r-grey); gap: calc(var(--u) * 4); grid-auto-flow: column; padding: 0 calc(var(--u) * 4); }
 .tag.rdy.on { --bc: var(--c-cyan); background: var(--c-cyan); color: #000; }
@@ -762,7 +767,7 @@ body[data-title-enter] .title-follow { animation: title-follow .32s steps(4) .14
 /* ---- 계정·랭킹(PROTOCOL §2.1·§11) ---- */
 .auth-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: calc(var(--u) * 4); margin-bottom: calc(var(--u) * 4); }
 .nick-card [hidden] { display: none; }
-.nick-card input[readonly] { color: var(--c-grey); }
+.nick-card input:disabled { color: var(--c-white); background: none; border-color: transparent; padding-left: 0; cursor: default; caret-color: transparent; }
 /* 로비 작은 메뉴 한 줄: 튜토리얼·오프닝 다시보기·(손님) 가입·로그아웃 — 같은 폭. 좁으면 글자를 낱말 단위로 두 줄 */
 /* 모드 창 아래 구분선 + 작은 메뉴 한 줄(공 커서 자리 없이 가운데, 커서 = 노랑 + 흰 밑줄) */
 .lobby-foot { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: calc(var(--u) * 4); margin-top: calc(var(--u) * 4); padding-top: calc(var(--u) * 4); border-top: var(--u) solid var(--r-line2); }
@@ -774,7 +779,6 @@ body[data-title-enter] .title-follow { animation: title-follow .32s steps(4) .14
 .rl-tabs { display: flex; align-items: center; gap: var(--gap); padding: 0 0 calc(var(--u) * 2); }
 .rl-tab { display: flex; gap: var(--gap); }
 .rl-tabs .btn.small { min-height: 44px; min-width: 3.6em; text-align: center; }
-.rl-tabs .rank-entry { margin-left: auto; }
 .tag.rank { --bc: var(--c-cyan); color: var(--c-cyan); }
 .rr-name .tag.rank { margin-right: calc(var(--u) * 4); vertical-align: middle; }
 .tag.rate { --bc: var(--c-line); }
@@ -863,3 +867,162 @@ body[data-title-enter] .title-follow { animation: title-follow .32s steps(4) .14
 .kp-keep { display: inline-flex; align-items: center; gap: calc(var(--u) * 4); padding: 0 calc(var(--u) * 4); border: var(--u) solid var(--r-line); font: var(--f-cap); color: var(--r-white); white-space: nowrap; }
 /* 팀 선택 칸·대기실 좌석의 보관 팀 이름 앞 기호 */
 .tcell.fl .nm .kp-g { margin-right: calc(var(--u) * 2); vertical-align: -0.1em; }
+/* ---- 채팅·공지(시안 _asset_samples/tongki_chat_mock, chat.js · notice.js). 경기 중 받은 줄은 최대 5줄(사용자 결정) ----
+   예외(사용자 요구): .cm-log 줄·.cm-nb 띠의 반투명 검정 바탕, 받은 줄 3단계 흐림(steps, ease 없음). 그 밖은 불투명 */
+.cm-ol { --ol: 2px; text-shadow: var(--ol) 0 0 #000, calc(var(--ol) * -1) 0 0 #000, 0 var(--ol) 0 #000, 0 calc(var(--ol) * -1) 0 #000,
+  var(--ol) var(--ol) 0 #000, calc(var(--ol) * -1) var(--ol) 0 #000, var(--ol) calc(var(--ol) * -1) 0 #000, calc(var(--ol) * -1) calc(var(--ol) * -1) 0 #000; }
+.cm-l .n { margin-right: .5em; } .cm-l .n.p1 { color: var(--r-cyan); } .cm-l .n.p2 { color: var(--r-down); }
+.cm-l.adm .n { color: var(--r-yel); }
+.cm-l .tag { display: inline-block; min-height: 0; margin-right: .35em; padding: 0 .25em; border: 0; background: var(--r-yel); color: #000; font: inherit; text-shadow: none; vertical-align: baseline; }
+.cm-l.ntc { color: var(--r-yel); }
+/* 경기 중 층: 캔버스 위 DOM(누름 통과). 글자 = PC RT 9 10×rk / 가로 모바일 RT 11 12px / 세로 모바일 RT 14 14px */
+.cm-game { position: absolute; inset: 0; pointer-events: none; z-index: 3;
+  --cm-fs: calc(10px * var(--rk)); --cm-lh: calc(12px * var(--rk)); --cm-ff: "RT 9", "RT 11", var(--sys); --cm-px: calc(3px * var(--rk)); --cm-b: max(2px, var(--u)); --cm-ih: calc(18px * var(--rk)); }
+.cm-game.t-land { --cm-fs: 12px; --cm-lh: 15px; --cm-ff: "RT 11", var(--sys); --cm-px: 4px; }
+.cm-game.t-port { --cm-fs: 14px; --cm-lh: 18px; --cm-ff: "RT 14", "RT 11", var(--sys); --cm-px: 4px; }
+.cm-log { position: absolute; display: flex; flex-direction: column; align-items: flex-start; font: var(--cm-fs) / var(--cm-lh) var(--cm-ff); color: var(--r-white); }
+.cm-line { max-width: 100%; padding: 0 var(--cm-px); background: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cm-log:not(.open) .cm-line { opacity: .75; animation: cm-fade .6s steps(3, end) forwards; }
+.cm-log.open .cm-line { background: rgba(0, 0, 0, .7); opacity: 1; animation: none; }
+@keyframes cm-fade { to { opacity: 0; } }
+.cm-in { position: absolute; display: flex; align-items: center; gap: calc(var(--cm-px) * 1.5); height: var(--cm-ih); padding: 0 var(--cm-px); pointer-events: auto;
+  background: var(--r-black); border: var(--cm-b) solid var(--r-white); box-shadow: 0 0 0 var(--cm-b) var(--r-line2), 0 0 0 calc(var(--cm-b) * 2) var(--r-black);
+  font: var(--cm-fs) / 1 var(--cm-ff); color: var(--r-white); white-space: nowrap; }
+.cm-in .to, .cm-in .cnt { flex: none; color: var(--r-line); }
+.cm-in .tg, .rchat .tg { flex: none; padding: 0 .35em; min-height: 0; background: none; border: var(--cm-b, var(--u)) solid var(--r-line3); color: var(--r-grey); font: inherit; cursor: pointer; pointer-events: auto; }
+.cm-in.notice { border-color: var(--r-yel); box-shadow: 0 0 0 var(--cm-b) var(--r-gold), 0 0 0 calc(var(--cm-b) * 2) var(--r-black); }
+.cm-in.notice .to { color: var(--r-yel); }
+.cm-in.notice .tg, .rchat.notice .tg { background: var(--r-yel); border-color: var(--r-yel); color: #000; }
+input[type=text].cm-tx { flex: 1; min-width: 0; min-height: 0; height: auto; padding: 0; border: 0; background: none; box-shadow: none; outline: none; font: inherit; color: var(--r-white); caret-color: var(--r-white); }
+input[type=text].cm-tx:focus, input[type=text].cm-tx:focus-visible { border: 0; outline: none; }
+.cm-in.notice .cm-tx, .rchat.notice .cm-tx { caret-color: var(--r-yel); }
+input[type=text].cm-tx::placeholder { color: var(--r-grey); }
+/* 공지 층(#app 밖 고정, 누름 통과). 띠 = 경기 화면 HUD 아래(최대 2줄 말줄임), 배너 = 비경기 화면 중앙 상단 */
+#notice { position: fixed; inset: 0; z-index: 98; pointer-events: none; }
+#notice:empty { display: none; }
+.cm-nb { position: absolute; display: flex; align-items: center; justify-content: center; gap: calc(var(--cm-px) * 1.5); padding: var(--cm-nbp) var(--cm-px);
+  --cm-px: calc(4px * var(--rk)); --cm-nbp: calc(2px * var(--rk)); --cm-b: 2px;
+  background: rgba(0, 0, 0, .62); border-block: var(--cm-b) solid var(--r-yel); font: calc(12px * var(--rk)) / 1.25 "RT 11B", "RT 11", var(--sys); color: var(--r-white); text-align: center; }
+.cm-nb.gap { font-size: 24px; --cm-px: 6px; --cm-nbp: 3px; }
+.cm-nb .lb, .cm-nbx .lb { flex: none; padding: 0 .3em; background: var(--r-yel); color: #000; text-shadow: none; }
+.cm-nb .t { min-width: 0; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow-wrap: anywhere; word-break: keep-all; }
+.cm-nb.gap .t { -webkit-line-clamp: 4; line-clamp: 4; }
+.cm-nbx { position: absolute; top: 8px; left: 50%; translate: -50% 0; width: min(70vw, 880px); display: flex; gap: calc(var(--u) * 6); align-items: baseline; padding: calc(var(--u) * 4) calc(var(--u) * 8);
+  background: var(--r-black); border: var(--o) solid var(--r-yel); box-shadow: 0 0 0 var(--o) #000, 0 0 0 calc(var(--o) * 2) var(--r-yel), 0 0 0 calc(var(--o) * 3) #000;
+  font: var(--f-body); color: var(--r-white); word-break: keep-all; overflow-wrap: anywhere; }
+.cm-nbx .lb { padding: 0 calc(var(--u) * 3); }
+.cm-nbx .t { min-width: 0; }
+@media (max-width: 640px), (max-height: 560px) { .cm-nbx { width: calc(100vw - 16px); } }
+/* 대기실 채팅 패널(.seats 와 .cmds 사이): 9-slice 창 + 로그(50줄 보관, 맨 아래 = 최신) + 스크롤 막대 + 입력줄 */
+.rchat { flex: none; margin: calc(var(--u) * 4) calc(var(--u) * 2) 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; gap: calc(var(--u) * 2) calc(var(--u) * 4);
+  padding: calc(var(--u) * 2) calc(var(--u) * 6); background: var(--r-win); border: var(--frame) solid var(--r-line); border-image: var(--img-win) 8 fill / var(--frame) stretch; image-rendering: pixelated;
+  --rc-fs: calc(10px * var(--rk)); --rc-lh: calc(12px * var(--rk)); --rc-ff: "RT 9", "RT 11", var(--sys); --rc-n: 4; }
+.rchat > * { image-rendering: auto; }
+.rc-log { grid-column: 1; height: calc(var(--rc-n) * var(--rc-lh)); overflow-y: auto; scrollbar-width: none; display: flex; flex-direction: column; font: var(--rc-fs) / var(--rc-lh) var(--rc-ff); color: var(--r-white); user-select: text; -webkit-user-select: text; }
+.rc-log::-webkit-scrollbar { display: none; }
+.rc-log > :first-child { margin-top: auto; }
+.rc-log > div { flex: none; white-space: normal; overflow-wrap: anywhere; } /* 대기실 채팅: 긴 줄은 줄바꿈(패널 높이 고정, 스크롤로 읽는다) */
+.rc-bar { grid-column: 2; grid-row: 1; width: calc(var(--u) * 4); min-width: 4px; background: var(--r-win2); position: relative; }
+.rc-bar i { position: absolute; left: 0; right: 0; bottom: 0; background: var(--r-line); }
+.rc-in { grid-column: 1 / -1; display: flex; align-items: center; gap: calc(var(--u) * 4); min-height: max(44px, calc(var(--u) * 16)); padding: 0 calc(var(--u) * 4);
+  background: var(--r-black); border: var(--u) solid var(--r-white); box-shadow: 0 0 0 var(--u) var(--r-line2); font: var(--rc-fs) / 1 var(--rc-ff); color: var(--r-white); }
+.rc-in .cnt { flex: none; color: var(--r-line); }
+.rc-in .send { flex: none; min-height: 32px; padding: 0 calc(var(--u) * 2); background: none; border: 0; color: var(--r-yel); font: inherit; cursor: pointer; }
+.rc-in .send:hover { text-decoration: underline; }
+.rchat.notice .rc-in { border-color: var(--r-yel); box-shadow: 0 0 0 var(--u) var(--r-gold); }
+.rchat.notice .rc-in .cm-tx { color: var(--r-yel); }
+/* 모바일: OS 키보드가 덮으면 입력줄을 키보드 위에 고정(chat.js visualViewport) */
+.rchat.kb .rc-in { position: fixed; left: 8px; right: 8px; bottom: calc(var(--kb, 0px) + 8px); z-index: 70; }
+@media (max-width: 640px), (max-height: 560px) { .rchat { --rc-fs: 12px; --rc-lh: 15px; --rc-ff: "RT 11", var(--sys); --rc-n: 3; } }
+@media (max-height: 560px) { .rchat { --rc-n: 2; margin-top: calc(var(--u) * 2); } }
+/* 채팅 패널이 있는 대기실: 선수 얼굴 줄을 7칸 한 줄(48px = 24x2)로 줄여 패널 높이를 확보. 세로 모바일은 4칸 2줄 유지 */
+.room:has(.rchat) .seat .roster { --fsz: 48px; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px 2px; }
+@media (max-width: 640px) { .room:has(.rchat) .seat .roster { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px 4px; } }
+.room:has(.rchat) .seat .roster .rp { min-width: 0; width: 100%; margin: 0; text-align: center; }
+.room:has(.rchat) .seat .roster figcaption { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* 관리자 로비 공지 입력줄(.lobby-r 맨 위) */
+.cm-adm { display: flex; align-items: center; gap: calc(var(--u) * 4); margin-bottom: calc(var(--u) * 6); padding: calc(var(--u) * 2) calc(var(--u) * 4);
+  background: var(--r-black); border: var(--u) solid var(--r-yel); box-shadow: 0 0 0 var(--u) var(--r-gold), 0 0 0 calc(var(--u) * 2) #000; font: var(--f-cap); color: var(--r-white); min-height: max(44px, calc(var(--u) * 18)); }
+.cm-adm .lb { flex: none; padding: 0 calc(var(--u) * 3); background: var(--r-yel); color: #000; }
+.cm-adm input[type=text].tx { flex: 1; min-width: 0; min-height: 0; padding: 0; border: 0; background: none; font: inherit; color: var(--r-white); }
+.cm-adm input[type=text].tx:focus-visible { outline: none; }
+.cm-adm:has(.tx:focus) { border-color: var(--r-white); }
+.cm-adm .cnt { flex: none; color: var(--r-line); }
+.cm-adm .send { flex: none; padding: 0 calc(var(--u) * 4); border: var(--o) solid var(--r-yel); background: none; color: var(--r-yel); min-height: 32px; font: inherit; cursor: pointer; }
+.cm-adm .send:is(:hover, :focus-visible) { color: var(--r-white); border-color: var(--r-white); outline: none; }
+
+/* ---- 래더(PROTOCOL §11, 2026-11-20 윤프론): 티어 칩 = 글자 + 색 테(아이콘 없음), 래더 화면(내 현황 + 대기열), 래더 방 머리줄, 결과 카드 티어 줄, 순위표 2탭 ---- */
+.tag.tier { --bc: var(--r-line); color: var(--bc); }
+.tag.tier.t-bronze { --bc: var(--r-bg2); color: var(--r-gold); }
+.tag.tier.t-silver { --bc: var(--r-line); color: var(--r-white); }
+.tag.tier.t-gold { --bc: var(--r-gold); color: var(--r-yel); }
+.tag.tier.t-platinum { --bc: var(--r-cyan); color: var(--r-cyan); }
+.tag.tier.t-diamond { --bc: var(--r-sky); color: var(--r-sky); }
+.tag.tier.t-master { --bc: var(--r-epic); background: var(--r-epic); color: #000; }
+.tag.tier.t-place, .tag.tier.t-guest { --bc: var(--r-grey); color: var(--r-line); }
+.ld-win { width: min(100%, calc(var(--u) * 300)); }
+.ld-season { font: var(--f-cap); color: var(--r-line); }
+.ld-me-row { display: flex; align-items: center; flex-wrap: wrap; gap: calc(var(--u) * 6); }
+.ld-rating { font: var(--f-big); color: var(--r-white); font-weight: normal; }
+.ld-rank { color: var(--r-yel); }
+.ld-wl { color: var(--r-line); }
+.ld-q { display: grid; gap: calc(var(--u) * 4); border-top: var(--u) solid var(--r-line2); padding-top: calc(var(--u) * 6); }
+.ld-q-t { font: var(--f-body); color: var(--r-white); }
+.ld-wait { font-weight: normal; color: var(--r-yel); }
+.ld-q-sub { display: flex; flex-wrap: wrap; gap: calc(var(--u) * 4) calc(var(--u) * 12); font: var(--f-cap); color: var(--r-line); }
+.ld-q-sub .tabular { color: var(--r-white); }
+.ld-cmds { display: flex; justify-content: center; }
+.ld-cmds .btn { width: auto; min-width: 8em; }
+.tag.ld-cnt { --bc: var(--r-grey); }
+.tag.ld-cnt.on { --bc: var(--c-cyan); color: var(--c-cyan); }
+.tag.ld-cd.warn { --bc: var(--r-down); color: var(--r-down); }
+.lobby-ld { display: grid; gap: calc(var(--u) * 8); align-content: start; justify-items: center; text-align: center; padding: calc(var(--u) * 12) 0; flex: 1; min-height: 0; }
+.lobby-ld .ld-me-row { justify-content: center; }
+.lobby-ld .ladder-entry { min-height: 44px; min-width: 10em; text-align: center; }
+.ld-lock { font: var(--f-cap); color: var(--r-down); }
+.lobby-tabs { flex-wrap: nowrap; }
+.lobby-tabs .btn { white-space: nowrap; }
+.result-tier { font: var(--f-body); color: var(--r-white); }
+.result-tier.up { color: var(--r-cyan); }
+.result-tier.down { color: var(--r-down); }
+.rk-tabs { border-bottom: var(--u) solid var(--r-line2); }
+.rk-sub { font: var(--f-cap); color: var(--r-line); min-height: 1.2em; }
+.rk-table td.rk-tier { padding-top: 0; padding-bottom: 0; }
+.rk-table .rk-hard { margin-left: 4px; }
+.rk-table td.rk-team { text-align: left; font: var(--f-cap); white-space: nowrap; }
+.rk-flame { min-width: 0; }
+.rk-win.rk-wide { width: min(100%, calc(var(--u) * 520)); }
+@media (max-width: 900px), (max-height: 560px) { .rk-win.rk-wide { width: min(100%, calc(var(--u) * 340)); } .rk-flame td.rk-team, .rk-flame th:nth-child(5) { display: none; } }
+@media (max-width: 640px) { .rk-table th, .rk-table td { padding-left: 3px; padding-right: 3px; } .rk-table td.rk-nick { max-width: 7.5em; } }
+
+/* ---- 스토리 챕터 시작 연출(screens/story_intro.js): 제목 카드 + 원작 대사 장면의 초상 2개. 창은 기존 초록 창(.dlg-box) 그대로 ---- */
+.story-intro-card { position: fixed; inset: 0; z-index: 80; display: grid; place-content: center; background: #000; cursor: pointer; user-select: none; }
+.story-intro-box { --pz: calc(40px * var(--bk)); align-items: center; }
+/* 초상 40x40(원작 스프라이트)을 장면 배경과 같은 정수배로. 왼쪽 = 통키, 오른쪽 = 상대(원작 (16,160)/(264,160)) */
+.story-intro-face { width: var(--pz); height: var(--pz); flex: none; image-rendering: pixelated; image-rendering: crisp-edges; }
+.story-intro-box .dlg-who { left: calc(var(--u) * 12 + var(--pz) + var(--u) * 10); }
+.story-intro-box .dlg-more { right: calc(var(--u) * 6 + var(--pz) + var(--u) * 10); }
+.story-intro-text { white-space: pre-wrap; max-width: none; }
+@media (max-width: 640px), (max-height: 560px) {
+  .story-intro-box { --pz: 80px; }
+  .story-intro-box .dlg-who { left: calc(10px + 80px + 8px); }
+  .story-intro-box .dlg-more { right: calc(10px + 80px + 8px); }
+}
+
+/* ---- 스토리 잔여 연출(screens/story_scene.js·story_match.js·story_end.js) ---- */
+/* 대사 장면 코트 = 원작 VSRAM −32(32 논리px 내린 자리, 위는 검정). 맞대면 끝 전환에서 --sy 32→0 */
+.story-intro-scene { --sy: 32; --y0: 0px; background-position: center calc(var(--y0) + var(--sy) * 1px * var(--bk)); }
+@media (max-width: 640px) { .story-intro-scene { --y0: calc(var(--row) + 16px); } }
+/* 맞대면 끝 아래 검은 띠(창 영역 y≥136 에서 3px/f 로 내려감) */
+.story-intro-band { position: absolute; left: 0; right: 0; bottom: 0; top: calc(var(--y0) + var(--by, 136) * 1px * var(--bk)); background: #000; pointer-events: none; }
+/* 화면 페이드(팔레트 페이드 대신 검정 막, 7단계) */
+.story-intro-fade { position: absolute; inset: 0; z-index: 5; background: #000; pointer-events: none; }
+/* 3전 팀 그림 80x40(오른쪽 초상 자리까지), 15전 엄마 40x40(다이가 왼쪽) */
+.story-intro-face.x.wide { width: calc(var(--pz) * 2); }
+/* 세로 좁은 화면: 초상 1배(원작 320 폭 대비 비율과 같음)로 대사 칸을 넓혀 14~16자 줄 접힘을 줄인다 */
+@media (max-width: 480px) {
+  .story-intro-box { --pz: 40px; }
+  .story-intro-box .dlg-who { left: calc(10px + 40px + 8px); }
+  .story-intro-box .dlg-more { right: calc(10px + 40px + 8px); }
+  .story-intro-text { padding-right: 0; }
+}

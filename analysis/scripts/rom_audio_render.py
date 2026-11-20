@@ -1,6 +1,7 @@
 """원작 효과음·음성·BGM 일괄 렌더 (z80snd.py + ffmpeg libgme). 결과는 public/assets/rom/ (gitignore) 에만 쓴다.
 
 사용: python analysis/scripts/rom_audio_render.py [sfx|bgm|all] [병렬수]
+      python analysis/scripts/rom_audio_render.py sfx-add <병렬수> a7,a8,b6  (지정 효과음만, 기존 sfx_gain_db 그대로 - 다른 파일은 안 건드림)
 - 효과음: 3초 렌더 → 뒤 무음 제거 → 22.05kHz 모노 16비트 WAV (public/assets/rom/sfx/)
 - 음성(DAC, 메일박스 $1BFF): 0x81 GO / 0x82 FIGHT / 0x83 GAME SET
 - BGM: 150초 렌더 → 레지스터 쓰기 순서로 루프 탐지 → 인트로+1루프 구간을 OGG/MP3 (public/assets/rom/bgm/), 루프 지점(초) 기록
@@ -56,6 +57,9 @@ SFX = [
     (0xC3, 0x1C0A, '포메이션 패스', '14 [관측]'),
     (0xC5, 0x1C0A, '6프레임 반복음(표 0x8BDE)', '0x8BBA [코드, 용도 미확인]'),
     (0xD0, 0x1C0A, '메뉴 계열(0x10658, 0x135DA)', '[코드, 용도 미확인]'),
+    (0xA7, 0x1C0A, '스토리 대사 타이핑음(대부분 화자)', '48 §2-2: 표 0x7528A, 0x121AE 가나마다 [코드+실측 t48_story_scene.py]'),
+    (0xA8, 0x1C0A, '스토리 대사 타이핑음(여성 화자: キャサリン·はるか·みさと)', '48 §2-2: 표 0x7528A [코드+실측]'),
+    (0xB6, 0x1C0A, '스토리 대사 타이핑음(だんぺい)', '48 §2-2: 표 0x7528A [코드+실측]'),
     (0x81, 0x1BFF, '음성 GO', '08 (0x288C 가 $A01BFF 에 기록, Z80 0x0FCF DAC 재생) [코드+렌더]'),
     (0x82, 0x1BFF, '음성 FIGHT', '08 [코드+렌더]'),
     (0x83, 0x1BFF, '음성 GAME SET', '08 [코드+렌더]'),
@@ -271,10 +275,31 @@ def main():
     meta = json.load(open(meta_p, encoding='utf-8')) if os.path.exists(meta_p) else {}
     meta['_note'] = ('원작 사운드 드라이버 렌더(analysis/scripts/z80snd.py + rom_audio_render.py, ffmpeg libgme). '
                      '파일은 public/assets/rom/ (gitignore). 청취 확인 UNVERIFIED. 의미 열의 [추정]은 코드 위치 근거만 있음.')
-    meta['stage_bgm_table_0x50D2'] = ['0x%02X' % v for v in STAGE_TABLE]
-    meta['story_bgm_table_0x50F2'] = ['0x%02X' % v for v in STORY_TABLE]
-    meta['bgm_call_sites'] = BGM_SITES
+    if mode != 'sfx-add':  # sfx-add 는 sfx 항목만 더한다
+        meta['stage_bgm_table_0x50D2'] = ['0x%02X' % v for v in STAGE_TABLE]
+        meta['story_bgm_table_0x50F2'] = ['0x%02X' % v for v in STORY_TABLE]
+        meta['bgm_call_sites'] = BGM_SITES
     with Pool(npar) as pool:
+        if mode == 'sfx-add':
+            # 지정 효과음만 추가 렌더: 기존 전체 공통 이득(sfx_gain_db)을 그대로 써서 원작 상대 음량 유지. 다른 효과음 파일·이득은 바꾸지 않는다
+            tags = [t.strip().lower() for t in sys.argv[3].split(',')]
+            items = [it for it in SFX if ('%02x' % it[0] + ('v' if it[1] == 0x1BFF else '')) in tags]
+            gain = 10 ** (meta['sfx_gain_db'] / 20)
+            for (tag, x, sr), (cid, slot, mean, ev) in zip(pool.map(render_sfx, items), items):
+                a = np.abs(x)
+                nz = np.nonzero(a > 10 ** (-60 / 20))[0]
+                x = x[:(nz[-1] + int(0.03 * sr)) if len(nz) else int(0.05 * sr)] * gain
+                n = min(len(x), int(0.008 * sr))
+                x[-n:] *= np.linspace(1, 0, n)
+                if np.abs(x).max() >= 1.0:
+                    raise SystemExit('%s: 기존 이득으로 클리핑 - 전체 재렌더(sfx) 필요' % tag)
+                p = os.path.join(OUT_SFX, tag + '.wav')
+                writewav(p, x, sr)
+                m = measure(x, sr)
+                m.update(path='rom/sfx/' + tag + '.wav', bytes=os.path.getsize(p), slot='0x%04X' % slot, meaning=mean, evidence=ev,
+                         silent=bool(len(nz) == 0))
+                meta['sfx'][tag] = m
+                print(tag, m['sec'], m['peak_dbfs'], m['bytes'], mean, flush=True)
         if mode in ('sfx', 'all'):
             res = pool.map(render_sfx, SFX)
             gpk = max(np.abs(x).max() for _, x, _ in [(t, x, s) for t, x, s in res])

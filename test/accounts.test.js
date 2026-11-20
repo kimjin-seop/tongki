@@ -125,7 +125,7 @@ test('JSON -> SQLite 가져오기: 멱등·원본 보존·백업 사본, 손님 
   } finally { a.ws.close(); await app.close(); }
 });
 
-test('랭킹: Elo +16/-16(배치 +24/-24)·랭크 방(계정 필수·규칙 고정)·정상 종료/기권 반영·GO 이전 무효·순위표·기권 잠금', async () => {
+test('래더: Elo +16/-16(배치 +24/-24)·랭크 방 대신 대기열(규칙 고정·목록 없음)·정상 종료/기권 반영·GO 이전 무효·한 판 뒤 해산·순위표·기권 잠금', async () => {
   assert.deepEqual(eloAfter({ rating: 1000, games: 10 }, { rating: 1000, games: 10 }, true), [1016, 984]);
   assert.deepEqual(eloAfter({ rating: 1000, games: 0 }, { rating: 1000, games: 0 }, true), [1024, 976]);
   assert.deepEqual(eloAfter({ rating: 100, games: 20 }, { rating: 100, games: 20 }, false), [100, 116]); // 진 쪽 84 -> 하한 100
@@ -139,16 +139,14 @@ test('랭킹: Elo +16/-16(배치 +24/-24)·랭크 방(계정 필수·규칙 고�
     a.send({ t: 'register', nickname: '랭커A', password: 'aaaaaa' }); await a.type('welcome');
     b.send({ t: 'register', nickname: '랭커B', password: 'bbbbbb' }); await b.type('welcome');
     g.send({ t: 'hello', nickname: '손님G' }); await g.type('welcome');
-    assert.equal(await g.err({ t: 'create_room', ranked: true }), 'ACCOUNT_REQUIRED');
-    assert.equal(await a.err({ t: 'create_room', ranked: true, rules: { mode: 'official', time: 3 } }), 'RANKED_RULES_FIXED');
-    a.send({ t: 'create_room', ranked: true });
-    const rj = await a.type('room_joined');
-    assert.equal(rj.room.ranked, true); assert.deepEqual(rj.room.rules, { mode: 'knockout', time: 5 });
-    g.send({ t: 'list_rooms' });
-    assert.equal((await g.wait((m) => m.t === 'room_list' && m.rooms.length === 1)).rooms[0].ranked, true);
-    assert.equal(await a.err({ t: 'set_rules', rules: { time: 3 } }), 'RANKED_RULES_FIXED');
-    b.send({ t: 'join_room', code: rj.room.code }); await b.type('room_joined');
-    const room = app.lobby.rooms.get(rj.room.code);
+    assert.equal(await a.err({ t: 'create_room', ranked: true }), 'LADDER_ONLY'); // 랭크 방은 없어졌다
+    const match = async () => {
+      a.send({ t: 'ladder_join' }); await a.wait((m) => m.t === 'ladder_queue' && m.queued);
+      b.send({ t: 'ladder_join' });
+      await a.type('ladder_matched'); await b.type('ladder_matched');
+      const rj = await a.type('room_joined'); await b.type('room_joined');
+      return { rj, room: app.lobby.rooms.get(rj.room.code) };
+    };
     const play = async () => {
       b.send({ t: 'ready', ready: true });
       await a.wait((m) => m.t === 'room_state' && m.room.start.ok);
@@ -156,24 +154,33 @@ test('랭킹: Elo +16/-16(배치 +24/-24)·랭크 방(계정 필수·규칙 고�
       await a.type('game_start'); await b.type('game_start');
     };
 
-    // 1) 정상 종료(GO 이후): 배치 구간 +24/-24
+    // 1) 정상 종료(GO 이후): 배치 구간 +24/-24, 끝나면 두 사람 모두 room_left{ladder_end}
+    let { rj, room } = await match();
+    assert.equal(rj.you, 0); assert.equal(rj.room.ranked, true); assert.equal(rj.room.ladder.counted, true); assert.deepEqual(rj.room.rules, { mode: 'knockout', time: 5 });
+    g.send({ t: 'list_rooms' });
+    assert.deepEqual((await g.type('room_list')).rooms, []); // 래더 방은 목록에 없다
+    assert.equal(await a.err({ t: 'set_rules', rules: { time: 3 } }), 'RANKED_RULES_FIXED');
     await play();
     room.game.match.phase = 'play'; room.game.finish(0, 'annihilation');
     const r1a = await a.type('ranking_result'), r1b = await b.type('ranking_result');
-    assert.deepEqual([r1a.counted, r1a.before, r1a.after, r1a.delta, r1a.oppBefore], [true, 1000, 1024, 24, 1000]);
+    assert.deepEqual([r1a.counted, r1a.before, r1a.after, r1a.delta, r1a.oppBefore, r1a.placement, r1a.placementLeft], [true, 1000, 1024, 24, 1000, true, 4]);
     assert.equal(r1b.delta, -24);
     const rec = store.records.at(-1);
     assert.equal(rec.ranked, true); assert.deepEqual(rec.ratingDelta, [24, -24]);
+    assert.equal((await a.type('room_left')).reason, 'ladder_end'); assert.equal((await b.type('room_left')).reason, 'ladder_end');
+    assert.equal(app.lobby.rooms.has(rj.room.code), false);
 
     // 2) GO 이전 퇴장 = 무효
+    ({ room } = await match());
     await play();
     b.send({ t: 'leave_room' });
     const r2 = await a.type('ranking_result');
     assert.equal(r2.counted, false); assert.equal(r2.why, 'VOID'); assert.equal(r2.delta, 0);
     assert.equal((await b.type('ranking_result')).why, 'VOID'); // 나간 쪽도 game_end 뒤에 받는다
-    b.send({ t: 'join_room', code: rj.room.code }); await b.type('room_joined');
+    assert.equal((await a.type('room_left')).reason, 'ladder_end'); await b.type('room_left');
 
     // 3) GO 이후 퇴장 = 기권 패배 반영
+    ({ room } = await match());
     await play();
     room.game.match.phase = 'play';
     a.send({ t: 'leave_room' });
@@ -182,11 +189,11 @@ test('랭킹: Elo +16/-16(배치 +24/-24)·랭크 방(계정 필수·규칙 고�
     const ra = app.lobby.ranking.get('랭커a');
     assert.deepEqual([ra.w, ra.l, ra.games], [1, 1, 2]);
 
-    // 순위표: 5경기 미만은 목록 제외, 내 줄은 배치 중
+    // 순위표: 5경기 미만은 목록 제외, 내 줄은 배치 중(종전 이름 ranking_list 도 같은 내용)
     a.send({ t: 'ranking_list' });
     const L = await a.type('ranking_list');
     assert.deepEqual(L.top, []);
-    assert.equal(L.me.placement, true); assert.equal(L.me.rank, null); assert.equal(L.me.nick, '랭커A');
+    assert.equal(L.me.placement, true); assert.equal(L.me.rank, null); assert.equal(L.me.nick, '랭커A'); assert.equal(L.season.n, 1);
   } finally { a.ws.close(); b.ws.close(); g.ws.close(); await app.close(); }
 
   // 저장소 단위: 같은 상대 24시간 4번째는 미반영, 5경기 이상이면 순위표, 최근 10경기 중 기권 3회 = 30분 잠금
@@ -197,9 +204,10 @@ test('랭킹: Elo +16/-16(배치 +24/-24)·랭크 방(계정 필수·규칙 고�
   const r4 = rs.record({ matchId: 'm3', players: P, winner: 0, now: T0 + 3 });
   assert.deepEqual([r4.counted, r4.why, r4.delta], [false, 'PAIR_LIMIT', [0, 0]]);
   for (let i = 0; i < 2; i++) rs.record({ matchId: `n${i}`, players: P, winner: 0, now: T0 + 86400001 + i });
-  const bd = rs.board(50, 'y', 'Y');
+  const bd = rs.board(50, 'y', 'Y', T0 + 86400003);
   assert.deepEqual(bd.top.map((r) => [r.rank, r.nick, r.w, r.l]), [[1, 'X', 5, 0], [2, 'Y', 0, 5]]);
   assert.equal(bd.me.rank, 2);
+  assert.deepEqual(bd.top[1].pvp, { w: 0, l: 6 }); // 사람끼리 전적은 같은 상대 제한 판도 센다
   const T1 = T0 + 3 * 86400001;
   for (let i = 0; i < 3; i++) rs.record({ matchId: `f${i}`, players: P, winner: 0, forfeit: 1, now: T1 + i * 86400001 });
   assert.ok(rs.lockedUntil('y', T1 + 2 * 86400001 + 1) > 0);
@@ -285,41 +293,7 @@ test('로그아웃 뒤 로그인 타이머: 로그아웃 시점부터 다시 건
   } finally { early.ws.close(); late.ws.close(); await app.close(); }
 });
 
-test('랭크 방 좌석 레이팅: room_joined/room_state slots 에 rating·placement(랭크 방만), 경기 뒤 최신 값', async () => {
-  const app = createServer({ store: new MemoryResultStore(), limits: LIM, log: () => {} });
-  const port = await app.listen(0);
-  const a = client(port), b = client(port), g = client(port);
-  await Promise.all([a.open, b.open, g.open]);
-  try {
-    a.send({ t: 'register', nickname: '좌석A', password: 'aaaaaa' }); await a.type('welcome');
-    b.send({ t: 'register', nickname: '좌석B', password: 'bbbbbb' }); await b.type('welcome');
-    g.send({ t: 'hello', nickname: '손님S' }); await g.type('welcome');
-    g.send({ t: 'create_room' });
-    const gs = (await g.type('room_joined')).room.slots[0];
-    assert.ok(!('rating' in gs) && !('placement' in gs)); // 비랭크 방은 필드 없음
-    app.lobby.ranking.record({ matchId: 'pre', players: [{ key: '좌석b', nick: '좌석B' }, { key: 'zz', nick: 'ZZ' }], winner: 0 });
-    a.send({ t: 'create_room', ranked: true });
-    const rj = await a.type('room_joined');
-    assert.deepEqual([rj.room.slots[0].rating, rj.room.slots[0].placement], [1000, true]);
-    b.send({ t: 'join_room', code: rj.room.code });
-    const bj = await b.type('room_joined');
-    assert.deepEqual([bj.room.slots[1].rating, bj.room.slots[1].placement], [1024, true]);
-    const st = await a.wait((m) => m.t === 'room_state' && m.room.slots[1]);
-    assert.deepEqual([st.room.slots[0].rating, st.room.slots[1].rating], [1000, 1024]); // 상대 입장 시 상대 값
-    b.send({ t: 'ready', ready: true });
-    await a.wait((m) => m.t === 'room_state' && m.room.start.ok);
-    a.send({ t: 'start' }); await a.type('game_start');
-    const room = app.lobby.rooms.get(rj.room.code);
-    room.game.match.phase = 'play'; room.game.finish(0, 'annihilation');
-    const r = await a.type('ranking_result');
-    const after = await a.wait((m) => m.t === 'room_state' && m.room.status === 'waiting' && m.room.slots[1] && m.room.slots[0].rating !== 1000);
-    assert.equal(r.oppBefore, 1024);
-    assert.deepEqual(after.room.slots.map((x) => x.rating), [r.after, app.lobby.ranking.get('좌석b').rating]); // 경기 종료 뒤 room_state 는 반영 후 값
-    assert.ok(after.room.slots[1].rating < 1024);
-  } finally { a.ws.close(); b.ws.close(); g.ws.close(); await app.close(); }
-});
-
-test('랭크: 계정 대 손님 — 계정 쪽만 승·패 +1, 손님은 레이팅·전적 없음(손님 좌석엔 ranking_result 없음)', async () => {
+test('래더 = 계정만(2026-11-20): 손님 ladder_join ACCOUNT_REQUIRED, 같은 연결에서 가입 승격 뒤 참가·매칭, 좌석 rating/placement/placementLeft/tier. 저장 계층 손님 K16 은 도달 불가지만 회귀 유지', async () => {
   const store = new MemoryResultStore();
   const app = createServer({ store, limits: LIM, log: () => {} });
   const port = await app.listen(0);
@@ -328,30 +302,50 @@ test('랭크: 계정 대 손님 — 계정 쪽만 승·패 +1, 손님은 레이�
   try {
     a.send({ t: 'register', nickname: '계정A', password: 'aaaaaa' }); await a.type('welcome');
     g.send({ t: 'hello', nickname: '손님G' }); await g.type('welcome');
-    assert.equal(await g.err({ t: 'create_room', ranked: true }), 'ACCOUNT_REQUIRED'); // 만들기는 계정만
-    a.send({ t: 'create_room', ranked: true });
-    const rj = await a.type('room_joined');
-    g.send({ t: 'join_room', code: rj.room.code });
+    g.send({ t: 'ladder_join' }); assert.equal((await g.type('error')).code, 'ACCOUNT_REQUIRED');
+    assert.equal(app.lobby.ladder.size, 0);
+    g.send({ t: 'register', nickname: '손님G', password: 'gggggg' }); await g.type('account_ok'); // 손님 세션을 계정으로 올린 뒤에는 된다
+    g.send({ t: 'ladder_join' }); assert.equal((await g.type('ladder_queue')).queued, true);
+    a.send({ t: 'ladder_join' });
+    const ma = await a.type('ladder_matched');
+    assert.deepEqual([ma.opp.nick, ma.opp.guest, ma.opp.rating, ma.opp.placement, ma.opp.placementLeft, ma.opp.tier], ['손님G', undefined, 1000, true, 5, null]);
     const gj = await g.type('room_joined');
-    assert.equal(gj.room.slots[1].rating, undefined); // 손님 좌석은 레이팅 표시 없음
-    const room = app.lobby.rooms.get(rj.room.code);
-    const play = async (win) => {
-      g.send({ t: 'ready', ready: true });
-      await a.wait((m) => m.t === 'room_state' && m.room.start.ok);
-      a.send({ t: 'start' });
-      await a.type('game_start'); await g.type('game_start');
-      room.game.match.phase = 'play'; room.game.finish(win, 'annihilation');
-      await g.type('game_end');
-      return a.type('ranking_result');
-    };
-    const r1 = await play(0); // 계정 승
-    assert.equal(r1.counted, true); assert.ok(r1.delta > 0);
-    assert.deepEqual((({ w, l, games }) => [w, l, games])(app.lobby.ranking.get('계정a')), [1, 0, 1]);
-    const r2 = await play(1); // 계정 패
-    assert.equal(r2.counted, true); assert.ok(r2.delta < 0);
-    assert.deepEqual((({ w, l, games }) => [w, l, games])(app.lobby.ranking.get('계정a')), [1, 1, 2]);
-    assert.equal(app.lobby.ranking.db.get('SELECT COUNT(*) AS n FROM ratings WHERE key = ?', '손님g').n, 0); // 손님 행 없음
-    assert.equal(await g.wait((m) => m.t === 'ranking_result', 200).catch(() => null), null); // 손님은 레이팅 변동 메시지 없음
+    assert.deepEqual([gj.you, gj.room.slots[0].guest, gj.room.slots[1].rating, gj.room.slots[1].placementLeft], [0, undefined, 1000, 5]);
+    await a.type('room_joined');
+    const room = app.lobby.rooms.get(gj.room.code);
+    a.send({ t: 'ready', ready: true });
+    await g.wait((m) => m.t === 'room_state' && m.room.start.ok);
+    g.send({ t: 'start' }); await g.type('game_start'); await a.type('game_start');
+    room.game.match.phase = 'play'; room.game.finish(1, 'annihilation'); // 계정A 승
+    const r = await a.type('ranking_result');
+    assert.deepEqual([r.counted, r.delta, r.vsGuest], [true, 24, false]); // 계정끼리 배치 K48: +24
     assert.equal(store.records.at(-1).ratingCounted, true);
+    // 저장 계층의 손님 상대 K16(도달 불가·미래 대비) 회귀
+    const k16 = app.lobby.ranking.record({ matchId: 'g', players: [{ key: '계정z', nick: '계정Z' }, { key: '손님q', nick: '손님Q', account: false }], winner: 0 });
+    assert.deepEqual([k16.counted, k16.delta], [true, [8, 0]]);
   } finally { a.ws.close(); g.ws.close(); await app.close(); }
+});
+
+test('방 목록 호스트 요약(2026-11-20): 계정 방장 = hostInfo{tier,rating,w,l}(배치 중 tier:null·placing:true, w/l = pvp_records), 손님 방장 = 생략, 전적 기록 뒤 캐시 무효화', async () => {
+  const app = createServer({ store: new MemoryResultStore(), limits: LIM, log: () => {} });
+  const port = await app.listen(0);
+  const a = client(port), g = client(port), v = client(port);
+  await Promise.all([a.open, g.open, v.open]);
+  try {
+    a.send({ t: 'register', nickname: '방장A', password: 'aaaaaa' }); await a.type('welcome');
+    g.send({ t: 'hello', nickname: '손님방장' }); await g.type('welcome');
+    v.send({ t: 'hello', nickname: '구경' }); await v.type('welcome');
+    a.send({ t: 'create_room' }); const ca = (await a.type('room_joined')).room.code;
+    g.send({ t: 'create_room' }); const cg = (await g.type('room_joined')).room.code;
+    v.send({ t: 'list_rooms' });
+    const l1 = await v.wait((m) => m.t === 'room_list' && m.rooms.length === 2);
+    const ra = l1.rooms.find((r) => r.code === ca), rg = l1.rooms.find((r) => r.code === cg);
+    assert.deepEqual(ra.hostInfo, { tier: null, placing: true, rating: 1000, w: 0, l: 0 });
+    assert.equal(ra.host, '방장A'); // host 는 종전대로 닉네임
+    assert.equal('hostInfo' in rg, false); // 손님 방장 = 생략
+    app.lobby.ranking.recordPvp({ players: [{ key: '방장a', nick: '방장A' }, { key: 'x', nick: 'X' }], winner: 0 }); // 전적 변동 -> 캐시 무효화(계정 키 = 소문자 닉네임)
+    v.send({ t: 'list_rooms' }); // 앞서 쌓인 목록(푸시 포함)은 건너뛰고 갱신된 값이 실린 목록을 기다린다(무효화가 없으면 TTL 60초라 시간 초과)
+    const l2 = await v.wait((m) => m.t === 'room_list' && m.rooms.find((r) => r.code === ca)?.hostInfo?.w === 1);
+    assert.deepEqual(l2.rooms.find((r) => r.code === ca).hostInfo, { tier: null, placing: true, rating: 1000, w: 1, l: 0 });
+  } finally { a.ws.close(); g.ws.close(); v.ws.close(); await app.close(); }
 });

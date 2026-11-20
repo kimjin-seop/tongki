@@ -3,7 +3,9 @@ import { net } from './net.js';
 import { loadManifest, loadFonts } from './game/assets.js';
 import { toast } from './ui.js';
 import { loadNames, teamName, teamLabel } from './names.js';
-import { ERR, ERR_CODE, ROOM_LEFT, TRAIN_END, LEAGUE, RANK_WHY } from './i18n.js';
+import { ERR, ERR_CODE, ROOM_LEFT, TRAIN_END, LEAGUE, RANK_WHY, codeText } from './i18n.js';
+import * as Chat from './chat.js';
+import * as Notice from './notice.js';
 import { $, isTyping } from './util.js';
 import { loadPix } from './pix.js';
 import * as Nick from './screens/nick.js';
@@ -17,6 +19,7 @@ import * as Lineup from './screens/lineup.js';
 import * as Tutorial from './screens/tutorial.js';
 import * as League from './screens/league.js';
 import * as Ranking from './screens/ranking.js';
+import * as Ladder from './screens/ladder.js';
 import * as Flame from './screens/flame/index.js';
 import { setCatalog as setFlameCatalog } from './screens/flame/store.js';
 import * as Intro from './intro.js';
@@ -27,7 +30,9 @@ export const app = {
   nick: null, you: null, rooms: [], room: null, welcome: null, teams: [],
   campaign: null, // 최근 campaign_list {progress, chapters}
   account: false, // 계정 세션인가(welcome.account / account_ok, PROTOCOL §2.1)
-  rankBoard: null, // 최근 ranking_list {top, me}(§11.3)
+  admin: false, // 서버가 관리자로 확인한 계정(welcome.admin / account_ok.admin). 공지 입력줄·「공지」 토글은 이때만 만든다
+  rankBoard: null, pvpBoard: null, // 최근 ladder_board {season, top, me, total}(§11.3) / pvp_board {top, me, total}(전체 랭킹)
+  ladderStatus: null, ladderQ: null, ladderMatch: null, // 래더(§11): 최근 ladder_status / ladder_queue / ladder_matched(래더 방 상대·반영 여부)
   league: null, leagueChamp: null, // 최근 league_state(PROTOCOL §10) / 아직 보여 주지 않은 league_end 우승 팀 idx
   flame: null, flameEnd: null, // 불꽃의 계승(PROTOCOL §13): 최근 flame_state / 아직 보여 주지 않은 flame_end 요약
   flameChamp: null, flameRank: null, // 아직 보여 주지 않은 우승(flame_result.champion: {run, achievements}, §13.12) / 최근 flame_ranking {top, me, total}(§13.13)
@@ -37,7 +42,7 @@ export const app = {
   bgm: (key) => audio.bgm(key),
   bgmStop: () => audio.bgmStop(), // 원작 0xE1(즉시 정지)
   go(name, data) {
-    const mods = { nick: Nick, lobby: Lobby, room: Room, game: Game, story: Story, prematch: Prematch, rules: Rules, lineup: Lineup, tutorial: Tutorial, league: League, ranking: Ranking, flame: Flame };
+    const mods = { nick: Nick, lobby: Lobby, room: Room, game: Game, story: Story, prematch: Prematch, rules: Rules, lineup: Lineup, tutorial: Tutorial, league: League, ranking: Ranking, ladder: Ladder, flame: Flame };
     if (name === 'game' && this.intro?.active) this.intro.abort(); // 진행 중 경기로 복귀하면 인트로를 바로 끝낸다
     this.screen?.unmount?.();
     const root = $('#app'); root.innerHTML = '';
@@ -78,10 +83,10 @@ function wire() {
   let quietClose = false;
   net.on('error', (m) => {
     if (m.code === 'LOGIN_TIMEOUT' && app.view === 'nick') { quietClose = true; return; }
-    toast(app.screen?.errText?.(m) || ERR_CODE[m.code] || m.msg || ERR.UNKNOWN, 'error'); // errText = 화면이 정하는 문구(불꽃의 계승 필살기 슬롯 거절, flame/index.js)
+    if (!app.screen?.quietError?.(m)) toast(app.screen?.errText?.(m) || codeText(m) || m.msg || ERR.UNKNOWN, 'error'); // errText = 화면이 정하는 문구(불꽃의 계승 필살기 슬롯 거절, flame/index.js)
     app.screen?.onError?.(m);
     // 토큰 거절(저장 토큰은 net 이 지웠다)·다른 곳에서 접속: 로그인 화면으로(가입 화면이 떠 있었으면 일반 접속 화면으로)
-    if (m.code === 'TOKEN_INVALID' || m.code === 'SESSION_REPLACED') { app.room = null; app.account = false; app.flame = null; app.flameEnd = null; app.flameChamp = null; app.flameRank = null; if (app.view !== 'nick' || app.screen?.upgrade) app.go('nick'); }
+    if (m.code === 'TOKEN_INVALID' || m.code === 'SESSION_REPLACED') { app.room = null; app.account = false; app.admin = false; Chat.reset(); app.flame = null; app.flameEnd = null; app.flameChamp = null; app.flameRank = null; app.ladderStatus = null; app.rankBoard = null; app.pvpBoard = null; app.ladderQ = null; app.ladderMatch = null; if (app.view !== 'nick' || app.screen?.upgrade) app.go('nick'); }
   });
   net.on('toast', (m) => toast(ERR_CODE[m.code] || m.msg || m.code, 'warn')); // 코드 문구표(i18n ERR_CODE: FLAME_TEAM_CLEARED 등)가 서버 msg 보다 먼저
   net.on('close', ({ was }) => {
@@ -95,27 +100,39 @@ function wire() {
   });
   net.on('welcome', (m) => {
     if (m.resumed && app.view && app.view !== 'nick') toast(ERR.RECONNECTED, 'ok', 1500);
-    app.welcome = m; app.nick = m.nickname; app.account = !!m.account; Nick.remember(m); app.teams = (m.teams || []).map((t) => ({ ...t, name: teamName(t.id, t.name), label: teamLabel(t.id, t.name) }));
-    if (m.location === 'lobby' && !['story', 'tutorial', 'league', 'ranking', 'flame'].includes(app.view)) app.go('lobby');
+    app.welcome = m; app.nick = m.nickname; app.account = !!m.account; app.admin = m.admin === true; Nick.remember(m); app.teams = (m.teams || []).map((t) => ({ ...t, name: teamName(t.id, t.name), label: teamLabel(t.id, t.name) }));
+    if (m.location === 'lobby' && !['story', 'tutorial', 'league', 'ranking', 'ladder', 'flame'].includes(app.view)) app.go('lobby');
     else if (m.location === 'lobby') app.screen?.onWelcome?.();
   });
   // 손님 → 계정 승격(토큰 교체는 net). 위치는 그대로
   net.on('account_ok', (m) => {
     app.account = true; if (app.welcome) app.welcome.account = true;
+    if (m.admin === true) app.admin = true;
     if (app.view === 'nick') app.screen.onAccountOk?.(m); else if (app.view === 'lobby') app.go('lobby');
   });
   // 로그아웃: 연결은 남고 세션만 끝난다(저장 토큰은 net 이 지웠다) -> 로그인 화면
-  net.on('logged_out', () => { app.room = null; app.account = false; app.welcome = null; app.flame = null; app.flameEnd = null; app.flameChamp = null; app.flameRank = null; app.go('nick', { mode: 'login', nick: app.nick }); });
-  // 순위표(§11.3): 순위표 화면과 랭크 대기실(상대 레이팅)이 쓴다
-  net.on('ranking_list', (m) => { app.rankBoard = m; app.screen?.onRankingList?.(m); });
-  // 랭크 경기 레이팅 변동(game_end 바로 뒤): 결과 카드에 한 줄, 반영 안 된 사유는 토스트
+  net.on('logged_out', () => { app.room = null; app.account = false; app.admin = false; Chat.reset(); app.welcome = null; app.flame = null; app.flameEnd = null; app.flameChamp = null; app.flameRank = null; app.ladderStatus = null; app.rankBoard = null; app.pvpBoard = null; app.ladderQ = null; app.ladderMatch = null; app.go('nick', { mode: 'login', nick: app.nick }); });
+  // 순위표(§11.3): 래더 랭킹 = ladder_board(종전 이름 ranking_list 도 같은 내용), 전체 랭킹 = pvp_board
+  for (const t of ['ladder_board', 'ranking_list']) net.on(t, (m) => { app.rankBoard = m; app.screen?.onRankingList?.(m); });
+  net.on('pvp_board', (m) => { app.pvpBoard = m; app.screen?.onPvpBoard?.(m); });
+  // 래더 대기열·현황(§11.2·§11.3): 화면은 screens/ladder.js. 줄에 섰다는 응답이 다른 화면에서 오면(재접속 등) 래더 화면으로
+  net.on('ladder_status', (m) => { app.ladderStatus = m; app.screen?.onLadderStatus?.(m); });
+  net.on('ladder_queue', (m) => {
+    app.ladderQ = m;
+    if (m.queued && app.view !== 'ladder' && ['lobby', 'ranking'].includes(app.view)) app.go('ladder');
+    else app.screen?.onLadderQueue?.(m);
+  });
+  net.on('ladder_matched', (m) => { app.ladderMatch = m; app.ladderQ = null; }); // 곧 room_joined(래더 방) -> 대기실
+  // 래더 경기 점수 변동(game_end 바로 뒤): 결과 카드에 점수·티어·배치 줄, 반영 안 된 사유는 토스트
   net.on('ranking_result', (m) => {
+    Ranking.invalidate(app); // 래더 점수가 바뀌었다: 다음 랭킹보드 진입은 새로 받는다
     if (!m.counted && RANK_WHY[m.why]) toast(RANK_WHY[m.why], 'warn');
     if (app.view === 'game') app.screen.on_ranking_result?.(m);
   });
   net.on('room_list', (m) => { app.rooms = m.rooms || []; if (app.view === 'lobby') app.screen.update?.(); });
   net.on('room_joined', (m) => {
     app.you = m.you; app.room = m.room;
+    Chat.enterRoom(m.room?.code ?? null);
     // 캠페인 방은 대기실을 거치지 않는다: 곧 game_start 가 온다(campaign_start·재접속 'game').
     // 경기가 끝난 대기 상태 방으로 재접속('room')했으면 스토리 목록으로
     if (m.room?.training) return; // 특훈 방(PROTOCOL §9): 대기실 없이 곧 game_start 가 온다
@@ -130,7 +147,7 @@ function wire() {
     else if (app.view === 'game') app.screen.onRoom?.(m.room);
   });
   net.on('room_left', (m) => {
-    app.room = null;
+    app.room = null; Chat.reset();
     if (ROOM_LEFT[m.reason]) toast(ROOM_LEFT[m.reason], 'warn');
     if (app.view === 'story') return; // 캠페인 방 정리(재시작·목록 복귀)는 스토리 화면 안에서 처리
     if (app.view === 'game' && app.screen.holdLobby?.()) return; // 튜토리얼(특훈) 완료 카드가 떠 있다: 카드의 '튜토리얼로'(자동 복귀 포함)가 넘긴다
@@ -140,9 +157,13 @@ function wire() {
     if (app.view === 'game' && app.screen.flame) { app.go('flame', { mode: 'auto' }); return; }
     if (app.view === 'league' || app.view === 'flame') return;
     if ((app.view === 'lineup' || app.view === 'prematch') && app.screen.flame) return; // 불꽃의 계승 경기 전 화면에서 온 정리: 그 화면이 제자리로 돌아간다
+    if (String(m.reason).startsWith('ladder_')) { app.ladderMatch = null; if (app.view !== 'ladder') app.go('ladder'); return; } // 래더 방 해산(한 판 끝·취소·시간 초과): 래더 화면(내 현황)으로
     if (app.view !== 'lobby') app.go('lobby');
   });
-  net.on('game_start', (m) => { app.you = m.you; app.go('game', { start: m }); });
+  // 채팅(사람끼리 방, room.chat)·서버 공지(접속 중 전원). 표시는 chat.js·notice.js
+  net.on('chat', (m) => Chat.receive(m));
+  net.on('notice', (m) => { if (Notice.show(m)) Chat.noticeLine(m); });
+  net.on('game_start', (m) => { Ranking.invalidate(app); app.you = m.you; app.go('game', { start: m }); });
   net.on('training_end', (m) => { if (TRAIN_END[m.reason]) toast(TRAIN_END[m.reason], 'warn'); }); // 상한 종료 사유(화면 처리는 아래 game 화면 on_training_end)
   // 리그(PROTOCOL §10): 상태는 app.league 에 두고 리그 화면에 넘긴다. 사람 경기 중 온 우승은 리그 화면으로 돌아갈 때 보여 준다
   net.on('league_state', (m) => { app.league = m; if (app.view === 'league') app.screen.onLeagueState?.(m); });
@@ -166,7 +187,7 @@ function wire() {
   net.on('flame_ranking', (m) => {
     const full = Array.isArray(m.top) && (m.top.length > 1 || !(m.total > 1));
     app.flameRank = full ? m : { ...(app.flameRank ?? {}), me: m.me ?? null };
-    if (app.view === 'flame') app.screen.onFlameRanking?.(m);
+    if (app.view === 'flame' || app.view === 'ranking') app.screen.onFlameRanking?.(m);
   });
   net.on('campaign_list', (m) => { app.campaign = m; app.screen?.onCampaignList?.(m); });
   net.on('campaign_result', (m) => {

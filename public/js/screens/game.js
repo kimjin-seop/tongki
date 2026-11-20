@@ -1,7 +1,7 @@
 // 경기 화면: 398x224(16:9) 캔버스를 창에 꽉 차게 확대(util.fitScale), DOM HUD(글자), 입력 전송, 일시정지·결과 오버레이
 import { h, pad2, fitScale, isTyping } from '../util.js';
 import { net } from '../net.js';
-import { END_REASON, END_RULE } from '../i18n.js';
+import { END_REASON, END_RULE, TIER, TIER_ORDER } from '../i18n.js';
 import { isCpuSeat } from './room.js';
 import { entry, has, image, json, imageAt, jsonAt } from '../game/assets.js';
 import { SnapBuffer } from '../game/snaps.js';
@@ -19,6 +19,7 @@ import { teamName } from '../names.js';
 import { toast } from '../ui.js';
 import * as Skin from './flame/skin.js';
 import { granted as flGranted, artOff as flArtOff } from './flame/store.js';
+import { gameChat } from '../chat.js';
 
 const STAGE_FILE_RE = /^rom\/bg\/stage_\d{2}$/, STAGE_JSON_RE = /^rom\/bg\/stage_\d{2}\.json$/, STAGE_KEY_RE = /^bg\.stage\.\d{2}$/;
 
@@ -58,6 +59,7 @@ export function mount(root, app, { start }) {
   const training = start.training?.kind ? start.training : null; // 특훈(혼자 하기, PROTOCOL §9): {kind, step, balls, pass, steps, gauge?}
   const league = start.league && Number.isInteger(start.league.i) ? start.league : null; // 리그 사람 경기(PROTOCOL §10): 끝나면 방이 없어지고 리그 메뉴로
   const flame = start.flame && Number.isInteger(start.flame.seat) ? start.flame : null; // 불꽃의 계승 경기(PROTOCOL §12.2·§13): 끝나면 방이 없어지고 도전 화면으로
+  const ladder = !!app.room?.ladder; // 래더 경기(PROTOCOL §11.2): 한 판 뒤 방이 해산된다(room_left ladder_end) -> 결과 카드를 남기고 래더 화면으로
   // 키운 팀 대전(PROTOCOL §13.20, 컴퓨터 대전 방의 불꽃 팀): game_start.flameVs. 그리기(선수 이름·skin·필살기 안내)만 flame 경기처럼 하고, 흐름(결과 카드·holdLobby·room_left)은 일반 방 그대로(= flame 은 null)
   // 사람끼리 방(§13.25): flameVs = {mode:'versus', seats:[{seat, fm, allow, slot} | null, …]} → 내 좌석 칸이 내 그리기 기준(안내 줄), 선수 이름·skin 은 좌석마다(flameCast.seats)
   const vsSeats = Array.isArray(start.flameVs?.seats) ? start.flameVs.seats : null;
@@ -163,6 +165,12 @@ export function mount(root, app, { start }) {
   };
   addEventListener('keydown', onGuideKey);
   const input = new InputSender((bits) => net.send('input', { bits }));
+  // 채팅 받은 줄·Enter 입력창(chat.js): 서버가 room.chat 을 준 방(사람끼리)에서만 만든다. 경기 입력·캔버스는 그대로(DOM 층만)
+  let chatUi = null;
+  const chatOn = (on) => {
+    if (on && !chatUi) chatUi = gameChat({ app, wrap, stage, help, guide, input, pad: () => pad });
+    else if (!on && chatUi) { chatUi.destroy(); chatUi = null; }
+  };
   // 터치 기기: 가상 패드(마우스 환경에서는 만들지 않음) + 스크롤·확대·길게 눌러 메뉴 방지
   const coarse = matchMedia(COARSE_MQ);
   let pad = null;
@@ -219,6 +227,7 @@ export function mount(root, app, { start }) {
     stage.style.setProperty('--ki', Math.max(1, Math.floor(s.k + 0.01))); // 캔버스에 붙는 DOM 글자(배너·떠오르는 글자)는 정수 배율(css)
     toastK = s.k; placeToast();
     placeGuide(s.cw);
+    chatUi?.place();
   }
   // 특훈: 토스트가 HUD(가운데 N/3단계)를 가리지 않게 HUD 줄(26px) 아래로 내린다(css #toasts --toast-top, unmount 에서 해제).
   // 필살 슛 특훈은 게이지(y 40 까지)·상단 벽 구간(y 44~68, 예전 필살 컷인 자리 — 이후 연출용으로 비워 둔다) 아래, 그만두기 창이 떠 있으면 그 창 아래
@@ -232,6 +241,7 @@ export function mount(root, app, { start }) {
   addEventListener('resize', fit);
   coarse.addEventListener('change', applyTouch);
   applyTouch();
+  chatOn(app.room?.chat === true);
 
   // ---- 에셋 (키로만 참조) ----
   const layout = entry(`spr.team.${pad2(start.teams[0].id)}`);
@@ -424,7 +434,8 @@ export function mount(root, app, { start }) {
       titleEl,
       h('div.result-rule', END_RULE[m.reason] ?? END_REASON[m.reason] ?? m.reason),
       h('div.muted.tabular', `남은 인원 ${m.rem[0]} : ${m.rem[1]}`),
-      rankLine, flameLine, btn));
+      rankLine, tierLine, flameLine, btn));
+    if (ladder && !app.account && rankLine.hidden) { rankLine.textContent = '미반영(손님)'; rankLine.hidden = false; } // 손님 좌석에는 ranking_result 가 없다
     overlay.hidden = false;
     setTimeout(() => btn.focus(), 30);
     armBack(BACK_MS);
@@ -444,7 +455,7 @@ export function mount(root, app, { start }) {
   }
   // 결과 화면 자동 복귀: 10초 카운트다운(버튼에 표시), 버튼을 누르면 즉시
   const BACK_MS = 10000;
-  const backLabel = training ? '튜토리얼로' : campaign ? '스토리로' : league ? '리그로' : flame ? '도전으로' : '대기실로';
+  const backLabel = training ? '튜토리얼로' : campaign ? '스토리로' : league ? '리그로' : flame ? '도전으로' : ladder ? '래더로' : '대기실로';
   let btn = null, backAt = 0, backTick = 0;
   function armBack(ms) {
     clearTimeout(backTimer); clearInterval(backTick);
@@ -460,12 +471,14 @@ export function mount(root, app, { start }) {
     else if (campaign) app.go('story', { mode: 'list' });
     else if (league) app.go('league', { mode: 'menu' });
     else if (flame) app.go('flame', { mode: 'auto' });
+    else if (ladder) app.go('ladder');
     else if (app.room) app.go('room');
   }
 
-  // 랭크 경기(PROTOCOL §11.3): ranking_result 가 game_end 바로 뒤에 온다 -> 결과 카드 버튼 위에 `레이팅 전 → 후 (±delta)`.
-  // 내가 기권해 곧 로비로 넘어가면(카드가 남지 않는다) 같은 줄을 토스트로
+  // 래더 경기(PROTOCOL §11.3): ranking_result 가 game_end 바로 뒤에 온다 -> 결과 카드 버튼 위에 `점수 전 → 후 (±delta)` + 티어 승급·강등 / 배치 진행 한 줄.
+  // 내가 기권해 곧 래더 화면으로 넘어가면(카드가 남지 않는다) 같은 줄을 토스트로
   const rankLine = h('div.result-rank.tabular', { hidden: true });
+  const tierLine = h('div.result-tier', { hidden: true });
   let leaving = false;
   // 불꽃의 계승: game_end 뒤에 오는 flame_result(재경기)·flame_end(도전 종료·우승)를 결과 카드 버튼 위 한 줄로
   const flameLine = h('div.result-flame', { hidden: true });
@@ -479,10 +492,19 @@ export function mount(root, app, { start }) {
   function onRankingResult(r) {
     if (![r?.before, r?.after, r?.delta].every(Number.isFinite)) return;
     const d = r.delta > 0 ? `+${r.delta}` : r.delta < 0 ? `−${-r.delta}` : '±0';
-    const text = `레이팅 ${r.before} → ${r.after} (${d})`;
+    const text = r.counted === false ? '미반영' : `점수 ${r.before} → ${r.after} (${d})`;
     rankLine.textContent = text; rankLine.hidden = false;
     rankLine.classList.toggle('up', r.delta > 0); rankLine.classList.toggle('down', r.delta < 0);
-    if (leaving) toast(text, r.delta < 0 ? 'warn' : 'ok', 5000);
+    // 티어: 배치 중 = 진행(3/5), 배치를 막 끝냄 = 정해진 티어, 그 밖 = 승급·강등(두 값 비교, 마스터는 결과에 오지 않는다 §11.3)
+    const P = app.ladderStatus?.config?.placementGames ?? 5;
+    const tb = TIER[r.tierBefore] ? r.tierBefore : null, ta = TIER[r.tier] ? r.tier : null;
+    let t = '', cls = '';
+    if (r.placement === true && Number.isInteger(r.placementLeft)) t = `배치 ${Math.max(0, P - r.placementLeft)}/${P}`;
+    else if (!tb && ta) { t = `배치 완료 · ${TIER[ta]}`; cls = 'up'; }
+    else if (tb && ta && tb !== ta) { const up = TIER_ORDER.indexOf(ta) > TIER_ORDER.indexOf(tb); t = `${up ? '승급' : '강등'} ${TIER[tb]} → ${TIER[ta]}`; cls = up ? 'up' : 'down'; }
+    tierLine.textContent = t; tierLine.hidden = !t;
+    tierLine.className = 'result-tier' + (cls ? ' ' + cls : '') + (ta ? ' t-' + ta : '');
+    if (leaving && !ladder) toast(t ? `${text} · ${t}` : text, r.delta < 0 ? 'warn' : 'ok', 5000);
   }
 
   let quitArmed = 0;
@@ -523,10 +545,11 @@ export function mount(root, app, { start }) {
       if (m.artifactPoints > 0) toast(`${flArtOff() ? '아이템' : '아티팩트'} 대신 경기 포인트 +${m.artifactPoints}`, 'ok', 4200); // 아티팩트 고갈(off §13.26 = 보스 보상으로 낼 아이템이 없음)
     },
     on_flame_end(m) { setFlameLine(m.summary?.result === 'champion' ? '우승' : '도전 종료'); },
-    holdLobby: () => trainDone || ((!!league || !!flame) && !!ended), // 완료·결과 카드가 떠 있으면 room_left 가 화면을 넘기지 않는다(main.js)
+    holdLobby: () => trainDone || ((!!league || !!flame || ladder) && !!ended), // 완료·결과 카드가 떠 있으면 room_left 가 화면을 넘기지 않는다(main.js)
     renderer, campaign, training, league, flame,
     onRoom(room) {
       roomWaiting = room.status === 'waiting';
+      chatOn(room.chat === true);
       if (ended && roomWaiting && !backAt && btn) armBack(BACK_MS);
     },
     onNetClose() {
@@ -538,6 +561,7 @@ export function mount(root, app, { start }) {
       document.body.style.removeProperty('--toast-top');
       mbgm.stop();
       cancelAnimationFrame(raf); clearTimeout(backTimer); clearInterval(backTick); clearTimeout(quitArmed); clearTimeout(campFallback); clearTimeout(helpDim);
+      chatUi?.destroy(); chatUi = null;
       input.setEnabled(false); input.destroy();
       removeEventListener('resize', fit); removeEventListener('blur', onBlur); removeEventListener('keydown', onGuideKey); removeEventListener('keydown', onEsc); removeEventListener('keydown', onQuitNav, true); removeEventListener('pointerdown', onOptsOut); removeEventListener('wheel', noWheelZoom, { passive: false });
       coarse.removeEventListener('change', applyTouch);

@@ -1,12 +1,12 @@
 // 서버 진입점: HTTP(정적 public/, /health) + WebSocket(/ws) + 60Hz 게임 루프
 import http from 'node:http';
-import { readFile, stat } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
 import { loadData } from './engine/index.js';
 import { mono, loadLimits } from './net/limits.js';
+import { createStaticHandler } from './net/static.js';
 import { Lobby } from './lobby/lobby.js';
 import { JsonlResultStore } from './store/results.js';
 import { SqliteProgressStore } from './store/progress.js';
@@ -16,12 +16,6 @@ import { openDb, sqliteAvailable, SQLITE_MISSING } from './store/db.js';
 import { importJson } from './store/migrate.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const MIME = {
-  '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
-  '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.woff': 'font/woff', '.ttf': 'font/ttf',
-  '.ogg': 'audio/ogg', '.mp3': 'audio/mpeg', '.wav': 'audio/wav',
-  '.ico': 'image/x-icon', '.webmanifest': 'application/manifest+json',
-};
 const MAX_MSG_PER_SEC = 240;
 
 export function createServer(opts = {}) {
@@ -44,8 +38,12 @@ export function createServer(opts = {}) {
   const flame = opts.flame ?? new SqliteFlameStore(db); // 불꽃의 계승 영구·도전 저장(PROTOCOL §13.6)
   const limits = loadLimits(process.env, opts.limits);
   const requireAccount = opts.requireAccount ?? process.env.REQUIRE_ACCOUNT === '1';
-  const lobby = new Lobby({ data, store, progress, leagues, flame, flameSeed: opts.flameSeed, db, requireAccount, leagueRand: opts.leagueRand, build: pkg.version, graceMs: opts.graceMs, limits, seed: opts.seed, log: opts.log });
+  // 채팅·공지(PROTOCOL §14): 관리자 = ADMIN_ACCOUNTS(쉼표 목록, 빈 값 = 공지 꺼짐). 공지 기록 = NOTICE_PATH, 기본 data/notices.jsonl(node --test 안에서는 실데이터 보호로 기록하지 않는다)
+  const admins = opts.admins ?? limits.adminAccounts;
+  const noticePath = opts.noticePath !== undefined ? opts.noticePath : limits.noticePath ? path.resolve(root, limits.noticePath) : process.env.NODE_TEST_CONTEXT ? null : path.join(root, 'data/notices.jsonl');
+  const lobby = new Lobby({ data, store, progress, leagues, flame, flameSeed: opts.flameSeed, db, requireAccount, leagueRand: opts.leagueRand, build: pkg.version, graceMs: opts.graceMs, limits, seed: opts.seed, log: opts.log, admins, noticePath });
   const publicDir = path.join(root, 'public');
+  const serveStatic = createStaticHandler(publicDir, { cacheBytes: opts.staticCacheBytes });
 
   const server = http.createServer(async (req, res) => {
     try {
@@ -55,15 +53,8 @@ export function createServer(opts = {}) {
         res.end(JSON.stringify({ ok: true, build: pkg.version, ...lobby.stats() }));
         return;
       }
-      let rel = decodeURIComponent(u.pathname);
-      if (rel.endsWith('/')) rel += 'index.html';
-      const file = path.join(publicDir, rel);
-      if (!file.startsWith(publicDir + path.sep)) { res.writeHead(403).end(); return; }
-      const st = await stat(file).catch(() => null);
-      if (!st?.isFile()) { res.writeHead(404).end('not found'); return; }
-      res.writeHead(200, { 'content-type': MIME[path.extname(file)] ?? 'application/octet-stream' });
-      res.end(await readFile(file));
-    } catch { res.writeHead(400).end(); }
+      await serveStatic(req, res, u.pathname); // 압축·캐시 헤더·304·Range·차단 목록: server/net/static.js
+    } catch { if (!res.headersSent) res.writeHead(400).end(); else res.destroy(); }
   });
 
   const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 4096 });
@@ -146,7 +137,8 @@ const selfPath = fileURLToPath(import.meta.url);
 const isEntry = [process.argv[1], process.env.pm_exec_path].some((p) => p && path.resolve(p) === selfPath);
 if (isEntry) {
   if (!sqliteAvailable()) { console.error(`[dodge-danpei] ${SQLITE_MISSING}`); process.exit(1); }
-  const app = createServer();
+  let app;
+  try { app = createServer(); } catch (e) { if (e?.code !== 'MIGRATION_GATED') throw e; console.error(`[dodge-danpei] ${e.message}`); process.exit(1); }
   app.listen().then((p) => console.log(`[dodge-danpei] listening :${p}`));
   process.on('uncaughtException', (e) => console.error('[uncaught]', e));
   for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => { app.lobby.progress.flush?.(); app.lobby.leagues.flush?.(); app.db.close(); process.exit(0); });

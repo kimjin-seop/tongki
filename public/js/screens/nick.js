@@ -35,7 +35,7 @@ export function mount(root, app, data = {}) {
     h('label.field-label', { for: 'nick' }, '닉네임'), nick, pwRow, pw2Row, btn, back);
   root.append(h('div.center-screen', h('div.title-stack', logo, form)));
   nick.value = upgrade ? app.nick : data.nick ?? get('dd.nick') ?? '';
-  if (upgrade) nick.readOnly = true;
+  if (upgrade) nick.disabled = true; // 승격 가입 = 지금 닉네임 그대로(PROTOCOL §2.1). readOnly 는 포커스·커서가 가서 입력 고장처럼 보였다
 
   function paint() {
     tabs.replaceChildren(...[['guest', '손님'], ['login', '로그인'], ['register', '가입']].filter(([m]) => !(reqAcct && m === 'guest'))

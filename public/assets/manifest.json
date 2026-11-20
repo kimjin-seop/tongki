@@ -2735,6 +2735,400 @@
   "source": "rom-extract(analysis/scripts/prematch_extract.py)",
   "_note": "EXIT 글자(원작 그래픽 그대로)"
  },
+ "ui.icon.keep.mark": {
+  "type": "image",
+  "size": [
+   16,
+   16
+  ],
+  "alpha": true,
+  "preload": "flame",
+  "variants": {
+   "1x": {
+    "path": "flame-legacy/keep/keep_mark.png",
+    "scale": 1
+   }
+  },
+  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/keep_icons_manifest.json)",
+  "qa": "pass",
+  "_note": "보관 표식(은테 액자 초상). CSS 정수배(--u/--pk)로 확대"
+ },
+ "ui.icon.keep.badge": {
+  "type": "image",
+  "size": [
+   8,
+   8
+  ],
+  "alpha": true,
+  "preload": "flame",
+  "variants": {
+   "1x": {
+    "path": "flame-legacy/keep/keep_badge.png",
+    "scale": 1
+   }
+  },
+  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/keep_icons_manifest.json)",
+  "qa": "pass",
+  "_note": "보관 배지판: 불씨 엠블럼(24x16) 오른쪽 아래 (17,9) 에 겹침. CSS 정수배(--u/--pk)로 확대"
+ },
+ "ui.icon.keep.glyph_recent": {
+  "type": "image",
+  "size": [
+   8,
+   8
+  ],
+  "alpha": true,
+  "preload": "flame",
+  "variants": {
+   "1x": {
+    "path": "flame-legacy/keep/keep_glyph_recent.png",
+    "scale": 1
+   }
+  },
+  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/keep_icons_manifest.json)",
+  "qa": "pass",
+  "_note": "최근 기호(시계, 은). CSS 정수배(--u/--pk)로 확대"
+ },
+ "ui.icon.keep.glyph_best": {
+  "type": "image",
+  "size": [
+   8,
+   8
+  ],
+  "alpha": true,
+  "preload": "flame",
+  "variants": {
+   "1x": {
+    "path": "flame-legacy/keep/keep_glyph_best.png",
+    "scale": 1
+   }
+  },
+  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/keep_icons_manifest.json)",
+  "qa": "pass",
+  "_note": "최고 기호(별, 금). CSS 정수배(--u/--pk)로 확대"
+ },
+ "ui.icon.keep.tag_recent": {
+  "type": "image",
+  "size": [
+   40,
+   15
+  ],
+  "alpha": true,
+  "preload": "flame",
+  "variants": {
+   "1x": {
+    "path": "flame-legacy/keep/keep_tag_recent.png",
+    "scale": 1
+   }
+  },
+  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/keep_icons_manifest.json)",
+  "qa": "pass",
+  "_note": "딱지 최근: 글자 Galmuri11 흰 (13,1). CSS 정수배(--u/--pk)로 확대"
+ },
+ "ui.icon.keep.tag_best": {
+  "type": "image",
+  "size": [
+   40,
+   15
+  ],
+  "alpha": true,
+  "preload": "flame",
+  "variants": {
+   "1x": {
+    "path": "flame-legacy/keep/keep_tag_best.png",
+    "scale": 1
+   }
+  },
+  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/keep_icons_manifest.json)",
+  "qa": "pass",
+  "_note": "딱지 최고: 글자 Galmuri11 노랑 (14,1). CSS 정수배(--u/--pk)로 확대"
+ },
+ "ui.icon.keep.slot_empty": {
+  "type": "9slice",
+  "size": [
+   16,
+   16
+  ],
+  "alpha": true,
+  "preload": "flame",
+  "variants": {
+   "1x": {
+    "path": "flame-legacy/keep/keep_slot_empty.png",
+    "scale": 1
+   }
+  },
+  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/keep_icons_manifest.json)",
+  "qa": "pass",
+  "_note": "빈 슬롯 점선 칸 9-slice(slice 4, repeat). #004824 창 위에. CSS 정수배(--u/--pk)로 확대"
+ },
+ "ui.icon.keep.new": {
+  "type": "image",
+  "size": [
+   22,
+   11
+  ],
+  "alpha": true,
+  "preload": "flame",
+  "variants": {
+   "1x": {
+    "path": "flame-legacy/keep/keep_new.png",
+    "scale": 1
+   }
+  },
+  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/keep_icons_manifest.json)",
+  "qa": "pass",
+  "_note": "NEW 배지 틀: 글자 Galmuri7 흰 (3,1) + 검정 그림자 필수. CSS 정수배(--u/--pk)로 확대"
+ },
+ "ui.icon.node.normal": {
+  "type": "image",
+  "size": [
+   16,
+   16
+  ],
+  "alpha": true,
+  "preload": "flame",
+  "variants": {
+   "1x": {
+    "path": "flame-legacy/node/node_normal.png",
+    "scale": 1
+   },
+   "2x": {
+    "path": "flame-legacy/node/node_normal@2x.png",
+    "scale": 2
+   },
+   "3x": {
+    "path": "flame-legacy/node/node_normal@3x.png",
+    "scale": 3
+   }
+  },
+  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/node_icons_manifest.json)",
+  "qa": "pass",
+  "_note": "지도 노드 일반(공). 원본 크기 그대로 씀(배율 2 이하 = 2x 32px, 배율 3 = 3x 48px), flame.css .fl-node-g"
+ },
+ "ui.icon.node.strong": {
+  "type": "image",
+  "size": [
+   16,
+   16
+  ],
+  "alpha": true,
+  "preload": "flame",
+  "variants": {
+   "1x": {
+    "path": "flame-legacy/node/node_strong.png",
+    "scale": 1
+   },
+   "2x": {
+    "path": "flame-legacy/node/node_strong@2x.png",
+    "scale": 2
+   },
+   "3x": {
+    "path": "flame-legacy/node/node_strong@3x.png",
+    "scale": 3
+   }
+  },
+  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/node_icons_manifest.json)",
+  "qa": "pass",
+  "_note": "지도 노드 강팀(불꽃). 원본 크기 그대로 씀(배율 2 이하 = 2x 32px, 배율 3 = 3x 48px), flame.css .fl-node-g"
+ },
+ "ui.icon.node.boss": {
+  "type": "image",
+  "size": [
+   16,
+   16
+  ],
+  "alpha": true,
+  "preload": "flame",
+  "variants": {
+   "1x": {
+    "path": "flame-legacy/node/node_boss.png",
+    "scale": 1
+   },
+   "2x": {
+    "path": "flame-legacy/node/node_boss@2x.png",
+    "scale": 2
+   },
+   "3x": {
+    "path": "flame-legacy/node/node_boss@3x.png",
+    "scale": 3
+   }
+  },
+  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/node_icons_manifest.json)",
+  "qa": "pass",
+  "_note": "지도 노드 보스(왕관). 원본 크기 그대로 씀(배율 2 이하 = 2x 32px, 배율 3 = 3x 48px), flame.css .fl-node-g"
+ },
+ "ui.icon.node.shop": {
+  "type": "image",
+  "size": [
+   16,
+   16
+  ],
+  "alpha": true,
+  "preload": "flame",
+  "variants": {
+   "1x": {
+    "path": "flame-legacy/node/node_shop.png",
+    "scale": 1
+   },
+   "2x": {
+    "path": "flame-legacy/node/node_shop@2x.png",
+    "scale": 2
+   },
+   "3x": {
+    "path": "flame-legacy/node/node_shop@3x.png",
+    "scale": 3
+   }
+  },
+  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/node_icons_manifest.json)",
+  "qa": "pass",
+  "_note": "지도 노드 상점(돈주머니). 원본 크기 그대로 씀(배율 2 이하 = 2x 32px, 배율 3 = 3x 48px), flame.css .fl-node-g"
+ },
+ "ui.icon.node.training": {
+  "type": "image",
+  "size": [
+   16,
+   16
+  ],
+  "alpha": true,
+  "preload": "flame",
+  "variants": {
+   "1x": {
+    "path": "flame-legacy/node/node_training.png",
+    "scale": 1
+   },
+   "2x": {
+    "path": "flame-legacy/node/node_training@2x.png",
+    "scale": 2
+   },
+   "3x": {
+    "path": "flame-legacy/node/node_training@3x.png",
+    "scale": 3
+   }
+  },
+  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/node_icons_manifest.json)",
+  "qa": "pass",
+  "_note": "지도 노드 특훈(아령). 원본 크기 그대로 씀(배율 2 이하 = 2x 32px, 배율 3 = 3x 48px), flame.css .fl-node-g"
+ },
+ "ui.icon.node.rest": {
+  "type": "image",
+  "size": [
+   16,
+   16
+  ],
+  "alpha": true,
+  "preload": "flame",
+  "variants": {
+   "1x": {
+    "path": "flame-legacy/node/node_rest.png",
+    "scale": 1
+   },
+   "2x": {
+    "path": "flame-legacy/node/node_rest@2x.png",
+    "scale": 2
+   },
+   "3x": {
+    "path": "flame-legacy/node/node_rest@3x.png",
+    "scale": 3
+   }
+  },
+  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/node_icons_manifest.json)",
+  "qa": "pass",
+  "_note": "지도 노드 휴식(십자). 원본 크기 그대로 씀(배율 2 이하 = 2x 32px, 배율 3 = 3x 48px), flame.css .fl-node-g"
+ },
+ "ui.icon.node.recruit": {
+  "type": "image",
+  "size": [
+   16,
+   16
+  ],
+  "alpha": true,
+  "preload": "flame",
+  "variants": {
+   "1x": {
+    "path": "flame-legacy/node/node_recruit.png",
+    "scale": 1
+   },
+   "2x": {
+    "path": "flame-legacy/node/node_recruit@2x.png",
+    "scale": 2
+   },
+   "3x": {
+    "path": "flame-legacy/node/node_recruit@3x.png",
+    "scale": 3
+   }
+  },
+  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/node_icons_manifest.json)",
+  "qa": "pass",
+  "_note": "지도 노드 영입(사람+). 원본 크기 그대로 씀(배율 2 이하 = 2x 32px, 배율 3 = 3x 48px), flame.css .fl-node-g"
+ },
+ "ui.icon.node.event": {
+  "type": "image",
+  "size": [
+   16,
+   16
+  ],
+  "alpha": true,
+  "preload": "flame",
+  "variants": {
+   "1x": {
+    "path": "flame-legacy/node/node_event.png",
+    "scale": 1
+   },
+   "2x": {
+    "path": "flame-legacy/node/node_event@2x.png",
+    "scale": 2
+   },
+   "3x": {
+    "path": "flame-legacy/node/node_event@3x.png",
+    "scale": 3
+   }
+  },
+  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/node_icons_manifest.json)",
+  "qa": "pass",
+  "_note": "지도 노드 이벤트(마름모 ?). 원본 크기 그대로 씀(배율 2 이하 = 2x 32px, 배율 3 = 3x 48px), flame.css .fl-node-g"
+ },
+ "sfx.story.type_b6": {
+  "type": "sfx",
+  "path": "rom/sfx/b6.wav",
+  "prefer": "rom",
+  "rom_id": "0xB6",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.095,
+  "bytes": 4228,
+  "gain": 1.0,
+  "preload": "menu",
+  "event": "대사 타이핑(だんぺい, 화자 0x00)",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "48 §2-2 표 0x7528A [코드+실측]"
+ },
+ "sfx.story.type_a7": {
+  "type": "sfx",
+  "path": "rom/sfx/a7.wav",
+  "prefer": "rom",
+  "rom_id": "0xA7",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.094,
+  "bytes": 4202,
+  "gain": 1.0,
+  "preload": "menu",
+  "event": "대사 타이핑(대부분 화자)",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "48 §2-2 표 0x7528A [코드+실측]"
+ },
+ "sfx.story.type_a8": {
+  "type": "sfx",
+  "path": "rom/sfx/a8.wav",
+  "prefer": "rom",
+  "rom_id": "0xA8",
+  "source": "rom-render(analysis/scripts/rom_audio_render.py)",
+  "sec": 0.095,
+  "bytes": 4228,
+  "gain": 1.0,
+  "preload": "menu",
+  "event": "대사 타이핑(キャサリン·はるか·みさと)",
+  "qa": "auto-pass(피크·클리핑·길이), 청취 UNVERIFIED",
+  "_note": "48 §2-2 표 0x7528A [코드+실측]"
+ },
  "bgm.title": {
   "type": "bgm",
   "path": "rom/bgm/8a.ogg",
@@ -2840,6 +3234,25 @@
   "source": "rom-render(tools/bgm/loop_exact.py + render.py)",
   "scene": "결과: 68k 0x4100 - 사람 대 컴퓨터에서 1P 쪽 패배 [코드]",
   "check": "1회 재생 곡: 드라이버 상태 정지 7.458초, 마지막 소리 7.447초 / 청취 UNVERIFIED"
+ },
+ "bgm.story.scene": {
+  "type": "bgm",
+  "path": "rom/bgm/91.ogg",
+  "alt": "rom/bgm/91.mp3",
+  "prefer": "rom",
+  "rom_id": "0x91",
+  "verified": true,
+  "loop": true,
+  "gain": 1.0,
+  "fade_sec": 1.802,
+  "preload": "menu",
+  "sec": 15.043,
+  "bytes": 236527,
+  "source": "rom-render(tools/bgm/loop_exact.py + render.py)",
+  "scene": "스토리 제목 카드(서브 2, 68k 0x11CA0) 시작 → 경기 전 대사·라인업·편성·맞대면까지 유지 → 맞대면 끝 0xE0(0x125DC) [판독 48 §2 + 실측 t48_story_scene.py 큐 0x91]",
+  "check": "루프 2.701~12.793초(길이 10.093초, 672틱), 키 온 268개·PSG 5452개 일치, 스펙트럼 상관 0.969, 지연 0.00ms / 청취 UNVERIFIED",
+  "loop_start": 4.70084,
+  "loop_end": 14.7934
  },
  "bgm.stage.00": {
   "type": "bgm",
@@ -3201,357 +3614,5 @@
   "check": "루프 21.322~49.716초(길이 28.394초, 1792틱), 키 온 2072개·PSG 15336개 일치, 스펙트럼 상관 0.941, 지연 0.00ms / 청취 UNVERIFIED",
   "loop_start": 23.32197,
   "loop_end": 51.71569
- },
- "ui.icon.keep.mark": {
-  "type": "image",
-  "size": [
-   16,
-   16
-  ],
-  "alpha": true,
-  "preload": "flame",
-  "variants": {
-   "1x": {
-    "path": "flame-legacy/keep/keep_mark.png",
-    "scale": 1
-   }
-  },
-  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/keep_icons_manifest.json)",
-  "qa": "pass",
-  "_note": "보관 표식(은테 액자 초상). CSS 정수배(--u/--pk)로 확대"
- },
- "ui.icon.keep.badge": {
-  "type": "image",
-  "size": [
-   8,
-   8
-  ],
-  "alpha": true,
-  "preload": "flame",
-  "variants": {
-   "1x": {
-    "path": "flame-legacy/keep/keep_badge.png",
-    "scale": 1
-   }
-  },
-  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/keep_icons_manifest.json)",
-  "qa": "pass",
-  "_note": "보관 배지판: 불씨 엠블럼(24x16) 오른쪽 아래 (17,9) 에 겹침. CSS 정수배(--u/--pk)로 확대"
- },
- "ui.icon.keep.glyph_recent": {
-  "type": "image",
-  "size": [
-   8,
-   8
-  ],
-  "alpha": true,
-  "preload": "flame",
-  "variants": {
-   "1x": {
-    "path": "flame-legacy/keep/keep_glyph_recent.png",
-    "scale": 1
-   }
-  },
-  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/keep_icons_manifest.json)",
-  "qa": "pass",
-  "_note": "최근 기호(시계, 은). CSS 정수배(--u/--pk)로 확대"
- },
- "ui.icon.keep.glyph_best": {
-  "type": "image",
-  "size": [
-   8,
-   8
-  ],
-  "alpha": true,
-  "preload": "flame",
-  "variants": {
-   "1x": {
-    "path": "flame-legacy/keep/keep_glyph_best.png",
-    "scale": 1
-   }
-  },
-  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/keep_icons_manifest.json)",
-  "qa": "pass",
-  "_note": "최고 기호(별, 금). CSS 정수배(--u/--pk)로 확대"
- },
- "ui.icon.keep.tag_recent": {
-  "type": "image",
-  "size": [
-   40,
-   15
-  ],
-  "alpha": true,
-  "preload": "flame",
-  "variants": {
-   "1x": {
-    "path": "flame-legacy/keep/keep_tag_recent.png",
-    "scale": 1
-   }
-  },
-  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/keep_icons_manifest.json)",
-  "qa": "pass",
-  "_note": "딱지 최근: 글자 Galmuri11 흰 (13,1). CSS 정수배(--u/--pk)로 확대"
- },
- "ui.icon.keep.tag_best": {
-  "type": "image",
-  "size": [
-   40,
-   15
-  ],
-  "alpha": true,
-  "preload": "flame",
-  "variants": {
-   "1x": {
-    "path": "flame-legacy/keep/keep_tag_best.png",
-    "scale": 1
-   }
-  },
-  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/keep_icons_manifest.json)",
-  "qa": "pass",
-  "_note": "딱지 최고: 글자 Galmuri11 노랑 (14,1). CSS 정수배(--u/--pk)로 확대"
- },
- "ui.icon.keep.slot_empty": {
-  "type": "9slice",
-  "size": [
-   16,
-   16
-  ],
-  "alpha": true,
-  "preload": "flame",
-  "variants": {
-   "1x": {
-    "path": "flame-legacy/keep/keep_slot_empty.png",
-    "scale": 1
-   }
-  },
-  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/keep_icons_manifest.json)",
-  "qa": "pass",
-  "_note": "빈 슬롯 점선 칸 9-slice(slice 4, repeat). #004824 창 위에. CSS 정수배(--u/--pk)로 확대"
- },
- "ui.icon.keep.new": {
-  "type": "image",
-  "size": [
-   22,
-   11
-  ],
-  "alpha": true,
-  "preload": "flame",
-  "variants": {
-   "1x": {
-    "path": "flame-legacy/keep/keep_new.png",
-    "scale": 1
-   }
-  },
-  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/keep_icons_manifest.json)",
-  "qa": "pass",
-  "_note": "NEW 배지 틀: 글자 Galmuri7 흰 (3,1) + 검정 그림자 필수. CSS 정수배(--u/--pk)로 확대"
- },
- "ui.icon.node.normal": {
-  "type": "image",
-  "size": [
-   16,
-   16
-  ],
-  "alpha": true,
-  "preload": "flame",
-  "variants": {
-   "1x": {
-    "path": "flame-legacy/node/node_normal.png",
-    "scale": 1
-   },
-   "2x": {
-    "path": "flame-legacy/node/node_normal@2x.png",
-    "scale": 2
-   },
-   "3x": {
-    "path": "flame-legacy/node/node_normal@3x.png",
-    "scale": 3
-   }
-  },
-  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/node_icons_manifest.json)",
-  "qa": "pass",
-  "_note": "지도 노드 일반(공). 원본 크기 그대로 씀(배율 2 이하 = 2x 32px, 배율 3 = 3x 48px), flame.css .fl-node-g"
- },
- "ui.icon.node.strong": {
-  "type": "image",
-  "size": [
-   16,
-   16
-  ],
-  "alpha": true,
-  "preload": "flame",
-  "variants": {
-   "1x": {
-    "path": "flame-legacy/node/node_strong.png",
-    "scale": 1
-   },
-   "2x": {
-    "path": "flame-legacy/node/node_strong@2x.png",
-    "scale": 2
-   },
-   "3x": {
-    "path": "flame-legacy/node/node_strong@3x.png",
-    "scale": 3
-   }
-  },
-  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/node_icons_manifest.json)",
-  "qa": "pass",
-  "_note": "지도 노드 강팀(불꽃). 원본 크기 그대로 씀(배율 2 이하 = 2x 32px, 배율 3 = 3x 48px), flame.css .fl-node-g"
- },
- "ui.icon.node.boss": {
-  "type": "image",
-  "size": [
-   16,
-   16
-  ],
-  "alpha": true,
-  "preload": "flame",
-  "variants": {
-   "1x": {
-    "path": "flame-legacy/node/node_boss.png",
-    "scale": 1
-   },
-   "2x": {
-    "path": "flame-legacy/node/node_boss@2x.png",
-    "scale": 2
-   },
-   "3x": {
-    "path": "flame-legacy/node/node_boss@3x.png",
-    "scale": 3
-   }
-  },
-  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/node_icons_manifest.json)",
-  "qa": "pass",
-  "_note": "지도 노드 보스(왕관). 원본 크기 그대로 씀(배율 2 이하 = 2x 32px, 배율 3 = 3x 48px), flame.css .fl-node-g"
- },
- "ui.icon.node.shop": {
-  "type": "image",
-  "size": [
-   16,
-   16
-  ],
-  "alpha": true,
-  "preload": "flame",
-  "variants": {
-   "1x": {
-    "path": "flame-legacy/node/node_shop.png",
-    "scale": 1
-   },
-   "2x": {
-    "path": "flame-legacy/node/node_shop@2x.png",
-    "scale": 2
-   },
-   "3x": {
-    "path": "flame-legacy/node/node_shop@3x.png",
-    "scale": 3
-   }
-  },
-  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/node_icons_manifest.json)",
-  "qa": "pass",
-  "_note": "지도 노드 상점(돈주머니). 원본 크기 그대로 씀(배율 2 이하 = 2x 32px, 배율 3 = 3x 48px), flame.css .fl-node-g"
- },
- "ui.icon.node.training": {
-  "type": "image",
-  "size": [
-   16,
-   16
-  ],
-  "alpha": true,
-  "preload": "flame",
-  "variants": {
-   "1x": {
-    "path": "flame-legacy/node/node_training.png",
-    "scale": 1
-   },
-   "2x": {
-    "path": "flame-legacy/node/node_training@2x.png",
-    "scale": 2
-   },
-   "3x": {
-    "path": "flame-legacy/node/node_training@3x.png",
-    "scale": 3
-   }
-  },
-  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/node_icons_manifest.json)",
-  "qa": "pass",
-  "_note": "지도 노드 특훈(아령). 원본 크기 그대로 씀(배율 2 이하 = 2x 32px, 배율 3 = 3x 48px), flame.css .fl-node-g"
- },
- "ui.icon.node.rest": {
-  "type": "image",
-  "size": [
-   16,
-   16
-  ],
-  "alpha": true,
-  "preload": "flame",
-  "variants": {
-   "1x": {
-    "path": "flame-legacy/node/node_rest.png",
-    "scale": 1
-   },
-   "2x": {
-    "path": "flame-legacy/node/node_rest@2x.png",
-    "scale": 2
-   },
-   "3x": {
-    "path": "flame-legacy/node/node_rest@3x.png",
-    "scale": 3
-   }
-  },
-  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/node_icons_manifest.json)",
-  "qa": "pass",
-  "_note": "지도 노드 휴식(십자). 원본 크기 그대로 씀(배율 2 이하 = 2x 32px, 배율 3 = 3x 48px), flame.css .fl-node-g"
- },
- "ui.icon.node.recruit": {
-  "type": "image",
-  "size": [
-   16,
-   16
-  ],
-  "alpha": true,
-  "preload": "flame",
-  "variants": {
-   "1x": {
-    "path": "flame-legacy/node/node_recruit.png",
-    "scale": 1
-   },
-   "2x": {
-    "path": "flame-legacy/node/node_recruit@2x.png",
-    "scale": 2
-   },
-   "3x": {
-    "path": "flame-legacy/node/node_recruit@3x.png",
-    "scale": 3
-   }
-  },
-  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/node_icons_manifest.json)",
-  "qa": "pass",
-  "_note": "지도 노드 영입(사람+). 원본 크기 그대로 씀(배율 2 이하 = 2x 32px, 배율 3 = 3x 48px), flame.css .fl-node-g"
- },
- "ui.icon.node.event": {
-  "type": "image",
-  "size": [
-   16,
-   16
-  ],
-  "alpha": true,
-  "preload": "flame",
-  "variants": {
-   "1x": {
-    "path": "flame-legacy/node/node_event.png",
-    "scale": 1
-   },
-   "2x": {
-    "path": "flame-legacy/node/node_event@2x.png",
-    "scale": 2
-   },
-   "3x": {
-    "path": "flame-legacy/node/node_event@3x.png",
-    "scale": 3
-   }
-  },
-  "source": "original(안아트 hand_pixel, _asset_samples/retro_ui/icons/node_icons_manifest.json)",
-  "qa": "pass",
-  "_note": "지도 노드 이벤트(마름모 ?). 원본 크기 그대로 씀(배율 2 이하 = 2x 32px, 배율 3 = 3x 48px), flame.css .fl-node-g"
  }
 }

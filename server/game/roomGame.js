@@ -173,6 +173,10 @@ export class RoomGame {
     if (this.o.onRanked) {
       try { rankRec = this.o.onRanked({ matchId: this.matchId, winner, reason, wentGo: this.match.phase !== 'ready' }); } catch (e) { console.error('[ranking]', e); }
     }
+    // 사람끼리 일반 멀티 경기 전적(래더 아님, PROTOCOL §11.1): 같은 판정 값만 넘긴다. 결과 레코드 형식은 바꾸지 않는다
+    if (this.o.onPvp) {
+      try { this.o.onPvp({ matchId: this.matchId, winner, reason, wentGo: this.match.phase !== 'ready' }); } catch (e) { console.error('[pvp]', e); }
+    }
     try {
       this.o.store.append({
         matchId: this.matchId, roomCode: this.o.roomCode, startedAt: new Date(this.startedAt).toISOString(), endedAt: new Date(endedAt).toISOString(),

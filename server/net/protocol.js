@@ -86,6 +86,14 @@ export const ERR = {
   // 랭킹(PROTOCOL §11)
   RANKED_LOCKED: '기권이 잦아 잠시 랭크 경기를 할 수 없습니다',
   RANKED_RULES_FIXED: '랭크 방은 규칙을 바꿀 수 없습니다',
+  LADDER_ONLY: '랭크 경기는 래더 대기열에서만 할 수 있습니다', // create_room{ranked:true}(2026-11-20 래더로 대체), 끝난 래더 방 start
+  // 채팅·공지(PROTOCOL §14)
+  CHAT_EMPTY: '보낼 내용을 입력하세요',
+  CHAT_TOO_LONG: '너무 깁니다', // params.max = 최대 글자 수
+  CHAT_RATE_LIMITED: '채팅이 너무 빠릅니다. 잠시 후 다시 보내세요',
+  CHAT_UNAVAILABLE: '여기서는 채팅할 수 없습니다',
+  NOT_ADMIN: '관리자만 할 수 있습니다',
+  NOTICE_RATE_LIMITED: '공지를 너무 자주 보냈습니다. 잠시 후 다시 보내세요',
 };
 
 /** 특훈 종류(PROTOCOL §9). TRAINING_READY 에 든 것만 시작할 수 있다(빠진 종류는 TRAINING_UNAVAILABLE). 지금은 둘 다 열려 있다 */

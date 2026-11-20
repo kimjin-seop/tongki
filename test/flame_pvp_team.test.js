@@ -118,7 +118,7 @@ test('사람끼리 방(D53): 방장이 「불꽃 팀」을 켠 방에서 두 사
     a.send({ t: 'register', nickname: 'PvpA', password: 'pw123456' }); await a.type('welcome');
     b.send({ t: 'hello', nickname: 'PvpB' }); await b.type('welcome');
     app.lobby.flame.save('pvpa', 'PvpA', pa, null); app.lobby.flame.save('pvpb', 'PvpB', pb, null); // 가입 뒤에 넣는다(가입 때의 손님 저장 옮기기와 섞이지 않게)
-    assert.equal(await a.err({ t: 'create_room', ranked: true, rules: { flameTeams: true } }, 1), 'RANKED_RULES_FIXED'); // 랭크 방은 켤 수 없다
+    assert.equal(await a.err({ t: 'create_room', ranked: true, rules: { flameTeams: true } }, 1), 'LADDER_ONLY'); // 랭크 방은 래더 대기열로 대체(2026-11-20)
     a.send({ t: 'create_room' }); const { room: r0 } = await a.type('room_joined');
     b.send({ t: 'join_room', code: r0.code }); await b.type('room_joined');
     const room = app.lobby.rooms.get(r0.code);

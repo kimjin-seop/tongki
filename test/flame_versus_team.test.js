@@ -189,8 +189,7 @@ test('컴퓨터 대전에서 키운 팀 고르기(D34): set_team{flame:recent} -
     b.send({ t: 'create_room', vsCpu: true }); await b.type('room_joined');
     assert.equal(await b.err({ t: 'set_team', team: 'flame:best' }, 4), 'FLAME_TEAM_NONE');
     b.send({ t: 'leave_room' }); await b.type('room_left');
-    b.send({ t: 'create_room', ranked: true }); await b.type('room_joined');
-    assert.equal(await b.err({ t: 'set_team', team: 'flame:recent' }, 5), 'FLAME_TEAM_ROOM');
+    assert.equal(await b.err({ t: 'create_room', ranked: true }, 5), 'LADDER_ONLY'); // 랭크 방은 래더 대기열로 대체(2026-11-20). 래더 방의 불꽃 팀 거절은 test/ladder.test.js
     a.send({ t: 'leave_room' }); await a.type('room_left');
     a.send({ t: 'create_room' }); await a.type('room_joined');
     assert.equal(await a.err({ t: 'set_team', team: 'flame:recent' }, 6), 'FLAME_TEAM_ROOM'); // 슬롯이 있어도 사람끼리 방은 거절
