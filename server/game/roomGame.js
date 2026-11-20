@@ -4,6 +4,17 @@ import { Match } from '../engine/index.js';
 import { GRACE_MS } from '../net/protocol.js';
 import { mono, loadLimits } from '../net/limits.js';
 
+/**
+ * 사람끼리 일반 멀티 경기 방인가(필살 추적 규칙 자동 적용 판정, 한 곳). 사용자 결정 2026-11-20: 옵션이 아니라 이 경기 종류에 항상 적용, 클라이언트가 바꿀 수 없다.
+ * 사람 두 좌석의 방(컴퓨터 대전 아님)이고 스토리·특훈·리그·불꽃의 계승 도전/연습 방이 아니며, 규칙 「불꽃 팀」(rules.flameTeams)을 켠 방도 아니다(이번 범위 밖 — 가정, docs/HANDOFF.md).
+ * 랭크 방·래더 큐 경기도 이 조건을 지나면 적용된다. room = lobby 의 방 객체
+ */
+export function isHumanVsHuman(room) {
+  return !!room && !room.vsCpu && !room.campaign && !room.training && !room.league && !room.flame && room.rules?.flameTeams !== true;
+}
+/** 방의 필살 회피 규칙(Match 옵션 evade): 'track' = 필살 추적(rules.special.track), 'rom' = 원작 */
+export const evadeOf = (room) => (isHumanVsHuman(room) ? 'track' : 'rom');
+
 const END_HOLD_FALLBACK = 90; // 엔진 endHold 가 없을 때만
 const MAX_CATCHUP = 4;
 
@@ -30,6 +41,8 @@ export class RoomGame {
       limitFrames: o.rules?.limitFrames, ruleMode: o.rules?.mode, // 규칙 창 값(없으면 rules.json 기본)
       ...(this.training ? { training: { kind: this.training.kind } } : {}),
       ...(o.flame ? { flame: o.flame } : {}), // 불꽃의 계승(PROTOCOL §12): 엔진 flame 옵션 그대로. 주지 않으면 종전 경로
+      // 필살 추적: lobby 가 evadeOf(room) 로 정한 값. 컴퓨터 좌석·특훈·flame 경기는 여기서도 한 번 더 막는다(그 경기는 원작 프레임 그대로)
+      ...(o.evade === 'track' && this.cpuSeat < 0 && !this.training && !o.flame ? { evade: 'track' } : {}),
     });
     this.input = [{ cur: 0, latch: 0 }, { cur: 0, latch: 0 }];
     this.paused = [false, false];
@@ -168,7 +181,7 @@ export class RoomGame {
         ...(this.campaign ? { campaign: { k: this.campaign.k, stage: this.match.stageInfo.id } } : {}),
         ...(this.league ? { league: { ...this.league, stage: this.match.stageInfo.id } } : {}),
         ...(this.o.onRanked ? { ranked: true, ratingCounted: !!rankRec?.counted, ratingDelta: rankRec?.delta ?? [0, 0] } : {}),
-        rules: { mode: this.match.ruleMode, limitFrames: this.match.limitFrames },
+        rules: { mode: this.match.ruleMode, limitFrames: this.match.limitFrames, ...(this.match.track ? { evade: 'track' } : {}) },
         winner: res.winnerNick, loser: winner >= 0 ? seats[1 - winner].nick : null,
         endReason: reason, ticks: this.match.f, remaining: rem, seed: this.seed,
         buildVersion: this.o.build, rulesVersion: this.match.R.version,

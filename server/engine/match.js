@@ -40,6 +40,13 @@ export function romDecomp(T, i, fl, spd) {
   return [(fl & 1 ? -ma : ma) * 256, (fl & 2 ? -mi : mi) * 256];
 }
 
+// ---- 필살 추적(사람끼리 방 규칙 evade='track', 원작에 없음 [자작]) 보조 함수. 정수 표(romAngle/romDecomp)만 쓴다(float 삼각함수 없음 = 결정론) ----
+// 의사 각도: romAngle 의 (i, fl) 을 한 바퀴 512 단위(팔분면 64)의 정수로. 0 = +x, 128 = +y
+const trkPang = (a) => { let q = a.fl & 4 ? 128 - a.i : a.i; if (a.fl & 1) q = 256 - q; if (a.fl & 2) q = (512 - q) & 511; return q; };
+const trkUnpang = (A) => { let q = A & 511, fl = 0; if (q > 256) { fl |= 2; q = 512 - q; } if (q > 128) { fl |= 1; q = 256 - q; } if (q > 64) { fl |= 4; q = 128 - q; } return { i: Math.min(q, 63), fl }; };
+// 수평 속도(16.16) -> 속력(8.8 워드, romDecomp 의 역). 주축 성분 / 표 cos 값
+const trkSpd = (T, vx, vy) => { const ax = Math.abs(vx), ay = Math.abs(vy), M = Math.max(ax, ay), m = Math.min(ax, ay); if (M === 0) return 0; const i = Math.min(63, Math.floor((m * 64) / M)); const c = i === 0 ? 65536 : T[i][1]; return Math.floor((M * 256 + (c >> 1)) / c) & 0xffff; };
+
 export class Match {
   /**
    * @param {{seed:number, teams:[number,number], data:{rules,teams,court}, humans?:[boolean,boolean], cpuLevels?:[number|null,number|null], limitFrames?:number, ruleMode?:'knockout'|'official'}} o
@@ -104,6 +111,8 @@ export class Match {
     //  컴퓨터 방어 표 0xD624(ai.js defend) / 시간 종료 동수 = TIME UP·PLAY OFF 배너 동안 선수 정지 뒤 양쪽 남은 인원 1(0x61C8, stepTimeHold) / 얼굴 HUD 떨림 없음(0xDF7E). 특훈($E68E=4)에는 규칙 창이 없다
     this.ruleMode = o.ruleMode === 'official' && !TR ? 'official' : 'knockout';
     this.official = this.ruleMode === 'official';
+    // evade: 'rom'(기본 = 원작) | 'track'(필살 추적, 사람끼리 방 전용 [자작], rules.special.track·analysis/45). 특훈·불꽃(flame) 경기에서는 받지 않는다. 꺼져 있으면 아래의 모든 추적 분기(this.track 검사)를 건너뛴다(원작 프레임 동일)
+    this.track = o.evade === 'track' && !TR && !o.flame && !!this.R.special?.track;
     this.result = null;
     this.endF = 0;
     this.ev = [];
@@ -969,7 +978,7 @@ export class Match {
       if (p.wind.fresh) p.wind.fresh = false;
       else if (++p.wind.n >= R.throw.rom.windFrames) {
         const w = p.wind; p.wind = null;
-        if (p.hasBall) { p.windRel = w.age > 0; if (w.kind === 'pass') this.doPass(p, w.bits); else this.doThrow(p, w.charge, w.charge > R.throw.maxCharge); p.windRel = false; }
+        if (p.hasBall) { p.windRel = w.age > 0; if (w.kind === 'pass') this.doPass(p, w.bits); else this.doThrow(p, w.charge, w.charge > R.throw.maxCharge, null, w.airChg); p.windRel = false; }
         if (p.st === ST.THROW || p.st === ST.PASS || p.st === ST.JUMP) p.st = p.z > 0 || p.vz !== 0 ? ST.JUMP : ST.IDLE;
         p.dashFlag = false;
       }
@@ -984,8 +993,9 @@ export class Match {
 
   /** 투구·패스 동작 시작(서브 0x0C/0x10). 지상이면 그 자리에 선다(0x718C). 발사는 windFrames 프레임 뒤 */
   beginWind(p, kind, charge, bits) {
+    const airChg = kind === 'throw' && !!p.charging; // 공중 차지(서브 0x24)에서 시작한 투구 동작: 착지 뒤 발사여도 필살 판정은 차지만 본다 [판독 0x8BEE -> 0x8CF0, 확인 원작 실행 analysis/47 §3.1]
     p.charging = false; p.chargeNew = false;
-    p.wind = { kind, charge, bits, n: 0, fresh: true, tgt: kind === 'throw' ? this.pickTarget(p, this.sides[p.seat].aim)?.pid ?? -1 : -1 }; // tgt = 투구 동작을 시작할 때의 대상(상대 컴퓨터가 방어 태세로 멈추는 기준)
+    p.wind = { kind, charge, bits, airChg, n: 0, fresh: true, tgt: kind === 'throw' ? this.pickTarget(p, this.sides[p.seat].aim)?.pid ?? -1 : -1 }; // tgt = 투구 동작을 시작할 때의 대상(상대 컴퓨터가 방어 태세로 멈추는 기준)
     p.windLeft = this.aimLeft(p);
     if (kind === 'throw' && this.R.move.rom && this.isHuman(p)) p.wind.faceAt = 1; // 투구 시작: 대상 기준으로 좌우·앞뒤를 정한다(0x716E -> 0x78A0). 서브 0x0C 초기화는 B 를 누른 다음 프레임에 돈다 [실측 cpu_def_a: f41 B, 방향 비트는 f42 에 바뀜]
     if (!this.isHuman(p)) p.dashFlag = p.dashFlag || p.st === ST.DASH; // CPU 경로는 종전 대시 보너스 조건 유지
@@ -1103,7 +1113,7 @@ export class Match {
   endSpecial() { this.ball.kind = 0; this.ball.sp = null; }
 
   /** fm = 엔드 어택 옵션 {target, power, speed}: 필살기 판정을 거치지 않고 위력·속도·대상을 직접 지정 */
-  doThrow(p, charge, auto = false, fm = null) {
+  doThrow(p, charge, auto = false, fm = null, airChg = false) {
     const R = this.R, T = R.throw, b = this.ball;
     const air = p.z > 0 || p.vz > 0;
     const dash = p.dashFlag || p.st === ST.DASH;
@@ -1112,7 +1122,7 @@ export class Match {
     const pow = p.stat.pow;
     b.power = fm ? fm.power : pow + (air ? Math.trunc(pow / T.airBonusDiv) : 0) + (dash ? Math.trunc(pow / T.dashBonusDiv) : 0) + charge;
     const speed = fm ? fm.speed : (p.stat.thr << T.speedShift) + (air ? T.airSpeedBonus : 0) + (dash ? T.dashSpeedBonus : 0) + (charge << T.chargeSpeedShift);
-    if (!fm && T.rom && this.data.rom && t) { this.romThrow(p, t, charge, auto); return; }
+    if (!fm && T.rom && this.data.rom && t) { this.romThrow(p, t, charge, auto, airChg); return; }
     b.rom = false; b.steer = 0; b.ang = null; b.ctr = 0;
     b.x = p.x + p.face * px(T.handDx); b.y = p.y; b.z = p.z + px(T.handZ);
     let nx = p.face, ny = 0, dist = 120;
@@ -1151,7 +1161,7 @@ export class Match {
    * - 수평 속도 = 속력 x 방향(각도표), vz = 속력 x (대상 높이(+16 지상 투구) - 공 높이, 수평 거리)의 기울기. 중력 보정 없음(투구 비행은 직선)
    * - 받아치기 창(b.ctr>0, 캐치 후 60프레임): 잡은 공의 위력·속력을 그대로 쓴다(0x89B0/0x7D12)
    */
-  romThrow(p, t, charge, auto) {
+  romThrow(p, t, charge, auto, airChg = false) {
     const R = this.R, T = R.throw, b = this.ball, RT = this.data.rom;
     const air = p.z > 0 || p.vz !== 0, dash = p.dashFlag;
     const pow = p.stat.pow, ch = charge <= T.maxCharge ? charge : 0; // 16프레임 자동 발사는 차지 가산 없음 [확인 0x89D6 cmpi #$f/bhi]
@@ -1183,7 +1193,7 @@ export class Match {
     b.steer = this.humans[p.seat] ? p.steer | 0 : 0; p.steer = 0;
     if (b.steer & 4) b.vz >>= 1; // 뒤쪽 보정이 걸린 채 발사되면 vz 절반 [확인 0xA450]
     let spId = null;
-    if (this.specialReady(p, charge, air, auto, ctrId !== null)) spId = this.pickSpecialId(p, ctrId);
+    if (this.specialReady(p, charge, air || airChg, auto, ctrId !== null)) spId = this.pickSpecialId(p, ctrId); // airChg: 공중 차지로 시작해 투구 동작 중 착지한 발사. 위력·속력의 공중 가산(위 air)은 발사 순간 기준 그대로
     if (spId !== null) { // 필살기: 위력=ID 표(255=덮어쓰지 않음), kind=ID+1. 초기 속도는 위 직선 속도 그대로
       const pw = this.data.specials.power[spId];
       if (pw !== undefined && pw !== 255) b.power = pw;
@@ -1191,6 +1201,7 @@ export class Match {
       if (s2 !== spd) { const v2 = romDecomp(RT.trig, a.i, a.fl, s2); b.vx = v2[0]; b.vy = v2[1]; b.vz = romDecomp(RT.trig, e.i, e.fl, s2)[0]; b.spd8 = s2; if (b.steer & 4) b.vz >>= 1; }
       b.kind = spId + 1; b.sp = initSpecial(b, spId);
     }
+    if (this.track) b.trk = spId !== null ? { pid: t.pid, id: b.id, on: true, d: 0, hv: null, x0: fl(t.x), y0: fl(t.y) } : null; // 필살 추적: 던질 때의 대상(t). 일반 투구는 추적하지 않는다(원작 그대로)
     if (p.fl) b.power = flThrowPow(this, p, b.power, { air, ch, spId, counter: flCtr }); // flame 조건부 위력: 캐치 후 첫 투구·차지 13~15·공중·필살/계열 가산
     p.hasBall = false; p.charging = false; p.hold = 0; p.dashFlag = false; p.gsp = false;
     b.c42 = c42; // 컴퓨터의 받아치기 판단(0xD566)이 본다
@@ -1695,7 +1706,10 @@ export class Match {
    */
   stepSpecialBall() {
     const R = this.R, L = R.special, C = R.court, b = this.ball;
+    const tk = this.track && b.rom && b.trk && b.trk.id === b.id ? b.trk : null; // 필살 추적(evade='track')일 때만. 꺼져 있으면 null 이라 아래 두 분기를 건너뛴다
+    const pre = tk ? this.trackPre(tk) : null;
     stepSpecial(b, b.sp, () => this.rng.next(), L);
+    if (tk) this.trackPost(tk, pre);
     this.ballDir();
     b.x += b.vx; b.y += b.vy; b.z += b.vz;
     let end = null;
@@ -1711,6 +1725,59 @@ export class Match {
       return;
     }
     if (!b.rom) this.hitCheck();
+  }
+
+  // ================= 필살 추적 (evade='track', 원작에 없음 [자작], rules.special.track, analysis/45 §6) =================
+  // 궤적 핸들러(special.js)는 자기 속도 상태(tk.hv, 돌리기 전)로 그대로 돈다 -> 그 출력의 수평 방향만 누적 각도 tk.d 만큼 돌린다(곡선·감속·정지·부메랑 같은 핸들러 성질 유지).
+  // tk.d 는 매 프레임 대상 쪽으로 turn 이내만 바뀐다. 높이는 이대로면 대상 상자에 닿지 않을 때만 대상 상자 가운데를 겨눈다. stepSpecialBall 에서 this.track 일 때만 불린다
+  /** 핸들러 앞: 핸들러 자신의 속도로 되돌리고 위치를 기억(핸들러가 위치를 직접 옮기는 blink 를 돌리려고) */
+  trackPre(tk) {
+    const b = this.ball, s = b.sp;
+    if (tk.hv) { b.vx = tk.hv[0]; b.vy = tk.hv[1]; b.vz = tk.hv[2]; }
+    return { x: b.x, y: b.y, loop: (s.h === 'loop' || s.h === 'loop2') && s.st === 4 };
+  }
+
+  /** 핸들러 뒤: 핸들러 속도를 저장하고, 돌린 속도(수평)·겨눈 vz 를 이번 프레임 이동 속도로 쓴다 */
+  trackPost(tk, pre) {
+    const R = this.R, K = R.special.track, b = this.ball, s = b.sp, T = this.data.rom.trig;
+    const fl = (v) => Math.floor(v / ONE);
+    const hv = [b.vx, b.vy, b.vz];
+    tk.hv = hv;
+    const loop = pre.loop || ((s.h === 'loop' || s.h === 'loop2') && s.st === 4); // 루프(위치 덮어쓰기) 중에는 방향을 새로 꺾지 않고 위치도 돌리지 않는다(원작 루프 평면 그대로)
+    const rot = (vx, vy, d) => { if (!d || (!vx && !vy)) return [vx, vy]; const u = trkUnpang(trkPang(romAngle(vx, vy, 0, 0)) + d); return romDecomp(T, u.i, u.fl, trkSpd(T, vx, vy)); };
+    if (!loop && tk.d) { const dx = b.x - pre.x, dy = b.y - pre.y; if (dx || dy) { const r = rot(dx, dy, tk.d); b.x = pre.x + r[0]; b.y = pre.y + r[1]; } } // blink 의 즉시 전진
+    if (!hv[0] && !hv[1]) return; // 정지 구간(dive 정지 등): 그대로
+    const t = this.players[tk.pid];
+    if (tk.on && (!t || !this.hittable(t))) tk.on = false; // 대상이 피격·쓰러짐·아웃 등으로 판정 대상이 아니면 끝
+    const Ah = trkPang(romAngle(hv[0], hv[1], 0, 0));
+    // 지나침 판정의 기준 = 핸들러의 '앞' 방향. 부메랑처럼 핸들러 속도가 V0 와 반대로 돌아선 구간은 반대 방향(+256)을 앞으로 본다(돌아오는 동안 추적이 꺼지지 않게)
+    const rev = hv[0] * s.v0[0] + hv[1] * s.v0[1] < 0;
+    let a = null;
+    if (tk.on && !loop) {
+      const tx = fl(t.x), ty = fl(t.y), bx = fl(b.x), by = fl(b.y);
+      if (tx !== bx || ty !== by) {
+        a = romAngle(tx, ty, bx, by);
+        const err = ((trkPang(a) - ((Ah + tk.d + (rev ? 256 : 0)) & 511) + 768) & 511) - 256; // -256..255
+        if (rev) a = null; // 돌아오는 구간: 방향은 계속 맞추지만(아래) 높이는 겨누지 않는다
+        if (err >= 128 || err <= -128) { if (!rev) { tk.on = false; a = null; } } // 대상을 지나침(앞 방향과 90도 이상) -> 끝. 되돌아가지 않는다
+        else tk.d = (tk.d + Math.max(-K.turn, Math.min(K.turn, err))) & 511;
+      }
+    }
+    const spd = trkSpd(T, hv[0], hv[1]);
+    if (tk.d) { const u = trkUnpang(Ah + tk.d); const v = romDecomp(T, u.i, u.fl, spd); b.vx = v[0]; b.vy = v[1]; }
+    if (!tk.on || !a || !spd) return;
+    // 높이: 회피로 생긴 차이만 메운다. 대상 상자가 서기 계열이고 던질 때 자리에서 moveMin px 안이면 핸들러 높이 그대로(원작 궤적 = 머리 위로 지나가는 lob 등도 원작대로 빗나간다).
+    // 그 밖(웅크림·점프 상자, 또는 옮겨 간 대상)이면 핸들러 vz 그대로 갈 때 대상 자리(수평 거리 끝)의 공 높이를 예측해, 겹침 범위 밖일 때만 대상 상자 가운데를 겨눈다(공 바닥 하한 minZ)
+    const H = R.hitboxIdx, Z = R.hitboxZ, hb = t.hb ?? H.stand, za = Z[hb], zc = Z[H.ball];
+    if ((H.byClass ? H.byClass.stand : [H.stand]).includes(hb) && Math.abs(fl(t.x) - tk.x0) + Math.abs(fl(t.y) - tk.y0) < K.moveMin) return;
+    const dist = Math.floor((this.data.rom.dist[a.i] * a.major) / 256), tz = fl(t.z), bz = fl(b.z);
+    const lo = Math.max(1, tz + za[0] - zc[0] - zc[1] + K.zMargin), hi = tz + za[0] + za[1] - zc[0] - K.zMargin;
+    const zArr = bz + Math.floor((hv[2] * dist) / (spd * 256));
+    if (zArr < lo || zArr > hi) {
+      // 남은 수평 비행 프레임(dist / 속력) 동안 높이차를 메우는 vz. 정수 비례식(정수 피연산자의 곱·나눗셈 후 내림 = 결정론). 1프레임 안에 닿으면 높이차 그대로, 상한 = 수평 속력 x vzMul
+      const dz = Math.max(K.minZ, tz + za[0] + (za[1] >> 1) - zc[0] - (zc[1] >> 1)) - bz, cap = spd * 256 * K.vzMul;
+      b.vz = Math.max(-cap, Math.min(cap, Math.trunc((dz * 65536 * spd) / Math.max(spd, dist * 256))));
+    }
   }
 
   /** 정지한 공이 코트 밖이면 해당 쪽 이동 가능 영역 안으로 이동 [추정] */
@@ -2318,6 +2385,7 @@ export class Match {
         limitFrames: this.limitFrames, mode: this.ruleMode, readyFrames: this.readyFrames, start: R.start, maxCharge: R.throw.maxCharge,
         holdMaxFrames: R.holdMaxFrames, catchWindowAdj: R.catch.windowAdj, crouchFrames: R.crouchFrames,
         swapFrames: R.out.swapFrames, downFrames: R.hit.downFrames,
+        ...(this.track ? { evade: 'track' } : {}), // 필살 추적 규칙일 때만(원작 규칙 경기의 game_start 에는 키가 없다)
         formation: this.fmOn ? {
           enabled: true, uses: R.formation.uses, startBit: BIT.S, holdFrames: R.formation.holdFrames, passSpeed: R.formation.passSpeed,
           passInterval: R.formation.passInterval, maxPasses: R.formation.maxPasses, cam: R.formation.cam,

@@ -50,6 +50,7 @@ test('로비 흐름: 로그인 -> 방 -> 준비 -> 시작 -> 대전 -> 종료(�
     assert.equal(ja.you, 0);
     const code = ja.room.code;
     assert.match(code, /^[A-Z0-9]{4,6}$/);
+    assert.equal(ja.room.evade, 'track'); // 사람끼리 일반 방 = 필살 추적 자동 적용(PROTOCOL §5.8)
     b.send({ t: 'join_room', code });
     assert.equal((await b.type('room_joined')).you, 1);
     a.send({ t: 'start' }); // 준비 전 시작 거부
@@ -60,6 +61,7 @@ test('로비 흐름: 로그인 -> 방 -> 준비 -> 시작 -> 대전 -> 종료(�
     a.send({ t: 'start' });
     const sa = await a.type('game_start'), sb = await b.type('game_start');
     assert.deepEqual([sa.you, sb.you], [0, 1]);
+    assert.equal(sa.rules.evade, 'track');
     assert.equal(sb.teams[1].id, 5);
     a.send({ t: 'input', bits: 8 });
     const snap = await a.type('snap');

@@ -1,6 +1,6 @@
 // 세션·로비·방 관리 (단일 프로세스, 방 단위 try/catch 격리)
 import { randomBytes, randomInt } from 'node:crypto';
-import { RoomGame } from '../game/roomGame.js';
+import { RoomGame, evadeOf } from '../game/roomGame.js';
 import { MemoryProgressStore } from '../store/progress.js';
 import { MemoryLeagueStore } from '../store/league.js';
 import { makeLeagueHandlers, leagueEnd } from '../league/handlers.js';
@@ -402,6 +402,7 @@ export class Lobby {
       ...(room.flame ? { flame: { node: room.flame.node, type: room.flame.type } } : {}),
       ...(room.ranked ? { ranked: true } : {}),
       rules: { ...room.rules },
+      evade: evadeOf(room), // 읽기 전용(PROTOCOL §4): 'track' = 사람끼리 일반 멀티 경기라 필살슛 유도(추적)가 항상 적용, 'rom' = 원작. 바꾸는 요청은 없다
       start: st.ok ? { ok: true } : { ok: false, code: st.code, msg: ERR[st.code] },
       slots: room.seats.map((m, i) => (!m && i === 1 && room.vsCpu ? { seat: 1, nick: CPU_NICK, ready: true, team: room.cpuTeam, host: false, connected: true, cpu: true } : m ? { seat: i, nick: m.s.nick, ready: m.ready, team: m.team, host: i === 0, connected: !!m.s.conn, ...(room.ranked ? this.seatRating(m.s) : {}),
         ...(m.flameTeam ? { flameTeam: { slot: m.flameTeam.slot, ...m.flameTeam.summary } } : {}) } : null)), // flameTeam = 고른 불꽃 팀 슬롯 요약(PROTOCOL §13.20. 그때 team 은 주장 칸의 몸 출처 팀이다)
@@ -790,6 +791,7 @@ export class Lobby {
     room.game = new RoomGame({
       roomCode: room.code, seats, data: this.o.data, stage: ch?.stage ?? room.league?.stage ?? room.flame?.stage ?? 0, league: room.league ? { i: room.league.i, j: room.league.j } : null,
       rules: { mode: room.rules.mode, timeMin: room.rules.time, limitFrames: room.rules.time * 60 * this.o.data.rules.tickRate }, campaign: room.campaign, training: room.training ?? null, store: this.o.store, build: this.o.build, seed: this.o.seed, limits: this.limits,
+      evade: evadeOf(room), // 필살 추적(사람끼리 일반 멀티 경기 자동 적용, roomGame.js isHumanVsHuman)
       send: (seat, obj) => this.sendTo(room.seats[seat]?.s, obj),
       onEnd: (res) => this.onGameEnd(room, res),
       ...(room.ranked ? { onRanked: (r) => this.rankedResult(room, r) } : {}),
