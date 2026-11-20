@@ -74,6 +74,7 @@
 | D61 | **보상 경로 대체**(off, `decisions.json artifact.off`): 보스 3지선다 = 필살슛·필살슛·포메이션(`bossKinds`), 낼 것 없는 칸은 뺀다(`emptyAsTeam` 미사용), 통째로 비면 `artifactFallbackPoints`. 상점 칸 유형 shot 60 / formation 40(`shopKinds`, 값 등급별 그대로). 시작 보상(PB03) = 필살슛 아이템(등급 출처 `startGrade` firstWin = C), 이벤트 E05 = 필살슛 아이템 1개(`eventGrade` shop). 첫 승리 보상 그대로. A28·A29(보상 칸 추가)·A30·시너지 없음 | 팀 강화 칸이 없어진 자리를 필살·포메이션 아이템으로 채운다(문기획) | `rewards.js itemChoices`, `run.js newRun·reroll`, `nodes.js chooseEvent` | D58 스위치 |
 | D62 | **도전 저장 이관**(읽을 때 한 번, 저장 형식 번호 그대로): 낀 SP = 주 슬롯이 그 슛인 첫 선수에게(나머지 같은 슛은 비움·원작 선수는 고유 슛), 낀 FM = `fmItem`, 3칸 비움. A01~A30 은 버리고 1개당 `artifact.refundPoints`(80) 경기 포인트. 풀지 않은 아티팩트 선택·열린 상점의 A 번호 칸은 빼고 빈 선택은 통째로 뺀다. 키운 팀 슬롯은 쓸 때 같은 규칙으로 바꿔 읽고 저장 칸은 고치지 않는다(B92) | 진행 중 도전을 깨지 않는다 | `save.js sanitizeRun`, `stats.js migrateWorn`, `teams.js versusOptions` | D58 스위치(환급분은 되돌리지 않는다) |
 | D63 | **영구 성장**: off 에서 PC03(신규 아티팩트 해금)은 목록에서 빼고 구매 `FLAME_LOCKED`, 이미 산 단계는 비용 합(300/900)을 코인으로 한 번 돌려주고 단계를 지운다(`profile.artV` 1 = 이관 끝, 중복 환불 방지). PB03 은 「시작 필살기 아이템(C 등급) 후보 선택권」으로 뜻이 바뀐다(`artifact.off.permText` → `permList[].text`). 도감 아티팩트 기록은 그대로 | 없어진 해금을 판 채로 두지 않는다 | `decisions.json artifact.hiddenPerm·off.permText`, `save.js sanitizeProfile`, `run.js buyPerm·viewOf` | D58 스위치(환불분은 되돌리지 않는다) |
+| D64 | **받아치기 필살은 필살기가 없어도 나간다**(2026-11-20, 사용자 지시 「필살기가 없어도 상대가 필살슛 쏘고 반격할때 나도 필살슛 나가게」): flame 좌석 선수가 필살기 아이템·고유 슛이 없어도(주 슬롯이 비었거나 잠겨 있어도) 상대 필살 공을 캐치 자세로 잡고 받아치기 창 안에 지상에서 던지면 **받아치기 필살**이 된다 — ID·위력·속력은 잡은 공 그대로(원작 규칙, 던진 선수의 슬롯이 아니다). 받아치기 공에는 여전히 flame 가산이 없다(`counterBonus:false`, A3·B125 그대로). 일반 대전·스토리·리그(flame 옵션 없음)는 원래부터 원작대로 잠금이 없어 바뀌지 않는다. A1 의 「받아치기 필살도 주 슬롯이 해금된 선수만」 부분을 대체한다(공중 차지 필살 잠금은 그대로) | 원작 받아치기 규칙과 같게 맞추는 것이라 원작 모드와 어긋나지 않는다. 엔진은 이미 `caps.lockCounter=false` 를 지원해서 엔진 0줄 | `decisions.json special.counterAnyPlayer`(true) → `catalog.js engineCaps` 가 `lockCounter:false` 로 덮는다(도전 경기·키운 팀 대전·측정 도구 `sim_*` 모두 `cat.engineCaps` 를 쓴다). 시험 `test/flame_engine.test.js` | `special.counterAnyPlayer` 를 false 또는 키 삭제(= `engine.lockCounter` true 그대로) |
 
 **결정 대기**(2026-11-19 기록, 자료 `analysis/40` §18.7 — 엔드리스 제동 후보 두 가지. 둘 다 미구현):
 
@@ -120,7 +121,7 @@ D1~D14 에 없어서 37 문서의 권고안을 그대로 쓴 것. 전부 [자작
 
 | # | 가정 | 근거 | 상수 |
 |---|---|---|---|
-| A1 | **잠금 범위**: flame 좌석만 잠근다(상대는 원작대로). 받아치기 필살도 주 슬롯이 해금된 선수만 된다. 잠겨 있으면 받아친 공은 잡은 공의 위력·속력을 그대로 승계하는 일반 슛이다 | 37 §3-C3 | `FLAME_DEFAULTS.lockCounter=true` |
+| A1 | **잠금 범위**: flame 좌석만 잠근다(상대는 원작대로). 받아치기 필살도 주 슬롯이 해금된 선수만 된다. 잠겨 있으면 받아친 공은 잡은 공의 위력·속력을 그대로 승계하는 일반 슛이다 | 37 §3-C3 | `FLAME_DEFAULTS.lockCounter=true`. **받아치기 부분은 D64(2026-11-20)로 대체**: 서버가 `lockCounter:false` 를 넘겨 필살기 없는 선수도 받아치기 필살이 된다 |
 | A2 | **강위력(A06)의 해금 범위**: 태그 13종 가운데 불꽃·도끼 계열은 A06 으로 열리지 않는다(A01·A02 의 정체성 유지). 엔진과 무관하고 P4(해금 계산)가 읽는다 | 37 §3-C2. D2 의 "표 그대로"는 태그 목록이고 이 항목은 해금 규칙이라 따로 적는다. **확인 필요** | `shot_families.json power.unlockExcludesFamilies`(지우면 13종 전부) |
 | A3 | **위력 가산 순서**: (일반 = 원작 식, 필살 = 표값) + 고정값 합 → % 는 마지막에 내림. 받아치기 공에는 가산하지 않는다(같은 공이 오갈 때 누적 방지) | 37 §2.3·§3-C5 | `FLAME_DEFAULTS.counterBonus=false` |
 | A4 | **캐치 후 첫 투구**: 투구·필살 공을 캐치 자세로 잡은 것만(줍기·패스 수신 제외). 그 선수의 다음 투구 한 번에 가산하고 지운다. 패스는 소비하지 않고, 맞으면 사라진다. 받아치기 창 안에 지상에서 던지면 A3 때문에 가산 없이 소비된다 → 창이 끝난 뒤나 점프 투구에서만 효과가 난다 | 37 §2.12·§3-C10 | `flame.js flThrowPow` |

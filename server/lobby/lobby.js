@@ -410,6 +410,7 @@ export class Lobby {
 
   /** 랭크 방 좌석의 현재 레이팅(PROTOCOL §11.2). placement = 순위표 기준 경기 수 미만(ranking_list.me.placement 와 같은 기준) */
   seatRating(s) {
+    if (!s.account) return {}; // 손님 좌석은 레이팅 없음
     const r = this.ranking.get(s.key, s.nick);
     return { rating: r.rating, placement: r.games < RANK.boardMinGames };
   }
@@ -526,6 +527,7 @@ export class Lobby {
         if (m.ranked !== undefined && typeof m.ranked !== 'boolean') fail('BAD_MESSAGE');
         const ranked = m.ranked === true;
         if (ranked && vsCpu) fail('BAD_MESSAGE'); // 랭크는 사람끼리만
+        if (ranked && !s.account) fail('ACCOUNT_REQUIRED');
         if (ranked) this.rankedGate(s);
         let code;
         if (m.code !== undefined && m.code !== null && m.code !== '') {
@@ -706,9 +708,12 @@ export class Lobby {
     };
   }
 
-  /** 랭크 입장 조건: 계정(REQUIRE_ACCOUNT 와 무관) + 기권 잠금 아님 */
+  /**
+   * 랭크 입장 조건: 기권 잠금 아님(계정만 검사). 손님도 랭크 방에 들어와 계정의 상대가 될 수 있다(2026-11-20 사용자 결정):
+   * 경기 결과는 계정 쪽에만 반영되고 손님은 레이팅·전적이 없다(RankingStore.record). 랭크 방 만들기는 계정만(create_room)
+   */
   rankedGate(s) {
-    if (!s.account) fail('ACCOUNT_REQUIRED');
+    if (!s.account) return;
     const until = this.ranking.lockedUntil(s.key);
     if (until) fail('RANKED_LOCKED', { until });
   }
@@ -722,9 +727,10 @@ export class Lobby {
     const valid = wentGo && (winner === 0 || winner === 1) && (RANK_NORMAL.includes(reason) || RANK_FORFEIT.includes(reason));
     let out;
     if (!valid) {
-      const before = players.map((p) => this.ranking.get(p.key).rating);
+      const before = players.map((p) => (p.account ? this.ranking.get(p.key).rating : RANK.init));
       out = { counted: false, why: 'VOID', before, after: before, delta: [0, 0] };
     } else out = this.ranking.record({ matchId, players, winner, forfeit: RANK_FORFEIT.includes(reason) ? 1 - winner : null });
+    out.acct = players.map((p) => p.account); // 손님 좌석에는 ranking_result 를 보내지 않는다(onGameEnd)
     room.rankOut = out;
     return out;
   }
@@ -779,7 +785,7 @@ export class Lobby {
     if (room.vsCpu && !ch && !room.flame && !fv && seats[0] && room.cpuTeam === seats[0].team) room.cpuTeam = this.pickCpuTeam(seats[0].team);
     if (room.vsCpu) seats[1] = { nick: CPU_NICK, team: room.cpuTeam, cpu: true, level: room.cpuLevel, ...(ch ? { special256: ch.specialChance256 } : {}) };
     for (const m of room.seats) if (m) m.ready = false;
-    if (room.ranked) room.rankPlayers = room.seats.map((m) => ({ key: m.s.key, nick: m.s.nick })); // 시작 시점 두 사람(종료 때 좌석이 비어도)
+    if (room.ranked) room.rankPlayers = room.seats.map((m) => ({ key: m.s.key, nick: m.s.nick, account: !!m.s.account })); // 시작 시점 두 사람(종료 때 좌석이 비어도). account=false = 손님(반영 없음)
     room.rankOut = null;
     room.game = new RoomGame({
       roomCode: room.code, seats, data: this.o.data, stage: ch?.stage ?? room.league?.stage ?? room.flame?.stage ?? 0, league: room.league ? { i: room.league.i, j: room.league.j } : null,
@@ -805,7 +811,7 @@ export class Lobby {
     if (room.rankOut) { // 랭크 방: game_end 바로 뒤 좌석별 레이팅 변동
       const o = room.rankOut; room.rankOut = null;
       for (const [i, m] of room.seats.entries()) {
-        if (m) this.sendTo(m.s, { t: 'ranking_result', matchId: res.matchId, counted: o.counted, ...(o.why ? { why: o.why } : {}), before: o.before[i], after: o.after[i], delta: o.delta[i], oppBefore: o.before[1 - i] });
+        if (m && o.acct?.[i] !== false) this.sendTo(m.s, { t: 'ranking_result', matchId: res.matchId, counted: o.counted, ...(o.why ? { why: o.why } : {}), before: o.before[i], after: o.after[i], delta: o.delta[i], oppBefore: o.before[1 - i] });
       }
     }
     if (room.campaign && room.seats[0]) this.campaignEnd(room, res);

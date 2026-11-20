@@ -799,6 +799,22 @@
 - 확인: `node --check` 바꾼 JS, `npm test`(임시 경로) 146/146, 실브라우저(임시 서버 3973·Edge 임시 프로필, 5 크기) `_verify/flame_noartifact_fe/v.mjs` 119/119 · 콘솔 오류 0(AudioContext 경고만) · 4xx 0. 백업 `_backup/flame_noartifact_fe_before/`(SHA256SUMS).
 - 후속(2026-11-20, 윤프론, 강화면 round65 Medium): 아이콘 위 딱지(등급 `.fl-ic-g`·강화 `.fl-ic-lv`·개수 `.fl-ic-n`)가 화면 배율 `--rk` 로 커져 목록 칸(`--ik:1`, 32px 그림)을 덮던 문제 → `flame.css` 한 줄로 딱지의 논리 1px 과 글자 크기를 아이콘 배율 `--ik` 에 맞춤(`--u = ik px`, 글자 = `fs-cap × ik/rk`). `ik = rk` 인 상점·보상 칸은 종전 그대로. 필살기 탭 선수 칸의 슛 이름 줄바꿈(「회오리 / 슛」)은 rk 2·3 에서 칸 폭(본문 71·96·102px)이 글자 폭(80·120px)보다 좁아 글자 토큰·7칸 배치를 바꾸지 않고는 못 고친다 → 그대로 둠. 확인 `_verify/round65_icon_chip_fix/`. 백업 `_backup/flame_icon_chip_before/`.
 
+## 4-66. 불꽃의 계승: 필살기 없어도 받아치기 필살 (2026-11-20, 박백엔) — 결정 analysis/39 D64, PROTOCOL §12 필살 잠금 줄
+- 사용자 지시 「필살기가 없어도 상대가 필살슛 쏘고 반격할때 나도 필살슛 나가게」. flame 좌석 선수가 필살기 아이템·고유 슛이 없어도 상대 필살 공을 잡아 받아치기 창 안에 던지면 잡은 공의 ID·위력·속력으로 필살이 나간다(받아치기 공 flame 가산 없음은 그대로).
+- 범위: 불꽃의 계승(도전 경기·키운 팀 대전·측정 도구)만. 일반 대전·스토리·리그는 flame 옵션이 없어 원래부터 원작대로 받아치기 필살에 잠금이 없다 → 불변. `server/engine/*` 미수정(match.js `355ac74a`·flame.js `7a8be665` sha256 앞 8자리 시작=끝).
+- 스위치: 새 키 `decisions.json special.counterAnyPlayer` = true(기본) → `catalog.js engineCaps` 가 `lockCounter:false` 로 덮는다. false·키 삭제 = 종전(`engine.lockCounter` true). 기존 키 값은 바꾸지 않았다.
+- 바꾼 파일: `server/flame/catalog.js`(engineCaps 한 줄), `server/flame/data/decisions.json`(새 키 + _meta 메모), `test/flame_engine.test.js`(시험 1개), 문서 39·PROTOCOL·이 절.
+- 확인: `DB_PATH=:memory: node --test test/*.test.js` 148/148, `validate_data.mjs` 오류 0·경고 0, `data/tongki.db` sha256 앞 12자리 `2fb9e76bc8b8` 불변. 서빙 중 3300 은 이 절 전 코드(반영은 사용자 승인 뒤 재시작).
+- 밸런스 영향: 받아치기 필살이 늘어 화력이 오른다(analysis/40 §관측: 잡힌 S 필살의 약 12% 가 받아치기로 돌아왔음). 임밸런 측정값(analysis/40)은 이 변경 전 기준이다.
+
+## 4-67. 랭킹: 계정 대 손님 경기 집계 (2026-11-20, 박백엔) — PROTOCOL §11.1·§11.2·§11.3
+- 제보: 「멀티플레이해서 승리했는데 랭킹보드에서 승이 안 올라감」. 코드상 승·패가 오르는 경로는 랭크 방(`create_room{ranked:true}`) 경기 하나뿐이다(`lobby.js startGame` 의 `onRanked` → `rankedResult` → `RankingStore.record`). 일반 사람끼리 방·컴퓨터 대전·스토리·리그·불꽃 팀 대전은 랭킹에 쓰지 않는다(설계). 순위표 목록은 5경기 이상만(`RANK.boardMinGames`, 미만은 내 줄 `배치 중`), 같은 상대 24시간 3경기 초과는 `PAIR_LIMIT`.
+- 운영 DB 조회(복사본, 읽기만, 2026-11-20 11:17 복사): `accounts` 0행, `ratings` 0행, `rank_games` 0행. `results.jsonl` 44줄 중 사람끼리 경기 2줄(2026-11-17, SQLite 도입 전, 비랭크), `ranked:true` 0줄, 마지막 기록 2026-11-19T15:30Z. 즉 이 서버 데이터에는 랭크 경기가 한 번도 없고 가입 계정도 없다.
+- 사용자 결정에 따른 수정: 손님도 랭크 방에 들어올 수 있고(만들기는 계정만), 경기 결과는 계정 쪽만 반영(양쪽 계정이면 양쪽), 손님은 레이팅 1000·저장 없음. 같은 키끼리 미반영(`SAME_KEY`). `rank_games` 손님 키 = `guest:<키>`. 손님 좌석에는 `ranking_result`·좌석 레이팅을 보내지 않는다(클라이언트 변경 없음 — 로비 목록의 랭크 방 입장 버튼은 원래 손님에게 막혀 있지 않았다).
+- 바꾼 파일: `server/store/ranking.js`(record), `server/lobby/lobby.js`(rankedGate·create_room·rankPlayers·rankedResult·onGameEnd·seatRating), `test/accounts.test.js`(손님 입장 거절 단언 1줄 삭제 + 시험 1개), `docs/PROTOCOL.md`. 백업 `_backup/rank_guest_before/`(되돌리기: 같은 경로로 복사, PROTOCOL 은 2026-11-20 표시 문구만 되돌림).
+- 확인: `DB_PATH=:memory: node --test test/*.test.js` 149/149. `data/tongki.db` sha256 앞 12자리 `2fb9e76bc8b8` 불변. 3300 은 건드리지 않았다 — **3300 재시작 전에는 종전 동작(손님 랭크 방 입장 거절)**.
+- 남은 것·리스크: 손님은 닉네임만 바꾸면 새 상대가 되어 같은 상대 제한(24시간 3경기)을 피할 수 있고 기권 잠금도 없다 → 한 사람이 다른 창에서 손님으로 접속해 자기 계정 승을 올리는 어뷰징은 코드로 막지 못한다(같은 IP 제한은 `TRUST_PROXY` 의존이라 미구현). 일반(비랭크) 방은 여전히 집계하지 않는다(사용자가 일반 방까지 원하면 별도 결정). 실화면·독립 리뷰 전.
+
 ## 5. 알려진 한계·결정 대기
 - 사운드: 재생 코드 완료(2026-11-17, 윤프론: `public/js/audio.js` WebAudio 관리자, 이벤트→키 표 `public/js/game/sfxmap.js`, 로비·경기 '소리' 버튼, M 키, 설정 localStorage `dd.audio`, 캡처 `_verify/round24/`). 효과음은 원작 ROM 렌더(sfx.*), BGM 은 §4-4 의 허용 목록 14곡만 재생. 키 이름 변경은 sfxmap.js 표만 고치면 됨. 실제 청취·iOS/카톡 인앱 실기기 미확인
 - 모바일: 실기기(iOS/Android) 미확인, 필살기 터치 타이밍 미확인

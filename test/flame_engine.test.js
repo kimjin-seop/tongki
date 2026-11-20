@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Match, loadData, BIT, ST } from '../server/engine/index.js';
 import { FLAME_DEFAULTS } from '../server/engine/flame.js';
+import { loadCatalog } from '../server/flame/catalog.js';
 
 const data = loadData();
 const FAM = { flame: [22, 25], axe: [11] };
@@ -112,6 +113,29 @@ test('flame R2 캐치 후 밀림 감소: 필살 공을 잡은 flame 좌석 선�
   assert.equal(half.slideV, Math.floor(base.slideV * 50 / 100));
   assert.ok(half.frames < base.frames && half.frames > 0);
   assert.deepEqual(base.thrown, { sp: null, kind: 0 }); // 해금된 필살이 없는 선수는 창 안에 던져도 받아치기 필살이 아니다(lockCounter)
+});
+
+test('flame 받아치기 필살(D64 special.counterAnyPlayer): 필살기 없는 선수도 상대 필살을 잡아 창 안에 던지면 잡은 공의 ID 로 필살이 나가고, 스위치를 끄면 종전대로 일반 슛', () => {
+  // 위 R2 시험과 같은 흐름: 좌석 0(일반 팀 0) 선수 0 이 필살 22 를 던지고, 필살기·해금이 전혀 없는 flame 좌석 1 의 선수 0 이 잡아 창 안에 던진다
+  const play = (caps) => {
+    const m = flameMatch({ seat: 1, roster: roster(1), caps }, { seed: 2 });
+    toLive(m);
+    m.giveBall(m.players[0]); m.sides[0].ctrl = 0;
+    const tk = (a, b) => { m.tick([a, b]); return m.drainEvents(); };
+    tk(BIT.C, 0); for (let i = 0; i < 13; i++) tk(BIT.B, 0);
+    let caught = null;
+    for (let i = 0; i < 80 && !caught; i++) caught = tk(0, m.ball.sp && i >= 2 && ((i - 2) & 3) < 2 ? BIT.B : 0).find((e) => e.k === 'catch') ?? null;
+    assert.ok(caught && caught.p === 7 && caught.kind === 23);
+    for (let d = 0; d < 200; d++) {
+      const ev = tk(0, d === 45 || d === 46 ? BIT.B : 0);
+      if (ev.some((e) => e.k === 'throw')) return { sp: ev.find((e) => e.k === 'special')?.id ?? null, kind: m.ball.kind };
+    }
+    return null;
+  };
+  const on = loadCatalog().engineCaps, off = loadCatalog({ patch: (raw) => { delete raw.decisions.special.counterAnyPlayer; } }).engineCaps;
+  assert.deepEqual([on.lockCounter, off.lockCounter], [false, true]); // 데이터 기본 = 켜짐, 키 삭제 = 종전(engine.lockCounter true)
+  assert.deepEqual(play(on), { sp: 22, kind: 23 }); // 잡은 공(필살 22)의 ID 로 받아치기 필살
+  assert.deepEqual(play(off), { sp: null, kind: 0 });
 });
 
 test('flame HP 입출력: 시작 HP 는 도전 전용 값(0 은 1 로), 종료 뒤 flameResult 가 최종 HP 를 돌려준다. HP 30% 이하 방어·치사 생존 1회', () => {

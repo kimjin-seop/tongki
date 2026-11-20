@@ -42,7 +42,7 @@
 | TRAINING_UNAVAILABLE | 아직 준비되지 않은 튜토리얼입니다 (서버가 닫아 둔 `training_start.kind`, §9.1. 지금은 닫힌 종류가 없다) |
 | NOT_IN_TRAINING | 튜토리얼 중이 아닙니다 (`training_quit`) |
 | GAME_ABORTED | 경기가 서버 오류로 중단되었습니다 (아래 toast로만 전달) |
-| ACCOUNT_REQUIRED | 계정으로 로그인해야 합니다 (`REQUIRE_ACCOUNT=1` 서버의 닉네임 `hello`, 손님의 랭크 방 만들기·입장, §2.1·§11) |
+| ACCOUNT_REQUIRED | 계정으로 로그인해야 합니다 (`REQUIRE_ACCOUNT=1` 서버의 닉네임 `hello`, 손님의 랭크 방 만들기(입장은 2026-11-20 부터 허용), §2.1·§11) |
 | ACCOUNT_EXISTS / NICK_REGISTERED | 이미 가입된 닉네임입니다 (`register`) / 가입된 닉네임입니다. 비밀번호로 로그인하세요 (닉네임만 보낸 `hello`) |
 | PASSWORD_INVALID | 비밀번호는 6~64자로 정하세요 (`register`) |
 | LOGIN_FAILED / LOGIN_LOCKED | 닉네임 또는 비밀번호가 맞지 않습니다 / 로그인 실패가 많아 잠시 막혔습니다 (`login`) |
@@ -101,7 +101,7 @@
 - **단계 정책**: 서버 환경변수 `REQUIRE_ACCOUNT=1` 이면 닉네임만 보낸 `hello` 를 `ACCOUNT_REQUIRED` 로 거절(계정 필수). **기본 0 = 종전 방식 유지**(기존 클라이언트가 그대로 동작). 기본값 전환은 사용자 승인 뒤.
 - **진행 승계**(2026-11-18 보안 리뷰 반영): 서버가 손님 진행·리그를 이어 주는 경로는 **그 닉네임의 손님 세션으로 접속한 연결에서 `register` 한 경우(`account_ok` 승격)** 하나다. 이것은 "원래 손님 본인만 승계한다"는 보장이 아니다(아래 한계 ①). 로그인 전 연결에서 가입하면(그 닉네임의 손님이 끊겨 있었거나 예전 손님 데이터가 DB·JSON 에 남아 있어도) **빈 진행으로 시작**한다. 남아 있던 손님 데이터는 지우거나 덮지 않고 계정이 읽지 않는 키 `guest-aside:<소문자 닉네임>:<시각 ms>` 로 옮겨 보존한다(서버 로그에 건수·키 기록. `NICK_RE` 에 `:` 가 없어 어떤 세션도 이 키를 쓸 수 없다). JSON 가져오기도 가입된 계정 키는 건너뛴다(§11.5).
 - **가입 경합**: 로그인 전 연결의 가입이 비밀번호 해시를 계산하는 사이 같은 닉네임 손님이 `hello` 로 들어오면, 계정은 만들어지고 그 손님 세션은 끝난다(`logout` 과 같은 정리: 방·경기 중이면 퇴장 = 기권, 손님 연결에 `logged_out`. 그 퇴장으로 끝나는 경기의 진행·리그는 계정 키에 기록하지 않는다). 가입 연결은 토큰 없이 `ACCOUNT_CREATED_RELOGIN` 을 받고 비밀번호로 `login` 한다.
-- **한계**(수용, 2026-11-18 팀장 결정): ① 손님은 소유 증명(영속 토큰)이 없다. 끊겨 있고 방에도 없는 손님 닉네임은 누구나 `hello` 로 즉시 가져갈 수 있고(§2 닉네임 재사용), 그 연결에서 `register` 하면 위 승계 경로로 **그 손님의 진행·리그가 승계된다**(hello → register 2단계 우회). 원래 손님은 그 뒤 그 닉네임으로 `NICK_REGISTERED`. 손님 진행(캠페인 클리어 단계·리그)은 민감 데이터가 아니라 영속 손님 토큰은 두지 않는다. 랭킹은 계정 전용(§11)이고 가입된 닉네임은 `hello` 로 잡을 수 없으므로, 랭킹·계정이 있는 닉네임은 이 우회의 영향을 받지 않는다. ② 로그인 전 연결 가입의 경우에도 원래 손님은 그 닉네임을 다시 쓸 수 없다(`NICK_REGISTERED`, 비밀번호를 모름). 진행은 `guest-aside:` 행에 남아 있으므로 되돌려 주려면 운영자가 수동으로 옮겨야 한다(자동 복구 경로 없음).
+- **한계**(수용, 2026-11-18 팀장 결정): ① 손님은 소유 증명(영속 토큰)이 없다. 끊겨 있고 방에도 없는 손님 닉네임은 누구나 `hello` 로 즉시 가져갈 수 있고(§2 닉네임 재사용), 그 연결에서 `register` 하면 위 승계 경로로 **그 손님의 진행·리그가 승계된다**(hello → register 2단계 우회). 원래 손님은 그 뒤 그 닉네임으로 `NICK_REGISTERED`. 손님 진행(캠페인 클리어 단계·리그)은 민감 데이터가 아니라 영속 손님 토큰은 두지 않는다. 랭킹 레이팅·전적은 계정에만 쌓이고(손님은 랭크 방 상대로만 참여, §11.1) 가입된 닉네임은 `hello` 로 잡을 수 없으므로, 랭킹·계정이 있는 닉네임은 이 우회의 영향을 받지 않는다. ② 로그인 전 연결 가입의 경우에도 원래 손님은 그 닉네임을 다시 쓸 수 없다(`NICK_REGISTERED`, 비밀번호를 모름). 진행은 `guest-aside:` 행에 남아 있으므로 되돌려 주려면 운영자가 수동으로 옮겨야 한다(자동 복구 경로 없음).
 - **보안**: 비밀번호 = `crypto.scrypt`(N 16384, r 8, 64바이트) + 계정별 랜덤 솔트 16바이트, 비교는 `timingSafeEqual`, 없는 닉네임도 같은 비용으로 계산. 평문·해시·토큰은 로그에 남기지 않는다. 로그인 실패 제한(메모리 기록이라 재시작하면 풀림, 15분 창): **(닉네임, IP) 쌍** 5회(`LOGIN_FAIL_NICK`) 또는 **IP** 20회(`LOGIN_FAIL_IP`) 실패면 그 쌍/IP 를 15분(`LOGIN_LOCK_MS`) `LOGIN_LOCKED`(맞는 비밀번호도 거절). **닉네임 단독**(모든 IP 합계)은 잠그지 않고 5회째 실패부터 다음 시도마다 응답을 1초씩 더 늦춘다(최대 10초, `LOGIN_SLOW_STEP_MS`·`LOGIN_SLOW_MAX_MS`). 그래서 남이 내 닉네임으로 실패를 쌓아도 다른 IP(새 기기)에서는 로그인된다(늦어질 뿐). 로그인에 성공하면 그 닉네임 단독 기록과 그 쌍 기록을 지운다. 레이트 리밋: IP당 분당 `register`+`login` 10회(`MAX_AUTH_PER_MIN`), 그리고 `hello` 상한(`MAX_HELLO_PER_MIN`)에도 함께 센다. 평문 비밀번호가 오가므로 공개 배포는 TLS(`wss://`) 필수.
 - **배포 필수 주의**: ① 리버스 프록시 뒤에서는 반드시 `TRUST_PROXY=1` — 빠뜨리면 모든 사용자가 프록시 IP 하나로 보여 IP별 로그인 잠금·가입/로그인 레이트 리밋·동시 연결 상한을 전원이 나눠 쓴다(한 사람의 실패로 전원 `LOGIN_LOCKED`). 반대로 프록시 없이 켜면 IP 위조로 우회된다. ② Node 22.5 이상(`node:sqlite`). 22.5~22.12 는 `--experimental-sqlite` 가 필요하다(pm2: `pm2 start server/index.js --name dodge-danpei --node-args="--experimental-sqlite"`), 22.13 이상은 옵션 없이 된다. ③ 공개 시 `wss://`(TLS) 필수. ④ DB 파일은 POSIX 에서 시작 때 권한 0600 으로 좁힌다(본 파일과 그때 있는 `-wal`·`-shm`, Windows 는 건너뜀).
 
@@ -540,12 +540,13 @@ table = [{idx, team, com, w, l, rate, left, rank}]  // 순위 목록 순서(rank
 - 같은 상대와 24시간 안에 반영된 경기가 3번이면 4번째부터 `counted:false, why:'PAIR_LIMIT'`(변동 없음, 기권 기록은 남는다).
 - 최근 랭크 경기 10판(반영 여부 무관) 중 자기 기권이 3번이 되면 30분 랭크 입장 잠금(`RANKED_LOCKED{params.until}`): `create_room{ranked}`·랭크 방 `join_room`·랭크 방 `start`(두 사람 모두 검사)를 거절.
 - 같은 IP 두 세션 미반영은 넣지 않았다(`TRUST_PROXY` 설정에 달려 있어 배포 환경 확인 뒤).
-- 컴퓨터 대전·캠페인·특훈(튜토리얼)·리그는 랭킹에 영향 없음.
+- 컴퓨터 대전·캠페인·특훈(튜토리얼)·리그는 랭킹에 영향 없음. **일반(비랭크) 사람끼리 방도 랭킹에 영향 없음**(랭크 방만 집계).
+- **계정 대 손님(2026-11-20 사용자 결정)**: 손님도 랭크 방에 들어올 수 있다. 손님은 레이팅 1000·저장 없음으로 계산되고 **계정 쪽만** 레이팅·승·패가 바뀐다(양쪽 계정이면 양쪽). 손님은 `ratings` 행·`ranking_result` 가 없다. `rank_games` 의 손님 키는 `guest:<소문자 닉네임>`(같은 상대 제한은 이 키 기준, 손님 기권은 잠금 없음). 같은 키끼리는 반영하지 않는다(`why:'SAME_KEY'`), 두 좌석 모두 손님이면 `why:'NO_ACCOUNT'`(둘 다 손님이라 보낼 곳 없음).
 
 ### 11.2 랭크 방
 - `create_room{ranked:true}`: **계정 세션만**(`REQUIRE_ACCOUNT` 와 무관, 손님은 `ACCOUNT_REQUIRED`). `vsCpu:true` 와 함께 보내면 `BAD_MESSAGE`. 규칙은 녹아웃·5분 고정(`rules` 를 보내면 같은 값만 허용, 다르면 `RANKED_RULES_FIXED`).
-- `room_list` 항목과 `room_state.room` 에 `ranked:true`(추가 필드). 랭크 방 `join_room` 도 계정만(`ACCOUNT_REQUIRED`·`RANKED_LOCKED`).
-- 랭크 방의 `room_joined.room.slots[i]`·`room_state.room.slots[i]`(사람 좌석)에 **`rating`(정수, 현재 레이팅, 배치 중이어도 값) · `placement`(boolean, 경기 수 < 5 = 순위표 `ranking_list.me.placement` 와 같은 기준)** 추가(2026-11-18). 비랭크 방 좌석에는 두 필드가 없다(하위 호환). 보낼 때마다 저장소에서 읽으므로 상대 입장·퇴장·경기 종료 뒤 `room_state`(반영 후 값)에도 최신이다. 경기 전 레이팅을 얻으려 `ranking_list` 로 보완할 필요 없음.
+- `room_list` 항목과 `room_state.room` 에 `ranked:true`(추가 필드). 랭크 방 `join_room` 은 손님도 가능(2026-11-20, 종전 `ACCOUNT_REQUIRED`), 계정은 `RANKED_LOCKED` 검사.
+- 랭크 방의 `room_joined.room.slots[i]`·`room_state.room.slots[i]`(사람 좌석)에 **`rating`(정수, 현재 레이팅, 배치 중이어도 값) · `placement`(boolean, 경기 수 < 5 = 순위표 `ranking_list.me.placement` 와 같은 기준)** 추가(2026-11-18). 비랭크 방 좌석과 랭크 방의 손님 좌석에는 두 필드가 없다(하위 호환). 보낼 때마다 저장소에서 읽으므로 상대 입장·퇴장·경기 종료 뒤 `room_state`(반영 후 값)에도 최신이다. 경기 전 레이팅을 얻으려 `ranking_list` 로 보완할 필요 없음.
 - 랭크 방 `set_rules` = `RANKED_RULES_FIXED`. `set_team` 은 0~21 만(SPECIAL 허용, 22~24 = `TEAM_INVALID`). 준비·시작·방장 위임·재경기는 일반 방과 같다.
 
 ### 11.3 요청·응답
@@ -554,7 +555,7 @@ table = [{idx, team, com, w, l, rate, left, rank}]  // 순위 목록 순서(rank
 -> { t:'ranking_list',
      top:[{ rank, nick, rating, w, l }],       // 5경기 이상만, rating 내림차순(같으면 같은 rank, 그다음 승 많은 순)
      me: { rank|null, nick, rating, w, l, games, placement:boolean } | null }   // 계정이면 내 줄(5경기 미만 = placement:true·rank:null = '배치 중'), 손님이면 null
-{ t:'ranking_result', matchId, counted:boolean, why?:'VOID'|'PAIR_LIMIT', before, after, delta, oppBefore }   // 랭크 경기 game_end 바로 뒤, 좌석별(내 값)
+{ t:'ranking_result', matchId, counted:boolean, why?:'VOID'|'PAIR_LIMIT'|'SAME_KEY', before, after, delta, oppBefore }   // 랭크 경기 game_end 바로 뒤, 계정 좌석별(내 값). 손님 좌석에는 보내지 않는다. 상대가 손님이면 oppBefore = 1000
 ```
 - 결과 레코드(§6)에 `ranked:true, ratingCounted, ratingDelta:[좌석0, 좌석1]` 추가.
 
@@ -606,7 +607,7 @@ flame: {
 - 안전 상한(2026-11-19, P1 리뷰 M1·M2, `flame.js FLAME_LIMITS`): 능력치는 [하한, 255], `fx`·`famPow`·`famPct` 는 0 이상 정수(255 까지), 훅을 거친 최종 위력은 [0, 4095] 로 자른다. `caps` 는 아는 키만 받고 범위를 자른다(`r1MaxPct`·`r2MaxPct` 0~100, `r3MaxFrames` 0~255, `downFramesMin` 1~255, `lowHpPct` 0~100, `hpFloor` 0~1, 스위치는 boolean). `caps`·`roster`·`allow` 는 클라이언트 입력이 아니라 서버가 저장된 도전 상태와 데이터에서 조립한다(§13).
 - 능력치는 언제나 복사본에 넣는다(전역 캐시 `teams.json` 객체는 바뀌지 않는다).
 - 위력 가산 순서: (일반 슛 = 원작 식 / 필살 = 표값) + 고정값 합 → % 는 마지막에 내림. 받아치기 공(잡은 공의 위력·속력 승계)과 포메이션 엔드 어택에는 가산하지 않는다.
-- 필살 잠금: 주 슬롯 ID 가 `allow` 에 없으면 공중 차지 13~15 투구도 일반 슛(차지의 위력·속력 가산은 남는다, こうしき 와 같은 형태). 받아치기 필살도 주 슬롯이 해금된 선수만 된다.
+- 필살 잠금: 주 슬롯 ID 가 `allow` 에 없으면 공중 차지 13~15 투구도 일반 슛(차지의 위력·속력 가산은 남는다, こうしき 와 같은 형태). 받아치기 필살은 `caps.lockCounter`(엔진 기본 true)가 true 면 주 슬롯이 해금된 선수만 된다. **불꽃의 계승 서버는 `decisions.json special.counterAnyPlayer`(기본 true, analysis/39 D64, 2026-11-20)로 `lockCounter:false` 를 넘긴다** → 필살기가 없는 선수도 상대 필살 공을 받아치면 잡은 공의 ID·위력·속력으로 받아치기 필살이 나간다(이벤트·스냅샷은 일반 받아치기 필살과 같다: `throw` 뒤 `special{p,id}`, 새 키 없음).
 - 20초 보유 제한·피격/캐치 판정·난수 순서는 건드리지 않는다.
 - 필살기 부여 구조(§13.21, 2026-11-19): 엔진 옵션은 **바뀌지 않았다**. 서버가 `allow` 에 「낀 아티팩트가 부여한 슛 + 로스터 원작 선수의 고유 슛」을 넣고, `roster[i].sp` 는 선수별 발동 가능 집합으로 거른 값을 넘긴다(불씨·클론은 아티팩트가 없으면 `[null, null]`).
 - 오리지널 팀(§13.8, 2026-11-19): 엔진 옵션은 **바뀌지 않았다**. 오리지널 선수의 `from` 에는 능력치·히트박스·기본 필살기의 출처인 `original_team.json` 의 `base` 선수가 들어간다(1차 = 태동 7명과 같은 값). 이름·몸(skin)·팀명은 엔진에 넘기지 않고 `RoomGame` 옵션 `flameCast` 로 따로 실어 `game_start.flameCast` 로 보낸다(§12.2).

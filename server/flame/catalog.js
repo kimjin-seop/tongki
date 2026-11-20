@@ -544,8 +544,8 @@ function build(raw) {
     equipPrice: (id) => price.equipmentPrice[items.get(id).rarity],
     consumablePrice: (id) => price.consumablePrice.overrides[id] ?? price.consumablePrice.default,
     sellPrice: (id) => items.get(id).proposed.sellPrice,
-    /** 엔진 옵션 caps(server/engine/flame.js FLAME_DEFAULTS 와 같은 키) */
-    engineCaps: { r1MaxPct: R.clamps.r1MaxPct, r2MaxPct: R.clamps.r2MaxPct, r3MaxFrames: R.clamps.r3MaxShortenFrames, downFramesMin: R.clamps.downFramesMin, ...raw.decisions.engine },
+    /** 엔진 옵션 caps(server/engine/flame.js FLAME_DEFAULTS 와 같은 키). special.counterAnyPlayer(D64) = true 면 받아치기 필살 잠금을 푼다(필살기 없는 선수도 상대 필살을 받아치면 필살) */
+    engineCaps: { r1MaxPct: R.clamps.r1MaxPct, r2MaxPct: R.clamps.r2MaxPct, r3MaxFrames: R.clamps.r3MaxShortenFrames, downFramesMin: R.clamps.downFramesMin, ...raw.decisions.engine, ...(raw.decisions.special.counterAnyPlayer === true ? { lockCounter: false } : {}) },
   };
 }
 

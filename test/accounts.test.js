@@ -146,7 +146,6 @@ test('랭킹: Elo +16/-16(배치 +24/-24)·랭크 방(계정 필수·규칙 고�
     assert.equal(rj.room.ranked, true); assert.deepEqual(rj.room.rules, { mode: 'knockout', time: 5 });
     g.send({ t: 'list_rooms' });
     assert.equal((await g.wait((m) => m.t === 'room_list' && m.rooms.length === 1)).rooms[0].ranked, true);
-    assert.equal(await g.err({ t: 'join_room', code: rj.room.code }), 'ACCOUNT_REQUIRED');
     assert.equal(await a.err({ t: 'set_rules', rules: { time: 3 } }), 'RANKED_RULES_FIXED');
     b.send({ t: 'join_room', code: rj.room.code }); await b.type('room_joined');
     const room = app.lobby.rooms.get(rj.room.code);
@@ -318,4 +317,41 @@ test('랭크 방 좌석 레이팅: room_joined/room_state slots 에 rating·plac
     assert.deepEqual(after.room.slots.map((x) => x.rating), [r.after, app.lobby.ranking.get('좌석b').rating]); // 경기 종료 뒤 room_state 는 반영 후 값
     assert.ok(after.room.slots[1].rating < 1024);
   } finally { a.ws.close(); b.ws.close(); g.ws.close(); await app.close(); }
+});
+
+test('랭크: 계정 대 손님 — 계정 쪽만 승·패 +1, 손님은 레이팅·전적 없음(손님 좌석엔 ranking_result 없음)', async () => {
+  const store = new MemoryResultStore();
+  const app = createServer({ store, limits: LIM, log: () => {} });
+  const port = await app.listen(0);
+  const a = client(port), g = client(port);
+  await Promise.all([a.open, g.open]);
+  try {
+    a.send({ t: 'register', nickname: '계정A', password: 'aaaaaa' }); await a.type('welcome');
+    g.send({ t: 'hello', nickname: '손님G' }); await g.type('welcome');
+    assert.equal(await g.err({ t: 'create_room', ranked: true }), 'ACCOUNT_REQUIRED'); // 만들기는 계정만
+    a.send({ t: 'create_room', ranked: true });
+    const rj = await a.type('room_joined');
+    g.send({ t: 'join_room', code: rj.room.code });
+    const gj = await g.type('room_joined');
+    assert.equal(gj.room.slots[1].rating, undefined); // 손님 좌석은 레이팅 표시 없음
+    const room = app.lobby.rooms.get(rj.room.code);
+    const play = async (win) => {
+      g.send({ t: 'ready', ready: true });
+      await a.wait((m) => m.t === 'room_state' && m.room.start.ok);
+      a.send({ t: 'start' });
+      await a.type('game_start'); await g.type('game_start');
+      room.game.match.phase = 'play'; room.game.finish(win, 'annihilation');
+      await g.type('game_end');
+      return a.type('ranking_result');
+    };
+    const r1 = await play(0); // 계정 승
+    assert.equal(r1.counted, true); assert.ok(r1.delta > 0);
+    assert.deepEqual((({ w, l, games }) => [w, l, games])(app.lobby.ranking.get('계정a')), [1, 0, 1]);
+    const r2 = await play(1); // 계정 패
+    assert.equal(r2.counted, true); assert.ok(r2.delta < 0);
+    assert.deepEqual((({ w, l, games }) => [w, l, games])(app.lobby.ranking.get('계정a')), [1, 1, 2]);
+    assert.equal(app.lobby.ranking.db.get('SELECT COUNT(*) AS n FROM ratings WHERE key = ?', '손님g').n, 0); // 손님 행 없음
+    assert.equal(await g.wait((m) => m.t === 'ranking_result', 200).catch(() => null), null); // 손님은 레이팅 변동 메시지 없음
+    assert.equal(store.records.at(-1).ratingCounted, true);
+  } finally { a.ws.close(); g.ws.close(); await app.close(); }
 });
