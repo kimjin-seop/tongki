@@ -113,7 +113,10 @@ export class Renderer {
       // 타입 0x4C(이동)로 빈 외야 슬롯까지 걸어간 뒤 외야 타입 0x24 로 남아 계속 보인다. 교체할 외야가 없어 퇴장(GONE)한 경우만 그리지 않는다
       if (pa[3] === ST.GONE) continue;
       const pos = lerpPos(pa, pb, t);
-      const dx = (pb[0] - pa[0]) / 16 / Math.max(1, b.f - a.f), dy = (pb[1] - pa[1]) / 16 / Math.max(1, b.f - a.f);
+      // 걷기 판정용 속도: 렌더 틱이 최신 스냅에 닿으면(a==b, 스냅 도착이 늦은 프레임) a-b 차가 0 이라 서기 그림이 끼어 다리가 떨린다.
+      // 그때는 직전 스냅(a0)→a 차로 잰다(원작은 걷는 동안 애니 0/2 유지, tools/diff/traces/oracle/walk_*.json)
+      const [qa, qb, nf] = b.f > a.f ? [pa, pb, b.f - a.f] : [sm.a0?.p[pid] ?? pa, pa, a.f - (sm.a0?.f ?? a.f)];
+      const dx = (qb[0] - qa[0]) / 16 / Math.max(1, nf), dy = (qb[1] - qa[1]) / 16 / Math.max(1, nf);
       items.push({ k: 'p', pid, pos, s: pa, dx, dy, depth: pos[1] });
     }
     // 선수 자세(방향·애니 프레임)를 먼저 정한다: 든 공 위치가 자세에 따라 달라진다
@@ -316,7 +319,7 @@ export class Renderer {
     // 점프볼 쳐내기 자세(fl&32) 시작 틱
     if (fl & FL.TIP) m.tipAt ??= tick; else m.tipAt = null;
     const el = fl & FL.TIP ? tick - m.tipAt : tick - (stStart[pid] ?? tick);
-    const pk = this.pickCol(seat, idx, st, fl, moving, m.back, el, tick);
+    const pk = this.pickCol(seat, idx, st, fl, moving, m.back, el, tick, m);
     it.left = m.left; it.col = pk.col; it.anim = pk.name; it.fi = pk.fi; it.cls = this.bodyClass[seat]?.[idx] ?? 0;
   }
 
@@ -442,7 +445,7 @@ export class Renderer {
   }
 
   /** 상태 코드 → anims.json 애니 이름 → 시트 열 */
-  pickCol(seat, idx, st, fl, moving, back, el, tick) {
+  pickCol(seat, idx, st, fl, moving, back, el, tick, mem = null) {
     const cls = this.bodyClass[seat]?.[idx] ?? 0;
     const ab = back ? '_b' : '_a';
     let name, mode = 'loop';
@@ -469,7 +472,8 @@ export class Renderer {
     if (mode === 'first') fi = 0;
     else if (mode === 'once') fi = Math.min(n - 1, Math.floor(el / sp) + 1);
     else if (mode === 'wind') fi = Math.min(n - 1, Math.floor(Math.max(0, el - 1) / (sp + 1)) + 1);
-    else fi = Math.floor(tick / sp) % n;
+    else fi = mem ? 0 : Math.floor(tick / sp) % n;
+    if (mem) { const k = animCounter(mem, an.name ?? name, n, Math.max(0, an.speed), mode === 'loop' && n > 1, tick); if (mode === 'loop') fi = k; }
     fi = Math.max(0, fi);
     return { col: an.frames[fi].col, name: an.name ?? name, fi };
   }
@@ -551,6 +555,26 @@ export class Renderer {
       g.restore();
     } else g.drawImage(img, rx, ry, rw, rh, dx, dy, rw, rh);
   }
+}
+
+/**
+ * 원작 선수 애니 프레임 카운터($10 = 프레임, $11 = 남은 틱, 0x19EC) 재현. 반환 = 이번 틱의 프레임 번호.
+ * 원작(에뮬 실측 _verify/walk_jitter_20261120/oracle_walk_L48.json): 루프 애니는 $11 이 0 이면 다음 프레임·speed 로 다시 채우고, 아니면 1 줄인다
+ * (프레임당 speed+1 틱: 걷기 7, 대시 4). 애니가 바뀌면 프레임만 0 으로 돌아가고 $11 은 이어 간다. 1프레임 애니(서기 등) 동안은 $11 이 멈춘다.
+ * run = 카운터를 돌리는 애니(여러 프레임 루프). 아니면 애니 이름만 기록해 다음 루프 애니가 프레임 0 에서 시작하게 한다
+ */
+export function animCounter(mem, name, n, speed, run, tick) {
+  const ti = Math.floor(tick);
+  let c = mem.ac;
+  if (!c || ti < c.t || ti - c.t > 60) c = mem.ac = { name, idx: 0, cnt: speed, t: ti }; // 처음·되감기·긴 공백: 프레임 0 부터
+  while (c.t < ti) {
+    c.t++;
+    if (c.name !== name) { c.name = name; c.idx = 0; }
+    if (!run) continue;
+    if (c.cnt <= 0) { c.idx = (c.idx + 1) % n; c.cnt = speed; } else c.cnt--;
+  }
+  if (c.name !== name) { c.name = name; c.idx = 0; } // 같은 틱 안에서 애니가 바뀐 경우
+  return c.idx % n;
 }
 
 export function buildAnimIndex(anims) {
