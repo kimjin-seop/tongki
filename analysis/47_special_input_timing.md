@@ -115,3 +115,22 @@
 
 ## 6. 재현 도구 (scratchpad, 저장소에 넣지 않음)
 `sweep_oracle.py`(원작 스윕, 그룹 ground/stand/dash/late/late2/edge), `white_ball.py`(원작 CRAM·`$3E` 프레임 기록), `head/run_ours.mjs`(HEAD 엔진, 같은 트레이스), `drive.mjs`·`drive2.mjs`(Edge CDP 특훈 스윕), 계측은 scratchpad 의 HEAD 사본 `server/game/roomGame.js`에만 넣었다(`SWEEP_LOG`).
+
+## 7. 구현 결과: 수정안 C (2026-11-20, 윤프론, 미커밋)
+- 범위: 표시 전용. `server/` 불변, 판정·스냅샷 형식 불변. A·B·D·받아치기 창 하양은 하지 않았다(별도 승인).
+- `public/js/game/special.js`: ROM 0x362E6 18행을 `CHARGE_PAL` 로 옮겼다(`rom/danpei.gen` 에서 직접 읽어 대조, 17행 = `02e 0ae 0ee 000`). `chargePalKey(charge)` = `'K'+차지`(0~17 로 자름), 원래 공 색과 같은 행(0·1·16)은 `null`(원본 시트). `paletteSheet` 가 `K` 키를 받는다(기존 `PAL.C` 키와 겹치지 않게 `C` 대신 `K`).
+- `public/js/game/render.js`: `draw` 에서 보유자(`a.b` HELD 의 `b[4]`)의 최신 스냅(b) 선수 배열 `[6]&CHARGING` 이면 `[7]` 행으로 공 4색 치환, `ball()` 일반(비필살) 경로에서만 적용. 도트·정수 좌표 그대로(보간·알파 없음). 보유하지 않은 공·비행 공·필살 공은 종전 그대로.
+- 원작과의 차이(남김): ① 스냅 CHARGING 플래그는 공중 차지와 공중 투구 동작(`wind`+JUMP)에만 서서, 공중 차지 중 착지해 지상 투구 동작으로 넘어간 10프레임은 원래 색으로 돌아간다(원작은 `$3E` 유지). ② 서버 왕복·스냅 흔들림으로 렌더 프레임에서 차지값이 가끔 하나 건너뛰거나 겹친다(D 범위).
+- 실화면 확인: 임시 서버 3393(`DB_PATH=:memory:` + 임시 경로) + 임시 프로필 headless Edge(CDP 9437), 필살 특훈에서 점프 → S 700ms 누름, 렌더 프레임마다 캔버스 캡처(소스 수정 없이 페이지에서 `Renderer.prototype.draw` 를 감쌈). 차지 0~16 전부 캡처, 공 주변 픽셀이 각 행 색과 일치, 13~15 = 순백(252,252,252) 8x8 채움, 16 = 원래 색 복귀. 렌더 순서 예: `0,1,…,12,13,14,14,16…` / `…,12,13,14,14,15,16…`(순백 3~4 렌더 프레임). 보유 비차지·비행 공은 원래 색. 콘솔 오류 0. 캡처 `_verify/charge_pal_20261120/`(`sheet_charge_0_16.png` 확대 모음, `charge_00~16.png`, `held_nocharge.png`, `flying.png`, `sheet_colors.txt`).
+
+## 8. 구현 결과: 수정안 A·B (2026-11-20, 박백엔, 미커밋)
+- **A (엔진)** `server/engine/match.js`: `beginWind` 가 공중 차지(`p.charging`)에서 시작한 투구 동작이면 `wind.airChg = true`(§2.1 의 두 진입 = 차지 해제·16 초과 `:849`, 차지 중 착지 `:936`). 발사 `:981` → `doThrow(…, null, w.airChg)` → `romThrow(p, t, charge, auto, airChg)` 에서 **필살 판정에만** `specialReady(p, charge, air || airChg, …)`. 위력·속력의 공중 가산·`groundTargetZ`·불꽃 훅은 종전대로 발사 순간 `air`. 필살 추적(`trackPre/trackPost`, `b.trk`) 코드는 건드리지 않았다. 비직역 경로(`doThrow` 본문, ROM 데이터 없음)는 airChg 를 쓰지 않는다(그 경로는 `beginWind` 를 거치지 않는다).
+- **B (서버 입력)** `server/game/roomGame.js`: `setInput` = `latch |= bits & ~cur; cur = bits`, 틱 = `b = cur | latch; latch = 0`. 틱 사이 탭(누름→뗌)은 1틱 보장, 뗀 비트는 다음 틱에 바로 0, 250ms 재전송(같은 값)은 래치에 아무것도 더하지 않는다. 엔진은 받은 bits 로만 결정적으로 돌고(서버 권위), 락스텝·입력 기록·리플레이 경로는 없다(클라이언트 `snaps.js DELAY_TICKS` 는 그리기 보간 지연만). 틱 흔들림(Windows 타이머)은 그대로 남는다.
+- 해시(sha256 앞 8): `match.js` eff5d6b5 → 0acb687b, `roomGame.js` a8da354a → 94fc66ac. 백업 `_backup/special_input_before/`.
+- §3.1 스윕 재측정(원작 트레이스 = 같은 scratchpad `oracle/` 132건, §6 `sweep_oracle.py` 출력 재사용 — ROM 쪽은 바뀌지 않으므로 원작 재실행은 하지 않았다. 우리 쪽은 작업 사본 엔진으로 같은 `inject` + 같은 패드열, 비교 = 발사 프레임·필살 여부·발사 다음 프레임 공 위력):
+  - 수정 전(HEAD 사본) **103/132**: stand 28/28, dash 42/42, ground 9/9, late 2/3, late2 6/21, late2d 6/16, edge 6/8, edged 4/5 (불일치 29 = 전부 「원작 필살, 우리 일반」).
+  - 수정 후 **132/132**: 정규 스윕(제자리 w0/3/6/9·대시 w0~15 × h11~17) 70/70, 점프 후반 late2+late2d **37/37**, late 3/3, edge 13/13, 지상·공중 기타 9/9.
+- `tools/diff/run.mjs --no-report`: 수정 전후 출력 바이트 동일(73 PASS + 종전 FAIL `rng_roll_180`). 오라클 시나리오에 「투구 동작 중 착지」 장면이 없어 개선 수치는 없다.
+- 컴퓨터 영향: 컴퓨터 공중 차지도 같은 엔진 경로(`:790` → `:849`/`:936` → `beginWind`)라 함께 바뀐다(원작 판정이 차지만 본다는 근거는 사람과 같다: 0x8BEE → 0x8CF0, 컴퓨터 지상 `$18`=15 필살 `p.gsp` 도 같은 근거). 컴퓨터 대 컴퓨터 40경기(6000프레임, 레벨 0~2 순환) 수정 전후 비교: 1경기(시드 1022, f1741)만 갈라졌다 — 컴퓨터 차지 14 → 투구 동작 중 착지 → 종전 일반(위력 39) / 이제 필살(ID 12, 50). 합계 투구 975→972, 필살 291→290(갈라진 뒤 경기 흐름 차이). 컴퓨터 공중 차지 착지 장면의 원작 실행 대조는 하지 않았다 [판독 근거만].
+- 시험 `test/special_input.test.js` 2건(A: 점프 w0~40 × h12/14 에서 차지 13~15 면 착지 뒤 발사도 필살·창 밖은 일반, 착지 뒤 필살과 공중 필살이 둘 다 나와야 함 / B: 래치 틱 열 `[B,B,0,B,0,B|R,0]`). 수정 전 파일로 돌리면 둘 다 실패(A `w16 h14 차지 14 z 0`), 수정 후 통과.
+- §7 ① 과의 관계: 착지 뒤 지상 투구 동작 10프레임에도 이제 필살이 나가지만, 스냅 CHARGING 플래그는 그 구간에 서지 않아 공 색은 원래 색으로 돌아간다(표시만의 차이, 남김).

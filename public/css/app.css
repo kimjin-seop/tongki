@@ -326,6 +326,9 @@ input[type=text]:focus-visible, input[type=password]:focus-visible { outline: va
   background: var(--r-win); border: var(--frame) solid var(--r-line); border-image: var(--img-win) 8 fill / var(--frame) stretch; image-rendering: pixelated; }
 .cmds .btn { justify-content: center; font: var(--f-head); }
 .room-code { letter-spacing: .08em; }
+/* 필살슛 유도 안내(room.evade='track'): 남는 폭까지만 차지(basis 0 + max-content 상한)해 머리줄을 줄바꿈시키지 않고, 모자라면 말줄임 */
+.room-head .evade-note { flex: 999 1 0; min-width: 0; max-width: max-content; } /* grow 999 = 남는 폭을 .spacer 보다 먼저 받는다 */
+.room-head .evade-note > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 /* 준비 상태: 준비 완료 = 하늘색 채운 표식 + 체크 + 좌석 안쪽 줄, 준비 중 = 회색 */
 .tag.rdy { --bc: var(--r-grey); gap: calc(var(--u) * 4); grid-auto-flow: column; padding: 0 calc(var(--u) * 4); }
 .tag.rdy.on { --bc: var(--c-cyan); background: var(--c-cyan); color: #000; }

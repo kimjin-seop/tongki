@@ -22,6 +22,19 @@ const PAL = {
 const CYCLE = [0xeee, 0x00e, 0xeee, 0x0e0, 0xeee, 0xe00];
 /** 공 시트(ball.png, CRAM 라인2 = ROM 0x3A1AC) 의 색 12~15 실제 RGB */
 const SRC = [0x028, 0x0ae, 0x0ee, 0x002];
+/** 차지 공 색: ROM 0x362E6 18행(차지 $3E -> 4색). 보유 공 핸들러 0xA40C 가 매 프레임 적용. 13~15 = 순백(필살 창). analysis/47 §1.2 */
+const CHARGE_PAL = [
+  [0x028, 0x0ae, 0x0ee, 0x002], [0x028, 0x0ae, 0x0ee, 0x002], [0x24a, 0x2ce, 0x2ee, 0x2ee], [0x24a, 0x2ce, 0x2ee, 0x2ee],
+  [0x48c, 0x4ee, 0x4ee, 0x4ee], [0x48c, 0x4ee, 0x4ee, 0x4ee], [0x6ae, 0x6ee, 0x6ee, 0x6ee], [0x6ae, 0x6ee, 0x6ee, 0x6ee],
+  [0x8ce, 0x8ee, 0x8ee, 0x8ee], [0x8ce, 0x8ee, 0x8ee, 0x8ee], [0xaee, 0xaee, 0xaee, 0xaee], [0xaee, 0xaee, 0xaee, 0xaee],
+  [0xcee, 0xcee, 0xcee, 0xcee], [0xeee, 0xeee, 0xeee, 0xeee], [0xeee, 0xeee, 0xeee, 0xeee], [0xeee, 0xeee, 0xeee, 0xeee],
+  [0x028, 0x0ae, 0x0ee, 0x002], [0x02e, 0x0ae, 0x0ee, 0x000],
+];
+/** 차지값 -> 공 색 치환 키('K'+차지). 원래 색과 같은 행(0,1,16)은 null */
+export function chargePalKey(charge) {
+  const c = Math.max(0, Math.min(CHARGE_PAL.length - 1, charge | 0));
+  return CHARGE_PAL[c].every((w, j) => w === SRC[j]) ? null : 'K' + c;
+}
 
 /** 잔상 패턴: ID -> [패턴, 개수]. 핸들러별 생성 코드(0xAEF4~0xB4DE) 판독 */
 const GHOST = {};
@@ -66,7 +79,7 @@ const g2rgb = (w) => [(w & 0xe) * 18, ((w >> 4) & 0xe) * 18, ((w >> 8) & 0xe) * 
 export function paletteSheet(cache, img, key) {
   if (!key) return img;
   if (cache.has(key)) return cache.get(key);
-  const dst = key[0] === 'Y' ? Array(4).fill(CYCLE[+key.slice(1)]) : PAL[key];
+  const dst = key[0] === 'Y' ? Array(4).fill(CYCLE[+key.slice(1)]) : key[0] === 'K' ? CHARGE_PAL[+key.slice(1)] : PAL[key];
   const c = document.createElement('canvas');
   c.width = img.naturalWidth || img.width; c.height = img.naturalHeight || img.height;
   const g = c.getContext('2d');

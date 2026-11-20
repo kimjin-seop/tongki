@@ -21,6 +21,7 @@ const cellId = (el) => { const v = el?.dataset?.team; return v == null ? null : 
 const RANK_MAX_TEAM = 21; // 랭크 방은 SPECIAL(15~21)까지, 22~24 는 서버가 TEAM_INVALID(PROTOCOL §11.2)
 // 팀 선택에서 한 번이라도 결정한 좌석('방코드:좌석'). 서버 좌석에는 「고른 적 있음」 표시가 없고(입장 기본값 = 좌석 번호 팀) 대기실은 규칙 창을 다녀오면 다시 마운트되므로 모듈 범위에 둔다
 const decided = new Set();
+const EVADE_NOTE = '필살슛 유도 — 받아내야 막힙니다'; // room.evade==='track'(사람끼리 일반 방) 대기실 안내 한 줄
 
 export function mount(root, app) {
   let selecting = false, cur = null, page = 0, pdCur = null;
@@ -145,6 +146,8 @@ export function mount(root, app) {
     root.append(h('div.screen.room',
       h('header.room-head', h('h1.pix-title', r.vsCpu || !r.host ? '대기실' : `${r.host}의 방`), r.ranked ? h('span.tag.rank', '랭크') : null,
         r.rules ? h('span.rules-line', '규칙 ', h('b', rulesText(r.rules))) : null,
+        // 읽기 전용(PROTOCOL §4 room.evade, §5.8). 사람끼리 일반 방만 'track'. 머리줄이 넘치면 줄바꿈 대신 말줄임(전문은 title)
+        r.evade === 'track' ? h('span.rules-line.evade-note', { title: EVADE_NOTE }, h('span', EVADE_NOTE)) : null,
         h('span.spacer'), h('span.room-code', { title: '방 코드' }, r.code), h('span.nick-me', app.nick || '')),
       h('div.seats', seat(0), h('div.vs', { 'aria-hidden': 'true' }, 'VS'), seat(1)),
       h('div.cmds', { style: { '--n': cmds.length } }, cmds)));

@@ -3,7 +3,7 @@
 // 투영(05_match_rules.md §1): 화면x = x - 카메라, 화면y = y/2 - z + 96 (VDP 오프셋 0xE0-0x80)
 // 카메라(this.cam)는 와이드 화면 왼쪽 끝의 세계 x. 원작 기준 카메라(320 화면 왼쪽) = cam + DW
 import { lerpPos, splinePos } from './snaps.js';
-import { LOOP_IDS, specialAnim, specialPalKey, specialHidden, specialGhosts, paletteSheet } from './special.js';
+import { LOOP_IDS, specialAnim, specialPalKey, specialHidden, specialGhosts, paletteSheet, chargePalKey } from './special.js';
 
 export const W = 398, H = 224;
 export const BASE_W = 320; // 원작 화면 폭
@@ -145,10 +145,13 @@ export class Renderer {
     // 필살 임팩트 연출(impact.js): 오라 뒤층 → 선수·공 → 앞층(입자·명중)
     const ifx = this.impact && { cam, tick, kind, sy: skY, ball: a.b[3] === BM.HELD || hideBall ? null : ball, posOf: (pid) => items.find((i) => i.pid === pid)?.pos ?? null };
     if (ifx) this.impact.drawBack(g, ifx);
+    // 차지 공 색(원작 0xA40C, ROM 0x362E6): 보유자가 차지 중이면 차지값 행으로 공 4색 치환. 최신 스냅(b) 값 = 원작 1프레임 표시 지연 근사
+    const hb = holder >= 0 ? b.p[holder] : null;
+    const chgKey = hb && hb[6] & FL.CHARGING ? chargePalKey(hb[7]) : null;
     for (const it of items) {
       if (it.k === 'p') this.player(it, cam, tick);
       else if (it.k === 'r') this.referee(ref, cam);
-      else this.ball(it.pos, cam, a.b, it.held ? { vx: 0, vy: 0, vz: 0 } : bv, tick); // 보유 중 속도 0(원작 $30 클리어 → 반전 없음)
+      else this.ball(it.pos, cam, a.b, it.held ? { vx: 0, vy: 0, vz: 0 } : bv, tick, chgKey); // 보유 중 속도 0(원작 $30 클리어 → 반전 없음)
     }
     if (ifx) this.impact.drawFront(g, ifx);
 
@@ -513,7 +516,7 @@ export class Renderer {
     }
   }
 
-  ball([x, y, z], cam, b, v, tick) {
+  ball([x, y, z], cam, b, v, tick, chgKey = null) {
     const g = this.g;
     const sx = Math.round(x - cam), sy = Math.round(y / 2 - z + Y0);
     const bd = this.ballData?.ball;
@@ -525,7 +528,7 @@ export class Renderer {
       const i = an.loop ? k % n : Math.min(n - 1, k);
       const fr = bd.frames[an.frames[i]] ?? bd.frames[0];
       const sp = b[6] ? this.sp : null;
-      if (!sp) return this.ballSprite(this.ballImg, fr, sx, sy, v.vx < 0);
+      if (!sp) return this.ballSprite(chgKey ? paletteSheet(this.palCache, this.ballImg, chgKey) : this.ballImg, fr, sx, sy, v.vx < 0);
       // 필살기: 색 치환 시트 + (숨김 ID 가 아니면) 본체 + 잔상/분신
       const img = paletteSheet(this.palCache, this.ballImg, specialPalKey(sp.id, fi));
       const el = tick - sp.start, left = sp.dir < 0;

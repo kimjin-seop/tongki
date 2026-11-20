@@ -86,7 +86,7 @@ export class RoomGame {
 
   setInput(seat, bits) {
     const i = this.input[seat];
-    i.cur = bits; i.latch |= bits; // 틱 사이 짧은 탭도 놓치지 않도록 래치
+    i.latch |= bits & ~i.cur; i.cur = bits; // 새로 눌린 비트만 래치: 틱 사이 짧은 탭은 1틱 보장, 뗀 비트는 다음 틱에 바로 반영(analysis/47 §2.2 결함 ②)
   }
 
   setConnected(seat, connected) {
@@ -124,7 +124,7 @@ export class RoomGame {
     let n = 0;
     while (this.nextAt <= now && n < MAX_CATCHUP && !this.done) {
       this.nextAt += dt; n++;
-      const bits = [0, 1].map((s) => { const i = this.input[s]; const b = i.latch; i.latch = i.cur; return b; });
+      const bits = [0, 1].map((s) => { const i = this.input[s]; const b = i.cur | i.latch; i.latch = 0; return b; });
       this.match.tick(bits);
       if (this.match.f % this.snapEvery === 0) this.broadcastSnap(this.match.snapshot());
       if (this.match.result && this.match.f - this.match.endF >= (this.match.endHold || END_HOLD_FALLBACK)) this.finish(this.match.result.winner, this.match.result.reason, this.match.result.rem);
