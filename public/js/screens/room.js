@@ -5,7 +5,7 @@
 import { h, clear } from '../util.js';
 import { net } from '../net.js';
 import { toast } from '../ui.js';
-import { ERR, ERR_CODE } from '../i18n.js';
+import { ERR, ERR_CODE, TIER } from '../i18n.js';
 import { available as prematchOk } from './prematch.js';
 import { available as lineupOk } from './lineup.js';
 import { rulesText } from './rules.js';
@@ -13,7 +13,7 @@ import { emblem, roster, glyphs, abbrOf, shortName, GRID_MAIN, arrowNav } from '
 import * as F from './flame/store.js';
 import { rankName, keepEmblem, keepGlyph } from './flame/ui.js';
 import { roomPanel } from '../chat.js';
-import { tierChip, guestChip, placementGames } from './ladder.js';
+import { tierChip, placementGames } from './ladder.js';
 
 const PAGE_SPECIAL = [15, 16, 17, 18, 19, 20, 21, 22, 23, 24]; // 스토리 전용 팀(목록 유지)
 // 불꽃 팀 칸(PROTOCOL §13.20): 불꽃의 계승에서 키운 팀 슬롯. 칸의 id = set_team 에 보내는 값 그대로('flame:recent' | 'flame:best'), 원작 팀 칸은 숫자
@@ -56,8 +56,18 @@ export function mount(root, app) {
 
   // 래더 방(PROTOCOL §11.2): 좌석마다 티어 칩 + 레이팅(slots[i].tier·rating·placement), 손님 좌석은 「손님」 칩.
   // 머리줄 = 「반영」/「미반영」(내가 손님이거나 같은 상대 제한 room.ladder.counted:false) + 시작 기한(startBy) 카운트다운
-  const ladderSeat = (s) => (s.guest ? guestChip() : [tierChip(s.tier, { placement: s.placement === true, left: s.placementLeft, games: placementGames(app) }),
-    Number.isInteger(s.rating) ? h('span.tag.rate.tabular', { title: '레이팅' }, String(s.rating)) : null]);
+  // 좌석 머리줄 오른쪽 뱃지(방장·준비 뱃지 왼쪽에 나란히): 손님 = 「게스트」 회색 칩, 계정 = 래더 칩(서버가 tier 를 주면 티어 색·이름, 배치 중이면 흐린 칩, 없으면 숫자 칩) + 승·패 칩.
+  // 컴퓨터 좌석·필드 없는 응답은 없음. 티어는 클라이언트에서 계산하지 않는다(slots[i].tier·placement 그대로). 래더 방의 「배치 n/5」 칩은 그대로 둔다
+  const seatBadges = (s, ladder) => {
+    if (s?.guest === true) return [h('span.tag.tier.t-guest', '게스트')];
+    if (!Number.isInteger(s?.rating)) return [];
+    const place = s.placement === true, tn = !place && TIER[s.tier] ? TIER[s.tier] : null;
+    const out = [];
+    if (ladder && place) out.push(tierChip(null, { placement: true, left: s.placementLeft, games: placementGames(app) }));
+    out.push(h('span.tag.tier.tabular' + (tn ? '.t-' + s.tier : place ? '.t-place' : '.t-num'), { 'aria-label': `래더 ${tn ?? ''} ${s.rating}`.replace(/\s+/g, ' ') }, `${tn ?? '래더'} ${s.rating}`));
+    if (Number.isInteger(s.w) && Number.isInteger(s.l)) out.push(h('span.tag.wl.w.tabular', `${s.w}승`), h('span.tag.wl.l.tabular', `${s.l}패`));
+    return out;
+  };
   /** 이번 판이 내 점수에 반영되는가: 계정 + 같은 상대 제한 아님(손님 상대도 반영, K 16 — PROTOCOL §11.1) */
   const ladderCounted = (r) => !!r?.ladder && r.ladder.counted !== false && !!app.account;
   const cdEl = h('span.tag.ld-cd.tabular', { title: '시작 기한' });
@@ -113,8 +123,8 @@ export function mount(root, app) {
         : s.host ? h('span.tag.host', '방장') : h('span.tag.rdy' + (rdy ? '.on' : ''), rdy ? '준비 완료' : '준비 중');
       const team = s?.team, ft = s?.flameTeam ?? null; // ft = 고른 불꽃 팀 요약(그때 team 은 주장 칸의 몸 출처 팀)
       return h('section.seat.s' + i + (i === me ? '.me' : '') + (rdy ? '.is-ready' : ''), { 'aria-label': `${i ? '오른쪽' : '왼쪽'} 좌석` },
-        h('div.seat-top', lab, h('span.seat-nick', cpu ? '컴퓨터' : s.nick), s && !s.connected && !cpu ? h('span.tag.off', '연결 끊김') : null,
-          r.ladder && s && !cpu ? ladderSeat(s) : null, tag),
+        h('div.seat-top', lab, h('span.seat-nick', cpu ? '컴퓨터' : s.nick),
+          h('span.seat-tags', s && !s.connected && !cpu ? h('span.tag.off', '연결 끊김') : null, cpu ? null : seatBadges(s, !!r.ladder), tag)),
         ft ? [
           h('div.seat-team.fl', keepEmblem(), keepGlyph(ft.slot), h('span.tn', flCore(ft).join(' · ') || '불꽃 팀'),
             i === me ? h('button.chg', { type: 'button', 'data-cmd': 'chg', onclick: openSelect }, '변경 ▶') : null),

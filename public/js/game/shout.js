@@ -52,15 +52,13 @@ export class ShoutFx {
     this.cur = { pid, id, start, text: this.textFor(pid, id), total: TOTAL };
   }
 
-  /** 짧은 외침(캐치 등). 필살 말풍선이 떠 있는 동안은 덮지 않는다. ticks = 표시 틱(60틱 = 1초) */
+  /** 짧은 외침(캐치 등): 필살 말풍선과 따로 선수별로 띄운다(다른 선수 머리 위면 동시 표시). 같은 선수에 필살 말풍선이 떠 있으면 필살 우선. ticks = 표시 틱(60틱 = 1초) */
   say(pid, text, start, ticks = 42) {
     if (!on || !Number.isInteger(pid) || pid < 0 || pid >= 14) return;
-    const c = this.cur;
-    if (c && c.id != null && start - c.start < c.total && start >= c.start) return;
-    this.cur = { pid, id: null, start, text, total: ticks };
+    (this.says ??= new Map()).set(pid, { pid, id: null, start, text, total: ticks });
   }
 
-  clear() { this.cur = null; this.last = null; }
+  clear() { this.cur = null; this.last = null; this.says?.clear(); }
 
   /**
    * 상자 + 꼬리를 합친 캔버스(문구·꼬리 자리·폰트 준비 상태별 캐시). tail = 가리킬 x(상자 왼쪽 기준).
@@ -112,17 +110,21 @@ export class ShoutFx {
    *   at = 이번 프레임에 그린 그 선수의 보간 위치 [x, y, z] 와 머리 top(발 기준, 음수). 퇴장 등으로 없으면 null. sy = 명중 흔들림 y
    */
   draw(g, o) {
-    const cur = this.cur;
-    if (!cur) return;
-    if (!on) { this.clear(); return; }
-    const age = Math.floor(o.tick - cur.start);
+    if (!on) { if (this.cur || this.says?.size) this.clear(); return; }
+    if (this.says?.size) for (const [pid, c] of this.says) if (!this.drawOne(g, o, c, this.cur && this.cur.pid === pid)) this.says.delete(pid);
+    if (this.cur && !this.drawOne(g, o, this.cur, false, true)) { this.cur = null; this.last = null; }
+  }
+
+  /** 말풍선 하나. 끝났으면 false. hide = 이번 프레임은 그리지 않음(같은 선수의 필살 말풍선이 우선) */
+  drawOne(g, o, cur, hide = false, main = false) {
     const total = cur.total ?? TOTAL;
-    if (age >= total || age < -60) { this.clear(); return; } // 끝남, 또는 재접속 등 틱 되감기
-    if (age < 0) return; // 이벤트 틱이 보간 그리기 틱보다 앞선다
+    const age = Math.floor(o.tick - cur.start);
+    if (age >= total || age < -60) return false; // 끝남, 또는 재접속 등 틱 되감기
+    if (age < 0 || hide) return true; // 이벤트 틱이 보간 그리기 틱보다 앞선다
     const left = total - age;
-    if (left <= T_BLINK && ((T_BLINK - left) >> 1) & 1) return; // 끝: 깜빡이며 사라짐
+    if (left <= T_BLINK && ((T_BLINK - left) >> 1) & 1) return true; // 끝: 깜빡이며 사라짐
     const p = o.at(cur.pid);
-    if (!p) return;
+    if (!p) return true;
     const [x, y, z] = p.pos;
     const sx = Math.round(x - o.cam), head = Math.round(y / 2 - z + Y0) + (p.top ?? HEAD_DEF) + (o.sy ?? 0);
     // 상자는 선수 x 가운데, 캔버스 좌우 안으로 가둔다. 꼬리 끝은 선수 x 를 가리킨다(상자가 가둬지면 꼬리가 기운다).
@@ -130,15 +132,15 @@ export class ShoutFx {
     const probe = this.img(cur.text, 0), bw = probe.width, ch = probe.height;
     const bx = Math.max(1, Math.min(W - 1 - bw, sx - (bw >> 1)));
     const c = this.img(cur.text, sx - bx);
-    // 세로는 가두지 않는다(2026-11-20): 예전 by = max(0, ..) 는 머리가 화면 위 26px 안(높은 점프·위쪽 라인)이면 상자를 아래로 밀어
-    // 꼬리 끝이 머리 top 아래 = 선수 몸 위에 겹쳤다. 꼬리 끝은 언제나 머리 top 위 GAP 이고, 위로 넘치면 상자 윗부분만 화면 밖으로 나간다
+    // 세로는 가두지 않는다(2026-11-20): 꼬리 끝은 언제나 머리 top 위 GAP 이고, 위로 넘치면 상자 윗부분만 화면 밖으로 나간다
     const by = head - GAP - ch;
     const tipX = bx + c.tip, tipY = by + ch;
-    this.last = { x: bx, y: by, w: bw, h: ch, tipX, tipY, head, z, age, sx };
+    if (main) this.last = { x: bx, y: by, w: bw, h: ch, tipX, tipY, head, z, age, sx };
     const k = age < T_IN ? POP[age] : 1;
-    if (k === 1) { g.drawImage(c, bx, by); return; }
+    if (k === 1) { g.drawImage(c, bx, by); return true; }
     const dw = Math.max(1, Math.round(bw * k)), dh = Math.max(1, Math.round(ch * k));
     const dx = Math.round(tipX - c.tip * k), dy = tipY - dh;
     g.drawImage(c, 0, 0, bw, ch, Math.max(0, Math.min(W - dw, dx)), dy, dw, dh);
+    return true;
   }
 }

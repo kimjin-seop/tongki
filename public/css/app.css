@@ -320,6 +320,16 @@ input[type=text]:focus-visible, input[type=password]:focus-visible { outline: va
 .seat.s0 { --bc: var(--c-cyan); } .seat.s1 { --bc: var(--c-red); }
 .seat-top { display: flex; align-items: center; gap: calc(var(--u) * 6); min-width: 0; }
 .seat-nick { flex: 1; min-width: 0; font: var(--f-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* 좌석 머리줄: 닉네임(길면 줄바꿈) + 오른쪽 정렬 뱃지 묶음(래더·승·패·게스트·방장/준비, 좁으면 뱃지 단위 줄바꿈) */
+.seat:has(.seat-tags) .seat-top { flex-wrap: wrap; row-gap: calc(var(--u) * 2); }
+.seat:has(.seat-tags) .seat-nick { flex: 1 1 8em; white-space: normal; overflow: visible; overflow-wrap: anywhere; } /* 닉네임이 길면 뱃지 묶음이 다음 줄(오른쪽 정렬)로 */
+.seat-tags { margin-left: auto; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: calc(var(--u) * 2); max-width: 100%; }
+.seat-tags .tag { border-width: max(2px, var(--u)); }
+.tag.tier.t-num { --bc: var(--r-line); color: var(--r-white); }
+/* 승·패 칩: 채운 바탕 + 밝은 글자(빨강 글자 금지 규칙), 바탕은 팔레트 색을 검정과 섞어 대비 4.5 이상 */
+.tag.wl { color: var(--r-white); }
+.tag.wl.w { --bc: var(--r-up); background: color-mix(in srgb, var(--r-up) 35%, #000); }
+.tag.wl.l { --bc: var(--r-down); background: color-mix(in srgb, var(--r-red) 45%, #000); }
 .seat-team { display: flex; align-items: center; gap: calc(var(--u) * 8); min-width: 0; }
 .seat-team .tn { flex: 1; min-width: 0; font: var(--f-head); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .chg { min-height: 44px; padding: 0 calc(var(--u) * 3); background: none; border: 0; color: var(--r-line); font: var(--f-cap); cursor: pointer; white-space: nowrap; }
@@ -945,11 +955,16 @@ input[type=text].cm-tx::placeholder { color: var(--r-grey); }
 .room-foot .cmds { margin-top: 0; align-content: center; }
 @media (max-height: 560px) { .room-foot .cmds { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 640px) { .room-foot { grid-template-columns: minmax(0, 1fr) auto; } .room-foot .cmds { grid-template-columns: 1fr; padding: 0 calc(var(--u) * 4); } }
-/* 채팅 패널이 있는 대기실: 선수 얼굴 줄을 7칸 한 줄(48px = 24x2)로 줄여 패널 높이를 확보. 세로 모바일은 4칸 2줄 유지 */
-.room:has(.rchat) .seat .roster { --fsz: 48px; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px 2px; }
-@media (max-width: 640px) { .room:has(.rchat) .seat .roster { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px 4px; } }
+/* 채팅 패널이 있는 대기실 좌석 얼굴(24px 정수배, pixelated): 아래 줄이 왼쪽 채팅 + 오른쪽 명령 창이라 좌석 세로가 넉넉하다.
+   데스크톱 = 4+3 두 줄 최대 96px, 낮은 데스크톱 창(561~699) = 7칸 한 줄 최대 72px, 모바일 가로 = 7칸 한 줄 48px(폭 한계), 세로 모바일 = 4+3 48px. 이름은 본문 글자 */
+.room:has(.rchat) .seat .roster { --fsz: max(24px, min(96px, round(down, 19cqi, 24px))); --cg: calc(var(--u) * 2); grid-template-columns: repeat(4, minmax(0, 1fr)); gap: calc(var(--u) * 4) var(--cg); }
 .room:has(.rchat) .seat .roster .rp { min-width: 0; width: 100%; margin: 0; text-align: center; }
-.room:has(.rchat) .seat .roster figcaption { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.room:has(.rchat) .seat .emb { --ek: var(--pk); } /* 채팅 있는 대기실: 엠블럼 한 단계 작게(얼굴·뱃지 줄 자리) */
+.room:has(.rchat) .seat .roster figcaption { font: calc(var(--rk) * 11px) / 1.05 "RT 11", var(--sys); width: auto; max-width: calc(100% + var(--cg, 4px)); white-space: normal; word-break: keep-all; overflow-wrap: anywhere; } /* 이름 전체 표시: 띄어쓰기에서 줄바꿈(2줄), 낱말이 칸보다 길면 옆 간격까지 */
+@media (min-width: 641px) and (min-height: 700px) and (max-height: 899px) { .room:has(.rchat) .seat { gap: calc(var(--u) * 4); padding-bottom: calc(var(--u) * 4); } .room:has(.rchat) .seat .roster { --fsz: max(24px, min(72px, round(down, 19cqi, 24px))); } }
+@media (min-width: 641px) and (min-height: 561px) and (max-height: 699px) { .room:has(.rchat) .seat .roster { --fsz: max(24px, min(72px, round(down, 12cqi, 24px))); grid-template-columns: repeat(7, minmax(0, 1fr)); } .room:has(.rchat) .seat .roster figcaption { font: 12px / 1.05 "RT 11", var(--sys); } }
+@media (max-height: 560px) { .room:has(.rchat) .seat .roster { --fsz: 48px; --cg: 2px; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px var(--cg); } .room:has(.rchat) .seat .roster figcaption { font: 10px / 1.1 "RT 9", "RT 11", var(--sys); max-width: calc(100% + 6px); } } /* 가로 모바일: 7칸(칸 약 52px)에 다섯 글자 낱말이 끊기지 않는 크기 */
+@media (max-width: 640px) { .room:has(.rchat) .seat .roster { --fsz: 48px; --cg: 4px; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px var(--cg); } .room:has(.rchat) .seat { gap: 4px; padding-bottom: 4px; } .room:has(.rchat) .seat .roster figcaption { font: var(--f-cap); line-height: 1.05; } }
 /* 관리자 로비 공지 입력줄(.lobby-r 맨 위) */
 .cm-adm { display: flex; align-items: center; gap: calc(var(--u) * 4); margin-bottom: calc(var(--u) * 6); padding: calc(var(--u) * 2) calc(var(--u) * 4);
   background: var(--r-black); border: var(--u) solid var(--r-yel); box-shadow: 0 0 0 var(--u) var(--r-gold), 0 0 0 calc(var(--u) * 2) #000; font: var(--f-cap); color: var(--r-white); min-height: max(44px, calc(var(--u) * 18)); }

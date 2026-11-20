@@ -154,9 +154,11 @@ room = { code, status:'waiting'|'playing', host:'방장닉네임', serverTime,
   evade:'track'|'rom',   // 읽기 전용(2026-11-20). 'track' = 이 방 경기는 필살슛 유도(추적)가 항상 적용된다(사람끼리 일반 방·랭크 방). 'rom' = 원작 그대로. §5.8
   start:{ ok:true } | { ok:false, code:'START_NEED_PLAYERS'|'START_NOT_READY', msg },   // 시작 버튼 활성/툴팁
   slots:[ // 항상 길이 2. 0=왼쪽 팀(방장), 1=오른쪽 팀. 비었으면 null
-    { seat:0, nick, ready:boolean, team:0~24, host:boolean, connected:boolean } | null,
+    { seat:0, nick, ready:boolean, team:0~24, host:boolean, connected:boolean,
+      guest:true  |  rating:정수, w:정수, l:정수, tier:티어id|'master'|null, placement:boolean } | null,
     ...] }
 ```
+- 좌석 래더 요약(읽기 전용, 2026-11-20 추가 필드, 하위 호환): 모든 방 종류(일반·컴퓨터 대전·래더·불꽃·캠페인 등)의 **사람 좌석**에 손님이면 `guest:true`, 로그인 계정이면 `rating`(지금 시즌 래더 레이팅) · `w` · `l`(지금 시즌 래더 승·패, `ladder_status` 의 `rating`·`w`·`l` 과 같은 값. 사람끼리 누적 전적 `pvp` 아님) · `tier`(표시 티어 id, 배치 중 `null`, `'master'` 가능) · `placement`(배치 중이면 true) — `tier`·`placement` 는 래더 방 좌석(§11.2)과 같은 의미·형식. 배치 중이어도 `rating` 숫자를 그대로 보낸다. 컴퓨터 좌석(`cpu:true`)에는 없다. 대기실 표시 예 「닉네임 | 게스트」「닉네임 | 래더:1000」. 값은 `room_state` 를 보낼 때마다 새로 읽는다(경기 종료 뒤 대기실 복귀 `room_state` 에 최신 값, 새 메시지 없음).
 - 시작 조건(서버 판정, 2026-11-18 클라이언트 표시 정리): 방장은 준비가 없다(`HOST_NO_READY`). 2명이 모이고 방장이 아닌 사람이 `ready:true` 일 때만 `start.ok`. 클라이언트는 조건 미달이어도 `시작` 버튼을 누를 수 있게 두고(흐리게), 누르면 `start.msg`(START_NEED_PLAYERS / START_NOT_READY 문구)를 토스트로 낸다. 로비는 방 코드 입력 없이 `room_list` 행을 눌러 그 `code` 로 `join_room` 을 보낸다(메시지 불변).
 - **컴퓨터 대전(`vsCpu:true`)** [추가 필드, 하위 호환]
   - 좌석 1은 서버 AI 좌석: `slots[1] = { seat:1, nick:'컴퓨터', ready:true, team, host:false, connected:true, cpu:true }`(접속 세션 없음). `room`에 `vsCpu:true, cpuLevel` 추가. 컴퓨터 팀은 방 생성 시 무작위.
