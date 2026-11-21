@@ -470,15 +470,78 @@ body[data-view=game] { background: #000; }
 /* 일시정지·결과: 화면을 덮는 반투명 막 없이 가운데 불투명 창만 */
 .overlay, .game .overlay { position: absolute; inset: 0; display: grid; place-items: center; background: none; }
 .pause-card { padding: calc(var(--u) * 6) calc(var(--u) * 12); font: var(--f-body); color: var(--r-white); }
-.result-card { padding: calc(var(--u) * 6) calc(var(--u) * 16) calc(var(--u) * 8); display: grid; gap: calc(var(--u) * 4); justify-items: center;
-  min-width: min(calc(var(--u) * 160), calc(100vw - 16px)); max-width: calc(100vw - 16px); }
-.result-card > * { max-width: 100%; }
-.result-title { font: var(--f-big); color: var(--r-white); white-space: nowrap; }
-.result-title.win { color: var(--r-yel); }
-.result-rule { font: var(--f-body); color: var(--r-white); text-align: center; }
-.result-card .muted { color: var(--r-cyan); font: var(--f-cap); }
-.result-card .result-flame { font: var(--f-body); color: var(--r-gold); } /* flame.css 의 .9rem(비정수) 를 경기 결과 카드 안에서만 정수 크기로 */
-.result-card .btn { text-align: center; }
+/* 경기 결과 카드(2026-11-21 시안 v2 A안 mockups_result/v2_A_*, 값 = art/ui_manga/scripts/mock_result_v2.py). 사용자 확정 시안이라 위 「금지」(그라디언트·흐림·반투명) 예외.
+   좌표계: 시안 640x360 논리 화면의 1px = --m(경기 무대 높이/360, 폭이 좁으면 폭 기준). 큰 단어 -> 칠판 창(점수·래더/불꽃 줄·버튼). 장식(광선·후광·색종이)은 .rs-fx */
+.overlay.result { container-type: size; overflow: hidden; background: radial-gradient(ellipse 60% 66% at 50% 46%, transparent 40%, rgba(0, 0, 0, .55) 100%), var(--rs-tint);
+  backdrop-filter: blur(6px) saturate(var(--rs-sat)) brightness(var(--rs-br)); -webkit-backdrop-filter: blur(6px) saturate(var(--rs-sat)) brightness(var(--rs-br));
+  --rs-tint: rgba(24, 16, 0, .25); --rs-sat: .55; --rs-br: .42; }
+.overlay.result.r-lose { --rs-tint: rgba(0, 6, 24, .3); --rs-sat: .2; --rs-br: .3; }
+.overlay.result.r-draw { --rs-tint: rgba(8, 8, 14, .25); }
+@media (orientation: portrait) and (max-width: 640px) { .overlay.result { position: fixed; z-index: 2; } } /* 세로 모바일: 무대(높이 약 220)가 낮아 화면 전체에 깐다(채팅 층 z 3 아래) */
+.result-card { --m: min(100cqh / 360, 100cqw / 340); position: relative; display: grid; justify-items: center; gap: calc(var(--m) * 30); padding-bottom: calc(var(--m) * 10);
+  --p1: var(--m); --n1: calc(var(--m) * -1); --p15: calc(var(--m) * 1.5); --n15: calc(var(--m) * -1.5); --p2: calc(var(--m) * 2); --n2: calc(var(--m) * -2);
+  --p3: calc(var(--m) * 3); --n3: calc(var(--m) * -3); --p6: calc(var(--m) * 6); --n6: calc(var(--m) * -6); font-family: "RT 11B", "RT 11", var(--sys); }
+/* 도트 글자: 본문은 투명(자리만), ::before = 검정 테(+바깥 색 테)+그림자, ::after = 세로 4단 그라데이션 */
+.rs-g { position: relative; display: block; color: transparent; white-space: nowrap; line-height: 1; }
+.rs-g::before, .rs-g::after { content: attr(data-t); position: absolute; inset: 0; }
+.rs-g::before { color: #000; text-shadow: var(--ring); filter: drop-shadow(var(--sh) var(--sh) 0 rgba(0, 0, 0, .67)); }
+.rs-g::after { color: transparent; background: var(--gr); -webkit-background-clip: text; background-clip: text; }
+.rs-word { position: relative; z-index: 1; margin-top: calc(var(--m) * 6); }
+.rs-word .rs-g { font-size: calc(var(--m) * 84); --sh: var(--p3);
+  --ring: var(--n3) var(--n3) #000, var(--n3) var(--n15) #000, var(--n3) 0 #000, var(--n3) var(--p15) #000, var(--n3) var(--p3) #000, var(--n15) var(--n3) #000, var(--n15) var(--p3) #000, 0 var(--n3) #000,
+    0 var(--p3) #000, var(--p15) var(--n3) #000, var(--p15) var(--p3) #000, var(--p3) var(--n3) #000, var(--p3) var(--n15) #000, var(--p3) 0 #000, var(--p3) var(--p15) #000, var(--p3) var(--p3) #000,
+    var(--n6) var(--n6) var(--rim), var(--n6) var(--n3) var(--rim), var(--n6) 0 var(--rim), var(--n6) var(--p3) var(--rim), var(--n6) var(--p6) var(--rim), var(--n3) var(--n6) var(--rim), var(--n3) var(--p6) var(--rim), 0 var(--n6) var(--rim),
+    0 var(--p6) var(--rim), var(--p3) var(--n6) var(--rim), var(--p3) var(--p6) var(--rim), var(--p6) var(--n6) var(--rim), var(--p6) var(--n3) var(--rim), var(--p6) 0 var(--rim), var(--p6) var(--p3) var(--rim), var(--p6) var(--p6) var(--rim);
+  --gr: linear-gradient(var(--w0) 0 20%, var(--w1) 20% 48%, var(--w2) 48% 74%, var(--w3) 74%); }
+.result-card.long .rs-word .rs-g { font-size: calc(var(--m) * 48); } /* 튜토리얼 완료: 글자 수가 많아 작게 */
+.result-card.r-win { --rim: #6e2800; --w0: #fcfcaa; --w1: #fcec00; --w2: #fca800; --w3: #d86000; }
+.result-card.r-lose { --rim: #0e101e; --w0: #e4e8f4; --w1: #b0b8cc; --w2: #8088a4; --w3: #585e7c; }
+.result-card.r-draw { --rim: #22243c; --w0: #fcfcfc; --w1: #dce2f4; --w2: #acb4d2; --w3: #828ab0; }
+/* 장식: 단어 가운데 기준. 승리 = 금색 광선 18줄 + 후광 + 색종이, 무승부 = 은색 광선 12줄 + 후광, 패배 = 어두운 후광만 */
+.rs-fx { position: absolute; left: 50%; top: calc(var(--m) * 48); width: 0; height: 0; pointer-events: none; }
+.rs-fx::before, .rs-fx::after { content: ""; position: absolute; left: calc(var(--r) * -1); top: calc(var(--r) * -1); width: calc(var(--r) * 2); height: calc(var(--r) * 2); }
+.rs-fx::before { --r: calc(var(--m) * var(--ray-r, 0)); background: repeating-conic-gradient(from var(--ray-rot, 90deg), var(--ray) 0 calc(180deg / var(--ray-n, 1)), transparent 0 calc(360deg / var(--ray-n, 1)));
+  -webkit-mask: radial-gradient(circle closest-side, #000c 0 25%, #0008 25% 50%, #0004 50% 75%, transparent 75%); mask: radial-gradient(circle closest-side, #000c 0 25%, #0008 25% 50%, #0004 50% 75%, transparent 75%); }
+.rs-fx::after { --r: calc(var(--m) * var(--halo-r)); height: calc(var(--r) * 1.6); top: calc(var(--r) * -.8);
+  background: radial-gradient(closest-side, var(--halo3) 0 99%, transparent 100%) center / 45% 45% no-repeat, radial-gradient(closest-side, var(--halo2) 0 99%, transparent 100%) center / 72% 72% no-repeat,
+    radial-gradient(closest-side, var(--halo1) 0 99%, transparent 100%) center / 100% 100% no-repeat; }
+.r-win .rs-fx { --ray: rgba(252, 200, 0, .17); --ray-n: 18; --ray-r: 260; --ray-rot: 95deg; --halo-r: 150; --halo1: rgba(252, 190, 40, .1); --halo2: rgba(252, 190, 40, .16); --halo3: rgba(252, 190, 40, .31); }
+.r-draw .rs-fx { --ray: rgba(200, 210, 240, .09); --ray-n: 12; --ray-r: 220; --halo-r: 130; --halo1: rgba(180, 190, 230, .06); --halo2: rgba(180, 190, 230, .1); --halo3: rgba(180, 190, 230, .2); }
+.r-lose .rs-fx { --ray-r: 0; --halo-r: 130; --halo1: rgba(50, 60, 110, .08); --halo2: rgba(50, 60, 110, .12); --halo3: rgba(50, 60, 110, .24); }
+.rs-fx i { position: absolute; left: calc(var(--m) * var(--x)); top: calc(var(--m) * var(--y)); width: calc(var(--m) * var(--w)); height: calc(var(--m) * var(--h)); background: var(--c); }
+.rs-fx i.c-yel { --c: var(--r-yel); } .rs-fx i.c-cyan { --c: var(--r-cyan); } .rs-fx i.c-red { --c: var(--r-red); } .rs-fx i.c-white { --c: var(--r-white); } .rs-fx i.c-gold { --c: var(--r-gold); }
+.result-card:not(.r-win) .rs-fx i { display: none; }
+/* 칠판 창: 원작 창 테 색 5겹(검정·흰·line·line2·line3) + 반투명 칠판 녹색(윗 2줄 밝게) */
+.rs-panel { position: relative; z-index: 1; width: calc(var(--m) * 304); min-height: calc(var(--m) * 170); display: grid; justify-items: center; align-content: start; gap: calc(var(--m) * 6);
+  padding: calc(var(--m) * 21) calc(var(--m) * 12) calc(var(--m) * 23); border: var(--m) solid #000;
+  background: linear-gradient(transparent var(--p3), var(--pn-hi) var(--p3) calc(var(--m) * 5), transparent calc(var(--m) * 5)), var(--pn);
+  box-shadow: inset 0 0 0 var(--m) var(--r-white), inset 0 0 0 var(--p2) var(--r-line), inset 0 0 0 var(--p3) var(--r-line2), inset 0 0 0 calc(var(--m) * 4) var(--r-line3), var(--p3) var(--p3) 0 rgba(0, 0, 0, .59);
+  --pn: rgba(0, 72, 36, .91); --pn-hi: rgba(24, 96, 60, .91); }
+.r-lose .rs-panel { --pn: rgba(16, 40, 32, .91); --pn-hi: rgba(40, 64, 56, .91); }
+.rs-panel.no-score { min-height: 0; padding-top: calc(var(--m) * 23); }
+.rs-score { display: flex; align-items: flex-start; gap: calc(var(--m) * 12); }
+.rs-score .rs-g { font-size: calc(var(--m) * 60); --sh: var(--p2);
+  --ring: var(--n2) var(--n2) #000, var(--n2) var(--n1) #000, var(--n2) 0 #000, var(--n2) var(--p1) #000, var(--n2) var(--p2) #000, var(--n1) var(--n2) #000, var(--n1) var(--p2) #000, 0 var(--n2) #000,
+    0 var(--p2) #000, var(--p1) var(--n2) #000, var(--p1) var(--p2) #000, var(--p2) var(--n2) #000, var(--p2) var(--n1) #000, var(--p2) 0 #000, var(--p2) var(--p1) #000, var(--p2) var(--p2) #000;
+  --gr: linear-gradient(var(--s0) 0 30%, var(--s1) 30% 50%, var(--s2) 50% 70%, var(--s3) 70%); }
+.rs-score .rs-g.d { --gr: linear-gradient(#c8c8d2, #c8c8d2); }
+.r-win .rs-g.l { --s0: #fcfc00; --s1: #fce400; --s2: #fccc00; --s3: #fcb400; }
+.r-win .rs-g.r { --s0: #c8c8d2; --s1: #b7b7c5; --s2: #a7a7b7; --s3: #9696aa; }
+.r-lose .rs-g.l { --s0: #ececf0; --s1: #d8d8e0; --s2: #c4c4d0; --s3: #b0b0c0; }
+.r-lose .rs-g.r { --s0: #9696aa; --s1: #87879b; --s2: #77778b; --s3: #68687c; }
+.r-draw .rs-score .rs-g { --s0: #ecf0fc; --s1: #d3d8e9; --s2: #b9c0d7; --s3: #a0a8c4; }
+.result-card :is(.result-rank, .result-tier, .result-flame) { font: calc(var(--m) * 12) / 1.25 "RT 11", var(--sys); text-align: center; max-width: 100%; }
+.result-card .result-flame { color: var(--r-gold); } /* flame.css 의 .9rem(비정수) 를 경기 결과 카드 안에서만 정수 크기로 */
+/* 버튼: 검정 칸 + 노랑 1도트 테 + 남은 시간 막대. hover = 밝은 녹색 + 흰 테 + 노랑 글자 + 노랑 글로우 */
+.rs-btn { position: relative; width: calc(var(--m) * 184); height: calc(var(--m) * 34); margin-top: calc(var(--m) * 20); padding: 0; cursor: pointer;
+  background: #000; border: var(--m) solid var(--r-yel); box-shadow: 0 0 0 var(--m) #000; color: var(--r-white); --bar-bg: #24342c;
+  font: calc(var(--m) * 12) / 1 "RT 11B", "RT 11", var(--sys); }
+.rs-btn-t { position: absolute; left: 0; right: 0; top: calc(var(--m) * 9); text-align: center; white-space: nowrap; text-shadow: var(--m) var(--m) 0 #000; }
+.rs-bar { position: absolute; left: var(--p3); right: var(--p3); bottom: var(--p3); height: var(--p2); background: var(--bar-bg); }
+.rs-bar i { display: block; height: 100%; width: calc(var(--left, 1) * 100%); background: var(--r-yel); }
+.rs-btn:hover { background: #146c44; border-color: var(--r-white); color: var(--r-yel); --bar-bg: #0a3c24;
+  box-shadow: inset 0 var(--p2) 0 #349664, 0 0 0 var(--m) #000, 0 0 0 var(--p3) rgba(252, 252, 0, .43), 0 0 0 calc(var(--m) * 4) rgba(252, 252, 0, .27), 0 0 0 calc(var(--m) * 5) rgba(252, 252, 0, .16); }
+.rs-btn:focus-visible { outline: var(--p2) solid var(--r-white); outline-offset: var(--p2); }
 .result-rank { font: var(--f-body); color: var(--r-white); }
 .result-rank.up { color: var(--r-cyan); }
 .result-rank.down { color: var(--r-down); }

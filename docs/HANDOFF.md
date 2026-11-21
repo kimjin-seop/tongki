@@ -1076,3 +1076,9 @@
   ```
 - 시험 `test/clientip.test.js` 2건(순수 판정: 루프백 자동·왼쪽 위조 무시·XFF 없음·외부 직접 연결·`0`·`1` / 실서버 :memory: 임시 포트: 루프백+XFF IP A 상한 2 초과(왼쪽 위조 바꿔도) `TOO_MANY_CONNECTIONS`, IP B 는 welcome, 경고 1회). 전체 186/186.
 - 되돌리기: `_backup/proxy_ip_before/`(index.js·HANDOFF.md·README.md·PROTOCOL.md) 덮고 `server/net/clientip.js`·`test/clientip.test.js` 삭제. 운영 반영은 서버 재시작 필요(재시작하지 않았다).
+
+## 21. 경기 결과 카드 현대화 — 시안 v2 A안(점수만) (2026-11-21, 윤프론, 미커밋)
+- 시안 `C:\Users\김진섭\Works\nekketsu\art\ui_manga\mockups_result\v2_A_*`(값 = `art/ui_manga/scripts/mock_result_v2.py`). 큰 단어 `승리!`/`패배`/`무승부`(Galmuri11-Bold, CSS 다중 외곽선 + 4단 그라데이션, 승리 = 금색 광선 18줄·후광·색종이, 무승부 = 은색 광선 12줄, 패배 = 어두운 후광만) → 칠판 창(5겹 테) 안 점수 `a-b` → 버튼 `대기방으로 (n)` + 남은 시간 막대(hover = 밝은 녹색·흰 테·노랑 글자·노랑 글로우). 새 이미지 없음. 종료 사유·`남은 인원` 줄은 화면에서 뺐다(game_end 데이터는 그대로). 일반 방 버튼 표기 `대기실로` → `대기방으로`(다른 모드 `래더로`·`리그로`·`도전으로`·`스토리로`·`튜토리얼로`는 그대로).
+- 점수 = `game_end.rem`([좌석0, 좌석1]) 을 승자 기준으로: 승리 = 내 수(금색) - 상대(회색), 패배 = 상대 수 - 내 수(시안 「4-0」), 무승부 = 내 수부터. 불꽃 연습 경기에서 flame_result.won 이 오면 단어·색·점수 순서를 그 승패로 다시 그린다(setMood).
+- 코드: `public/js/screens/game.js` showResult·onTrainingEnd(튜토리얼 완료 카드도 같은 부품, 단어만 작게)·armBack(글자+막대 갱신)·backBtn/fxEl/setMood, `public/css/app.css` 「경기 결과 카드」 절(클래스 접두 `rs-` — 대기실 채팅이 `rc-` 를 쓴다). 크기 단위 `--m` = 무대 높이/360(container query), 세로 모바일(≤640 portrait)은 무대가 낮아 결과 막을 화면 전체(fixed, 채팅 층 아래)로 깐다. 자동 복귀 10초·재접속·room 상태·래더/불꽃 줄 동작 불변.
+- 검증 `_verify/result_card_20261121/v.mjs`(포트 8841, :memory:, 임시 Edge): 승리 = 실제 사람 대 사람 경기 상대 기권, 패배·무승부·튜토리얼 완료 = 진행 중 실경기 화면에 game_end/training_end 주입. 1280x720·844x390·390x844 잘림·겹침 없음. 되돌리기: `_backup/result_card_before/`(game.js·app.css·i18n.js·HANDOFF.md) 덮기.

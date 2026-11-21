@@ -1,7 +1,7 @@
 // 경기 화면: 398x224(16:9) 캔버스를 창에 꽉 차게 확대(util.fitScale), DOM HUD(글자), 입력 전송, 일시정지·결과 오버레이
 import { h, pad2, fitScale, isTyping } from '../util.js';
 import { net } from '../net.js';
-import { END_REASON, END_RULE, TIER, TIER_ORDER } from '../i18n.js';
+import { TIER, TIER_ORDER } from '../i18n.js';
 import { isCpuSeat } from './room.js';
 import { entry, has, image, json, imageAt, jsonAt } from '../game/assets.js';
 import { SnapBuffer } from '../game/snaps.js';
@@ -439,18 +439,16 @@ export function mount(root, app, { start }) {
     buf.frozen = true;
     banner.hidden = true;
     renderer.noBanner = true; // 결과 카드와 GAME SET 등 캔버스 배너가 겹치지 않게
-    const title = m.winner === -1 ? '무승부' : m.winner === you ? '승리!' : '패배';
-    btn = h('button.btn.primary', { type: 'button', onclick: back }, backLabel);
+    btn = backBtn();
     keys.hidden = true;
-    overlay.className = 'overlay result';
-    titleEl = h('div.result-title' + (m.winner === you ? '.win' : ''), title);
+    // 결과 카드(시안 v2 A안): 큰 승패 단어 -> 점수(승자 기준 「a - b」, 데이터 = game_end.rem[좌석0, 좌석1]) -> 버튼. 종료 사유는 화면에 두지 않는다
+    titleEl = resultWord('');
+    scoreEl = h('div.rs-score', { 'aria-hidden': 'true' });
+    card = h('div.result-card', fxEl(), titleEl, h('div.rs-panel', scoreEl, rankLine, tierLine, flameLine, btn));
+    setMood(m.winner === -1 ? 'draw' : m.winner === you ? 'win' : 'lose');
     if (practice) setFlameLine('연습 경기'); // 연습 경기: 승패만(보상·코인 줄 없음). 서버 판정(flame_result.won)이 오면 제목을 그것으로 맞춘다
     if (practiceWon !== null) setPracticeTitle();
-    overlay.replaceChildren(h('div.pwin.result-card',
-      titleEl,
-      h('div.result-rule', END_RULE[m.reason] ?? END_REASON[m.reason] ?? m.reason),
-      h('div.muted.tabular', `남은 인원 ${m.rem[0]} : ${m.rem[1]}`),
-      rankLine, tierLine, flameLine, btn));
+    overlay.replaceChildren(card);
     if (ladder && !app.account && rankLine.hidden) { rankLine.textContent = '미반영(손님)'; rankLine.hidden = false; } // 손님 좌석에는 ranking_result 가 없다
     overlay.hidden = false;
     setTimeout(() => btn.focus(), 30);
@@ -462,23 +460,59 @@ export function mount(root, app, { start }) {
     if (!training || !m.cleared) return;
     trainDone = true; ended ??= m;
     input.setEnabled(false); buf.frozen = true; banner.hidden = true; quitWin.hidden = true; placeToast(); keys.hidden = true;
-    btn = h('button.btn.primary', { type: 'button', onclick: back }, backLabel);
-    overlay.className = 'overlay result';
-    overlay.replaceChildren(h('div.pwin.result-card', h('div.result-title.win', '튜토리얼 완료'), btn));
+    btn = backBtn();
+    overlay.className = 'overlay result r-win';
+    overlay.replaceChildren(h('div.result-card.r-win.long', fxEl(), resultWord('튜토리얼 완료'), h('div.rs-panel.no-score', btn)));
     overlay.hidden = false;
     setTimeout(() => btn.focus(), 30);
     armBack(BACK_MS);
   }
   // 결과 화면 자동 복귀: 10초 카운트다운(버튼에 표시), 버튼을 누르면 즉시
   const BACK_MS = 10000;
-  const backLabel = training ? '튜토리얼로' : campaign ? '스토리로' : league ? '리그로' : flame ? '도전으로' : ladder ? '래더로' : '대기실로';
-  let btn = null, backAt = 0, backTick = 0;
+  const backLabel = training ? '튜토리얼로' : campaign ? '스토리로' : league ? '리그로' : flame ? '도전으로' : ladder ? '래더로' : '대기방으로';
+  let btn = null, btnText = null, btnBar = null, backAt = 0, backTick = 0;
   function armBack(ms) {
     clearTimeout(backTimer); clearInterval(backTick);
     backAt = performance.now() + ms;
     backTimer = setTimeout(back, ms);
-    const paint = () => { if (btn) btn.textContent = `${backLabel} (${Math.max(0, Math.ceil((backAt - performance.now()) / 1000))})`; };
+    const paint = () => {
+      const left = Math.max(0, backAt - performance.now());
+      if (btnText) btnText.textContent = `${backLabel} (${Math.ceil(left / 1000)})`;
+      if (btnBar) btnBar.style.setProperty('--left', String(left / ms)); // 남은 시간 막대
+    };
     paint(); backTick = setInterval(paint, 250);
+  }
+  /** 결과 카드 부품: 버튼(글자 + 남은 시간 막대) */
+  function backBtn() {
+    btnText = h('span.rs-btn-t', backLabel); btnBar = h('span.rs-bar', h('i'));
+    return h('button.rs-btn', { type: 'button', onclick: back }, btnText, btnBar);
+  }
+  /** 큰 도트 글자(외곽선은 ::before, 그라데이션은 ::after 가 data-t 를 그린다) */
+  const glyph = (cls, t) => h('span.rs-g' + cls, { 'data-t': t }, t);
+  const resultWord = (t) => h('div.rs-word', glyph('', t));
+  /** 단어 뒤 장식(광선·후광·색종이). 색종이 = 시안 생성 스크립트와 같은 범위·색·개수, 배치는 고정 시드 */
+  function fxEl() {
+    const fx = h('div.rs-fx', { 'aria-hidden': 'true' });
+    let s = 3;
+    const rnd = (n) => { s = (s + 0x6d2b79f5) | 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t ^= t + Math.imul(t ^ (t >>> 7), 61 | t); return Math.floor((((t ^ (t >>> 14)) >>> 0) / 4294967296) * n); };
+    const cols = ['yel', 'cyan', 'red', 'white', 'gold'], sz = [[2, 1], [1, 2], [2, 2], [3, 1]];
+    for (let i = 0; i < 60; i++) {
+      const x = 150 + rnd(340), y = 8 + rnd(192), c = cols[rnd(5)], [w, hh] = sz[rnd(4)];
+      if (x > 250 && x < 390 && y > 30 && y < 170) continue;
+      fx.append(h('i.c-' + c, { style: { '--x': x - 320, '--y': y - 72, '--w': w, '--h': hh } }));
+    }
+    return fx;
+  }
+  /** 승패에 맞춰 단어·점수·색을 다시 그린다. 점수 = 승자 기준(이긴 쪽 남은 인원 - 진 쪽), 무승부는 내 쪽부터 */
+  let card = null, scoreEl = null;
+  function setMood(mood) {
+    const word = mood === 'win' ? '승리!' : mood === 'lose' ? '패배' : '무승부';
+    const g = titleEl.firstChild; g.textContent = word; g.dataset.t = word;
+    for (const el of [card, overlay]) { el.classList.remove('r-win', 'r-lose', 'r-draw'); el.classList.add('r-' + mood); }
+    overlay.classList.add('overlay', 'result');
+    const me = you === 1 ? 1 : 0, rem = Array.isArray(ended?.rem) ? ended.rem : [0, 0];
+    const w = mood === 'lose' ? 1 - me : me;
+    scoreEl.replaceChildren(glyph('.l', String(rem[w] ?? 0)), glyph('.d', '-'), glyph('.r', String(rem[1 - w] ?? 0)));
   }
   function back() {
     clearTimeout(backTimer); clearInterval(backTick);
@@ -502,8 +536,8 @@ export function mount(root, app, { start }) {
   // 연습 경기 결과(flame_result{practice, won}): 결과 카드 제목 = 서버가 본 승패. 무승부(game_end.winner -1)는 won 이 false 로 와도 '무승부' 그대로 둔다
   let titleEl = null, practiceWon = null;
   const setPracticeTitle = () => {
-    if (!titleEl || (!practiceWon && ended?.winner === -1)) return;
-    titleEl.textContent = practiceWon ? '승리!' : '패배'; titleEl.classList.toggle('win', practiceWon);
+    if (!titleEl || !card || (!practiceWon && ended?.winner === -1)) return;
+    setMood(practiceWon ? 'win' : 'lose');
   };
   function onRankingResult(r) {
     if (![r?.before, r?.after, r?.delta].every(Number.isFinite)) return;
