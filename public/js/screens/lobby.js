@@ -14,6 +14,9 @@ import { arrowNav } from '../pix.js';
 import { soundButton } from '../audio.js';
 import { NOTICE_MAX } from '../chat.js';
 
+// 메인 하단 저작권 2줄(위치·모양 = app.css .lobby-cr 한 곳). 줄1 = 원작 타이틀 화면(f2899) 플레인 A 저작권 두 줄 원문
+const COPYRIGHT = ['©こしたてつひろ／小学館／テレビ東京 ©1992 SEGA', 'Remake by 흑칠랑'];
+
 /** 관리자 공지 입력줄(시안 E1): 공지 · 입력 · 글자 수 · 보내기. Enter = 보내기 */
 function adminRow() {
   const tx = h('input.tx', { type: 'text', maxLength: NOTICE_MAX, autocomplete: 'off', enterkeyhint: 'send', 'aria-label': '서버 공지' });
@@ -99,7 +102,8 @@ export function mount(root, app) {
         h('button.btn.small.acct-btn.logout', { type: 'button', 'data-k': 'logout', onclick: () => net.send('logout') }, '로그아웃')),
       h('section.pwin.room-panel',
         h('div.rl-top', tabsEl, mkWrap),
-        list, ldPanel))));
+        list, ldPanel)),
+    h('div.lobby-cr.title-follow', { 'aria-hidden': 'true' }, COPYRIGHT.map((t) => h('div', t)))));
   net.send('list_rooms');
   const offNav = arrowNav(root);
   const offLogo = fitLogo(root.querySelector('.lobby'));
@@ -163,7 +167,7 @@ function alphaBox(img) {
 function fitLogo(lobby) {
   const img = lobby?.querySelector('.title-logo img');
   if (!img || typeof ResizeObserver === 'undefined') return () => {};
-  const box = img.parentElement, left = box.parentElement, menu = left.querySelector('.lobby-menu');
+  const box = img.parentElement, left = box.parentElement, menu = left.querySelector('.lobby-menu'), cr = lobby.querySelector('.lobby-cr');
   const mobile = matchMedia('(max-width: 760px)');
   const px = (el, p) => parseFloat(getComputedStyle(el)[p]) || 0;
   function apply() {
@@ -172,7 +176,7 @@ function fitLogo(lobby) {
     const cw = x1 - x0, ch = y1 - y0;
     const availW = box.clientWidth;
     const availH = mobile.matches ? innerHeight * 0.3
-      : lobby.clientHeight - px(lobby, 'paddingTop') - px(lobby, 'paddingBottom') - px(left, 'paddingTop') - (menu?.offsetHeight ?? 0) - px(left, 'rowGap') - 4;
+      : lobby.clientHeight - px(lobby, 'paddingTop') - px(lobby, 'paddingBottom') - px(left, 'paddingTop') - (menu?.offsetHeight ?? 0) - px(left, 'rowGap') - (cr?.offsetHeight ?? 0) - 4;
     const fit = Math.min(availW / cw, availH / ch);
     if (!(fit > 0)) return;
     const n = Math.floor(fit);

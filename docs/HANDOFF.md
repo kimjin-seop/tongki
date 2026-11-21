@@ -1082,3 +1082,8 @@
 - 점수 = `game_end.rem`([좌석0, 좌석1]) 을 승자 기준으로: 승리 = 내 수(금색) - 상대(회색), 패배 = 상대 수 - 내 수(시안 「4-0」), 무승부 = 내 수부터. 불꽃 연습 경기에서 flame_result.won 이 오면 단어·색·점수 순서를 그 승패로 다시 그린다(setMood).
 - 코드: `public/js/screens/game.js` showResult·onTrainingEnd(튜토리얼 완료 카드도 같은 부품, 단어만 작게)·armBack(글자+막대 갱신)·backBtn/fxEl/setMood, `public/css/app.css` 「경기 결과 카드」 절(클래스 접두 `rs-` — 대기실 채팅이 `rc-` 를 쓴다). 크기 단위 `--m` = 무대 높이/360(container query), 세로 모바일(≤640 portrait)은 무대가 낮아 결과 막을 화면 전체(fixed, 채팅 층 아래)로 깐다. 자동 복귀 10초·재접속·room 상태·래더/불꽃 줄 동작 불변.
 - 검증 `_verify/result_card_20261121/v.mjs`(포트 8841, :memory:, 임시 Edge): 승리 = 실제 사람 대 사람 경기 상대 기권, 패배·무승부·튜토리얼 완료 = 진행 중 실경기 화면에 game_end/training_end 주입. 1280x720·844x390·390x844 잘림·겹침 없음. 되돌리기: `_backup/result_card_before/`(game.js·app.css·i18n.js·HANDOFF.md) 덮기.
+
+## 22. 메인(로비) 하단 저작권 2줄 (2026-11-21, 윤프론, 미커밋)
+- 문구: 줄1 `©こしたてつひろ／小学館／テレビ東京 ©1992 SEGA`(원작 타이틀 f2899 플레인 A 두 줄을 한 줄로), 줄2 `Remake by 흑칠랑`. 근거 = ROM 부팅 무입력 2899프레임 재실행 캡처·이름표 덤프 `_verify/copyright_20261121/rom_evidence/`(행 24·25 열 6~33, 행 26·27 열 14~24).
+- 코드: `public/js/screens/lobby.js` 상수 `COPYRIGHT` + `.lobby-cr`(그리드 마지막 줄, 두 열 걸침, aria-hidden), `fitLogo` 가 그 높이를 뺀다. 모양·위치 = `public/css/app.css` 맨 끝 「메인(로비) 하단 저작권」 절(12px RT 11, --r-line, pointer-events none). 로비 외 화면에는 없다.
+- 검증 `_verify/copyright_20261121/v.mjs`(포트 8867, :memory:, 임시 Edge) 11/11. 되돌리기: `_backup/copyright_before/` 덮기.
