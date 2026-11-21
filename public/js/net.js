@@ -21,19 +21,25 @@ export class Net extends Emitter {
       const ws = new WebSocket(this.url);
       this.ws = ws;
       ws.onopen = () => {
-        this.open = true; this.backoff = 500;
+        this.open = true; // 재연결 간격은 welcome 을 받아야 초기화한다(열리자마자 거절되는 연결의 0.5초 반복 방지)
         this.emit('open');
         if (this.token) { this.tokenHello = true; this.send('hello', { token: this.token }); }
         res();
       };
       ws.onmessage = (ev) => { let m; try { m = JSON.parse(ev.data); } catch { return; } this._recv(m); };
-      ws.onclose = () => {
+      ws.onclose = (ev) => {
         const was = this.open; this.open = false;
-        this.emit('close', { was });
+        // 서버 거절(close 1008: 차단 RATE_LIMITED·TOO_MANY_CONNECTIONS·Origin 불일치. LOGIN_TIMEOUT 은 제외): 재연결을 1분 이상, 지수로 최대 15분까지 늦추고 1회 알림
+        const rejected = ev?.code === 1008 && ev.reason !== 'LOGIN_TIMEOUT';
+        this.emit('close', { was, rejected });
         res();
         if (this.closing) return;
+        if (rejected) {
+          this.backoff = Math.max(60000, this.backoff);
+          if (!this.rejectNoticed) { this.rejectNoticed = true; this.emit('rejected', { reason: ev.reason }); }
+        }
         setTimeout(() => this.connect(), this.backoff);
-        this.backoff = Math.min(8000, this.backoff * 2);
+        this.backoff = Math.min(rejected ? 15 * 60000 : Math.max(8000, this.backoff), this.backoff * 2);
       };
       ws.onerror = () => {};
     });
@@ -51,7 +57,7 @@ export class Net extends Emitter {
   _recv(m) {
     if (!m || typeof m.t !== 'string') return;
     if (typeof m.serverTime === 'number') this.offset = m.serverTime - Date.now();
-    if (m.t === 'welcome') { this.tokenHello = false; this.setToken(m.token); }
+    if (m.t === 'welcome') { this.tokenHello = false; this.setToken(m.token); this.backoff = 500; this.rejectNoticed = false; }
     if (m.t === 'account_ok') this.setToken(m.token); // 손님 → 계정 승격: 저장 토큰을 로그인 토큰으로 바꾼다
     if (m.t === 'logged_out') this.forgetToken();
     if (m.t === 'error' && m.code === 'TOKEN_INVALID') { this.tokenHello = false; this.forgetToken(); }

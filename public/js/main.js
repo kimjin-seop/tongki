@@ -90,8 +90,9 @@ function wire() {
     if (m.code === 'TOKEN_INVALID' || m.code === 'SESSION_REPLACED') { app.room = null; app.account = false; app.admin = false; Chat.reset(); app.flame = null; app.flameEnd = null; app.flameChamp = null; app.flameRank = null; app.ladderStatus = null; app.rankBoard = null; app.pvpBoard = null; app.ladderQ = null; app.ladderMatch = null; if (app.view !== 'nick' || app.screen?.upgrade) app.go('nick'); }
   });
   net.on('toast', (m) => toast(ERR_CODE[m.code] || m.msg || m.code, 'warn')); // 코드 문구표(i18n ERR_CODE: FLAME_TEAM_CLEARED 등)가 서버 msg 보다 먼저
-  net.on('close', ({ was }) => {
-    if (was && !net.closing && !quietClose) toast(ERR.DISCONNECTED, 'error');
+  net.on('rejected', () => toast(ERR.CONN_REJECTED, 'error')); // 서버 거절(close 1008): net.js 가 재연결을 늦추고 1회만 알린다
+  net.on('close', ({ was, rejected }) => {
+    if (was && !net.closing && !quietClose && !rejected) toast(ERR.DISCONNECTED, 'error');
     quietClose = false;
     app.screen?.onNetClose?.();
   });

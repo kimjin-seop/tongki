@@ -6,7 +6,7 @@
 import { h, clear } from '../util.js';
 import { toast } from '../ui.js';
 import { net } from '../net.js';
-import { ROOM_OFF, ERR, TIER, lockText } from '../i18n.js';
+import { ROOM_OFF, ERR, lockText } from '../i18n.js';
 import { tierChip, guestChip, placementGames, seasonText } from './ladder.js';
 import { rulesText } from './rules.js';
 import { titleLogo, start as startIntro } from '../intro.js';
@@ -116,19 +116,18 @@ export function mount(root, app) {
       const off = r.status === 'playing' ? 'playing' : r.vsCpu ? 'cpu' : r.players >= r.max ? 'full' : null;
       const st = off ? ROOM_OFF[off].st : '대기';
       const name = `${r.host}의 방`, rules = r.rules ? rulesText(r.rules) : '';
-      // 계정 방장이면 티어 칩(배치 중 = 「배치 중」 칩) + 승률·전적(판수 0 이면 생략). 손님 방장은 hostInfo 가 없어 아무것도 붙이지 않는다
+      // 계정 방장이면 승률·전적만(판수 0 이면 생략). 일반 경기 목록이라 티어·「배치 중」 칩은 붙이지 않는다(2026-11-21). 손님 방장은 hostInfo 가 없다
       const hi = r.hostInfo, hn = hi ? (hi.w | 0) + (hi.l | 0) : 0;
       const pct = hn ? Math.round((hi.w / hn) * 100) : null;
       const hostTxt = pct != null ? `승률 ${pct}%·${hi.w}승 ${hi.l}패` : '';
-      const hostChip = hi ? tierChip(hi.tier, { placement: !!hi.placing }) : null;
-      const hostAria = hi ? (hi.placing ? '배치 중' : TIER[hi.tier] ?? '') + (pct != null ? ` 승률 ${pct}%` : '') : '';
+      const hostAria = pct != null ? `승률 ${pct}%` : '';
       const row = h('button.room-row' + (off ? '.off' : ''), {
         type: 'button', 'data-code': r.code, 'aria-disabled': off ? 'true' : null,
         'aria-label': `${name}, ${hostAria ? hostAria + ', ' : ''}${rules ? rules + ', ' : ''}${r.players}/${r.max}, ${st}`,
         onclick: () => { if (off) toast(ROOM_OFF[off].msg, 'warn'); else net.send('join_room', { code: r.code }); },
       },
         h('span.rr-main', h('b.rr-name', name), rules ? h('span.rr-rules', rules) : null,
-          hostChip || hostTxt ? h('span.rr-host', hostChip, hostTxt ? h('span.rr-wl.tabular', hostTxt) : null) : null),
+          hostTxt ? h('span.rr-host', h('span.rr-wl.tabular', hostTxt)) : null),
         h('span.rr-n.tabular', `${r.players}/${r.max}`),
         h('span.rr-st' + (off ? '' : '.st-wait'), st));
       list.append(row);

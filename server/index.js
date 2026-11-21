@@ -9,6 +9,7 @@ import { mono, loadLimits } from './net/limits.js';
 import { createStaticHandler } from './net/static.js';
 import { createInviteHandler } from './net/invite_og.js';
 import { BotGuard, loadBotguardConfig } from './net/botguard.js';
+import { resolveClientIp } from './net/clientip.js';
 import { Lobby } from './lobby/lobby.js';
 import { JsonlResultStore } from './store/results.js';
 import { SqliteProgressStore } from './store/progress.js';
@@ -52,12 +53,13 @@ export function createServer(opts = {}) {
   const publicDir = path.join(root, 'public');
   const serveStatic = createStaticHandler(publicDir, { cacheBytes: opts.staticCacheBytes });
   const serveInvite = createInviteHandler(path.join(publicDir, 'index.html'), lobby, { perMin: limits.maxInvitePreviewPerMin });
+  // IP 판정(server/net/clientip.js, HANDOFF §20): TRUST_PROXY 없음 = 루프백(프록시)에서 온 연결만 XFF 마지막 값, '0' = 끔, 그 밖 = 항상 신뢰
+  const log = opts.log ?? ((...a) => console.error(...a));
+  let proxyWarned = false;
   const clientIp = (req) => {
-    if (process.env.TRUST_PROXY) { // 신뢰 프록시가 덧붙인 마지막 값을 사용
-      const xf = String(req.headers['x-forwarded-for'] ?? '').split(',').pop().trim();
-      if (xf) return xf;
-    }
-    return req.socket.remoteAddress ?? '';
+    const r = resolveClientIp(req.socket.remoteAddress, req.headers['x-forwarded-for'], process.env.TRUST_PROXY);
+    if (r.viaXff && !proxyWarned) { proxyWarned = true; log('[proxy] 루프백(프록시)에서 X-Forwarded-For 감지: 실제 IP 로 자동 인식합니다'); }
+    return r.ip;
   };
 
   const server = http.createServer(async (req, res) => {
@@ -84,7 +86,7 @@ export function createServer(opts = {}) {
         if (ws.readyState !== 1 || ws.bufferedAmount > 1 << 20) return;
         ws.send(typeof m === 'string' ? m : JSON.stringify(m));
       },
-      close() { ws.close(); },
+      close(code, reason) { ws.close(code, reason); }, // code 1008 + reason = 클라이언트가 자동 재연결을 길게 늦춘다(public/js/net.js)
     };
     const n = (ipConns.get(ip) ?? 0) + 1;
     ipConns.set(ip, n);
@@ -98,9 +100,10 @@ export function createServer(opts = {}) {
       loginTimer = setTimeout(() => { loginTimer = null; if (!conn.session) reject('LOGIN_TIMEOUT'); }, ms);
       loginTimer.unref?.();
     };
-    const bg = n > limits.maxConnPerIp ? { ok: true } : botguard.checkUpgrade(ip, req.headers); // 차단 중 IP = RATE_LIMITED, Origin 불일치(ALLOWED_ORIGINS) = 오류 없이 close 1008
+    // 업그레이드 단계는 점수 누적·Origin 검사만(Origin 불일치 = 오류 없이 close 1008). 차단 중 IP 판정은 hello·login 의 lobby.bgGate(경기 중 세션 재접속 예외)
+    const bg = n > limits.maxConnPerIp ? { ok: true } : botguard.checkUpgrade(ip, req.headers);
     if (n > limits.maxConnPerIp) { reject('TOO_MANY_CONNECTIONS'); conn.rejected = true; }
-    else if (!bg.ok) { if (bg.why === 'blocked') reject('RATE_LIMITED'); else ws.close(1008); conn.rejected = true; }
+    else if (!bg.ok) { ws.close(1008); conn.rejected = true; }
     else conn.armLoginTimer(limits.loginTimeoutMs);
     ws.on('message', (raw) => {
       if (conn.rejected) return;

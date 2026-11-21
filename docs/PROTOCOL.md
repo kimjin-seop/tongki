@@ -61,7 +61,7 @@
 정의 위치는 `server/net/protocol.js`의 `ERR`이며 이 표와 일치한다. `NOT_IN_GAME`은 정의만 있고 현재 서버가 보내지 않는다.
 서버 주도 알림은 `{t:'toast', code, msg, params?}` (예: 한 방에서 엔진 오류로 경기가 중단됨 `GAME_ABORTED`, 이때 `game_end.reason='error'`).
 
-**접속·세션 상한**(환경변수, 기본값): `MAX_CONN_PER_IP`=20 동시 연결/IP, `MAX_HELLO_PER_MIN`=60 hello/IP/분, `MAX_SESSIONS`=2000, `MAX_ROOMS`=1000, `LOGIN_TIMEOUT_MS`=30000, `LOGOUT_LOGIN_TIMEOUT_MS`=300000(로그아웃 시점부터, 연결 시점 타이머는 취소), `MAX_PAUSE_MS`=90000, `MAX_DISCONNECTS`=5. 리버스 프록시 뒤에서는 `TRUST_PROXY=1`(`X-Forwarded-For` 마지막 값을 IP로 사용).
+**접속·세션 상한**(환경변수, 기본값): `MAX_CONN_PER_IP`=20 동시 연결/IP, `MAX_HELLO_PER_MIN`=60 hello/IP/분, `MAX_SESSIONS`=2000, `MAX_ROOMS`=1000, `LOGIN_TIMEOUT_MS`=30000, `LOGOUT_LOGIN_TIMEOUT_MS`=300000(로그아웃 시점부터, 연결 시점 타이머는 취소), `MAX_PAUSE_MS`=90000, `MAX_DISCONNECTS`=5. IP 판정: 직접 상대가 루프백(같은 호스트 프록시)이면 `TRUST_PROXY` 없이도 `X-Forwarded-For` 마지막 값을 IP로 사용(자동), 외부 직접 연결은 소켓 주소. `TRUST_PROXY=0` = 자동 끔, `TRUST_PROXY=1` = 항상 XFF 마지막 값(프록시가 다른 호스트일 때). HANDOFF §20.
 
 ## 2. 세션·로그인·재접속
 
@@ -111,7 +111,7 @@
 - **가입 경합**: 로그인 전 연결의 가입이 비밀번호 해시를 계산하는 사이 같은 닉네임 손님이 `hello` 로 들어오면, 계정은 만들어지고 그 손님 세션은 끝난다(`logout` 과 같은 정리: 방·경기 중이면 퇴장 = 기권, 손님 연결에 `logged_out`. 그 퇴장으로 끝나는 경기의 진행·리그는 계정 키에 기록하지 않는다). 가입 연결은 토큰 없이 `ACCOUNT_CREATED_RELOGIN` 을 받고 비밀번호로 `login` 한다.
 - **한계**(수용, 2026-11-18 팀장 결정): ① 손님은 소유 증명(영속 토큰)이 없다. 끊겨 있고 방에도 없는 손님 닉네임은 누구나 `hello` 로 즉시 가져갈 수 있고(§2 닉네임 재사용), 그 연결에서 `register` 하면 위 승계 경로로 **그 손님의 진행·리그가 승계된다**(hello → register 2단계 우회). 원래 손님은 그 뒤 그 닉네임으로 `NICK_REGISTERED`. 손님 진행(캠페인 클리어 단계·리그)은 민감 데이터가 아니라 영속 손님 토큰은 두지 않는다. 랭킹 레이팅·전적은 계정에만 쌓이고(손님은 랭크 방 상대로만 참여, §11.1) 가입된 닉네임은 `hello` 로 잡을 수 없으므로, 랭킹·계정이 있는 닉네임은 이 우회의 영향을 받지 않는다. ② 로그인 전 연결 가입의 경우에도 원래 손님은 그 닉네임을 다시 쓸 수 없다(`NICK_REGISTERED`, 비밀번호를 모름). 진행은 `guest-aside:` 행에 남아 있으므로 되돌려 주려면 운영자가 수동으로 옮겨야 한다(자동 복구 경로 없음).
 - **보안**: 비밀번호 = `crypto.scrypt`(N 16384, r 8, 64바이트) + 계정별 랜덤 솔트 16바이트, 비교는 `timingSafeEqual`, 없는 닉네임도 같은 비용으로 계산. 평문·해시·토큰은 로그에 남기지 않는다. 로그인 실패 제한(메모리 기록이라 재시작하면 풀림, 15분 창): **(닉네임, IP) 쌍** 5회(`LOGIN_FAIL_NICK`) 또는 **IP** 20회(`LOGIN_FAIL_IP`) 실패면 그 쌍/IP 를 15분(`LOGIN_LOCK_MS`) `LOGIN_LOCKED`(맞는 비밀번호도 거절). **닉네임 단독**(모든 IP 합계)은 잠그지 않고 5회째 실패부터 다음 시도마다 응답을 1초씩 더 늦춘다(최대 10초, `LOGIN_SLOW_STEP_MS`·`LOGIN_SLOW_MAX_MS`). 그래서 남이 내 닉네임으로 실패를 쌓아도 다른 IP(새 기기)에서는 로그인된다(늦어질 뿐). 로그인에 성공하면 그 닉네임 단독 기록과 그 쌍 기록을 지운다. 레이트 리밋: IP당 분당 `register`+`login` 10회(`MAX_AUTH_PER_MIN`), 그리고 `hello` 상한(`MAX_HELLO_PER_MIN`)에도 함께 센다. 평문 비밀번호가 오가므로 공개 배포는 TLS(`wss://`) 필수.
-- **배포 필수 주의**: ① 리버스 프록시 뒤에서는 반드시 `TRUST_PROXY=1` — 빠뜨리면 모든 사용자가 프록시 IP 하나로 보여 IP별 로그인 잠금·가입/로그인 레이트 리밋·동시 연결 상한을 전원이 나눠 쓴다(한 사람의 실패로 전원 `LOGIN_LOCKED`). 반대로 프록시 없이 켜면 IP 위조로 우회된다. ② Node 22.5 이상(`node:sqlite`). 22.5~22.12 는 `--experimental-sqlite` 가 필요하다(pm2: `pm2 start server/index.js --name dodge-danpei --node-args="--experimental-sqlite"`), 22.13 이상은 옵션 없이 된다. ③ 공개 시 `wss://`(TLS) 필수. ④ DB 파일은 POSIX 에서 시작 때 권한 0600 으로 좁힌다(본 파일과 그때 있는 `-wal`·`-shm`, Windows 는 건너뜀).
+- **배포 필수 주의**: ① 같은 호스트 프록시(루프백)는 자동으로 `X-Forwarded-For` 마지막 값을 쓴다(HANDOFF §20). 프록시가 다른 호스트면 반드시 `TRUST_PROXY=1` — 빠뜨리면 모든 사용자가 프록시 IP 하나로 보여 IP별 로그인 잠금·가입/로그인 레이트 리밋·동시 연결 상한을 전원이 나눠 쓴다(한 사람의 실패로 전원 `LOGIN_LOCKED`). 반대로 프록시 없이 켜면 IP 위조로 우회된다. ② Node 22.5 이상(`node:sqlite`). 22.5~22.12 는 `--experimental-sqlite` 가 필요하다(pm2: `pm2 start server/index.js --name dodge-danpei --node-args="--experimental-sqlite"`), 22.13 이상은 옵션 없이 된다. ③ 공개 시 `wss://`(TLS) 필수. ④ DB 파일은 POSIX 에서 시작 때 권한 0600 으로 좁힌다(본 파일과 그때 있는 `-wal`·`-shm`, Windows 는 건너뜀).
 
 ## 3. 로비
 - `{t:'list_rooms'}` -> `room_list`. 로비에 있는 사용자에게는 방 생성/삭제/인원/상태 변화·규칙 변경(`set_rules` 로 `mode`·`time`·`flameTeams` 가 실제로 바뀐 때, 2026-11-19) 시 서버가 `room_list`를 푸시한다(최대 250ms 단위로 합쳐서 전체 목록).
@@ -122,6 +122,7 @@
   - `tier` = `ladder_status.me.tier` 와 같은 계산(지금 시즌 표시 티어, 순위 조건을 채우면 `'master'`, 배치 5판 미만이면 `null` + `placing:true`). `rating` = 지금 시즌 레이팅(배치 중에도 실린다, `ladder_matched.opp.rating` 과 같은 공개 값).
   - `w`·`l` = 사람끼리 누적 전적(`pvp_records`, 시즌 무관) = 전체 랭킹(§11.6 `pvp_board`)과 같은 값. 승률 표시는 클라이언트가 `w/(w+l)` 로 계산(판수 0 이면 표시 생략 권장).
   - 공개 값만 싣는다(계정 키·토큰·비밀번호 관련 값 없음).
+  - 클라이언트 표시(2026-11-21): 로비 「일반 경기」 방 목록은 승률·전적(`w`·`l`)만 쓰고 `tier`·`placing`(티어·「배치 중」 칩)은 표시하지 않는다. 필드는 종전대로 실린다.
   - 서버 비용: 호스트별 값은 `RankingStore.hostBadges` 메모리 캐시(래더·전적 기록·시즌 넘김마다 무효화, TTL 60초)에서 꺼내고, 캐시가 빗나간 호스트가 여럿이어도 시즌 순위 계산은 목록 1회당 한 번만 한다.
 ```js
 { code:'AB12', host:'철수', players:1, max:2, status:'waiting', rules:{…}, hostInfo:{ tier:'gold', rating:1180, w:12, l:7 } }

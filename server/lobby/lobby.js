@@ -136,13 +136,13 @@ export class Lobby {
         this.attachAccount(conn, acct, msg.token);
         return;
       }
+      this.bgGate(conn, s.key, s); // 거절이면 기존 연결(다른 탭)을 빼앗지 않는다
       if (s.conn && s.conn !== conn) {
         const old = s.conn;
         old.session = null;
         try { old.send({ t: 'error', code: 'SESSION_REPLACED', msg: ERR.SESSION_REPLACED }); old.close(); } catch { /* ignore */ }
         s.conn = null;
       }
-      this.bgGate(conn, s.key, s);
       clearTimeout(s.graceTimer);
       resumed = true;
     } else {
@@ -174,6 +174,8 @@ export class Lobby {
   bgGate(conn, key, s = key ? this.byNick.get(key) : null) {
     if (!this.botguard?.blocked(conn.ip, key)) return;
     if (s && this.roomOf(s)?.game) return;
+    // 세션 없는 연결은 오류 전송 뒤 close 1008(클라이언트가 자동 재연결을 길게 늦춘다). 로그인된 연결(가입 승격 등)은 끊지 않는다
+    if (!conn.session) setImmediate(() => { try { conn.close?.(1008, 'RATE_LIMITED'); } catch { /* ignore */ } });
     fail('RATE_LIMITED');
   }
 
@@ -596,6 +598,7 @@ export class Lobby {
     const idx = room.seats[0] ? 1 : 0;
     room.seats[idx] = { s, ready: false, team: team ?? idx };
     s.roomCode = room.code;
+    room.lastActive = mono(); // 입장도 활동(유휴 방 정리 기준)
     this.sendTo(s, { t: 'room_joined', you: idx, room: this.roomView(room) });
     this.broadcastRoom(room);
     this.markListDirty();
@@ -1012,7 +1015,7 @@ export class Lobby {
   onGameEnd(room, res) {
     room.game = null;
     room.lastActive = mono(); // 유휴 시간은 경기가 끝난 때부터 센다
-    if (room.bgTrack) this.judgeInputs(room);
+    if (room.bgTrack) { try { this.judgeInputs(room); } catch (e) { this.log('[botguard]', e); } } // 판정 오류가 결과 전송·방 정리를 막지 않게
     for (const [i, m] of room.seats.entries()) if (m) this.sendTo(m.s, { ...res, you: i });
     if (room.rankOut) { // 랭크 방: game_end 바로 뒤 좌석별 레이팅 변동
       const o = room.rankOut; room.rankOut = null;
@@ -1052,7 +1055,7 @@ export class Lobby {
       b.iv = [];
       if (r.blocked && s.conn) {
         const conn = s.conn;
-        setImmediate(() => { this.err(conn, 'RATE_LIMITED'); try { conn.close(); } catch { /* ignore */ } });
+        setImmediate(() => { this.err(conn, 'RATE_LIMITED'); try { conn.close(1008, 'RATE_LIMITED'); } catch { /* ignore */ } });
       }
     }
   }
@@ -1080,7 +1083,11 @@ export class Lobby {
 
   // ---------- 게임 루프 (서버에서 주기 호출) ----------
   tickGames(now = mono()) {
-    if (now - this.idleSweepAt >= 60000) { this.idleSweepAt = now; try { this.sweepIdleRooms(now); } catch (e) { this.log('[idle]', e); } } // 유휴 방 정리(1분마다, 새 타이머 없음)
+    if (now - this.idleSweepAt >= 60000) { // 유휴 방 정리·봇 탐지 기록 정리(1분마다, 새 타이머 없음)
+      this.idleSweepAt = now;
+      try { this.sweepIdleRooms(now); } catch (e) { this.log('[idle]', e); }
+      try { this.botguard?.sweep(); } catch (e) { this.log('[botguard]', e); }
+    }
     for (const room of this.rooms.values()) {
       const g = room.game;
       if (!g) continue;

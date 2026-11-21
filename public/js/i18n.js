@@ -1,6 +1,7 @@
 // 클라이언트 측 문구 (서버 msg 가 우선, 없을 때만 사용)
 export const ERR = {
   DISCONNECTED: '서버와 연결이 끊어졌습니다. 다시 연결하는 중…',
+  CONN_REJECTED: '서버가 접속을 거절했습니다. 잠시 뒤 다시 시도합니다',
   RECONNECTED: '다시 연결되었습니다',
   UNKNOWN: '요청을 처리하지 못했습니다',
   ASSETS: '리소스를 불러오지 못했습니다',
@@ -59,7 +60,7 @@ export const ROOM_OFF = {
   full: { st: '가득 참', msg: '방이 가득 찼습니다' },
   cpu: { st: '컴퓨터 대결', msg: '컴퓨터와 대결 중인 방입니다' },
 };
-export const ROOM_LEFT = { closed: '방이 닫혔습니다', grace: '연결이 오래 끊겨 방에서 나왔습니다',
+export const ROOM_LEFT = { closed: '방이 닫혔습니다', grace: '연결이 오래 끊겨 방에서 나왔습니다', idle: '오래 활동이 없어 방이 닫혔습니다',
   ladder_cancel: '상대가 나가 래더 대전이 취소되었습니다', ladder_timeout: '시작 시간이 지나 래더 대전이 해산되었습니다' }; // ladder_end = 정상 종료(문구 없음)
 export const END_REASON = {
   annihilation: '전멸', timeup: '시간 종료', sudden_death: '서든데스', forfeit_disconnect: '연결 끊김 기권',

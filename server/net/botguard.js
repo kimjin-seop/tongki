@@ -1,6 +1,6 @@
 // 봇 탐지·임시 차단 (docs/HANDOFF.md §19). 세 가지 신호만 본다:
 //  ① 기계적 입력 간격(사람끼리 경기, 경기 끝날 때 판정) ② 한 IP 다계정(서로 다른 닉네임 신규 접속·로그인) ③ 브라우저가 아닌 클라이언트 지문(WS 업그레이드 헤더)
-// IP·계정(닉네임 키)별 의심 점수 -> 임계 초과 시 새 접속·hello 거절(RATE_LIMITED / close 1008). 점수는 분당 감쇠, 차단 시간은 반복 시 2배(최대 24시간).
+// IP·계정(닉네임 키)별 의심 점수 -> 임계 초과 시 hello·login 거절(RATE_LIMITED + close 1008, 경기 중 세션 재접속은 예외). 점수는 분당 감쇠, 차단 시간은 반복 시 2배(최대 24시간).
 // 이미 접속 중인 세션·진행 중 경기는 끊지 않는다(기계적 입력 차단은 경기가 끝난 뒤 그 좌석 연결만 닫는다, lobby.js onGameEnd).
 import { statSync, readFileSync } from 'node:fs';
 
@@ -58,7 +58,7 @@ const TOOL_UA = /\b(node|undici|ws\/|python|aiohttp|requests|websocket-client|we
 /**
  * 브라우저 아닌 클라이언트 지문(순수 함수). headers = WS 업그레이드 요청 헤더(소문자 키).
  * 신호: Origin 없음, User-Agent 없음 또는 도구 UA(2단위), Accept-Language 없음, Sec-WebSocket-Extensions 없음.
- * 단위 합 1 = 5점, 2 = 25점, 3 이상 = 60점(하나만으로는 거의 안 오르고 겹치면 크게)
+ * 단위 합 1 = 5점(단, Sec-WebSocket-Extensions 없음 하나뿐이면 0점: 압축 끈 브라우저·프록시 오탐 방지), 2 = 25점, 3 이상 = 60점(하나만으로는 거의 안 오르고 겹치면 크게)
  */
 export function headerSignals(headers = {}) {
   const sig = [];
@@ -68,7 +68,7 @@ export function headerSignals(headers = {}) {
   if (!headers['accept-language']) sig.push('no_lang');
   if (!headers['sec-websocket-extensions']) sig.push('no_ext');
   const units = sig.reduce((a, s) => a + (s === 'no_ua' || s === 'tool_ua' ? 2 : 1), 0);
-  return { signals: sig, score: units === 0 ? 0 : units === 1 ? 5 : units === 2 ? 25 : 60 };
+  return { signals: sig, score: units === 0 ? 0 : units === 1 ? (sig[0] === 'no_ext' ? 0 : 5) : units === 2 ? 25 : 60 };
 }
 
 export class BotGuard {
@@ -115,7 +115,7 @@ export class BotGuard {
     const t = this.now();
     let e = this.ent.get(id);
     if (!e) { e = { score: 0, at: t, until: 0, strikes: 0, strikeAt: 0 }; this.ent.set(id, e); }
-    e.score = Math.max(0, e.score - ((t - e.at) / MIN) * this.cfg.decayPerMin);
+    e.score = Math.max(0, e.score - (Math.max(0, t - e.at) / MIN) * this.cfg.decayPerMin); // 시계 역행(NTP 보정)이면 감쇠 0
     e.at = t;
     if (e.strikes && t - e.strikeAt > DAY && t >= e.until) e.strikes = 0;
     return e;
@@ -155,19 +155,24 @@ export class BotGuard {
   }
 
   /**
-   * WS 업그레이드 검사. 반환 {ok:true} | {ok:false, why:'blocked'|'origin'}.
-   * Origin 검사(ALLOWED_ORIGINS 설정 시): 없거나 목록 밖이면 점수 + 거절. 지문 점수는 통과한 접속에도 쌓인다
+   * WS 업그레이드 검사(점수 누적·Origin 검사만). 반환 {ok:true} | {ok:false, why:'origin'}.
+   * 차단 판정은 하지 않는다: hello·login 단계 lobby.bgGate 가 한다(경기 중 세션의 재접속은 차단 IP 라도 통과, 신규 접속은 RATE_LIMITED).
+   * Origin 검사(ALLOWED_ORIGINS 설정 시): 없거나 목록 밖이면 거절. 점수는 IP 당 1분에 1회만(거절된 클라이언트의 재연결 반복이 같은 IP 전체를 차단하지 않게).
+   * 지문 점수는 통과한 접속에도 쌓인다
    */
   checkUpgrade(ip, headers = {}) {
     if (!this.cfg.enabled || this.exemptIp(ip)) return { ok: true };
-    if (this.blocked(ip)) return { ok: false, why: 'blocked' };
     const fp = headerSignals(headers);
     if (this.cfg.allowedOrigins.length && !this.cfg.allowedOrigins.includes(normOrigin(headers.origin))) {
-      this.addIp(ip, Math.max(25, fp.score), 'origin', `origin=${String(headers.origin ?? '-').slice(0, 80)}`);
+      const id = `ip:${normIp(ip)}`, t = this.now(), last = this.ent.get(id)?.originAt;
+      if (last === undefined || t - last >= MIN || t < last) { // t < last = 시계 역행
+        this.addIp(ip, Math.max(25, fp.score), 'origin', `origin=${String(headers.origin ?? '-').slice(0, 80)}`);
+        const e2 = this.ent.get(id); if (e2) e2.originAt = t;
+      }
       return { ok: false, why: 'origin' };
     }
     if (fp.score) this.addIp(ip, fp.score, 'fingerprint', `signals=${fp.signals.join('+')}`);
-    return this.blocked(ip) ? { ok: false, why: 'blocked' } : { ok: true };
+    return { ok: true };
   }
 
   /** 다계정: 이 IP 에서 닉네임 키로 새 세션(손님 신규 hello·가입·로그인 성공). account = 계정 로그인이면 점수 배율을 낮춘다 */
@@ -207,13 +212,31 @@ export class BotGuard {
     return { res, blocked: b || this.blocked(ip, key) };
   }
 
+  /** 다 식은 항목인가(차단 중 아님·점수 감쇠 끝·24시간 안 반복 기록 없음) */
+  cooled(e, t) { return t >= e.until && e.score - (Math.max(0, t - e.at) / MIN) * this.cfg.decayPerMin <= 0 && (!e.strikes || t - e.strikeAt > DAY); }
+
+  /**
+   * 주기 정리(lobby.tickGames 1분마다): 다 식은 항목·하루 지난 닉네임 기록을 지우고, 상한(maxEntries)을 넘으면 오래된(마지막 갱신이 이른) 항목부터 지운다.
+   * 상한 정리 때 차단 중인 항목은 가장 나중에 지운다
+   */
+  sweep(maxEntries = 50000) {
+    const t = this.now();
+    for (const [id, e] of this.ent) if (this.cooled(e, t)) this.ent.delete(id);
+    if (this.ent.size > maxEntries) {
+      const old = [...this.ent].sort(([, a], [, b]) => (t < a.until) - (t < b.until) || a.at - b.at);
+      for (const [id] of old.slice(0, this.ent.size - maxEntries)) this.ent.delete(id);
+    }
+    this.pruneNicks(t);
+    if (this.nicks.size > maxEntries) for (const ip of [...this.nicks.keys()].slice(0, this.nicks.size - maxEntries)) this.nicks.delete(ip);
+  }
+
   /** /health 요약: 차단 중 수·사유별 누적(IP·닉네임 원문 없음) */
   summary() {
     const t = this.now();
     let blockedIps = 0, blockedNicks = 0;
     for (const [id, e] of this.ent) {
       if (t < e.until) { if (id.startsWith('ip:')) blockedIps++; else blockedNicks++; }
-      else if (e.score - ((t - e.at) / MIN) * this.cfg.decayPerMin <= 0 && (!e.strikes || t - e.strikeAt > DAY)) this.ent.delete(id); // 다 식은 항목 정리
+      else if (this.cooled(e, t)) this.ent.delete(id); // 다 식은 항목 정리
     }
     return { enabled: this.cfg.enabled, blockedIps, blockedNicks, reasons: { ...this.reasons } };
   }

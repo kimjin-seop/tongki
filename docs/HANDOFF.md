@@ -1043,8 +1043,8 @@
 - 점수: IP(`ip:…`)·계정 닉네임 키(`k:…`)별 의심 점수. 사유마다 한 줄 로그 `[botguard] ip=… reason=… score=…`(차단 시 `… blocked minutes=… strikes=…`). 분당 `BOTGUARD_DECAY_PER_MIN`(1) 감쇠. `BOTGUARD_THRESHOLD`(100)를 넘으면 차단 `BLOCK_MINUTES`(30분), 24시간 안에 다시 걸리면 2배씩(최대 24시간).
   - ① 기계적 입력(`mechanicalInput` 순수 함수): 사람끼리 경기(래더·사람끼리 일반 방)에서 좌석별 입력 비트가 **바뀐** 간격(재전송 제외, 2초 초과 간격 제외)을 경기를 넘어 누적, 경기 끝에 표본 `BOTGUARD_MECH_SAMPLES`(120) 이상이면 판정. 변동계수 < `BOTGUARD_MECH_CV`(0.08) 또는 한 틱 칸 비율 ≥ `BOTGUARD_MECH_MODE_SHARE`(0.85) 면 의심 → 계정 키 +`BOTGUARD_MECH_PTS`(70), IP 는 계정 세션이면 x`BOTGUARD_ACCOUNT_WEIGHT`(0.5). 즉 2회 반복이면 그 닉네임 차단. 차단에 걸리면 **경기 결과를 보낸 뒤** 그 좌석 연결만 `RATE_LIMITED` + 종료(경기 도중엔 끊지 않음).
   - ② 다계정(`noteNick`): 한 IP 에서 서로 다른 닉네임(손님 신규 hello·가입·로그인 성공)이 10분 `BOTGUARD_NICKS_PER_10MIN`(40)·하루 `BOTGUARD_NICKS_PER_DAY`(200) 초과 시 새 닉네임마다 +`BOTGUARD_MULTI_PTS`(20)(계정 로그인은 x0.5). 같은 닉네임 재접속은 세지 않는다.
-  - ③ 지문(`headerSignals`, WS 업그레이드 헤더): Origin 없음·Accept-Language 없음·Sec-WebSocket-Extensions 없음(각 1단위), User-Agent 없음 또는 도구 UA(node/python/aiohttp/curl/go-http/okhttp 등, 2단위). 합 1=5점, 2=25점, 3 이상=60점(브라우저 기본이면 0). `ALLOWED_ORIGINS`(콤마, 예 `https://tongki.example.com,https://www.tongki.example.com`)를 설정하면 Origin 없음·목록 밖은 점수 + 오류 없이 close 1008. 기본 비어 있음 = Origin 검사 끔(개발·시험·도메인 변경 영향 없음).
-- 차단 효과: 차단 중 IP 의 새 WebSocket 접속 = `RATE_LIMITED` + close 1008, 이미 붙은 연결의 hello/register/login(차단 IP 또는 차단 닉네임) = `RATE_LIMITED`. 그 닉네임 세션이 경기 중이면 재접속 hello 는 통과(경기 보호). 새 오류 코드 없음.
+  - ③ 지문(`headerSignals`, WS 업그레이드 헤더): Origin 없음·Accept-Language 없음·Sec-WebSocket-Extensions 없음(각 1단위), User-Agent 없음 또는 도구 UA(node/python/aiohttp/curl/go-http/okhttp 등, 2단위). 합 1=5점(Extensions 없음 단독은 0점), 2=25점, 3 이상=60점(브라우저 기본이면 0). `ALLOWED_ORIGINS`(콤마, 예 `https://tongki.example.com,https://www.tongki.example.com`)를 설정하면 Origin 없음·목록 밖은 점수 + 오류 없이 close 1008. 기본 비어 있음 = Origin 검사 끔(개발·시험·도메인 변경 영향 없음).
+- 차단 효과: 차단 중 IP·닉네임의 hello/register/login = `RATE_LIMITED`(세션 없는 연결은 이어서 close 1008 `RATE_LIMITED`). 업그레이드 단계에서는 차단 판정을 하지 않는다(점수·Origin 검사만). 그 닉네임 세션이 경기 중이면(재접속 유예 중 포함) 재접속 hello 는 통과(경기 보호). 새 오류 코드 없음.
 - 면제: `BOTGUARD_ALLOW_IPS`(콤마, 127.0.0.1·::1 은 항상 포함 → 로컬·기존 시험 영향 없음). 재시작 없이 면제·해제: `BOTGUARD_ALLOW_FILE`(기본 `data/botguard_allow.txt`, `node --test` 중에는 없음)에 한 줄씩 `1.2.3.4` 또는 `nick:닉네임` 을 적으면 10초 안에 다시 읽어 그 IP/닉네임의 점수·차단을 지우고 이후 검사를 면제한다(`#` 주석 가능). 전부 끄기 `BOTGUARD_ENABLED=0`(재시작). 차단 상태는 메모리라 서버 재시작으로도 풀린다.
 - 관찰: `/health` 에 `botguard:{enabled, blockedIps, blockedNicks, reasons:{fingerprint, origin, multi_account, mechanical_input}}`(IP·닉네임 원문 없음, 원문은 로그에만).
 - 운영 켜는 법: nginx 뒤면 `TRUST_PROXY=1`(없으면 모든 접속이 프록시 IP 하나로 보여 한꺼번에 차단될 수 있음 — 반드시 확인), 실제 서비스 도메인을 `ALLOWED_ORIGINS` 에 넣고 초대 링크 도메인이 바뀌면 같이 고친다. 로그 `grep '\[botguard\]'` 로 사유 확인.
@@ -1052,3 +1052,27 @@
 - 한계: 헤더(UA·Origin·Accept-Language)를 브라우저처럼 위조한 봇, 실제 브라우저 자동화(Puppeteer 등), 입력 간격에 무작위 지연을 넣은 봇, IP 를 계속 바꾸는 봇은 못 막는다. 서버 수신 시각 기준이라 네트워크 지연 흔들림이 큰 봇은 사람처럼 보일 수 있다(보수적 = 오탐보다 미탐 쪽). 차단은 단일 프로세스 메모리.
 - 시험 `test/botguard.test.js` 4건(누적·차단·해제·2배·감쇠·허용 IP / Origin 허용·거절·다계정 / 기계적 입력 사람 통과·상수·틱 주기 걸림·표본 부족 / 실서버(:memory:, 임시 포트) 차단 IP RATE_LIMITED+1008·Origin 1008·/health 에 IP 없음). 전체 184/184.
 - 되돌리기: `_backup/botguard_before/`(index.js·limits.js·lobby.js·HANDOFF.md·PROTOCOL.md) 덮고 `server/net/botguard.js`·`test/botguard.test.js` 삭제.
+- 리뷰 반영(2026-11-21, 정검수 지적 6건+1): ① 클라이언트(`public/js/net.js`) 재연결 간격은 onopen 이 아니라 welcome 때 초기화, close 1008(LOGIN_TIMEOUT 제외: 차단·TOO_MANY_CONNECTIONS·Origin)이면 1분부터 2배씩 최대 15분, 토스트 `ERR.CONN_REJECTED` 1회(끊김 토스트 생략). 서버 Origin 거절 점수는 IP 당 1분 1회. ② 업그레이드 단계 차단 판정 제거 → `bgGate` 로 일원화(경기 중 세션 예외, 토큰 재접속은 기존 탭을 빼앗기 전에 검사). ③ `BotGuard.sweep()`(다 식은 항목·하루 지난 닉네임 정리, 상한 5만 초과 시 오래된 것부터, 차단 중 항목은 마지막)을 `lobby.tickGames` 1분 주기에서 호출. ④ 감쇠 계산 시계 역행 `Math.max(0, …)`. ⑤ `onGameEnd` 의 `judgeInputs` 예외는 로그만 남기고 삼킴. ⑥ i18n `ROOM_LEFT.idle` 문구, `join()` 에서 `room.lastActive` 갱신. + 지문 `no_ext` 단독이면 0점(2단위 이상부터 점수). 시험 3건 추가(Origin 1분 1회·시계 역행·sweep / net.js 재연결 지연 / 차단 IP 경기 중 재접속 통과·신규 RATE_LIMITED+1008), 전체 189/189. 수정 전 사본 `_backup/botguard_review_before/`.
+
+## 20. 프록시 뒤 클라이언트 IP 자동 인식 (2026-11-21, 박백엔, 미커밋) — 운영 사고 대응
+- 사고: 운영 서버가 nginx(127.0.0.1) 뒤에서 `TRUST_PROXY` 없이 떠서 전원이 IP 127.0.0.1 하나로 계산 → `MAX_CONN_PER_IP`(20) 초과로 전원 `TOO_MANY_CONNECTIONS`. 설정 하나 빠뜨려도 전체 장애가 나지 않게 고쳤다.
+- 동작(`server/net/clientip.js resolveClientIp`, 순수 함수 / `server/index.js clientIp` 한 곳에서 WS 연결 상한·botguard·hello/로그인 제한·초대 미리보기가 같이 씀):
+  - 직접 연결 상대(`req.socket.remoteAddress`)가 루프백(127.0.0.0/8, `::1`, `::ffff:127.*`)이면 `TRUST_PROXY` 가 없어도 `X-Forwarded-For` 의 **마지막 값**(가장 가까운 프록시가 붙인 값)을 IP 로 쓴다. nginx `$proxy_add_x_forwarded_for` 는 클라이언트가 보낸 XFF 뒤에 실제 IP 를 덧붙이므로 왼쪽 값은 위조 가능 → 무시. 종전 `TRUST_PROXY=1` 처리도 마지막 값이라 일관.
+  - 루프백인데 XFF 가 없으면 루프백 IP 그대로. 루프백이 아닌 직접 연결(외부에서 포트로 바로 접속)은 XFF 를 무시하고 소켓 주소(위조 방지).
+  - 자동 신뢰로 처음 XFF 를 쓰면 로그 1회: `[proxy] 루프백(프록시)에서 X-Forwarded-For 감지: 실제 IP 로 자동 인식합니다`.
+- `TRUST_PROXY` 값 의미: 없음/빈 값 = 자동(위, 기본) / `0` = 끔(항상 소켓 주소, XFF 무시) / 그 밖의 값(예 `1`) = 종전대로 직접 상대와 무관하게 항상 XFF 마지막 값 신뢰(프록시가 다른 호스트에 있을 때만).
+- 주의: 같은 호스트에 프록시가 아닌 다른 로컬 프로세스가 XFF 를 달고 붙으면 그 값이 신뢰된다(로컬 접근 권한이 있어야 하므로 수용). 서버 포트(3300)는 외부에 직접 열지 않는 것이 원칙이며, 열려 있어도 외부 직접 연결의 XFF 는 무시된다.
+- nginx 설정 예:
+  ```
+  location /ws {
+    proxy_pass http://127.0.0.1:3300;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+  ```
+- 시험 `test/clientip.test.js` 2건(순수 판정: 루프백 자동·왼쪽 위조 무시·XFF 없음·외부 직접 연결·`0`·`1` / 실서버 :memory: 임시 포트: 루프백+XFF IP A 상한 2 초과(왼쪽 위조 바꿔도) `TOO_MANY_CONNECTIONS`, IP B 는 welcome, 경고 1회). 전체 186/186.
+- 되돌리기: `_backup/proxy_ip_before/`(index.js·HANDOFF.md·README.md·PROTOCOL.md) 덮고 `server/net/clientip.js`·`test/clientip.test.js` 삭제. 운영 반영은 서버 재시작 필요(재시작하지 않았다).
