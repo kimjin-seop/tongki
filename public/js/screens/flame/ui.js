@@ -6,6 +6,7 @@ import { face, emblem } from '../../pix.js';
 import { playerName, teamName } from '../../names.js';
 import * as F from './store.js';
 import * as Skin from './skin.js';
+import { fmNameKo } from '../../game/formation.js';
 
 /**
  * 아이템 아이콘 32x32(정수배 확대, image-rendering: pixelated). 슬롯 바탕은 밝은 남회색(#404860 이상), 희귀도 색은 바깥 테두리.
@@ -209,18 +210,79 @@ export function padNav() {
   return () => cancelAnimationFrame(raf);
 }
 
-// ---------------- 보관 팀(키운 팀 슬롯 recent·best, PROTOCOL §13.20·§13.25): 안아트 keep 아이콘 세트(app.css .kp-*) ----------------
-export const KEEP_SLOTS = ['recent', 'best'];
-export const KEEP_LABEL = { recent: '최근', best: '최고' };
-/** 불씨 엠블럼 + 오른쪽 아래 보관 배지판(8x8 을 (17,9) 에 겹침) */
+// ---------------- 저장 팀(팀 스냅샷 3칸 s1~s3, PROTOCOL §13.20-B): 팀 선택 「불꽃의 계승」 탭 · 불꽃 홈 「저장 팀」 · 저장 칸 고르기 공용 ----------------
+/** 불씨 엠블럼 + 오른쪽 아래 보관 배지판(8x8 을 (17,9) 에 겹침) = 불꽃 팀 표시 */
 export const keepEmblem = () => h('span.emb.fl-emb-o.kp-emb', { 'aria-hidden': 'true' });
-/** 슬롯 딱지 40x15(글자 = 최근 흰 / 최고 노랑) */
-export const keepTag = (slot) => h('span.kp-tag.' + slot, KEEP_LABEL[slot] ?? '');
-/** 좁은 칸용 8x8 기호(시계 / 별) */
-export const keepGlyph = (slot) => h('i.kp-g.' + slot, { 'aria-hidden': 'true' });
-/** NEW 배지 */
-export const keepNew = () => h('span.kp-new', 'NEW');
 /** 보관 표식 16x16 */
 export const keepMark = () => h('i.kp-mark', { 'aria-hidden': 'true' });
-/** 요약 한 줄: 「구간 N · N승」 */
-export const keepRec = (t) => `구간 ${t.seg} · ${t.wins}승`;
+export const SNAP_SLOTS = ['s1', 's2', 's3'];
+export const snapLabel = (k) => `슬롯 ${String(k ?? '').replace(/^s/, '')}`;
+export const snapRec = (t) => `구간 ${t.seg} · ${t.wins}승`;
+/** profile.teams 의 3칸: {s1: 카드 | null, …} (옛 recent·best 키는 읽지 않는다) */
+export const snapsOf = (P) => { const T = P?.teams && typeof P.teams === 'object' ? P.teams : {}; return Object.fromEntries(SNAP_SLOTS.map((k) => [k, T[k] && typeof T[k] === 'object' ? T[k] : null])); };
+/** 카드·상대 요약의 선수 칸 → 그리기용 {team, idx}. 오리지널·클론(cast 있음) = 이름·색 입힌 얼굴, 원작 선수 = from 그대로 */
+export function snapFrom(p, team = null) {
+  const f = { team: p?.from?.team ?? 0, idx: p?.from?.idx ?? 0 };
+  return p?.cast && typeof p.cast.name === 'string' && p.cast.name ? castFor(f, p.cast, team) : f;
+}
+/** 선수 이름: 서버 name(원작 선수 = '@팀:번호' → rankName), 없으면 얼굴 출처 이름 */
+/** 카드 선수 칸의 빈 장비 칸 이름: 칸 폭(--snw)에 한 낱말이 한 줄로 들어가게 「가슴보호대」 → 「보호대」(장비 이름 낱말은 4글자 이하) */
+const SNAP_SLOT_SHORT = { protector: '보호대' };
+const snapName = (p, f) => (typeof p?.name === 'string' && p.name ? rankName(p.name) : pname(f));
+/** 작은 초상 한 줄(상대 좌석·대기실 좌석·칸 고르기): 7명 얼굴만 */
+export const snapFaces = (t) => h('span.sn-faces', { 'aria-hidden': 'true' }, (Array.isArray(t?.players) ? t.players : []).slice(0, 7).map((p) => pface(snapFrom(p, t.team))));
+/**
+ * 카드 본문: 머리(칸 · 팀 이름 · 구간·승수 · extra) + 선수 7명 가로 줄(얼굴·이름·능력치 6개·장비 4칸·필살기) + 포메이션 한 줄.
+ * 값은 서버 카드(flame_state.profile.teams.sN) 그대로다(능력치 = players[i].final, 계산하지 않는다). usable:false = 쓸 수 없는 칸
+ */
+export function snapBody(t, slot, extra = null) {
+  const head = h('div.sn-head', h('b.sn-slot', snapLabel(slot)), t.team?.name ? h('span.sn-tn', t.team.name) : null, h('span.sn-rec.tabular', snapRec(t)), extra);
+  if (t.usable === false || !Array.isArray(t.players) || !t.players.length) return [head, h('div.sn-off', '쓸 수 없는 팀')];
+  const row = h('div.sn-row', t.players.map((p) => {
+    const f = snapFrom(p, t.team), sp = Number.isInteger(p.special?.id) ? p.special.id : null;
+    return h('div.sn-p',
+      h('div.sn-pt', pface(f), h('span.nm', snapName(p, f)), p.captain ? h('span.tag.host.sn-cap', '주장') : null),
+      h('dl.sn-st', F.SIX_KEYS.map((k) => [h('dt', F.statName(k)), h('dd.tabular', `${p.final?.[k] ?? '-'}${F.statUnit(k)}`)])),
+      h('div.sn-eq', Object.keys(F.SLOT_KO).map((s) => {
+        const e = p.equip?.[s], d = e ? F.equipDef(e.id) : null;
+        return d ? h('div.sn-eqr', icon(d, { lv: e.lv }), h('span', d.name)) : h('div.sn-eqr.vac', emptyIcon(), h('span', SNAP_SLOT_SHORT[s] ?? F.SLOT_KO[s]));
+      })),
+      h('div.sn-sp', sp !== null ? [gradeTag(p.special.grade), h('span', F.shotName(sp))] : h('span.vac', F.NO_SHOT)));
+  }));
+  const fg = t.fmItem ? F.grantOf(F.artDef(t.fmItem))?.grade ?? null : null;
+  return [head, row, h('div.sn-fm', h('i', '포메이션'), h('b', Number.isInteger(t.fm) ? fmNameKo(t.fm) : '-'), fg ? gradeTag(fg) : null)];
+}
+/**
+ * 저장할 칸 고르기 창(지도 「팀 저장」·도전 종료 「팀 저장」 공용). ctx.S.snapPick = {} 열림 | {over: 칸} 덮어쓰기 확인 | null 닫힘.
+ * 빈 칸 = 바로 저장, 찬 칸 = 덮어쓰기 확인. src = 'run'(진행 중 도전의 지금 팀) | 'ended'(끝난 도전의 팀) — 재료는 서버가 정한다
+ */
+export function snapPicker(ctx, src) {
+  const { S } = ctx, T = snapsOf(ctx.prof());
+  const save = (k) => { if (ctx.send('flame_snap_save', { slot: k, src })) S.snapPick = null; ctx.paint(); };
+  const over = S.snapPick?.over;
+  if (over) {
+    const no = btn('취소', 'snap-no', () => { S.snapPick = {}; ctx.paint(); }, '.center', { 'data-sfx': 'cancel' });
+    no.dataset.first = '1';
+    return h('section.pwin.fl-ask.sn-pickw', { role: 'dialog', 'aria-label': '덮어쓰기 확인' },
+      h('div.fl-ask-t', `${snapLabel(over)}에 덮어씁니다`), h('div.fl-cmds', btn('덮어쓰기', 'snap-over', () => save(over), '.primary.center'), no));
+  }
+  const rows = SNAP_SLOTS.map((k) => {
+    const t = T[k];
+    return h('button.sn-slotb' + (t ? '' : '.empty'), { type: 'button', 'data-k': 'snap-' + k, 'aria-label': `${snapLabel(k)} ${t ? snapRec(t) : '빈 슬롯'}`,
+      onclick: () => { if (t) { S.snapPick = { over: k }; ctx.paint(); } else save(k); } },
+    h('b.sn-slot', snapLabel(k)), t ? [snapFaces(t), h('span.sn-rec.tabular', snapRec(t))] : h('span.vac', '빈 슬롯'));
+  });
+  rows[0].dataset.first = '1';
+  return h('section.pwin.fl-ask.sn-pickw', { role: 'dialog', 'aria-label': '저장할 칸' },
+    h('h2.fl-info-t', '팀 저장'), h('div.sn-slots', rows),
+    h('div.fl-cmds', btn('취소', 'snap-cancel', () => { S.snapPick = null; ctx.paint(); }, '.center', { 'data-sfx': 'cancel' })));
+}
+/** 고르기 창의 Esc: 덮어쓰기 확인 → 칸 목록 → 닫힘. 창이 없으면 false */
+export function snapPickEsc(ctx) {
+  const { S } = ctx;
+  if (!S.snapPick) return false;
+  S.snapPick = S.snapPick.over ? {} : null; ctx.paint();
+  return true;
+}
+/** 팀 저장 기능이 켜져 있는가(flame_catalog.versusTeam.enabled · snapSlots) */
+export const snapOn = () => F.catalog()?.versusTeam?.enabled === true && (F.catalog().versusTeam.snapSlots ?? 3) > 0;

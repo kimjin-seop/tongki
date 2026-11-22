@@ -402,18 +402,9 @@ input[type=text]:focus-visible, input[type=password]:focus-visible { outline: va
 @keyframes glow-r { 0% { border-color: var(--c-red); } 33% { border-color: #fcb400; } 66% { border-color: #fcfc00; } }
 .tcell:focus-visible { outline: var(--o) solid var(--c-white); outline-offset: var(--o); }
 .tcell .emb { --ek: calc(var(--pk) + 1); }
-/* 불꽃 팀(PROTOCOL §13.20): 팀 선택 칸 2개(최근·최고), 대기실 좌석·팀 창의 핵심 3명 + 구간·승수 */
-.tcell.fl:not(.at0):not(.at1) { --bc: var(--r-bg1); }
-.tcell.fl .nm { color: var(--r-fire); font: var(--f-body); }
-/* 2단계: 반투명 대신 회색 글자 + 회색 엠블럼 + 「잠김」 글자로 구분 */
-.tcell.fl.off { cursor: not-allowed; }
-.tcell.fl.off .nm { color: var(--r-grey); }
-.tcell.fl.off .emb { filter: grayscale(1); }
-.tcell.fl.off::after { content: "잠김"; font: var(--f-cap); color: var(--r-grey); }
+/* 불꽃 팀(PROTOCOL §13.20-B): 대기실 좌석·팀 창 = 7명 작은 초상 + 구간·승수. 팀 선택 「불꽃의 계승」 탭 카드는 아래 .sn-* */
 .seat-team.fl .tn { color: var(--r-fire); white-space: normal; overflow: visible; text-overflow: clip; word-break: keep-all; } /* 핵심 3명 이름: 말줄임 대신 줄바꿈 */
 .flt { display: grid; gap: calc(var(--u) * 4); margin: auto 0; justify-items: center; min-width: 0; }
-.flt-core { display: flex; flex-wrap: wrap; justify-content: center; gap: calc(var(--u) * 2) calc(var(--u) * 8); font: var(--f-body); }
-.flt-core b { font-weight: normal; white-space: nowrap; }
 .flt-rec { font: var(--f-cap); color: var(--c-yel); }
 .tside { display: grid; grid-template-rows: 1fr 1fr; gap: calc(var(--u) * 8); min-height: 0; }
 .tinfo { padding: calc(var(--u) * 4) calc(var(--u) * 6); display: flex; flex-direction: column; gap: calc(var(--u) * 6); min-width: 0; min-height: 0; container-type: inline-size; overflow: hidden; }
@@ -922,37 +913,116 @@ body[data-title-enter] .title-follow { animation: title-follow .32s steps(4) .14
   .toast, .toast.show { transition: none; }
 }
 
-/* ---- 불꽃 보관 팀(키운 팀 슬롯 최근·최고, 안아트 keep 세트 1x 그림을 정수배로): 엠블럼 배지 · 딱지 · 기호 · NEW · 빈 칸(점선 9-slice) ---- */
-@font-face { font-family: "RT 7"; src: url("/assets/fonts/Galmuri7.woff2") format("woff2"); font-display: block; }
+/* ---- 불꽃 저장 팀(팀 스냅샷 3칸 s1~s3, PROTOCOL §13.20-B, 안아트 keep 세트 1x 그림을 정수배로): 엠블럼 배지 · 표식 · 빈 칸(점선 9-slice) ---- */
 .kp-emb { position: relative; }
 .kp-emb::after { content: ""; position: absolute; left: calc(17px * var(--ek)); top: calc(9px * var(--ek)); width: calc(8px * var(--ek)); height: calc(8px * var(--ek)); image-rendering: pixelated;
   background: var(--img-kp-badge, url("/assets/flame-legacy/keep/keep_badge.png")) 0 0 / 100% 100% no-repeat; }
-.kp-tag, .kp-new, .kp-g, .kp-mark { display: inline-block; flex: none; vertical-align: middle; image-rendering: pixelated; background: 0 0 / 100% 100% no-repeat; }
-.kp-tag { width: calc(40px * var(--rk)); height: calc(15px * var(--rk)); padding: var(--u) 0 0 calc(var(--u) * 13); font: calc(12px * var(--rk))/calc(13px * var(--rk)) "RT 11", var(--sys); color: var(--r-white); white-space: nowrap; overflow: hidden;
-  background-image: var(--img-kp-t-recent, url("/assets/flame-legacy/keep/keep_tag_recent.png")); }
-.kp-tag.best { padding-left: calc(var(--u) * 14); color: var(--r-yel); background-image: var(--img-kp-t-best, url("/assets/flame-legacy/keep/keep_tag_best.png")); }
-.kp-new { width: calc(22px * var(--rk)); height: calc(11px * var(--rk)); padding: var(--u) 0 0 calc(var(--u) * 3); font: calc(8px * var(--rk))/calc(8px * var(--rk)) "RT 7", "RT 9", var(--sys); color: var(--r-white);
-  text-shadow: var(--u) var(--u) 0 #000; white-space: nowrap; overflow: hidden; background-image: var(--img-kp-new, url("/assets/flame-legacy/keep/keep_new.png")); }
-.kp-g { width: calc(8px * var(--pk)); height: calc(8px * var(--pk)); background-image: var(--img-kp-g-recent, url("/assets/flame-legacy/keep/keep_glyph_recent.png")); }
-.kp-g.best { background-image: var(--img-kp-g-best, url("/assets/flame-legacy/keep/keep_glyph_best.png")); }
-.kp-mark { width: calc(16px * var(--rk)); height: calc(16px * var(--rk)); background-image: var(--img-kp-mark, url("/assets/flame-legacy/keep/keep_mark.png")); }
-/* 보관 팀 칸(불꽃 홈): 창(#004824) 안 줄. 빈 칸 = 점선 9-slice(slice 4 논리px) */
+.kp-mark { display: inline-block; flex: none; vertical-align: middle; image-rendering: pixelated; background: 0 0 / 100% 100% no-repeat;
+  width: calc(16px * var(--rk)); height: calc(16px * var(--rk)); background-image: var(--img-kp-mark, url("/assets/flame-legacy/keep/keep_mark.png")); }
+/* 불꽃 홈 「저장 팀」 줄: 창(#004824) 안 칸 3개. 빈 칸 = 점선 9-slice(slice 4 논리px) */
 .kp-win { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: calc(var(--u) * 4) calc(var(--u) * 8); padding: calc(var(--u) * 2) calc(var(--u) * 8); }
 .kp-title { display: inline-flex; align-items: center; gap: calc(var(--u) * 4); font: var(--f-body); color: var(--r-yel); white-space: nowrap; }
 .kp-slot { display: inline-flex; align-items: center; gap: calc(var(--u) * 4); min-height: 44px; min-width: 0; padding: 0 calc(var(--u) * 4); background: none; border: 0; color: var(--r-white); font: var(--f-cap); cursor: pointer; white-space: nowrap; }
 .kp-slot:is(:hover, :focus-visible) { color: var(--r-yel); outline: var(--o) solid var(--r-white); outline-offset: calc(var(--o) * -1); }
-.kp-slot .kp-core { color: var(--r-line); }
-.kp-slot.empty { cursor: pointer; border: calc(var(--u) * 4) solid transparent; border-image: var(--img-kp-empty, url("/assets/flame-legacy/keep/keep_slot_empty.png")) 4 fill / calc(var(--u) * 4) repeat; image-rendering: pixelated;
-  min-height: calc(var(--u) * 24); padding: 0 calc(var(--u) * 4); }
+.kp-slot.empty, .sn-empty { cursor: pointer; border: calc(var(--u) * 4) solid transparent; border-image: var(--img-kp-empty, url("/assets/flame-legacy/keep/keep_slot_empty.png")) 4 fill / calc(var(--u) * 4) repeat; image-rendering: pixelated; }
+.kp-slot.empty { min-height: calc(var(--u) * 24); padding: 0 calc(var(--u) * 4); color: var(--r-line); }
 .kp-slot.empty > * { image-rendering: pixelated; }
-/* 도전 종료 결과: 갱신된 슬롯 딱지 + 구간·승수, 한 줄 안내 */
-.kp-end { display: grid; gap: calc(var(--u) * 2); margin-top: calc(var(--u) * 2); }
-.kp-end-row { display: flex; align-items: center; gap: calc(var(--u) * 4); flex-wrap: wrap; font: var(--f-cap); color: var(--r-white); }
-.kp-end-t { font: var(--f-cap); color: var(--r-cyan); }
-/* 새 도전 확인 창: 「보관 팀 유지」 */
+/* 새 도전 확인 창: 「저장 팀 유지」 */
 .kp-keep { display: inline-flex; align-items: center; gap: calc(var(--u) * 4); padding: 0 calc(var(--u) * 4); border: var(--u) solid var(--r-line); font: var(--f-cap); color: var(--r-white); white-space: nowrap; }
-/* 팀 선택 칸·대기실 좌석의 보관 팀 이름 앞 기호 */
-.tcell.fl .nm .kp-g { margin-right: calc(var(--u) * 2); vertical-align: -0.1em; }
+
+/* 카드(팀 선택 「불꽃의 계승」 탭 · 불꽃 「저장 팀」 화면 공용, ui.js snapBody): 머리 + 선수 7명 가로 줄(칸 폭 --snw, 넘치면 가로 스크롤·스냅) + 포메이션 */
+.sn-slot { font: var(--f-cap); color: var(--r-yel); white-space: nowrap; }
+.kp-slot .sn-slot { color: inherit; }
+.sn-win { min-width: 0; min-height: 0; display: flex; flex-direction: column; padding: calc(var(--u) * 2); }
+.sn-list { flex: 1; min-width: 0; min-height: 0; overflow: auto; display: grid; grid-auto-rows: max-content; gap: calc(var(--u) * 6); align-content: start; padding: calc(var(--u) * 4); }
+.sn-card { --bc: var(--r-line2); display: grid; gap: calc(var(--u) * 3); min-width: 0; padding: calc(var(--u) * 3) calc(var(--u) * 4); background: var(--r-black); border: calc(var(--u) * 2) solid var(--bc);
+  color: var(--r-white); text-align: left; font: var(--f-cap); border-radius: 0; box-shadow: none; }
+button.sn-card { cursor: pointer; }
+.sn-pick:is(:hover, :focus-visible) { --bc: var(--r-white); outline: none; }
+.sn-pick.mine { animation: glow .7s steps(1) infinite; }
+.sn-pick.mine.s1 { animation-name: glow-r; }
+.sn-pick[aria-pressed=true] .sn-head::after { content: "결정"; margin-left: auto; padding: 0 calc(var(--u) * 3); border: var(--u) solid var(--r-yel); color: var(--r-yel); }
+.sn-pick.off { cursor: not-allowed; color: var(--r-grey); }
+.sn-pick.off .sn-head::after { content: "잠김"; margin-left: auto; color: var(--r-grey); }
+.sn-empty { display: flex; align-items: center; gap: calc(var(--u) * 8); min-height: calc(var(--u) * 40); padding: 0 calc(var(--u) * 6); color: var(--r-line); }
+.sn-head { display: flex; align-items: center; gap: calc(var(--u) * 6); flex-wrap: wrap; min-width: 0; }
+.sn-tn { font: var(--f-body); color: var(--r-white); word-break: keep-all; overflow-wrap: anywhere; }
+.sn-rec { color: var(--r-cyan); white-space: nowrap; }
+.sn-x { margin-left: auto; display: flex; align-items: center; gap: calc(var(--u) * 4); }
+.sn-ask { color: var(--r-white); white-space: nowrap; }
+.sn-row { --snw: calc(var(--u) * 62); display: flex; gap: calc(var(--u) * 2); overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; padding-bottom: calc(var(--u) * 2); }
+.sn-p { flex: 1 0 var(--snw); min-width: var(--snw); scroll-snap-align: start; display: grid; grid-auto-rows: max-content; gap: calc(var(--u) * 3); padding: calc(var(--u) * 2); border: var(--u) solid var(--r-line3); background: var(--r-win2); }
+.sn-pt { display: grid; justify-items: center; gap: calc(var(--u) * 2); text-align: center; }
+.sn-pt .face { --fk: var(--pk); box-shadow: 0 0 0 var(--u) #000, 0 0 0 calc(var(--u) * 2) var(--r-line); }
+.sn-pt .nm { font: var(--f-cap); word-break: keep-all; overflow-wrap: anywhere; line-height: 1.15; }
+.sn-cap { min-height: 0; }
+.sn-st { margin: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 calc(var(--u) * 2); line-height: 1.2; }
+.sn-st dt { color: var(--r-line); white-space: nowrap; overflow: visible; }
+.sn-st dd { margin: 0; text-align: right; }
+.sn-eq { display: grid; gap: calc(var(--u) * 2); }
+.sn-eqr { --ik: max(1, calc(var(--rk) - 1)); display: flex; align-items: center; gap: calc(var(--u) * 2); min-width: 0; }
+.sn-eqr span { min-width: 0; word-break: keep-all; overflow-wrap: anywhere; line-height: 1.15; }
+.sn-eqr.vac span, .sn-sp .vac { color: var(--r-grey); }
+.sn-sp { display: flex; align-items: center; flex-wrap: wrap; gap: calc(var(--u) * 2); color: var(--r-yel); word-break: keep-all; overflow-wrap: anywhere; line-height: 1.15; }
+.sn-fm { display: flex; align-items: center; flex-wrap: wrap; gap: calc(var(--u) * 4); }
+.sn-fm i { font-style: normal; color: var(--r-line); }
+.sn-fm b { font-weight: normal; }
+.sn-off { color: var(--r-grey); }
+/* 작은 초상 한 줄(대기실 좌석·팀 창·저장 칸 고르기) */
+.sn-faces { display: flex; flex-wrap: wrap; justify-content: center; gap: calc(var(--u) * 2); }
+.sn-faces .face { --fk: max(1, calc(var(--pk) - 1)); box-shadow: 0 0 0 var(--u) #000; }
+.sn-sl { color: var(--r-line); font: var(--f-cap); }
+.seat .sn-faces .face { --fk: var(--pk); } /* 대기실 좌석(넓은 창): 초상 원래 배율 */
+.tinfo.fl .tinfo-top .tn, .seat-team.fl .tn { white-space: normal; overflow: visible; text-overflow: clip; word-break: keep-all; overflow-wrap: anywhere; line-height: 1.15; }
+/* 팀 선택 「불꽃의 계승」 쪽: 카드 창을 넓게, 오른쪽 팀 창은 좁게(초상 줄만). 배율 2 이상 데스크톱만 좁힌다 —
+   배율 1(폭 900 이하·높이 560 이하)은 머리 글자 24px 가 좁힌 창(96px)을 넘쳐 「결정」이 창 밖으로 밀렸다(강화면 D1) → 다른 탭과 같은 비율 */
+@media (min-width: 901px) and (min-height: 561px) { .tsel.flp .tsel-body { grid-template-columns: minmax(0, 1fr) calc(var(--u) * 112); } .tsel.flp .sn-row { --snw: calc(var(--u) * 60); } } /* 112 = 기본 팀 이름 「불꽃국민학교」(머리 글자 6자)가 한 줄. 카드 최소 폭 60 = 좁아진 카드 창(1280·1920)에서도 선수 7명이 한 줄(7×60+6×2=432u) */
+.tsel.flp .sn-eqr { --ik: 1; } /* 좁은 카드(60u): 배율 3에서 아이콘(ik 2 = 64px)이 칸을 차지해 장비 이름이 글자 단위로 끊겼다(강화면 L1) → 1배 아이콘, 이름은 낱말 단위 */
+/* 1P 창 초상 7개 한 줄(배율 2: 24px×7 + 2px×6 = 180px > 창 안쪽 약 168px → 간격 1u·좌우 여백 4u 를 빌린다. 강화면 L2). 배율 3은 종전(4+3 두 줄) */
+@media (min-width: 901px) and (min-height: 561px) { .tsel.flp .tinfo .sn-faces { gap: var(--u); margin-inline: calc(var(--u) * -4); } }
+@media (min-width: 1900px) and (min-height: 900px) { .tsel.flp .tinfo .sn-faces { gap: calc(var(--u) * 2); margin-inline: 0; } }
+.tinfo-stt { white-space: nowrap; }
+.tsel.flp .tinfo-st { flex-wrap: wrap; row-gap: calc(var(--u) * 2); } /* 좁은 창: 「고르는 중」은 한 줄 그대로, 「결정」은 모자라면 다음 줄 */
+/* 잠김(불꽃 팀을 못 쓰는 규칙): 카드·1P 창 요약 글자를 회색으로(누르면 사유 토스트) */
+.sn-pick.off :is(.sn-tn, .sn-rec, .sn-pt .nm, .sn-st dt, .sn-st dd, .sn-eqr span, .sn-sp, .sn-fm i, .sn-fm b) { color: var(--r-grey); }
+.tinfo.fl.off :is(.tn, .flt-rec, .tinfo-stt) { color: var(--r-grey); }
+.tsel.flp .tinfo-top { flex-wrap: wrap; row-gap: calc(var(--u) * 2); }
+.tsel.flp .tinfo-top .tn { flex-basis: 100%; }
+.tsel.flp .tinfo-top .tn { white-space: normal; overflow: visible; text-overflow: clip; word-break: keep-all; overflow-wrap: anywhere; line-height: 1.15; }
+.tsel.flp .tinfo .rp figcaption { display: none; }
+.sn-sl { white-space: nowrap; } /* 「 · 슬롯 1」은 한 덩어리로 줄바꿈(가운뎃점만 윗줄에 남지 않게) */
+/* 낮은 화면(높이 560 이하): 반 높이 팀 창에 이름·초상·구간·결정이 다 들어가게 이름 줄을 1P 표식 옆으로, 글자는 본문 크기 */
+@media (max-height: 560px) {
+  .tsel.flp .tinfo-top .tn { flex-basis: auto; font: var(--f-body); }
+  .tsel.flp .tinfo .flt { gap: 2px; }
+}
+.tpage .tl-s, .tpage.short .tl-l { display: none; }
+.tpage.short .tl-s { display: inline; }
+.sn-none { display: grid; place-content: center; justify-items: center; gap: calc(var(--u) * 12); text-align: center; }
+.sn-none-t { display: grid; gap: calc(var(--u) * 4); }
+.sn-none-t p { margin: 0; font: var(--f-body); color: var(--r-white); }
+.sn-none-t p + p { color: var(--r-yel); }
+.sn-go { text-align: center; }
+/* 저장할 칸 고르기 창(지도·도전 종료) */
+.sn-pickw { align-self: center; width: min(100%, calc(var(--u) * 300)); justify-items: stretch; }
+.sn-slots { display: grid; gap: calc(var(--u) * 4); }
+.sn-slotb { display: flex; align-items: center; flex-wrap: wrap; gap: calc(var(--u) * 4) calc(var(--u) * 8); min-height: var(--row); width: 100%; padding: calc(var(--u) * 2) calc(var(--u) * 6);
+  background: var(--r-black); border: var(--o) solid var(--r-line); border-radius: 0; color: var(--r-white); font: var(--f-cap); cursor: pointer; text-align: left; }
+.sn-slotb:is(:hover, :focus-visible) { border-color: var(--r-white); outline: none; animation: r-glow .7s steps(1) infinite; }
+.sn-slotb .vac { color: var(--r-grey); }
+.sn-slotb .sn-faces { justify-content: flex-start; }
+/* 불꽃 홈 팀 이름: 칩 = 버튼, 누르면 입력 칸 + 확인·취소 */
+button.fl-chip { cursor: pointer; }
+button.fl-chip:is(:hover, :focus-visible) { outline: var(--o) solid var(--r-yel); outline-offset: 0; }
+.fl-tn { display: inline-flex; align-items: center; gap: calc(var(--u) * 4); flex-wrap: wrap; justify-content: center; }
+.fl-tn-in { width: calc(var(--u) * 120); min-width: 0; }
+.fl-snaps .sn-win { flex: 1; }
+/* 배율 1(모바일·좁은 데스크톱): 글자가 상대적으로 커서 칸 폭을 px 로. 세로 모바일 = 카드 안 2.5명 */
+@media (max-width: 900px), (max-height: 560px) { .sn-row { --snw: 96px; } }
+@media (max-width: 640px) { .sn-row { --snw: 120px; } .sn-p { flex: none; width: var(--snw); } .sn-list { padding: 4px; gap: 6px; } .sn-card { padding: 3px 4px; } }
+@media (max-width: 760px) {
+  .tsel.flp .tsel-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+}
 /* ---- 채팅·공지(시안 _asset_samples/tongki_chat_mock, chat.js · notice.js). 경기 중 받은 줄은 최대 5줄(사용자 결정) ----
    예외(사용자 요구): .cm-log 줄·.cm-nb 띠의 반투명 검정 바탕, 받은 줄 3단계 흐림(steps, ease 없음). 그 밖은 불투명 */
 .cm-ol { --ol: 2px; text-shadow: var(--ol) 0 0 #000, calc(var(--ol) * -1) 0 0 #000, 0 var(--ol) 0 #000, 0 calc(var(--ol) * -1) 0 #000,

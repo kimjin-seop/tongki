@@ -204,7 +204,7 @@ test('일반 사람끼리 방 경기는 전적(pvp)에 반영·레이팅 불변,
     a.send({ t: 'ladder_join' }); c.send({ t: 'ladder_join' });
     const { code } = await a.type('ladder_matched'); await a.type('room_joined');
     assert.equal(await g.err({ t: 'join_room', code }), 'ROOM_FULL'); // 매칭된 두 사람 전용
-    assert.equal(await a.err({ t: 'set_team', team: 'flame:recent' }), 'FLAME_TEAM_ROOM');
+    assert.equal(await a.err({ t: 'set_team', team: 'flame:s1' }), 'FLAME_TEAM_ROOM');
     assert.equal(await a.err({ t: 'set_team', team: 22 }), 'TEAM_INVALID');
     c.send({ t: 'leave_room' }); // 경기 전 취소 = 남은 사람도 해산(벌점 없음)
     assert.equal((await a.type('room_left')).reason, 'ladder_cancel');

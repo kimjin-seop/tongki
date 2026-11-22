@@ -20,6 +20,7 @@ import * as Nodes from '../server/flame/nodes.js';
 import * as Run from '../server/flame/run.js';
 import { equipChoices } from '../server/flame/rewards.js';
 
+process.env.FLAME_START_CLONES = '0'; // 시작 팀 랜덤(roster.startClones)은 끄고 고정 시작 팀 기준으로 본다(랜덤 시작은 flame_startclones.test.js)
 const data = loadData(), cat = loadCatalog();
 const soft = (fn) => { try { fn(); return true; } catch (e) { if (e instanceof FlameError) return false; throw e; } };
 /** 승리 뒤 회복(D15) 값만 바꾼 카탈로그. v = undefined 면 키 없음 */
@@ -75,7 +76,7 @@ function playRun(profile, { seed, loseAt = 0, engineCheck = false, C = cat }) {
 }
 
 test('flame 지도·시드: 같은 시드 = 같은 지도·같은 보상, 구간당 경기 4(일반 2·강팀 1·보스 1) (구간 2·3 은 들어갈 때 만든다), 상대는 내 로스터와 겹치지 않는다', () => {
-  const a = Run.newRun(cat, data, freshProfile(), { seed: 77 }), b = Run.newRun(cat, data, freshProfile(), { seed: 77 }), c = Run.newRun(cat, data, freshProfile(), { seed: 78 });
+  const a = Run.newRun(cat, data, freshProfile(), { seed: 77 }), b = Run.newRun(cat, data, freshProfile(), { seed: 77 }), c = Run.newRun(cat, data, freshProfile(), { seed: 79 });
   assert.deepEqual([a.map, a.pending], [b.map, b.pending]);
   assert.notDeepEqual(a.map, c.map);
   assert.equal(a.map.length, 1); // 저장 v3: 현재 구간만 들고 다음 구간은 보스를 이길 때 만든다
@@ -196,7 +197,7 @@ test('flame 로비 연결: flame_new -> 보상 선택 -> 장착 -> 경기 노드
     assert.deepEqual([rj.room.flame.node, rj.room.vsCpu], [nodeId, true]);
     const gs = await a.type('game_start');
     assert.deepEqual([gs.flame.seat, gs.teams[0].flame, gs.teams[0].players[0].from], [0, true, { team: 0, idx: 0 }]);
-    assert.deepEqual([gs.flameCast.seat, gs.flameCast.team.short, gs.flameCast.players.length, gs.flameCast.players[0].name], [0, '불씨', 7, '윤이음']); // 표시용 정의(오리지널 팀, D17)
+    assert.deepEqual([gs.flameCast.seat, gs.flameCast.team.short, gs.flameCast.players.length, gs.flameCast.players[0].name], [0, '불꽃', 7, '윤이음']); // 표시용 정의(오리지널 팀, D17)
     a.send({ t: 'flame_equip', p: 0, inst: null, slot: 'headband', ref: 4 }); // 경기 중에는 도전 조작 불가
     assert.equal((await a.wait((m) => m.t === 'error' && m.ref === 4)).code, 'ALREADY_IN_ROOM');
     assert.equal(app.lobby.roomListMsg().rooms.length, 0); // 비공개 방
@@ -493,7 +494,7 @@ test('flame 오리지널 팀(D17): 새 도전은 오리지널 7명으로 시작�
   assert.deepEqual([a.flame.allow, a.flame.roster.map((r) => r.sp[0])], [[], Array(7).fill(null)]);
   assert.deepEqual([b.flame.allow, b.flame.roster.map((r) => r.sp[0]).filter((id) => id !== null)], [[...new Set(own)].sort((x, y) => x - y), own]);
   const v = Run.viewOf(cat, data, run, profile).run.cast;
-  assert.deepEqual([v.team.name, v.team.short, v.players[0].name, v.players[0].role, v.players[0].protagonist, v.players[0].locked, v.players[1].locked], ['불씨 국민학교', '불씨', '윤이음', 'ace', true, true, false]);
+  assert.deepEqual([v.team.name, v.team.short, v.players[0].name, v.players[0].role, v.players[0].protagonist, v.players[0].locked, v.players[1].locked], ['불꽃국민학교', '불꽃', '윤이음', 'ace', true, true, false]);
   assert.deepEqual([Object.keys(v.players[6].skin), a.cast.players.map((p) => p.id), catalogMsg(cat).original.players.length], [['team', 'idx', 'uni', 'hair'], run.roster.map((r) => r.orig), 7]);
   // flame_catalog.original.players[].base = 그 선수 칸의 from(도감·seen.players 의 키 '팀:번호'). 도전이 없어도 화면이 그 키에 오리지널 이름을 붙일 수 있다
   assert.deepEqual(catalogMsg(cat).original.players.map((p) => p.base), run.roster.map((r) => r.from));

@@ -31,6 +31,15 @@ function pool(cat, seg, type, oppUnlocked) {
   const rows = cat.cfg.opponents.segments, S = rows[segRow(rows, seg)];
   return [...S[type], ...(oppUnlocked && S.unlocked ? S.unlocked[type] : [])];
 }
+/**
+ * 첫 경기 노드 상대 제한(39 D68, decisions.json run.firstNode). 구간 1(seg 0)의 템플릿 첫 경기 층(li)에서만 허용 팀 목록을, 아니면 null(제한 없음).
+ * 환경 변수 FLAME_FIRST_NODE=0 이면 끈다(재측정·시험용)
+ */
+export function firstNodeAllow(cat, seg, li) {
+  const F = cat.decisions.run?.firstNode;
+  if (!F || F.enabled !== true || process.env.FLAME_FIRST_NODE === '0' || seg !== 0) return null;
+  return li === cat.template.findIndex((s) => s.node) ? F.allowTeams : null;
+}
 function oppOf(cat, data, seg, type, team, diff) {
   const O = cat.cfg.opponents, add = cpuLevelAddOf(cat, diff, type); // 숫자 = 전 종류 공통(종전), {normal,strong,boss} = 종류별(D32)
   // 하한 1(리뷰 L1): 레벨 0 이하가 지도에 저장되면 save.js 의 cpuLevel >= 1 검사에 걸려 도전이 격리된다
@@ -46,7 +55,8 @@ export function genSegment(cat, data, seed, seg, { roster, diff, oppUnlocked }) 
   cat.template.forEach((step, li) => {
     let nodes;
     if (step.node) {
-      const all = pool(cat, seg, step.node, oppUnlocked);
+      const allow = firstNodeAllow(cat, seg, li), full = pool(cat, seg, step.node, oppUnlocked), lim = allow ? full.filter((t) => allow.includes(t)) : full;
+      const all = lim.length ? lim : full; // 허용 팀이 풀에 하나도 없으면 제한하지 않는다(지도가 비지 않게)
       let cand = all.filter((t) => !conflicts(cat, roster, t) && !used.has(t));
       if (!cand.length) cand = all.filter((t) => !conflicts(cat, roster, t));
       if (!cand.length) cand = all; // 후보가 전부 겹치면 그대로 쓴다(지도가 비지 않게)
@@ -78,10 +88,11 @@ export function findNode(run, id) {
 function fixLayers(cat, data, run, seg, layers, fromLayer, oppUnlocked) {
   layers.forEach((layer, li) => {
     if (li < fromLayer) return;
+    const allow = firstNodeAllow(cat, seg, li);
     for (const n of layer) {
       if (!isMatch(n.type) || !conflicts(cat, run.roster, n.opp.team) || run.match?.node === n.id) continue;
       const taken = new Set(layer.map((x) => x.opp?.team));
-      const cand = pool(cat, seg, n.type, oppUnlocked).filter((t) => !conflicts(cat, run.roster, t) && !taken.has(t));
+      const cand = pool(cat, seg, n.type, oppUnlocked).filter((t) => !conflicts(cat, run.roster, t) && !taken.has(t) && (!allow || allow.includes(t)));
       if (cand.length) n.opp = oppOf(cat, data, seg, n.type, rngFor(run.seed, 'refix', n.id).pick(cand), run.diff);
     }
   });

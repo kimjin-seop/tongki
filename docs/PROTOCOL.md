@@ -754,7 +754,7 @@ flame: {
 
 ### 13.3 규칙 요약
 
-- **도전**: 시작 7명 = 오리지널 팀 「불씨 국민학교」 7명(D17, §13.8. `decisions.json roster.startOriginal` 키를 지우면 종전대로 태동(팀 0, D4)), 시작 경기 포인트 100(+초기 지원금), 시작 보상 = 장비 선택(2 + 장비 보급), 전술 연구가 있으면 아티팩트 선택. 3구간 × 층 7(일반 → 상점|특훈 → 일반 → 휴식|영입|이벤트 → 강팀 → 상점|특훈|휴식 → 보스), 층마다 후보 1~2개, 총 12경기(D9). 같은 지도 시드 = 같은 지도. 보상은 도전 비밀값을 따른다(같은 도전의 같은 보상은 언제 열어도 같다. 재접속·재시작 뒤에도).
+- **도전**: 시작 7명 = 오리지널 팀 「불꽃국민학교」(2026-11-21 개명, 종전 「불씨 국민학교」. 플레이어가 바꿀 수 있다 §13.20-B) 7명(D17, §13.8. `decisions.json roster.startOriginal` 키를 지우면 종전대로 태동(팀 0, D4)), 시작 경기 포인트 100(+초기 지원금), 시작 보상 = 장비 선택(2 + 장비 보급), 전술 연구가 있으면 아티팩트 선택. 3구간 × 층 7(일반 → 상점|특훈 → 일반 → 휴식|영입|이벤트 → 강팀 → 상점|특훈|휴식 → 보스), 층마다 후보 1~2개, 총 12경기(D9). 같은 지도 시드 = 같은 지도. 보상은 도전 비밀값을 따른다(같은 도전의 같은 보상은 언제 열어도 같다. 재접속·재시작 뒤에도).
 - **경기 결과(D6)**: 좌석 0 의 정상 승리(`annihilation`·`timeup`·`sudden_death`)만 승리. `error`(엔진 오류) = 재경기(같은 노드), 서버 재시작으로 사라진 경기 = 재경기(`flame_get` 때 `inMatch` 가 풀린다). 그 밖(패배·`forfeit_*`·`draw_cap`) = 패배 = 도전 종료. 경기 뒤 현재 HP 는 유지되고 HP 0 선수는 1 로 남는다(D5). **승리 뒤 전원 회복(D15, [자작 제안])**: 이기고 도전이 이어지면 전원 현재 HP 가 최대 HP 의 `run_config.rest.afterWinHealPct` %(시작값 30, half-up)만큼 오른다(최대 HP 까지, HP 1 로 남은 선수 포함. 키가 없거나 0 이면 꺼짐. 패배·재경기·우승에는 없음). **구간 보스 승리(D30, §13.18)** 는 `rest.afterBossHealPct` %(시작값 50)가 이 값을 대신한다(키가 없으면 같은 값). `flame_result.hp` 는 엔진이 낸 경기 종료 시점 값 그대로이고, 회복이 반영된 값은 뒤따르는 `flame_state.run.roster[i].hp` 다. 회복 % 는 `flame_catalog.afterWinHealPct`·`afterBossHealPct` 로 받는다(`rest[]` 는 휴식실 선택지뿐).
 - **승리 보상**: 경기 포인트(일반 60·강팀 100·보스 160) + 장비 선택 3장(등급 55/30/12/3 에 구간·노드 보정, 전설은 PC02 해금 뒤, A28·A29·C18 로 장수 증가) + 보스 = 아티팩트 선택 3 / 강팀 = 소모품 1. 선택(`pending`)을 풀어야 다음 노드를 고를 수 있다(`FLAME_PENDING`).
 - **정산**: 도전 종료 때 한 번. 일반 20·강팀 40·보스 80 × 승수 + 우승 200 + 첫 우승 300(× 난이도 `coinPct`). **패배 분투 보상(D16, [자작 제안])**: 끝까지 치른 경기(`annihilation`·`timeup`·`sudden_death`)를 져서 도전이 끝나면 그 마지막 경기에서 아웃시킨 상대 수 × `economy.flameCoin.proposed.defeatOutCoin`(지금 값 4, 처음 2)을 최대 `defeatOutCoinMax`(18, 처음 12. 2026-11-19 임밸런 보정 analysis/40 §16.2)까지 더한다(같은 `coinPct` 적용). 아웃 수는 서버의 경기 결과 `game_end.rem[1]`(상대 남은 인원)에서만 읽는다(7 - 남은 인원). 기권(`forfeit_*`)·무승부 상한(`draw_cap`)·포기(`flame_abandon`·`flame_new`)·재경기(`error`·서버 재시작·저장 실패)·우승·승리에는 없다. 두 키가 없거나 0 이면 꺼짐. 값은 `flame_catalog.economy.coin.proposed` 로도 받는다. `flame_state.run.coinsPending` 에는 들지 않는다(항상 `defeat:0`). 도전 저장은 지워지고(영입 선수·장비·아티팩트·강화·특훈·경기 포인트·소모품) 코인·영구 성장·도감·기록·업적은 남는다. **경기를 한 판도 치르지 않은 도전**(시작 직후 포기·`flame_new` 반복)은 도전 횟수(`totals.runs`)·최고 기록(`best`)·업적에 넣지 않는다(`summary.counted:false`, 도감만 합친다).
@@ -1077,6 +1077,8 @@ flame 경기 방은 특훈·리그 방과 같은 비공개 방이다: 방 목록
 
 ### 13.20 키운 팀 슬롯 + 컴퓨터 대전에서 그 팀 고르기 (1차 증분, 2026-11-19 박백엔) — 서버·데이터. 화면은 후속(윤프론)
 
+> **2026-11-21 개정(§13.20-B, D66)**: 자동 2칸(recent·best)은 폐지되고 사용자 저장 3칸 `s1`~`s3`·팀 이름으로 바뀌었다. 아래 (1)~(3) 의 칸 이름·저장 시점·요약 형식은 옛 기록이다.
+
 결정 `analysis/39` D33~D37(가정 B73~B84), 요구·분해 `analysis/43_flame_team_in_versus.md`. 사용자 요청 「멀티에서 팀 고를 때 자기가 키웠던 팀을 선택할 수 있으면 좋을듯」의 **1차 범위 = 컴퓨터 대전 방**(사람 1명 + 컴퓨터 원작 팀). 온라인 사람끼리 방은 2차(미구현, 43 §6). 원작 경기 엔진(`server/engine/`)·`public/` 은 고치지 않았다. 데이터 `run_config.json versusTeam{enabled, surviveUsesPerMatch?}` — **키를 지우거나 `enabled:false` 면 종전 동작**(슬롯을 저장하지 않고 고를 수도 없다. 이미 저장된 슬롯은 지우지 않는다). `CATALOG_MSG_REV` 11 → 12(`flame_catalog.ver` 끝이 `.m12`). 저장 형식 버전은 그대로(도전 3·영구 2). 새 DB 표 없음.
 
 **(1) 슬롯 저장** — 영구 저장(`flame_profiles` 의 JSON)의 **선택 칸** `teams{recent?, best?}`.
@@ -1118,6 +1120,63 @@ flame 경기 방은 특훈·리그 방과 같은 비공개 방이다: 방 목록
 > **2차(2026-11-19, §13.25)**: 사람끼리 방에서도 방장이 규칙 「불꽃 팀」(`rules.flameTeams`)을 켜면 두 사람이 각자 슬롯을 고를 수 있다. 위 (3) 의 `FLAME_TEAM_ROOM`(사람끼리 방) 거절은 그 규칙이 꺼진 방에만 해당하고, 문구는 「이 방은 불꽃 팀을 허용하지 않습니다」로 바뀌었다. 컴퓨터 대전 방의 동작·`game_start.flameVs{seat:0,…}`·`noRecord` 는 이 절 그대로다. 도전 종료 요약에 `flame_end.summary.teams{recent, best}` 가 늘었다(§13.2 목록).
 
 화면 후속(윤프론): ① 대기실 팀 선택 격자에 「최근」「최고」 2칸(`flame_state.profile.teams`, `flame_catalog.versusTeam.enabled`, 컴퓨터 대전 방·체력제일 때만 활성) → `set_team{team:'flame:recent'}`. ② 대기실 좌석 표시(`slots[0].flameTeam`: 구간·승수·핵심 3명). ③ `screens/game.js`: 그리기용 판별을 `start.flame ?? start.flameVs` 로(선수 이름·skin `flameCast`, 필살기 안내 `noSpecial`), **흐름용 판별(결과 카드 「도전으로」·`holdLobby`·`room_left`)은 `start.flame` 만** 보게 유지. ④ 새 오류 코드 3개 토스트. ⑤ 공식 규칙을 고르면 불꽃 팀 칸 비활성(또는 `FLAME_TEAM_RULES` 토스트).
+
+#### 13.20-B 팀 스냅샷 3칸 + 팀 이름 (2026-11-21 박백엔) — 서버·데이터. 화면은 후속(윤프론). 결정 analysis/39 D66(가정 B149~B157)
+
+**위 (1)·(2)·(3) 의 자동 2칸(recent·best)을 대체한다.** 정산은 더 이상 칸을 자동으로 쓰지 않는다. (4) 경기·(5) 상대 팀·§13.25 사람끼리 방 규칙은 그대로이고 칸 이름만 `s1`~`s3` 이다.
+
+**저장 형식**(영구 저장 `flame_profiles.data` JSON 의 선택 칸, `PROFILE_VERSION` 2·DB 스키마 그대로, DDL 없음)
+
+| 칸 | 뜻 |
+|---|---|
+| `teams.s1` · `s2` · `s3` | 사용자가 저장한 칸(이름 없음, 서버 고정 id). 한 칸 형식 = (1) 의 재료와 같고 `name?`(저장 시점 팀 이름) 하나가 늘었다 |
+| `teams.ended` | 마지막으로 끝난 도전(경기 1판 이상)의 팀 = 도전 종료 화면 저장 재료. 대전에서 못 고른다. `flame_new` 가 버린다 |
+| `teams.recent` · `best` | 폐지. **지우지 않고** 검증해 그대로 보존(읽어서 쓰지 않는다 = 되돌리기용) |
+| `snapV` | 1 = 옛 best→s1, recent→s2 한 번 변환을 마쳤다(이미 있는 칸은 덮지 않음, 두 칸이 같으면 s1 만). 지운 칸을 되살리지 않는다 |
+| `teamName` | 플레이어가 정한 팀 이름. 없으면 기본 이름(카탈로그 `original.name` = 「불꽃국민학교」)을 따른다 |
+
+**요청**(전부 `flame_*` 빈도 창, 방 안 = `ALREADY_IN_ROOM`, 응답 = `flame_state`)
+
+| 요청 | 필드 | 동작 | 성공 응답 추가 키 | 오류 |
+|---|---|---|---|---|
+| `flame_snap_save` | `slot: 's1'\|'s2'\|'s3'`, `src?: 'run'\|'ended'` | 재료를 그 칸에 **덮어쓴다**(확인은 클라이언트). `src:'run'` = 진행 중 도전의 지금 팀(풀지 않은 선택·HP·소모품 제외), `src:'ended'` = 마지막으로 끝난 도전의 팀(`teams.ended`), 생략 = 진행 중 도전 우선·없으면 종료 팀. **도전 종료 화면의 「팀 저장」은 `src:'ended'` 로 보낸다**(그사이 새 도전이 시작됐으면 새 팀으로 덮지 않고 `FLAME_NONE`). 지도 화면 저장은 `src:'run'`. 재료는 서버 상태에서만 | `snapSaved: slot` | `BAD_MESSAGE`(칸 id·src 값), `FLAME_NONE`(지정한 재료 없음 / 생략 시 도전도 종료 팀도 없음), `FLAME_UNAVAILABLE`(versusTeam 꺼짐), `ALREADY_IN_ROOM` |
+| `flame_snap_delete` | `slot` | 그 칸을 비운다(확인은 클라이언트) | `snapDeleted: slot` | `BAD_MESSAGE`, `FLAME_TEAM_NONE`(빈 칸), `ALREADY_IN_ROOM` |
+| `flame_team_name` | `name: string\|null` | 앞뒤 공백·제어문자 제거·연속 공백 1칸(채팅 `cleanText`). 빈 문자열·공백만·`null`·기본 이름과 같은 값 = 기본 이름으로(저장 칸 삭제). 진행 중 도전 표시·도전 경기에 바로 반영, 스냅샷 칸은 저장 순간 이름 고정 | — | `BAD_MESSAGE`(문자열·null 아님), `FLAME_TEAM_NAME_LONG`(params.max = 12), `FLAME_TEAM_NAME_INVALID`(한글·영문·숫자·공백 밖 문자, 채팅 욕설 목록) |
+| `set_team` | `team: 'flame:s1'\|'flame:s2'\|'flame:s3'` | (3)·§13.25 와 같다 | — | 폐지된 `'flame:recent'`·`'flame:best'` = `TEAM_INVALID`, 빈 칸 = `FLAME_TEAM_NONE`, 그 밖 종전 코드 |
+
+**`flame_state.profile` 새 칸**(본인에게만)
+
+| 칸 | 형식 |
+|---|---|
+| `teams` | `{s1, s2, s3}` 각각 카드 \| `null`(빈 칸). **`recent`·`best` 키는 없다**(구 화면 = 그 키가 없어 '없음'으로 그린다) |
+| `teamEnded` | bool. 진행 중 도전이 없을 때 `flame_snap_save` 가 쓸 종료 팀이 있는가(도전 종료 화면의 「팀 저장」 버튼) |
+| `teamName` | 정한 이름 \| `null`(기본 이름 사용) |
+| `teamNameDefault` | 기본 이름(「불꽃국민학교」). 카탈로그 `versusTeam.teamName.default` 와 같다 |
+| `played` | bool. `totals.runs > 0`(경기 1판 이상 치르고 끝낸 도전) 또는 지금 도전 중. 팀 선택 「불꽃의 계승」 탭 안내 표시 판별용 |
+
+카드(`teams.sN`):
+
+| 칸 | 형식 |
+|---|---|
+| `slot` | `'s1'` 등 |
+| `at` · `seg` · `wins` · `diff` | 재료 시각(ms: `src:'run'` 으로 저장한 칸 = 저장한 순간, `src:'ended'` 로 저장한 칸 = **그 도전이 끝난 시각**이지 저장 버튼을 누른 시각이 아니다) · 도달 구간(1부터) · 그 도전의 승수 · 난이도 id |
+| `team` | `{id, name, short, custom?}` \| `null`(오리지널 팀이 아닌 옛 태동 도전). `name` = 저장 시점 이름, `custom:true` = 플레이어가 정한 이름 |
+| `core` · `captain` | 종전 요약과 같다(핵심 3명 이름, 주장 몸 `{team, idx}`) |
+| `usable` | `false` = 엔진 데이터에 없는 선수가 있어 쓸 수 없는 칸(`players` 빈 배열) |
+| `fm` · `fmItem` · `arts` | 실제로 쓰이는 포메이션 패턴 · 팀 포메이션 아이템 id \| null · 팀 공용 아티팩트(off 모델에서는 빈 배열) |
+| `players[7]` | 아래 |
+
+`players[i]`: `i`, `from{team,idx}`(몸 = 원작 초상 fallback), `cast`(= `flame_state.run.cast.players[i]` 형식: 오리지널·클론의 `{id, kind, name, role, skin…}` \| `null` = 원작 선수 → `from` 으로 초상·이름), `name`(오리지널·클론 = 이름, 원작 선수 = `'@팀:번호'` → 화면 `rankName`), `kind`(`starter`\|`clone`\|`original`), `role`, `recruited`, `captain`(bool, 라인업 칸 0), `field`(`'in'` = 칸 0~3 내야, `'out'` = 4~6 외야), `final{s0…s7, r1, r2, r3}`(서버가 대전과 같은 경로로 지금 계산한 최종 능력치. 화면 6개 = `F.SIX_KEYS`), `hpMax`(= `final.s0` = 대전 시작 HP), `equip{장비 슬롯: {id, lv}|null}`(이름·등급은 카탈로그 `equipment` 에서 id 로), `sp[2]`(엔진에 넘기는 필살기 슬롯), `spItem`(필살기 아이템 id \| null), `special{id, grade}`.
+
+**상대도 보는 요약** `room_state.slots[i].flameTeam = {slot, seg, wins, diff, at, core, team, captain, players[7]{from, cast, name}}` — 능력치·장비는 싣지 않는다.
+
+**기타**: `flame_end.summary.teams` 는 언제나 `{recent:false, best:false}`(구 화면 호환), 새 칸 `teamSave`(bool) = 이 도전의 팀을 종료 화면에서 `flame_snap_save{slot, src:'ended'}` 로 저장할 수 있다(경기 없는 도전 = false, **`flame_new` 로 진행 중 도전을 포기한 정산 = false**: 곧 새 도전이 시작되고 종료 팀은 버려진다. `flame_abandon`·패배 = true). `flame_catalog.versusTeam = {enabled, slots:['s1','s2','s3'], snapSlots:3, ruleMode, surviveUsesPerMatch, humans, teamName:{default, max:12}}`(꺼짐 = `slots:[]`, `snapSlots:0`), 개정 번호 `CATALOG_MSG_REV` 20. `flame_get` 은 방 안(대기실)에서도 응답한다(랭크 방 포함 서버 제한 없음 — 화면이 랭크 방에서 부르지 않을 뿐). 손님도 저장되고 같은 닉네임(키 = 소문자)으로 다시 접속하면 그대로다.
+
+**구 화면(배포 직후 윤프론 후속 전) 영향**: 대기실 팀 선택의 불꽃 칸(`room.js FL_LABEL` = recent·best 만)이 안 보이고, 불꽃의 계승 홈의 「보관 팀」 창은 두 칸 모두 '없음', 종료 화면의 보관 팀 갱신 줄이 안 나온다. 오류는 나지 않는다(새 칸은 구 화면이 읽지 않는다).
+
+화면 반영(2026-11-21 윤프론, HANDOFF §24): 팀 선택 탭 「학교」「스페셜」「불꽃의 계승」(종전 「보관 팀」 탭·격자 칸 폐지, `room.js` 쪽 번호 2) — 카드 3장(`flame/ui.js snapBody`: 7명 초상·이름·능력치 `F.SIX_KEYS`·장비 4칸·필살기·포메이션, 서버 카드 값 그대로), 빈 칸 점선 카드, 3칸 모두 비거나 상태·카탈로그 없음(`FLAME_UNAVAILABLE` 포함) = 안내 두 줄(+ 컴퓨터 대전 방만 「불꽃의 계승 하러 가기」 = `leave_room` → `room_left` 뒤 `app.leaveTo` 로 불꽃 화면). 상대·대기실 좌석 = `flameTeam.players` 작은 초상 + 구간·승수. 불꽃 홈 「저장 팀」 줄(칸 3개) → 「저장 팀」 화면(`snaps`, 카드 + 칸별 삭제 확인 → `flame_snap_delete`), 지도 「팀 저장」 = 칸 고르기 → `flame_snap_save{slot, src:'run'}`(찬 칸은 덮어쓰기 확인), 도전 종료 화면 「팀 저장」(`summary.teamSave && profile.teamEnded`) = `src:'ended'`, 성공 토스트 「팀을 저장했습니다」(`snapSaved`), 홈 팀 이름 칩 → 입력 칸(최대 `versusTeam.teamName.max`, 비우고 확인 = 기본 이름) → `flame_team_name`. 카드의 `at` 은 표시하지 않는다. 옛 키(recent·best)·`KEEP_*`·`keepTag`·`keepNew`·`keepRec`·`FL_LABEL`·`dd.flame.keepSeen` 참조는 화면 코드에서 모두 뺐다.
+
+**한계(되돌리기)**: 이 변경 전 서버는 `sanitizeProfile` 이 아는 칸만 옮기고 `teams` 는 recent·best 만 옮긴다 → 되돌린 서버가 그 계정의 영구 저장을 한 번 쓰면 **`s1`~`s3`·`ended`·`snapV`·`teamName` 이 사라지고** recent·best 자동 저장이 다시 돈다. 다시 이 서버로 올리면 `snapV` 가 없어 그때의 best→s1·recent→s2 변환이 한 번 더 일어난다. 배포 전 운영 DB(`data/tongki.db`) 백업 필요.
 
 ### 13.21 필살기 부여 구조 (2026-11-19 박백엔) — 서버·데이터. 화면은 후속(윤프론). 결정 analysis/39 D38(가정 B85~B93)
 
@@ -1307,6 +1366,14 @@ flame 경기 방은 특훈·리그 방과 같은 비공개 방이다: 방 목록
 **(3) `CATALOG_MSG_REV` 18 → 19** — `cat.ver` 끝이 `.m19`(예 `1.1.1.7.o3.p2.e1.aoff.m19`). 캐시된 카탈로그는 종전대로 문자열 비교로 다시 받는다.
 
 화면 구현됨(artLine, 윤프론): `store.js artLine` 에서 C 등급 필살 카드의 기본 위력 = `cat.special.power[grant.shot]`(+ 등급 가산), `null` 이면 표시하지 않는다.
+
+### 13.28 시작 팀 랜덤 구성 (2026-11-22 박백엔) — 서버·데이터. 프로토콜 변화 없음(추가 요청·추가 칸 없음). 결정 analysis/39 D67(가정 B158~B163)
+
+새 도전(`flame_new`)의 시작 7명이 영입 풀 클론 7명의 랜덤 구성으로 바뀐다(`decisions.json roster.startClones.enabled`, 꺼짐 = 종전 고정 오리지널 7명).
+- 응답 형식은 그대로다: `flame_state.run.roster[i]` = `{from(몸), clone(풀 id), ...}`(`orig` 없음), `run.cast.players[i]` = `{kind:'clone', id, name, role, grade, skin, ...}`(§13.10 영입한 클론과 같은 칸), `team.players[i]` 능력치. `run.cast.team`(팀 이름·엠블럼)은 그대로 「불꽃국민학교」, `origTeam` 도 그대로. 따라서 클라이언트는 시작 선수가 `kind:'starter'`(고정 오리지널)가 아니라 `kind:'clone'` 으로 올 수 있다는 점만 다룬다: 시작 선수의 `tagline`(한 줄 소개)은 null, `locked`(주인공 교체 잠금)·`protagonist` 는 false(= 7칸 모두 교체 가능).
+- 제약(칸 i = 라인업 번호): 역할 [ace, guard, catcher, runner, jumper, passer, balanced]·등급 [A, A, B, B, C, C, C] 고정, 7명 점수 합 -4~+6, 같은 몸·같은 이름 뒷글자 없음. 난수 = 도전 비밀값(`run.secret`)에서 HMAC 파생(클라이언트는 비밀값을 모르고 시작 팀을 고를 수 없다). 뽑힌 라인업은 도전 저장에 남아 이어하기·재접속에 같다. 도감 키는 `c:<풀 id>`(§13.16).
+- 운영 스위치: 환경 변수 `FLAME_START_CLONES=0|1` 이 데이터 값을 덮는다. 카탈로그 메시지·`CATALOG_MSG_REV`·`cat.ver` 는 바뀌지 않는다(풀·오리지널 데이터 버전 그대로).
+- 시뮬 도구(`sim_balance.mjs`·`sim_versus.mjs`)의 고정 빌드 경로(`startLineup(cat)`)는 비밀값이 없어 언제나 종전 고정 팀이다. `run` 모드(`Run.newRun` 경유)는 랜덤 시작 팀을 쓴다 — 종전 측정과 맞추려면 `FLAME_START_CLONES=0` 을 붙인다.
 
 ## 14. 채팅·관리자 공지 — 서버 2026-11-20 박백엔. 설계 analysis/49_chat_admin_notice.md, 화면은 후속(윤프론, 시안 `Works/_asset_samples/tongki_chat_mock/`)
 

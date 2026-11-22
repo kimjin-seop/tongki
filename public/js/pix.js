@@ -14,9 +14,8 @@ export const GRID_MAIN = [0, 1, 3, 2, 5, 6, 7, 4, 10, 11, 14, 12, 13, 9, 8];
 const IMGS = { '--img-bg': 'select.bg.unit', '--img-win': 'select.window.9s', '--img-emb': 'select.emblems',
   '--img-font': 'select.font.white', '--img-font-y': 'select.font.yellow', '--img-faces': 'hud.faces',
   '--img-ball': 'select.ball', '--img-bar': 'prematch.fm.bar', // 레트로 UI: 메뉴 공 커서 16x16x4, 눈금 게이지 4x8
-  // 불꽃 보관 팀(안아트 keep 세트): 표식·배지·기호·딱지·빈 칸·NEW
-  '--img-kp-mark': 'ui.icon.keep.mark', '--img-kp-badge': 'ui.icon.keep.badge', '--img-kp-g-recent': 'ui.icon.keep.glyph_recent', '--img-kp-g-best': 'ui.icon.keep.glyph_best',
-  '--img-kp-t-recent': 'ui.icon.keep.tag_recent', '--img-kp-t-best': 'ui.icon.keep.tag_best', '--img-kp-empty': 'ui.icon.keep.slot_empty', '--img-kp-new': 'ui.icon.keep.new' };
+  // 불꽃 저장 팀(안아트 keep 세트): 표식·엠블럼 배지·빈 칸 점선
+  '--img-kp-mark': 'ui.icon.keep.mark', '--img-kp-badge': 'ui.icon.keep.badge', '--img-kp-empty': 'ui.icon.keep.slot_empty' };
 
 /** 부팅 시 1회: 이미지 키 → CSS 변수, 팀→엠블럼 표 로드 */
 export async function loadPix() {

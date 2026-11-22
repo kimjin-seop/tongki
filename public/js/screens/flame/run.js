@@ -3,7 +3,7 @@
 import { h } from '../../util.js';
 import { toast } from '../../ui.js';
 import * as F from './store.js';
-import { icon, emptyIcon, pface, pname, pteam, isClone, ownShotOf, tname, emblem, origEmblem, sprite, hpBar, head, chip, btn, learnTip, gradeTag, rarTag, artKindTag } from './ui.js';
+import { icon, emptyIcon, pface, pname, pteam, isClone, ownShotOf, tname, emblem, origEmblem, sprite, hpBar, head, chip, btn, learnTip, gradeTag, rarTag, artKindTag, snapPicker, snapPickEsc, snapOn } from './ui.js';
 
 const isMatch = (t) => t === 'normal' || t === 'strong' || t === 'boss';
 const pointChip = (run) => chip('경기 포인트', String(run.points), '.pt');
@@ -130,7 +130,8 @@ export function map(ctx) {
   const cancelAb = () => { S.abAsk = false; ctx.paint(); };
   let cmds;
   const resting = ctx.peeking; // 휴식실에서 지도를 보는 중: 휴식 선택이 남아 있다
-  if (S.abAsk) {
+  if (S.snapPick) cmds = snapPicker(ctx, 'run'); // 팀 저장(§13.20-B): 진행 중 도전의 지금 팀을 저장 칸에
+  else if (S.abAsk) {
     const no = btn('취소', 'ab-no', cancelAb, '.center', { 'data-sfx': 'cancel' });
     no.dataset.first = '1';
     cmds = h('div.fl-cmds.ask', h('span.fl-ask-t', '도전을 포기합니다'), btn('포기', 'ab-yes', () => { S.abAsk = false; ctx.send('flame_abandon'); }, '.danger.center'), no);
@@ -157,7 +158,8 @@ export function map(ctx) {
           run.artifacts.map((id) => (id ? icon(F.artDef(id)) : emptyIcon())))),
       // 연습 경기(PROTOCOL §13.15): 받을 수 있고(run.practiceAvailable) 풀지 않은 선택이 없을 때만 작은 버튼. 결과는 도전에 반영되지 않는다(거절 = 토스트)
       run.practiceAvailable === true && !run.pending?.length && !run.node ? btn('연습 경기', 'practice', () => ctx.send('flame_practice'), '.small.fl-practice-b') : null,
-      btn('포기', 'abandon', () => { S.abAsk = true; ctx.paint(); }, '.small'),
+      snapOn() ? btn('팀 저장', 'snap', () => { S.abAsk = false; S.snapPick = {}; document.activeElement?.blur(); ctx.paint(); }, '.small') : null, // blur: 다시 그린 뒤 첫 칸에 포커스
+      btn('포기', 'abandon', () => { S.snapPick = null; S.abAsk = true; ctx.paint(); }, '.small'),
       btn('돌아가기', 'back', () => ctx.go('home'), '.small.back')),
     h('section.pwin.fl-map', segTabs, board),
     cmds));
@@ -186,7 +188,7 @@ export function map(ctx) {
   const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => { draw(); placeToast(); if (board.clientWidth !== bw) { bw = board.clientWidth; showCur(board); } }) : null;
   ro?.observe(cols); ro?.observe(board);
   requestAnimationFrame(() => { draw(); placeToast(); bw = board.clientWidth; showCur(board); });
-  return { esc: () => (S.abAsk ? cancelAb() : ctx.go('home')), off: () => { ro?.disconnect(); document.body.style.removeProperty('--fl-toast-bottom'); } };
+  return { esc: () => (snapPickEsc(ctx) || (S.abAsk ? cancelAb() : ctx.go('home'))), off: () => { ro?.disconnect(); document.body.style.removeProperty('--fl-toast-bottom'); } };
 }
 /** 지도가 가로로 넘칠 때 지금 고를 수 있는 칸(없으면 현재 층)을 가운데로. 넘치지 않으면 그대로 */
 function showCur(board) {

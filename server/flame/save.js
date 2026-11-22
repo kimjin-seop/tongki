@@ -13,9 +13,11 @@
 //     손으로 쓴 아티팩트(A01~A30)는 버리고 1개당 artifact.refundPoints 경기 포인트를 돌려준다. 아직 풀지 않은 아티팩트 선택·상점 칸의 A 번호도 뺀다(빈 선택은 통째로 뺀다).
 //   영구 저장 = hiddenPerm(PC03) 의 산 단계를 코인으로 한 번 돌려주고 단계를 지운다. artV 1 = 이 이관을 마쳤다는 표시(선택 필드, 중복 환불 방지). 도감의 아티팩트 기록은 그대로 둔다.
 //   되돌린 서버(이 기능 전)는 spItem·fmItem·artV 를 버린다 -> 이관된 도전은 아무것도 끼지 않은 상태로 읽힌다(한계, PROTOCOL §13.26)
+//   팀 스냅샷(B149, 2026-11-21): teams.s1~s3(사용자 저장 칸)·teams.ended(마지막으로 끝난 도전)·snapV(옛 best->s1, recent->s2 변환 표시)도 선택 필드다(형식 버전 그대로).
+//   옛 recent·best 는 지우지 않고 그대로 옮겨 둔다. 되돌린 서버는 sanitizeTeams 가 recent·best 만 옮겨 s1~s3·ended·snapV 를 버린다(그 서버가 한 번 쓰면 사라진다. 한계, PROTOCOL §13.20)
 import { STAT_KEYS, grantOf, teamArtifactsOn } from './catalog.js';
 import { secretFromSeed } from './rng.js';
-import { sanitizeTeams } from './teams.js';
+import { sanitizeTeams, migrateSnaps, TEAM_NAME_MAX } from './teams.js';
 import { cleanSpecials, formationOf, migrateWorn } from './stats.js';
 import { artifactChoices } from './rewards.js';
 
@@ -27,6 +29,8 @@ export const PROFILE_VERSION = 2; // 영구 저장(profile)
 export const PERM_TABLE_VERSION = 2;
 /** 팀 공용 아티팩트 끄기 이관 판(D63): profile.artV. 1 = 숨긴 영구 성장(PC03) 환불을 마쳤다 */
 export const ART_MIGRATION_VERSION = 1;
+/** 팀 스냅샷 변환 판(B149): profile.snapV. 1 = 옛 자동 칸(best -> s1, recent -> s2) 변환을 마쳤다(다시 하지 않는다) */
+export const SNAP_MIGRATION_VERSION = 1;
 /** 옛 표(perm_upgrades legacy) 단계 -> 새 표 단계: 총효과(단계 × perLevel)가 같게. legacy 가 없는 항목은 그대로. 받아 주는 상한(cat.permCap)은 부르는 쪽이 자른다 */
 export function permLvOfLegacy(cat, id, lv) {
   const L = cat.permLegacy?.get(id), u = cat.perm.get(id);
@@ -65,7 +69,7 @@ function migrate(v, target = SAVE_VERSION) {
 }
 
 export const freshProfile = () => ({
-  v: PROFILE_VERSION, permV: PERM_TABLE_VERSION, artV: ART_MIGRATION_VERSION, coins: 0, // artV: 새 영구 저장은 돌려줄 것이 없다(D63)
+  v: PROFILE_VERSION, permV: PERM_TABLE_VERSION, artV: ART_MIGRATION_VERSION, snapV: SNAP_MIGRATION_VERSION, coins: 0, // artV: 새 영구 저장은 돌려줄 것이 없다(D63)
   earned: 0, spent: [], perm: {},
   codex: { items: [], artifacts: [], consumables: [], players: [] },
   best: { seg: 0, wins: 0, clears: 0, clearDiff: [] }, totals: { runs: 0, wins: 0, boss: 0 },
@@ -112,6 +116,7 @@ export function sanitizeProfile(cat, raw) {
   const ach = new Set(cat.cfg.achievements.map((a) => a.id));
   if (Array.isArray(v.achievements)) p.achievements = [...new Set(v.achievements.filter((a) => ach.has(a)))];
   p.firstClear = v.firstClear === true;
+  if (typeof v.teamName === 'string' && v.teamName && [...v.teamName].length <= TEAM_NAME_MAX) p.teamName = v.teamName; // 플레이어가 정한 팀 이름(B149, 선택 필드. 없으면 기본 이름)
   if (v.practiceUsed === true) p.practiceUsed = true; // 연습 경기를 이미 썼다(D28, 선택 필드. 형식 버전은 그대로이고 없는 저장은 '쓰지 않음'이다)
   // 팀 공용 아티팩트 끄기(D63): 숨긴 영구 성장(PC03)의 산 단계는 그 단계 비용 합을 코인으로 한 번 돌려주고 단계를 지운다. artV 가 이미 1 이면 다시 돌려주지 않는다(team 으로 되돌려 다시 산 단계는 숨김만)
   if (!(Number.isInteger(v.artV) && v.artV >= ART_MIGRATION_VERSION)) delete p.artV; // 표시가 없는 저장(이 기능 전): off 에서 아래에서 한 번 환불하고 표시를 붙인다. team 에서는 표시 없이 둔다
@@ -119,7 +124,9 @@ export function sanitizeProfile(cat, raw) {
     for (const id of cat.artifact.hiddenPerm) { const lv = p.perm[id] ?? 0; if (lv > 0) { const back = cat.perm.get(id).costs.slice(0, lv).reduce((a, c) => a + c, 0); p.coins += back; delete p.perm[id]; } }
     p.artV = ART_MIGRATION_VERSION;
   }
-  const teams = sanitizeTeams(cat, v.teams, legacyPerm); // 키운 팀 슬롯(D33, 선택 필드): 없어진 id 는 그 칸만 버리고, 쓸 수 없는 슬롯은 그 슬롯만 버린다(teams.js)
+  let teams = sanitizeTeams(cat, v.teams, legacyPerm); // 키운 팀 칸(D33·B149, 선택 필드): 없어진 id 는 그 칸만 버리고, 쓸 수 없는 칸은 그 칸만 버린다(teams.js)
+  // B149: 표시가 없는 저장 = 옛 자동 칸(best -> s1, recent -> s2)을 한 번 옮긴다(이미 있는 칸은 덮지 않는다). 다음 저장부터 snapV 1 이라 다시 옮기지 않는다
+  if (!(Number.isInteger(v.snapV) && v.snapV >= SNAP_MIGRATION_VERSION)) teams = migrateSnaps(teams);
   if (teams) p.teams = teams;
   return p;
 }

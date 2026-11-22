@@ -1,5 +1,5 @@
 // 불꽃의 계승(PROTOCOL §13, 기획 analysis/36 §12). 한 모듈에서 화면을 모드로 나눈다(league.js 와 같은 형태):
-//   home(모드 메인) / perm(영구 성장) / codex(선수·장비·아티팩트 도감) / records(기록 및 업적) / rank(도달 순위, §13.13) / end(도전 종료)
+//   home(모드 메인) / snaps(저장 팀 3칸, §13.20-B) / perm(영구 성장) / codex(선수·장비·아티팩트 도감) / records(기록 및 업적) / rank(도달 순위, §13.13) / end(도전 종료)
 //   run(도전 진행): 서버 상태로 바탕 화면이 정해진다 — 풀지 않은 선택(pending) = reward·rest·recruit·event, 열린 노드 = shop·train, 그 밖 = map(진행 지도).
 //                   그 위에 겹쳐 여는 화면(sub) = team(선수 관리) / inv(장비 관리) / artifact(아티팩트·필살기 슬롯) / formation / items(소모품)
 // 상태는 서버가 단일 출처다: main.js 가 app.flame(최근 flame_state)·app.flameEnd(아직 보여 주지 않은 flame_end 요약)에 두고 이 화면은 그것만 그린다.
@@ -22,7 +22,7 @@ import * as Rank from './rank.js';
 import './matchhud.js'; // 불꽃의 계승 경기에서만 켜지는 HP 숫자 층(일반 경기 HUD 는 그대로)
 
 const VIEWS = {
-  home: Home.home, perm: Home.perm, codex: Home.codex, records: Home.records, end: Home.end, rank: Rank.rank,
+  home: Home.home, snaps: Home.snaps, perm: Home.perm, codex: Home.codex, records: Home.records, end: Home.end, rank: Rank.rank,
   intro: RunV.intro, champ: RunV.champ, map: RunV.map, reward: RunV.reward, shop: RunV.shop, train: RunV.train, rest: RunV.rest, recruit: RunV.recruit, event: RunV.event,
   team: Team.team, inv: Team.team, artifact: Team.artifact, formation: Team.formation, items: Team.items,
 };
@@ -43,7 +43,7 @@ export function mount(root, app, data = {}) {
   if (app.flameEnd) mode = 'auto'; // 아직 보여 주지 않은 종료 요약이 남아 있으면 어디서 들어오든 그것부터 보인다(다음 도전 중에 뒤늦게 뜨지 않게)
   let sub = null, offNav = null, offView = null, busy = false, busyT = 0, alive = true, last = null, wantRun = false, healed = false;
   let peek = false, req = null, reqMeta = null, seen = null; // peek = 휴식실에서 지도 보기 / req = 마지막으로 보낸 요청 / seen = 직전 상태 요약(획득·구매 토스트용)
-  S.newAsk = false; S.abAsk = false; // 확인 창은 화면을 다시 열 때 닫힌 상태로
+  S.newAsk = false; S.abAsk = false; S.info = false; S.snapPick = null; S.snapDel = null; S.tnEdit = false; S.tnPending = false; // 확인 창·입력 칸은 화면을 다시 열 때 닫힌 상태로
   const offPad = padNav();
   nodeIcons(); // 지도 노드 아이콘 manifest 경로 → CSS 변수(한 번)
   const st = () => app.flame ?? null;
@@ -60,13 +60,13 @@ export function mount(root, app, data = {}) {
       net.send(t, d); req = t; reqMeta = meta;
       return true;
     },
-    go(m) { mode = m; sub = null; peek = false; if (m === 'rank') net.send('flame_ranking_get', {}); paint(true); }, // 순위는 들어갈 때마다 새로 받는다(응답 = flame_ranking, flame_state 가 아니라 busy 를 걸지 않는다)
+    go(m) { mode = m; sub = null; peek = false; S.snapPick = null; S.snapDel = null; if (m === 'rank') net.send('flame_ranking_get', {}); paint(true); }, // 순위는 들어갈 때마다 새로 받는다(응답 = flame_ranking, flame_state 가 아니라 busy 를 걸지 않는다)
     /** 풀지 않은 휴식 선택을 둔 채 지도를 본다(on = false 면 휴식실로 돌아간다) */
-    peek(on) { peek = !!on; sub = null; paint(true); },
+    peek(on) { peek = !!on; sub = null; S.snapPick = null; paint(true); },
     get peeking() { return peek; },
     /** 새 도전을 요청했다: 도전이 담긴 상태가 오면 도전 진행 화면으로 */
     expectRun() { wantRun = true; },
-    open(s) { if (SUBS.includes(s)) { sub = s; paint(true); } },
+    open(s) { if (SUBS.includes(s)) { sub = s; S.snapPick = null; paint(true); } }, // 칸 고르기 창(S.snapPick)은 화면을 옮기면 닫는다
     close() { sub = null; paint(true); },
     paint: () => paint(),
     leave: () => app.go('lobby'),
@@ -132,6 +132,15 @@ export function mount(root, app, data = {}) {
     if (b?.height) document.body.style.setProperty('--fl-toast-sub', Math.max(8, Math.round(innerHeight - b.top + 6)) + 'px');
     else document.body.style.removeProperty('--fl-toast-sub');
     document.body.classList.toggle('fl-subt', !!b?.height);
+    // 모드 메인(홈): 상단 기본 위치는 로고를 가린다(css body.fl-homet #toasts). 아래 줄(뒤로 가기·순위) 두 버튼 사이에 토스트 폭이 들어가면 그 줄 높이에,
+    // 좁으면(세로 모바일) 아래 줄 바로 위에 띄운다. 메뉴는 아래 줄 위까지 내려올 수 있어 「바로 위」를 넓은 화면 기본으로 쓰지 않는다
+    const f = alive && last === 'home' ? root.querySelector('.fl-home > .fl-foot') : null, fb = f?.getBoundingClientRect();
+    if (fb?.height) {
+      const bs = [...f.querySelectorAll('button')].map((e) => e.getBoundingClientRect()), tw = document.getElementById('toasts')?.getBoundingClientRect().width ?? 0;
+      const gap = bs.length === 2 ? bs[1].left - bs[0].right : 0, inRow = tw > 0 && bs.length === 2 && innerWidth / 2 - tw / 2 >= bs[0].right + 8 && innerWidth / 2 + tw / 2 <= bs[1].left - 8 && gap > tw;
+      document.body.style.setProperty('--fl-toast-home', Math.max(8, Math.round(inRow ? innerHeight - fb.bottom : innerHeight - fb.top + 6)) + 'px');
+    } else document.body.style.removeProperty('--fl-toast-home');
+    document.body.classList.toggle('fl-homet', !!fb?.height);
   }
   addEventListener('resize', placeSubToast);
 
@@ -236,6 +245,10 @@ export function mount(root, app, data = {}) {
   return {
     onFlameState(m) {
       busy = false; clearTimeout(busyT);
+      // 팀 스냅샷·팀 이름(§13.20-B): 성공 응답 = flame_state(snapSaved·snapDeleted 키 / 팀 이름은 요청 뒤 첫 상태). 거절은 flame_error 토스트(main.js)
+      if (m.snapSaved) { S.snapPick = null; toast('팀을 저장했습니다', 'ok'); }
+      if (m.snapDeleted) { S.snapDel = null; toast('팀을 지웠습니다', 'ok'); }
+      if (S.tnPending && req === 'flame_team_name') { S.tnPending = false; S.tnEdit = false; S.tnVal = null; }
       if (wantRun && m.run) { wantRun = false; if (mode !== 'end') { mode = 'run'; sub = null; } }
       if (m.note) showNote(m.note);
       showDone(m);
@@ -244,7 +257,7 @@ export function mount(root, app, data = {}) {
     },
     onFlameCatalog() { paint(); },
     onFlameRanking() { if (mode === 'rank' || mode === 'home' || mode === 'end') paint(); },
-    onFlameEnd() { mode = 'end'; sub = null; askMyRank(); },
+    onFlameEnd() { mode = 'end'; sub = null; S.snapPick = null; askMyRank(); }, // 지도에서 연 칸 고르기가 종료 화면의 「확인」 자리에 뜨지 않게
     // 카탈로그 요청이 거절되면 '불러오는 중'에 머물지 않게 로비로 돌아간다(거절 사유는 main.js 토스트)
     /** 거절 토스트 문구를 이 화면이 정한다(main.js 가 먼저 묻는다. null = 종전 문구). 부여 구조(§13.21)의 슬롯 지정 거절 = 그 선수가 쓸 수 없는 슛 */
     errText(m) {
@@ -253,8 +266,11 @@ export function mount(root, app, data = {}) {
       if (req === 'flame_formation' && F.gradeOn()) return '장착한 포메이션 아이템만 고를 수 있습니다'; // 등급제(§13.22): 기본 + 낀 아이템의 패턴만
       return req === 'flame_special' && F.granted() ? '부여되지 않은 필살기입니다' : null;
     },
-    onError() { busy = false; wantRun = false; req = null; reqMeta = null; clearTimeout(busyT); F.catalogRetry(); const s = st(); if (!s || !F.catalogReady(s.catalogVer)) app.go('lobby'); },
+    onError(m) {
+      // 저장 칸 삭제·저장이 「칸 없음」(FLAME_TEAM_NONE)으로 거절됐다(다른 창에서 이미 지움 등): 상태를 새로 받아 칸을 맞춘다(room.js 와 같은 방식)
+      if (m?.code === 'FLAME_TEAM_NONE') { S.snapDel = null; S.snapPick = null; net.send('flame_get'); }
+      S.tnPending = false; busy = false; wantRun = false; req = null; reqMeta = null; clearTimeout(busyT); F.catalogRetry(); const s = st(); if (!s || !F.catalogReady(s.catalogVer)) app.go('lobby'); },
     onWelcome() { net.send('flame_get'); if (mode === 'rank') net.send('flame_ranking_get', {}); else askMyRank(); },
-    unmount() { alive = false; offView?.(); offNav?.(); offPad(); clearTimeout(busyT); removeEventListener('resize', placeSubToast); document.body.style.removeProperty('--fl-toast-sub'); document.body.classList.remove('fl-subt'); },
+    unmount() { alive = false; offView?.(); offNav?.(); offPad(); clearTimeout(busyT); removeEventListener('resize', placeSubToast); document.body.style.removeProperty('--fl-toast-sub'); document.body.classList.remove('fl-subt'); document.body.style.removeProperty('--fl-toast-home'); document.body.classList.remove('fl-homet'); },
   };
 }

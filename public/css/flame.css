@@ -109,9 +109,18 @@
 @media (prefers-reduced-motion: reduce) { .fl-logo-f { animation: none; } }
 .fl-menu { flex: none; width: min(100%, calc(var(--u) * 200)); padding: calc(var(--u) * 4) calc(var(--u) * 8); display: grid; gap: 0; }
 .fl-menu .fl-menu-b { min-height: var(--row); font: var(--f-body); text-align: left; }
+/* 메뉴 8줄(「모드 소개」 추가) = 배율 2 의 낮은 데스크톱 창(1280x720 등)에서 아래 줄이 화면 밖으로 밀리지 않게 줄 높이 40 → 36(마우스·키보드 화면) */
+@media (min-width: 901px) and (min-height: 561px) and (max-height: 800px) { .fl-home .fl-menu .fl-menu-b { min-height: calc(var(--u) * 18); } }
 .fl-ask { width: min(100%, calc(var(--u) * 280)); padding: calc(var(--u) * 8); display: grid; gap: calc(var(--u) * 8); justify-items: center; }
 .fl-ask .fl-cmds { width: 100%; margin: 0; }
 .fl-opts { display: flex; flex-wrap: wrap; justify-content: center; gap: calc(var(--u) * 4); }
+/* 모드 소개 창(홈 메뉴 맨 위 「모드 소개」) + 첫 방문 점 배지(깜박임 없음) */
+.fl-info { width: min(100%, calc(var(--u) * 320)); justify-items: stretch; }
+.fl-info-t { margin: 0; font: var(--f-body); color: var(--r-yel); text-align: center; }
+.fl-info-l { margin: 0; padding: 0; list-style: none; display: grid; gap: calc(var(--u) * 4); }
+.fl-info-l li { position: relative; padding-left: calc(var(--u) * 10); font: var(--f-cap); color: var(--r-white); word-break: keep-all; overflow-wrap: anywhere; }
+.fl-info-l li::before { content: ""; position: absolute; left: 0; top: .45em; width: calc(var(--u) * 4); height: calc(var(--u) * 4); background: var(--r-yel); }
+.fl-menu .fl-menu-b .fl-dot { display: inline-block; width: calc(var(--u) * 4); height: calc(var(--u) * 4); min-width: 6px; min-height: 6px; margin-left: calc(var(--u) * 4); vertical-align: super; background: var(--r-red); box-shadow: 0 0 0 var(--u) #000; }
 .fl-foot { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: var(--gap); }
 
 /* ---- 영구 성장: 창 안 가로줄(상자 없음) ---- */
@@ -528,6 +537,9 @@ button.fl-card.rare[aria-pressed=true] { box-shadow: 0 0 0 calc(var(--u) * 2) va
 /* 관리 화면(선수·장비·필살기·포메이션·소모품) = 명령 줄 바로 위(머리줄 탭을 가리지 않게, index.js placeSubToast 가 --fl-toast-sub 를 잰다) */
 body.fl-subt #toasts { top: auto; bottom: var(--fl-toast-sub, calc(var(--u) * 48)); gap: calc(var(--u) * 2); }
 body.fl-subt .toast { padding: var(--u) calc(var(--u) * 6); }
+/* 모드 메인(홈) = 아래 줄(뒤로 가기·순위) 바로 위(로고·메뉴를 가리지 않게, index.js placeSubToast 가 --fl-toast-home 을 잰다) */
+body.fl-homet #toasts { top: auto; bottom: var(--fl-toast-home, calc(var(--u) * 48)); gap: calc(var(--u) * 2); }
+body.fl-homet .toast { padding: var(--u) calc(var(--u) * 6); }
 @media (max-width: 639px) {
   :root:has(.fl-reward) #toasts { top: auto; bottom: calc(var(--u) * 120); gap: 4px; }
   :root:has(.fl-reward) .toast { padding: 2px 8px; }

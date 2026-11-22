@@ -4,7 +4,8 @@
 import { SAVE_VERSION, PROFILE_VERSION, FlameError, sanitizeProfile, sanitizeRun } from './save.js';
 import { loadCatalog, checkAgainstEngine, cloneRecruitOn, practiceCfg, recruitRoomHealPct, afterWinHealPct, POOL_GRADES } from './catalog.js';
 import { teamOfRun, grantShotOf } from './stats.js';
-import { TEAM_SLOTS, versusTeamCfg, versusOptions, teamSummary } from './teams.js';
+import { TEAM_SLOTS, SNAP_SLOTS, ENDED_SLOT, TEAM_NAME_MAX, versusTeamCfg, versusOptions, teamSummary, snapshotOf } from './teams.js';
+import { cleanText, maskBadwords } from '../chat/chat.js';
 import * as Items from './items.js';
 import * as Nodes from './nodes.js';
 import * as Run from './run.js';
@@ -51,7 +52,8 @@ export function catalogMsg(cat, data = loadData()) {
     // 키운 팀 슬롯 요약(D33·D35, §13.20, 표시용). enabled = run_config.json versusTeam 이 켜져 있는가(꺼져 있으면 슬롯을 저장하지 않고 컴퓨터 대전에서 고를 수 없다),
     // slots = set_team{team:'flame:<슬롯>'} 에 쓰는 슬롯 이름, ruleMode = 그 팀을 쓸 수 있는 규칙, surviveUsesPerMatch = 대전 한 경기의 치사 생존(P10) 횟수(팀 합계)
     // humans = 사람끼리 방에서 방장이 규칙 「불꽃 팀」(rules.flameTeams)을 켤 수 있는가(D53). false 면 컴퓨터 대전 방만(1차)
-    versusTeam: (() => { const V = versusTeamCfg(cat); return V ? { enabled: true, slots: TEAM_SLOTS.slice(), ruleMode: VERSUS_RULE_MODE, surviveUsesPerMatch: V.surviveUses, humans: V.humans } : { enabled: false, slots: [], humans: false }; })(),
+    // 팀 스냅샷(B149): slots = 사용자 저장 칸 id(s1~s3), snapSlots = 칸 수(0 = 꺼짐), teamName = 팀 이름 {default: 기본 이름, max: 최대 글자 수}
+    versusTeam: (() => { const V = versusTeamCfg(cat), teamName = { default: cat.original?.name ?? null, max: TEAM_NAME_MAX }; return V ? { enabled: true, slots: TEAM_SLOTS.slice(), snapSlots: TEAM_SLOTS.length, ruleMode: VERSUS_RULE_MODE, surviveUsesPerMatch: V.surviveUses, humans: V.humans, teamName } : { enabled: false, slots: [], snapSlots: 0, humans: false, teamName }; })(),
     // 엔드리스 요약(D24, 표시용). enabled = 무한 구간인가(꺼져 있으면 종전: 구간 championSegments 의 보스 승리에서 끝난다), championSegments = 우승 기준 구간 수,
     // itemMax = 장비 보유 상한(넘으면 받는 즉시 판매가만큼 포인트), artifactFallbackPoints = 아티팩트 고갈 때 보스 보상 대체 포인트, rerollFrom·rerollAdd = 그 구간 이상의 보스 격파마다 재선택 +n, rankTop = 순위표 줄 수
     endless: (() => {
@@ -77,8 +79,9 @@ export function catalogMsg(cat, data = loadData()) {
 
 /** 키운 팀을 쓸 수 있는 규칙(D34): 체력제만. こうしき + flame 훅 조합은 측정한 적이 없다(analysis/43 §5) */
 export const VERSUS_RULE_MODE = 'knockout';
-const TEAM_REF = /^flame:([a-z]+)$/;
-/** set_team 의 team 값이 불꽃 팀 슬롯 참조('flame:recent' | 'flame:best')면 슬롯 이름, 아니면 null */
+const TEAM_REF = /^flame:([a-z0-9]+)$/;
+const TEAM_NAME_RE = /^[가-힣ㄱ-ㅎㅏ-ㅣA-Za-z0-9 ]+$/u; // 팀 이름 문자(B149): 닉네임 규칙(protocol.js NICK_RE) 문자 + 공백
+/** set_team 의 team 값이 불꽃 팀 칸 참조('flame:s1' | 'flame:s2' | 'flame:s3')면 칸 id, 아니면 null(폐지된 'flame:recent'·'flame:best' 도 null = TEAM_INVALID, B149) */
 export const flameTeamSlot = (v) => { const m = typeof v === 'string' ? TEAM_REF.exec(v) : null; return m && TEAM_SLOTS.includes(m[1]) ? m[1] : null; };
 
 /**
@@ -146,8 +149,9 @@ export function makeFlameHandlers(fail) {
     state(lobby, s, c, extra ?? {});
     return c;
   };
-  const endRun = (lobby, s, c, result) => {
+  const endRun = (lobby, s, c, result, o = {}) => {
     const summary = Run.settle(c.cat, c.run, c.profile, result);
+    if (o.replaced) summary.teamSave = false; // flame_new(리뷰 M): 곧 새 도전이 시작되고 종료 팀(ended)은 버려지므로 종료 화면에서 저장할 수 없다
     c.run = null;
     lobby.sendTo(s, { t: 'flame_end', summary });
   };
@@ -160,7 +164,8 @@ export function makeFlameHandlers(fail) {
       if (m.diff !== undefined && !Number.isInteger(m.diff)) fail('BAD_MESSAGE');
       act(this, s, (c) => {
         const next = Run.newRun(c.cat, c.data, c.profile, { diff: m.diff ?? 0, seed: this.o.flameSeed }); // 거절(잠긴 난이도)은 옛 도전을 정산하기 전에
-        if (c.run) endRun(this, s, c, 'abandon');
+        if (c.run) endRun(this, s, c, 'abandon', { replaced: true });
+        if (c.profile.teams?.[ENDED_SLOT]) { const { [ENDED_SLOT]: _e, ...rest } = c.profile.teams; c.profile.teams = rest; } // eslint-disable-line no-unused-vars -- 새 도전을 시작하면 종료 화면 저장 재료는 버린다(B149)
         c.run = next;
       }, { needRun: false });
     },
@@ -238,6 +243,49 @@ export function makeFlameHandlers(fail) {
     flame_use(s, m) { act(this, s, (c) => Items.useConsumable(c.cat, c.run, m.c, m.p, teamOfRun(c.cat, c.data, c.run, c.profile.perm).players.map((p) => p.final.s0))); },
     flame_buy(s, m) { act(this, s, (c) => { const note = Nodes.buy(c.cat, c.run, m.i); return note ? { note } : undefined; }); }, // note.upgraded = 낮은 등급 자동 판매(§13.22)
     flame_train(s, m) { act(this, s, (c) => Nodes.train(c.cat, c.run, m.p, m.opt)); },
+    // 팀 스냅샷(B149, §13.20): slot = 's1'|'s2'|'s3'. 진행 중인 도전이 있으면 그 도전의 지금 팀, 없으면 마지막으로 끝난 도전의 팀(teams.ended)을 그 칸에 덮어쓴다.
+    // 재료는 서버 상태에서만 만든다(클라이언트는 칸 id 만). 방 안 ALREADY_IN_ROOM, 재료 없음 FLAME_NONE, 기능 꺼짐 FLAME_UNAVAILABLE
+    // src(선택, 리뷰 M): 'run' = 진행 중 도전만, 'ended' = 종료 팀만(도전 종료 화면의 「팀 저장」은 이것을 보낸다). 생략 = 진행 중 도전 우선, 없으면 종료 팀. 지정한 재료가 없으면 FLAME_NONE
+    flame_snap_save(s, m) {
+      if (!SNAP_SLOTS.includes(m.slot) || (m.src !== undefined && m.src !== 'run' && m.src !== 'ended')) fail('BAD_MESSAGE');
+      act(this, s, (c) => {
+        if (!versusTeamCfg(c.cat)) throw new FlameError('FLAME_UNAVAILABLE');
+        const now = Date.now(), useRun = m.src === 'run' || (m.src === undefined && !!c.run);
+        if ((useRun && !c.run) || (!useRun && !c.profile.teams?.[ENDED_SLOT])) throw new FlameError('FLAME_NONE');
+        const t = useRun ? snapshotOf(c.cat, c.run, c.profile, { seg: c.run.seg + 1, wins: Run.winsOf(c.run), now }) : c.profile.teams?.[ENDED_SLOT] ? { ...structuredClone(c.profile.teams[ENDED_SLOT]), name: c.profile.teamName } : null;
+        if (!t) throw new FlameError('FLAME_NONE');
+        if (!t.name) delete t.name;
+        c.profile.teams = { ...(c.profile.teams ?? {}), [m.slot]: t };
+        return { snapSaved: m.slot };
+      }, { needRun: false });
+    },
+    // 칸 비우기(B149): 빈 칸 FLAME_TEAM_NONE. 확인 단계는 클라이언트가 한다
+    flame_snap_delete(s, m) {
+      if (!SNAP_SLOTS.includes(m.slot)) fail('BAD_MESSAGE');
+      act(this, s, (c) => {
+        if (!c.profile.teams?.[m.slot]) throw new FlameError('FLAME_TEAM_NONE');
+        const { [m.slot]: _gone, ...rest } = c.profile.teams; // eslint-disable-line no-unused-vars
+        c.profile.teams = rest;
+        return { snapDeleted: m.slot };
+      }, { needRun: false });
+    },
+    // 팀 이름(B149): 영구 저장 단위 1개. 빈 문자열·공백만·null = 기본 이름으로(저장 칸을 지워 기본값을 따른다). 앞뒤 공백·제어문자 제거, 1~TEAM_NAME_MAX 자,
+    // 한글·영문·숫자·공백만(닉네임 문자 규칙 + 공백), 채팅 욕설 목록에 걸리면 거절. 진행 중 도전 표시에 바로 반영되고, 스냅샷 칸에는 저장한 순간의 이름이 고정된다
+    flame_team_name(s, m) {
+      if (m.name !== null && m.name !== undefined && typeof m.name !== 'string') fail('BAD_MESSAGE');
+      act(this, s, (c) => { // 검사는 빈도 창 안에서(거절도 횟수에 든다)
+        let name = null;
+        if (typeof m.name === 'string') {
+          const r = cleanText(m.name, TEAM_NAME_MAX);
+          if (r.code === 'CHAT_TOO_LONG') throw new FlameError('FLAME_TEAM_NAME_LONG', { max: TEAM_NAME_MAX });
+          if (r.text) {
+            if (!TEAM_NAME_RE.test(r.text) || maskBadwords(r.text, this.chatBad) !== r.text) throw new FlameError('FLAME_TEAM_NAME_INVALID');
+            name = r.text;
+          }
+        }
+        if (name === null || name === c.cat.original?.name) delete c.profile.teamName; else c.profile.teamName = name;
+      }, { needRun: false });
+    },
     flame_perm(s, m) { act(this, s, (c) => { Run.buyPerm(c.cat, c.profile, m.id); }, { needRun: false }); },
     // 도달 순위표(§13.13). top = 1~상한(생략 = 상한). me = 계정이면 내 줄, 손님이면 null. 방 안에서도 볼 수 있다(읽기 전용)
     flame_ranking_get(s, m) {

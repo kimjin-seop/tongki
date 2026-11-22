@@ -38,6 +38,7 @@ export const app = {
   flame: null, flameEnd: null, // 불꽃의 계승(PROTOCOL §13): 최근 flame_state / 아직 보여 주지 않은 flame_end 요약
   flameChamp: null, flameRank: null, // 아직 보여 주지 않은 우승(flame_result.champion: {run, achievements}, §13.12) / 최근 flame_ranking {top, me, total}(§13.13)
   view: null, screen: null,
+  leaveTo: null, // 대기실에서 방을 나간 뒤 갈 화면(room.js 「불꽃의 계승 하러 가기」 → 'flame'). room_left 가 한 번 쓰고 지운다
   intro: null, // 부팅 인트로 제어(재생 중일 때만)
   sfx: (key, opt) => audio.play(key, opt), // 소리 키 재생(bgm.* 는 BGM 전환). 없는 키·잠금 전은 무음
   bgm: (key) => audio.bgm(key),
@@ -102,6 +103,7 @@ function wire() {
   });
   net.on('welcome', (m) => {
     if (m.resumed && app.view && app.view !== 'nick') toast(ERR.RECONNECTED, 'ok', 1500);
+    app.leaveTo = null; // 재접속: 대기실 「불꽃의 계승 하러 가기」의 갈 곳이 room_left 없이 남지 않게
     app.welcome = m; app.nick = m.nickname; app.account = !!m.account; app.admin = m.admin === true; Nick.remember(m); app.teams = (m.teams || []).map((t) => ({ ...t, name: teamName(t.id, t.name), label: teamLabel(t.id, t.name) }));
     if (m.location === 'lobby' && !['story', 'tutorial', 'league', 'ranking', 'ladder', 'flame'].includes(app.view)) app.go('lobby');
     else if (m.location === 'lobby') app.screen?.onWelcome?.();
@@ -157,6 +159,8 @@ function wire() {
   net.on('room_left', (m) => {
     app.room = null; Chat.reset();
     if (ROOM_LEFT[m.reason]) toast(ROOM_LEFT[m.reason], 'warn');
+    if (app.view === 'room' && app.leaveTo) { const to = app.leaveTo; app.leaveTo = null; app.go(to); return; } // 대기실 팀 선택의 「불꽃의 계승 하러 가기」(room.js): 방을 나간 뒤 그 화면으로
+    app.leaveTo = null;
     if (app.view === 'story') return; // 캠페인 방 정리(재시작·목록 복귀)는 스토리 화면 안에서 처리
     if (app.view === 'game' && app.screen.holdLobby?.()) return; // 튜토리얼(특훈) 완료 카드가 떠 있다: 카드의 '튜토리얼로'(자동 복귀 포함)가 넘긴다
     if (app.view === 'game' && app.screen.training) { app.go('tutorial'); return; } // 튜토리얼을 그만두거나 상한으로 끝났다: 고르는 화면으로

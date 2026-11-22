@@ -8,6 +8,7 @@ import { computeTeam, teamOfRun, upgradeBonus, upgradePreview } from '../server/
 import * as Items from '../server/flame/items.js';
 import { newRun } from '../server/flame/run.js';
 
+process.env.FLAME_START_CLONES = '0'; // 시작 팀 랜덤(roster.startClones)은 끄고 고정 시작 팀 기준으로 본다(랜덤 시작은 flame_startclones.test.js)
 const data = loadData(), cat = { ...loadCatalog(), artifact: { ...loadCatalog().artifact, model: 'team' } }; // 아티팩트 스위치 team(종전 공용 3칸) 고정. off(기본값) 동작은 flame_noartifact.test.js
 const catOff = { ...cat, grade: { ...cat.grade, on: false } }; // 등급제 스위치(decisions.json grade.model)를 끈 것과 같은 카탈로그
 const code = (fn) => { try { fn(); } catch (e) { if (e instanceof FlameError) return e.code; throw e; } return null; };

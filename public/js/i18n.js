@@ -12,13 +12,14 @@ export const ERR = {
   READY_RESET_OPP: '방장이 팀을 바꿔 준비가 풀렸습니다',
   ACCOUNT_REQUIRED: '계정으로 로그인해야 합니다',
   RANKED_RULES_FIXED: '래더 경기는 규칙을 바꿀 수 없습니다',
+  FLAME_TEAM_UNUSABLE: '쓸 수 없는 팀입니다', // 팀 선택 「불꽃의 계승」 탭의 usable:false 카드(room.js)
 };
 /** 서버 오류 코드별 짧은 토스트 문구(여기 있는 코드는 서버 msg 보다 먼저 쓴다, main.js). 불꽃 팀 고르기(PROTOCOL §13.20) */
 export const ERR_CODE = {
   TEAM_INVALID: '고를 수 없는 팀입니다',
   FLAME_TEAM_NONE: '저장된 불꽃 팀이 없습니다',
   FLAME_TEAM_ROOM: '이 방은 불꽃 팀을 허용하지 않습니다',
-  FLAME_TEAM_RULES: '불꽃 팀은 체력제만',
+  FLAME_TEAM_RULES: '불꽃 팀은 체력제 규칙에서만 쓸 수 있습니다',
   FLAME_TEAM_CHANGED: '불꽃 팀 기록이 바뀌어 새로 불러왔습니다. 확인 후 다시 시작하세요', // 사람끼리 방(PROTOCOL §13.25): 시작 때 슬롯이 바뀜
   FLAME_TEAM_CLEARED: '방장이 불꽃 팀 허용을 꺼서 팀 선택이 풀렸습니다', // toast{code} 전용(§13.25)
   // 채팅·공지(사람끼리 방 chat, 관리자 notice_send). CHAT_TOO_LONG 은 params.max 로 고른다(chatErr)

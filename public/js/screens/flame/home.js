@@ -3,16 +3,19 @@ import { h } from '../../util.js';
 import { toast } from '../../ui.js';
 import { fmNameKo } from '../../game/formation.js';
 import * as F from './store.js';
-import { icon, emptyIcon, pface, pname, pteam, isClone, tname, emblem, sprite, head, chip, btn, castFor, rarTag, artKindTag, rankName, KEEP_SLOTS, KEEP_LABEL, keepTag, keepNew, keepMark, keepRec } from './ui.js';
+import { icon, emptyIcon, pface, pname, pteam, isClone, tname, emblem, sprite, head, chip, btn, castFor, rarTag, artKindTag, keepMark, SNAP_SLOTS, snapsOf, snapLabel, snapRec, snapBody, snapPicker, snapPickEsc, snapOn } from './ui.js';
 import { champCoins } from './run.js';
 
 const coinChip = (n) => chip('불꽃코인', String(n), '.coin');
 /** 내 순위(도달 순위표의 내 줄, PROTOCOL §13.13 flame_ranking.me.rank). 손님(me:null)·기록 없는 계정(rank:null)·아직 받지 못했으면 null → 줄을 그리지 않는다 */
 const myRank = (app) => { const r = app.flameRank?.me?.rank; return Number.isInteger(r) && r > 0 ? r : null; };
-/** 보관 팀(키운 팀 슬롯, §13.20): 기능이 켜져 있는가(flame_catalog.versusTeam.enabled) / 슬롯 요약 */
-const keepOn = () => F.catalog()?.versusTeam?.enabled === true;
-const keepOf = (P) => (P?.teams && typeof P.teams === 'object' ? P.teams : {});
-const KEEP_SEEN = 'dd.flame.keepSeen'; // 도전 종료 화면의 보관 팀 NEW 배지를 이미 보였는가(이 브라우저에서 한 번)
+/** 저장 팀(팀 스냅샷 3칸, §13.20-B): 칸이 하나라도 있는가 */
+const anySnap = (P) => Object.values(snapsOf(P)).some(Boolean);
+const SNAP_EMPTY_MSG = '「팀 저장」으로 채울 수 있습니다';
+/** 모드 소개 창(홈 메뉴 「모드 소개」). 설명 문구 최소화 규칙: 한 줄만. 시작 팀 구성(FLAME_START_CLONES)은 켜고 끌 수 있어 단정하지 않는다. 근거: 종료·정산 server/flame/run.js settle */
+const INFO_LINES = [
+  '지도를 따라 구간 보스를 넘는 도전입니다. 지거나 포기하면 장비·영입 선수는 사라지고 불꽃코인이 남습니다.',
+];
 
 // ---------------- 모드 메인 ----------------
 export function home(ctx) {
@@ -25,45 +28,98 @@ export function home(ctx) {
   const top = h('div.fl-home-top',
     h('div.fl-logo', { role: 'img', 'aria-label': '불꽃의 계승' }, h('span.fl-logo-f', { 'aria-hidden': 'true' }), h('b', '불꽃의 계승')),
     h('div.fl-chips', coinChip(P.coins), chip('최고 도달 구간', F.segText(P.best.seg, run, S.segments)), chip('최고 기록', `${P.best.wins}승`), P.best.clears ? chip('우승', `${P.best.clears}회`) : null,
-      myRank(ctx.app) !== null ? chip('내 순위', `${myRank(ctx.app)}위`, '.rank') : null));
+      myRank(ctx.app) !== null ? chip('내 순위', `${myRank(ctx.app)}위`, '.rank') : null, teamNameUi(ctx, P)));
+  const closeInfo = () => { S.info = false; ctx.paint(); };
   let body;
-  if (S.newAsk) {
+  if (S.info) {
+    // 모드 소개(메뉴 맨 위 「모드 소개」): 메뉴 자리에 창 하나. 닫기 = 버튼·Esc(게임패드 B)·창 밖 클릭
+    const x = btn('닫기', 'info-close', closeInfo, '.center', { 'data-sfx': 'cancel' });
+    x.dataset.first = '1';
+    body = h('section.pwin.fl-ask.fl-info', { role: 'dialog', 'aria-label': '불꽃의 계승 모드 소개' },
+      h('h2.fl-info-t', '불꽃의 계승'),
+      h('ul.fl-info-l', INFO_LINES.map((t) => h('li', t))),
+      h('div.fl-cmds', x));
+  } else if (S.newAsk) {
     const ok = btn('시작', 'new-ok', startNew, '.primary.center');
     const no = btn('취소', 'new-no', cancel, '.center', { 'data-sfx': 'cancel' });
     no.dataset.first = '1';
     body = h('section.pwin.fl-ask', { role: 'dialog', 'aria-label': '새로운 도전' },
       run ? h('div.fl-ask-t', '진행 중인 도전을 포기하고 새로 시작합니다') : null,
-      keepOn() && KEEP_SLOTS.some((k) => keepOf(P)[k]) ? h('span.kp-keep', { 'data-k': 'keep-stay' }, keepMark(), '보관 팀 유지') : null,
+      snapOn() && anySnap(P) ? h('span.kp-keep', { 'data-k': 'keep-stay' }, keepMark(), '저장 팀 유지') : null,
       diffs.length > 1 ? h('div.fl-opts', { role: 'group', 'aria-label': '난이도' }, diffs.map((d) =>
         h('button.btn', { type: 'button', 'data-k': 'diff-' + d.id, 'aria-pressed': String(S.newDiff === d.id), onclick: () => { S.newDiff = d.id; ctx.paint(); } }, d.name))) : null,
       h('div.fl-cmds', ok, no));
   } else {
     const items = [
+      ['모드 소개', 'info', () => { S.info = true; ctx.paint(); }],
       ['새로운 도전', 'new', askNew], ['이어하기', 'cont', () => ctx.go('run'), !run], ['영구 성장', 'perm', () => ctx.go('perm')],
       ['선수 도감', 'cx-player', () => { S.codexTab = 'player'; S.codexSel = null; ctx.go('codex'); }],
       ['장비 도감', 'cx-equip', () => { S.codexTab = 'equip'; S.codexSel = null; ctx.go('codex'); }],
       [F.artOff() ? '아이템 도감' : '아티팩트 도감', 'cx-art', () => { S.codexTab = 'art'; S.codexSel = null; ctx.go('codex'); }], // off(§13.26): 필살기·포메이션 아이템
       ['기록 및 업적', 'rec', () => ctx.go('records')],
     ];
-    const bs = items.map(([label, k, fn, off]) => h('button.ritem.fl-menu-b', { type: 'button', 'data-k': k, disabled: !!off, onclick: fn }, label));
-    (run ? bs[1] : bs[0]).dataset.first = '1';
+    // 첫 방문(끝낸 도전 0회) = 「모드 소개」 옆 점 배지(깜박임 없음). 첫 포커스는 종전대로 새로운 도전/이어하기
+    const fresh = !(P.totals?.runs > 0);
+    const bs = items.map(([label, k, fn, off]) => h('button.ritem.fl-menu-b', { type: 'button', 'data-k': k, disabled: !!off, onclick: fn }, label,
+      k === 'info' && fresh ? h('i.fl-dot', { 'aria-hidden': 'true' }) : null));
+    bs.find((b) => b.dataset.k === (run ? 'cont' : 'new')).dataset.first = '1';
     body = h('nav.pwin.fl-menu', { 'aria-label': '불꽃의 계승' }, bs);
   }
-  // 보관 팀 칸 2개(최근·최고): 요약만(편집 없음). 누르면 핵심 3명을 펼친다. 빈 슬롯 = 점선 빈 칸
-  if (keepOn() && !S.newAsk) {
-    const T = keepOf(P);
-    top.append(h('section.pwin.kp-win', { 'aria-label': '보관 팀' }, h('span.kp-title', keepMark(), '보관 팀'),
-      KEEP_SLOTS.map((k) => {
+  // 저장 팀 칸 3개: 칸 이름 + 구간·승수(빈 칸 = 점선). 찬 칸을 누르면 「저장 팀」 화면(카드 3장·칸별 삭제), 빈 칸은 저장 방법 토스트 한 줄
+  if (snapOn() && !S.newAsk && !S.info) {
+    const T = snapsOf(P);
+    top.append(h('section.pwin.kp-win', { 'aria-label': '저장 팀' }, h('span.kp-title', keepMark(), '저장 팀'),
+      SNAP_SLOTS.map((k) => {
         const t = T[k];
-        if (!t) return h('button.kp-slot.empty', { type: 'button', 'data-k': 'keep-' + k, 'aria-label': `보관 팀 ${KEEP_LABEL[k]} 없음`, onclick: () => toast('도전을 마치면 팀이 보관됩니다', 'info') }, keepTag(k)); // 빈 칸: 누르면 토스트 한 줄(반응 없음 방지)
-        const open = S.keepOpen === k, core = (Array.isArray(t.core) ? t.core : []).slice(0, 3).map(rankName).filter(Boolean);
-        return h('button.kp-slot', { type: 'button', 'data-k': 'keep-' + k, 'aria-expanded': String(open), onclick: () => { S.keepOpen = open ? null : k; ctx.paint(); } },
-          keepTag(k), h('span.tabular', keepRec(t)), open && core.length ? h('span.kp-core', core.join(' · ')) : null);
+        if (!t) return h('button.kp-slot.empty', { type: 'button', 'data-k': 'keep-' + k, 'aria-label': `${snapLabel(k)} 빈 슬롯`, onclick: () => toast(SNAP_EMPTY_MSG, 'info') }, h('b.sn-slot', snapLabel(k)));
+        return h('button.kp-slot', { type: 'button', 'data-k': 'keep-' + k, 'aria-label': `${snapLabel(k)} ${snapRec(t)}`, onclick: () => ctx.go('snaps') },
+          h('b.sn-slot', snapLabel(k)), h('span.tabular', snapRec(t)));
       })));
   }
-  ctx.root.append(h('div.screen.fl.fl-home', top, body,
-    h('footer.fl-foot', btn('뒤로 가기', 'back', ctx.leave, '.small.back'), btn('순위', 'rank', () => ctx.go('rank'), '.small'))));
-  return { esc: () => (S.newAsk ? cancel() : ctx.leave()) };
+  const scr = h('div.screen.fl.fl-home', top, body,
+    h('footer.fl-foot', btn('뒤로 가기', 'back', ctx.leave, '.small.back'), btn('순위', 'rank', () => ctx.go('rank'), '.small')));
+  if (S.info) scr.addEventListener('click', (e) => { if (!body.contains(e.target) && !e.target.closest('button')) closeInfo(); }); // 소개 창 밖 클릭 = 닫기
+  ctx.root.append(scr);
+  return { esc: () => (S.tnEdit ? tnCancel(ctx) : S.info ? closeInfo() : S.newAsk ? cancel() : ctx.leave()) };
+}
+
+// ---------------- 팀 이름(§13.20-B flame_team_name) ----------------
+const tnCancel = (ctx) => { ctx.S.tnEdit = false; ctx.S.tnVal = null; ctx.paint(); };
+/** 홈 정보 줄의 팀 이름 칩: 누르면 그 자리에서 입력 칸(최대 12자). 비우고 확인 = 기본 이름. 거절(FLAME_TEAM_NAME_LONG·INVALID)은 서버 토스트, 입력 칸은 남는다 */
+function teamNameUi(ctx, P) {
+  const { S } = ctx, def = typeof P.teamNameDefault === 'string' ? P.teamNameDefault : '';
+  if (!def) return null; // 이 기능이 없는 서버
+  const now = typeof P.teamName === 'string' && P.teamName ? P.teamName : def, max = F.catalog()?.versusTeam?.teamName?.max ?? 12;
+  if (!S.tnEdit) return h('button.fl-chip.fl-tn-b', { type: 'button', 'data-k': 'tn', 'aria-label': `팀 이름 ${now} 바꾸기`, onclick: () => { S.tnEdit = true; S.tnVal = now; ctx.paint(); } }, h('i', '팀 이름'), h('b', now));
+  const ok = () => { if (ctx.send('flame_team_name', { name: String(S.tnVal ?? '').trim() })) S.tnPending = true; };
+  const inp = h('input.rinput.fl-tn-in', { type: 'text', maxlength: String(max), value: S.tnVal ?? now, placeholder: def, 'data-k': 'tn-in', 'aria-label': '팀 이름', autocomplete: 'off', spellcheck: 'false',
+    oninput: (e) => { S.tnVal = e.target.value; },
+    onkeydown: (e) => {
+      if (e.isComposing) return;
+      if (e.key === 'Enter') { e.preventDefault(); ok(); } else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); tnCancel(ctx); }
+    } });
+  inp.dataset.first = '1';
+  return h('span.fl-tn', inp, btn('확인', 'tn-ok', ok, '.small.primary'), btn('취소', 'tn-no', () => tnCancel(ctx), '.small', { 'data-sfx': 'cancel' }));
+}
+
+// ---------------- 저장 팀(카드 3장, 보기 + 칸별 삭제) ----------------
+export function snaps(ctx) {
+  const { S } = ctx, T = snapsOf(ctx.prof());
+  const back = () => { S.snapDel = null; ctx.go('home'); };
+  const cards = SNAP_SLOTS.map((k) => {
+    const t = T[k];
+    if (!t) return h('div.sn-card.sn-empty', { 'data-k': 'sv-' + k }, h('b.sn-slot', snapLabel(k)), h('span', '빈 슬롯'));
+    const no = btn('취소', 'del-no-' + k, () => { S.snapDel = null; ctx.paint(); }, '.small', { 'data-sfx': 'cancel' });
+    if (S.snapDel === k) no.dataset.first = '1';
+    const x = S.snapDel === k ? [h('span.sn-ask', '지울까요?'), btn('삭제', 'del-ok-' + k, () => ctx.send('flame_snap_delete', { slot: k }), '.small.danger'), no]
+      : btn('삭제', 'del-' + k, () => { S.snapDel = k; ctx.paint(); }, '.small');
+    return h('div.sn-card', { 'data-k': 'sv-' + k }, snapBody(t, k, h('span.sn-x', x)));
+  });
+  const b = btn('돌아가기', 'back', back, '.small.back');
+  if (!S.snapDel) b.dataset.first = '1';
+  ctx.root.append(h('div.screen.fl.fl-snaps', h('header.fl-head', h('h1.pix-title.fl-title', '저장 팀'), h('div.fl-head-x'), b),
+    h('section.pwin.sn-win', h('div.sn-list', { 'data-sc': 'snaps' }, cards))));
+  return { esc: () => { if (S.snapDel) { S.snapDel = null; ctx.paint(); } else back(); } };
 }
 
 // ---------------- 영구 성장 ----------------
@@ -209,27 +265,15 @@ export function records(ctx) {
 }
 
 // ---------------- 도전 종료 ----------------
-/** 이번 정산에서 갱신된 보관 팀 슬롯(flame_end.summary.teams): 딱지 + 구간·승수 + 한 줄. 경기 없이 끝난 도전(둘 다 false)·기능 꺼짐 = 없음.
- *  NEW 는 이 브라우저에서 처음 보관 팀이 생긴 결과 화면에서만(localStorage, 같은 요약을 다시 그려도 같은 값) */
-function keepEnd(m) {
-  const kt = m.teams && typeof m.teams === 'object' ? m.teams : {}, upd = KEEP_SLOTS.filter((k) => kt[k] === true);
-  if (!upd.length) return null;
-  if (m.kpNew === undefined) {
-    let seen = true;
-    try { seen = !!localStorage.getItem(KEEP_SEEN); if (!seen) localStorage.setItem(KEEP_SEEN, '1'); } catch { /* 저장소 불가: NEW 없음 */ }
-    m.kpNew = !seen;
-  }
-  const rec = keepRec({ seg: m.seg, wins: m.matches ?? 0 });
-  return h('div.kp-end', { 'data-k': 'keep-end' },
-    upd.map((k, i) => h('div.kp-end-row', { 'data-k': 'keep-end-' + k }, keepTag(k), m.kpNew && i === 0 ? keepNew() : null, h('span.tabular', rec))),
-    h('div.kp-end-t', '보관 팀으로 멀티 대전에 쓸 수 있습니다'));
-}
 const END_TITLE = { defeat: '도전 종료', champion: '우승', abandon: '도전 포기' };
 export function end(ctx) {
   const { app } = ctx, m = app.flameEnd;
   const done = () => { app.flameEnd = null; ctx.go(ctx.run() ? 'run' : 'home'); };
   const ok = btn('확인', 'ok', done, '.primary.center.big');
   ok.dataset.first = '1';
+  // 팀 저장(§13.20-B): 경기를 치른 이 도전의 팀이 남아 있으면(summary.teamSave + profile.teamEnded) 칸 고르기 → flame_snap_save{src:'ended'}
+  const P = ctx.prof(), canSave = snapOn() && m.teamSave === true && P?.teamEnded === true;
+  const save = canSave ? btn('팀 저장', 'snap', () => { ctx.S.snapPick = {}; document.activeElement?.blur(); ctx.paint(); }, '.center.big') : null;
   const kv = (k, v) => h('div.fl-rec-row', h('i', k), h('b.tabular', v));
   const coins = m.coins ?? { total: 0 };
   const parts = [['일반', coins.normal], ['강팀', coins.strong], ['보스', coins.boss], ['우승', coins.champion], ['첫 우승', coins.first]].filter(([, v]) => v > 0)
@@ -260,10 +304,9 @@ export function end(ctx) {
         h('div.fl-rec-row.fl-coin-row', h('i', '획득 불꽃코인'), h('b.tabular', `+${coins.total}`)),
         parts ? h('div.fl-end-parts.tabular', parts) : null,
         coins.defeat > 0 ? kv('분투 보상', `+${coins.defeat}`) : null, // 패배 분투 보상(PROTOCOL §13.3, total 에 이미 포함)
-        ach.length ? h('div.fl-rec-row', h('i', '새 업적'), h('b', ach.join(' · '))) : null,
-        keepEnd(m)),
+        ach.length ? h('div.fl-rec-row', h('i', '새 업적'), h('b', ach.join(' · '))) : null),
       h('section.pwin.fl-rec-box.fl-lost', h('h2.fl-sub', '소멸'),
         lostRows.filter(([, v]) => v > 0).map(([k, v, u]) => kv(k, `${v}${u}`)))),
-    h('div.fl-cmds.one', ok)));
-  return { esc: done };
+    canSave && ctx.S.snapPick ? snapPicker(ctx, 'ended') : h('div.fl-cmds' + (save ? '' : '.one'), save, ok)));
+  return { esc: () => snapPickEsc(ctx) || done() };
 }

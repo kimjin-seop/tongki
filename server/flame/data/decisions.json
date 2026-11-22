@@ -188,7 +188,21 @@
       5,
       6
     ],
-    "captainSlot": 0
+    "captainSlot": 0,
+    "startClones": {
+      "enabled": true,
+      "slots": [
+        { "role": "ace", "grade": "A" },
+        { "role": "guard", "grade": "A" },
+        { "role": "catcher", "grade": "B" },
+        { "role": "runner", "grade": "B" },
+        { "role": "jumper", "grade": "C" },
+        { "role": "passer", "grade": "C" },
+        { "role": "balanced", "grade": "C" }
+      ],
+      "band": { "min": -4, "max": 6 },
+      "tries": 64
+    }
   },
   "hp": {
     "floorAfterMatch": 1,
@@ -207,6 +221,7 @@
   },
   "run": {
     "matchesPerSegment": 4,
+    "firstNode": { "enabled": true, "allowTeams": [1, 3], "_note": "D68: 구간 1(seg 0)의 첫 경기 층 상대를 이 팀들로 제한한다(승률 55~71%). 끄면(enabled=false 또는 키 삭제) 종전 무작위. 환경변수 FLAME_FIRST_NODE=0 으로도 끈다" },
     "segmentNodes": "nodes.json proposed.segmentTemplate"
   },
   "synergy": {

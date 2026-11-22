@@ -15,6 +15,7 @@ import * as Run from '../server/flame/run.js';
 import { generatePool, serializePool } from '../server/flame/tools/gen_recruit_pool.mjs';
 
 const DATA_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../server/flame/data');
+process.env.FLAME_START_CLONES = '0'; // 시작 팀 랜덤(roster.startClones)은 끄고 고정 시작 팀 기준으로 본다(랜덤 시작은 flame_startclones.test.js)
 const data = loadData(), cat = loadCatalog();
 const key = (v) => `${v.team}:${v.idx}`;
 /** 영입실 한 번 방문(구간 seg). 후보 칸(저장 형식)을 돌려준다 */

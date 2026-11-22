@@ -72,17 +72,18 @@ test('엔진 두 좌석(D53): 좌석별 allow·famOf·caps·surviveUsed 가 섞�
   assert.deepEqual(new Match({ seed: 6, teams: [0, 0], data, flame: [B] }).info(), new Match({ seed: 6, teams: [0, 0], data, flame: B }).info());
   // 양 좌석 키운 팀 + 컴퓨터 AI 로 끝까지(예외 없음)
   const p = freshProfile(); playUntilLoss(p, 51, 1, 1000);
-  const v = [0, 1].map((s) => versusOptions(cat, data, p.teams.recent, undefined, s).flame);
+  const v = [0, 1].map((s) => versusOptions(cat, data, p.teams.ended, undefined, s).flame);
   const g = new Match({ seed: 10, teams: [0, 0], data, humans: [false, false], cpuLevels: [3, 3], ruleMode: 'knockout', flame: v });
   for (let n = 0; n < 130000 && g.phase !== 'end'; n++) g.tick([0, 0]);
   assert.ok(g.result && g.flameResult().every((r) => r.hp.length === 7));
 });
 
-test('flame_end.summary.teams: 이번 정산에서 갱신된 키운 팀 슬롯(경기 없는 도전은 둘 다 false)', () => {
+test('flame_end.summary(B149): teams 는 언제나 둘 다 false(자동 칸 폐지, 구 클라이언트 호환), teamSave = 경기를 치른 도전이면 종료 팀 저장 가능', () => {
   const profile = freshProfile();
-  assert.deepEqual(playUntilLoss(profile, 31, 2, 1000).end.teams, { recent: true, best: true });
-  assert.deepEqual(playUntilLoss(profile, 32, 0, 2000).end.teams, { recent: true, best: false }); // 기록을 넘지 못한 도전 = 최근만
-  assert.deepEqual(Run.settle(cat, Run.newRun(cat, data, profile, { seed: 33 }), profile, 'abandon', 0, 3000).teams, { recent: false, best: false });
+  const e1 = playUntilLoss(profile, 31, 2, 1000).end;
+  assert.deepEqual([e1.teams, e1.teamSave], [{ recent: false, best: false }, true]);
+  const e2 = Run.settle(cat, Run.newRun(cat, data, profile, { seed: 33 }), profile, 'abandon', 0, 3000);
+  assert.deepEqual([e2.teams, e2.teamSave], [{ recent: false, best: false }, false]);
 });
 
 function client(port) {
@@ -114,6 +115,7 @@ test('사람끼리 방(D53): 방장이 「불꽃 팀」을 켠 방에서 두 사
   try {
     const pa = freshProfile(), pb = freshProfile();
     playUntilLoss(pa, 31, 2, 1000); playUntilLoss(pb, 41, 1, 1100);
+    pa.teams.s1 = structuredClone(pa.teams.ended); pb.teams.s2 = structuredClone(pb.teams.ended); // 사용자가 저장한 칸(B149)
     const a = client(port), b = client(port); await a.open; await b.open;
     a.send({ t: 'register', nickname: 'PvpA', password: 'pw123456' }); await a.type('welcome');
     b.send({ t: 'hello', nickname: 'PvpB' }); await b.type('welcome');
@@ -124,7 +126,7 @@ test('사람끼리 방(D53): 방장이 「불꽃 팀」을 켠 방에서 두 사
     const room = app.lobby.rooms.get(r0.code);
     const c = client(port); await c.open; c.send({ t: 'hello', nickname: 'PvpC' }); await c.type('welcome'); // 로비 대기 계정(방 목록 갱신 확인용)
     await new Promise((r) => setTimeout(r, 400)); c.drop('room_list'); // 접속 때 받은 목록과 접속으로 예약된 목록 갱신(250ms)은 먼저 흘려보낸다(규칙 변경 전 상태)
-    assert.equal(await a.err({ t: 'set_team', team: 'flame:recent' }, 2), 'FLAME_TEAM_ROOM'); // 허용 전
+    assert.equal(await a.err({ t: 'set_team', team: 'flame:s1' }, 2), 'FLAME_TEAM_ROOM'); // 허용 전
     assert.equal(await a.err({ t: 'set_rules', rules: { mode: 'official', flameTeams: true } }, 3), 'FLAME_TEAM_RULES'); // 공식 규칙과 함께 못 켠다
     // 데이터 스위치를 끄면 키를 버린다(1차와 같다)
     const V = app.lobby.flameCat.cfg.versusTeam; V.humans = false;
@@ -134,11 +136,11 @@ test('사람끼리 방(D53): 방장이 「불꽃 팀」을 켠 방에서 두 사
     a.send({ t: 'set_rules', rules: { flameTeams: true } });
     assert.equal((await a.wait((m) => m.t === 'room_state' && m.room.rules.flameTeams)).room.rules.flameTeams, true);
     assert.ok(await c.wait((m) => m.t === 'room_list' && m.rooms.some((x) => x.code === r0.code && x.rules.flameTeams === true))); // 규칙만 바뀌어도 로비의 방 목록 행이 갱신된다
-    b.send({ t: 'set_team', team: 'flame:best' }); await b.wait((m) => m.t === 'room_state' && m.room.slots[1].flameTeam);
+    b.send({ t: 'set_team', team: 'flame:s2' }); await b.wait((m) => m.t === 'room_state' && m.room.slots[1].flameTeam);
     b.send({ t: 'ready', ready: true }); await b.wait((m) => m.t === 'room_state' && m.room.slots[1].ready);
-    a.send({ t: 'set_team', team: 'flame:recent' }); // 방장이 불꽃 팀을 바꾸면 상대 준비 해제(D53 (6))
+    a.send({ t: 'set_team', team: 'flame:s1' }); // 방장이 불꽃 팀을 바꾸면 상대 준비 해제(D53 (6))
     const rs = await b.wait((m) => m.t === 'room_state' && m.room.slots[0].flameTeam);
-    assert.deepEqual([rs.room.slots[0].flameTeam.slot, rs.room.slots[1].flameTeam.slot, rs.room.slots[1].ready], ['recent', 'best', false]);
+    assert.deepEqual([rs.room.slots[0].flameTeam.slot, rs.room.slots[1].flameTeam.slot, rs.room.slots[1].ready], ['s1', 's2', false]);
     b.send({ t: 'ready', ready: true }); await b.wait((m) => m.t === 'room_state' && m.room.slots[1].ready);
 
     let saves = 0; const save = app.lobby.flame.save;
@@ -148,9 +150,9 @@ test('사람끼리 방(D53): 방장이 「불꽃 팀」을 켠 방에서 두 사
     a.send({ t: 'start' });
     const [ga, gb] = [await a.type('game_start'), await b.type('game_start')];
     // 좌석별 조립: 능력치 = 각자 저장 재료로 서버가 다시 계산한 값(HP 가득), flameVs·flameCast 좌석별, 도전 경기 표시(flame) 없음
-    const want = [versusOptions(cat, data, pa.teams.recent, undefined, 0).flame, versusOptions(cat, data, pb.teams.best, undefined, 1).flame];
+    const want = [versusOptions(cat, data, pa.teams.s1, undefined, 0).flame, versusOptions(cat, data, pb.teams.s2, undefined, 1).flame];
     for (const g of [ga, gb]) {
-      assert.deepEqual([g.flame, g.flameVs.mode, g.flameVs.seats.map((x) => [x.seat, x.slot]), g.flameCast.seats.map((x) => x.slot), g.teams.map((t) => t.flame)], [undefined, 'versus', [[0, 'recent'], [1, 'best']], ['recent', 'best'], [true, true]]);
+      assert.deepEqual([g.flame, g.flameVs.mode, g.flameVs.seats.map((x) => [x.seat, x.slot]), g.flameCast.seats.map((x) => x.slot), g.teams.map((t) => t.flame)], [undefined, 'versus', [[0, 's1'], [1, 's2']], ['s1', 's2'], [true, true]]);
       for (const s of [0, 1]) assert.deepEqual(g.teams[s].players.map((p) => STATS.map((k) => p[k])), want[s].roster.map((r) => STATS.map((k) => r.stat[k])));
       assert.ok(g.teams.every((t) => t.players.every((p) => p.hp0 === p.hp)));
     }
@@ -169,10 +171,10 @@ test('사람끼리 방(D53): 방장이 「불꽃 팀」을 켠 방에서 두 사
     assert.deepEqual([ge.flame, ge.flameVs.seats.map((x) => x.seat), ge.flameVs.seats.every((x) => x.hp.length === 7)], [undefined, [0, 1], true]);
     assert.deepEqual([saves, JSON.stringify(['pvpa', 'pvpb'].map((k) => [app.lobby.flame.getProfile(k), app.lobby.flame.getRun(k)]))], [0, stored]);
     const rec = results.records.at(-1);
-    assert.deepEqual([results.records.length - nRec, rec.players.map((p) => p.flameTeam?.slot), rec.ranked, rec.players[0].flameTeam.at], [1, ['recent', 'best'], undefined, pa.teams.recent.at]);
+    assert.deepEqual([results.records.length - nRec, rec.players.map((p) => p.flameTeam?.slot), rec.ranked, rec.players[0].flameTeam.at], [1, ['s1', 's2'], undefined, pa.teams.s1.at]);
 
     // 고를 때 본 슬롯이 시작 전에 바뀌면 FLAME_TEAM_CHANGED + 새 요약 방송, 상대 준비 해제
-    const pa2 = structuredClone(pa); pa2.teams.recent.at = 5555;
+    const pa2 = structuredClone(pa); pa2.teams.s1.at = 5555;
     app.lobby.flame.save('pvpa', 'PvpA', pa2, null);
     b.send({ t: 'ready', ready: true }); await b.wait((m) => m.t === 'room_state' && m.room.slots[1].ready);
     b.drop('room_state');
@@ -184,7 +186,7 @@ test('사람끼리 방(D53): 방장이 「불꽃 팀」을 켠 방에서 두 사
     const [ta, tb] = [await a.wait((m) => m.t === 'toast'), await b.wait((m) => m.t === 'toast')];
     const off = await b.wait((m) => m.t === 'room_state' && !m.room.rules.flameTeams);
     assert.deepEqual([ta.code, tb.code, off.room.slots.map((s) => s.flameTeam)], ['FLAME_TEAM_CLEARED', 'FLAME_TEAM_CLEARED', [undefined, undefined]]);
-    assert.equal(await b.err({ t: 'set_team', team: 'flame:best' }, 5), 'FLAME_TEAM_ROOM');
+    assert.equal(await b.err({ t: 'set_team', team: 'flame:s2' }, 5), 'FLAME_TEAM_ROOM');
     a.ws.close(); b.ws.close(); c.ws.close();
   } finally { await app.close(); }
 });

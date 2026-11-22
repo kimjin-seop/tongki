@@ -4,6 +4,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { rngSecret } from './rng.js';
 
 const DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), 'data');
 const FILES = ['rules', 'economy', 'decisions', 'nodes', 'perm_upgrades', 'items_equipment', 'artifacts', 'consumables', 'synergies', 'formation_tags', 'shot_families', 'run_config'];
@@ -50,8 +51,10 @@ const bad = (m) => { throw new Error('flame catalog: ' + m); };
  *      model 'off' 이면 cat.ver 에 `.aoff` 가 든다(개정 번호는 그대로. team 이면 그 칸이 없다)
  * 19 = special.power[슛 ID](슛별 기본 위력 = server/data/specials.json power, 표값 255 는 null. 하플레이 M2 의 C 등급 필살 카드 표시용) 추가.
  *      슛별 투구 속도 표는 없어(던진 선수의 구속에서 계산) speed 칸은 없다. 같은 날 D65 로 상점 값(grade.price.shop)·shopKinds 도 바뀌었다(칸 모양은 그대로)
+ * 20 = 팀 스냅샷(B149): versusTeam.slots 가 ['s1','s2','s3'](사용자 저장 칸) + snapSlots(칸 수, 0 = 꺼짐)·teamName{default, max}. flame_state.profile.teams 가 {s1,s2,s3} 카드|null,
+ *      flame_end.summary.teamSave, 새 요청 flame_snap_save·flame_snap_delete·flame_team_name(PROTOCOL §13.20)
  */
-export const CATALOG_MSG_REV = 19;
+export const CATALOG_MSG_REV = 20;
 
 const pctOn = (v) => (Number.isFinite(v) && v > 0 ? v : 0);
 /**
@@ -399,9 +402,56 @@ export function recruitView(cat, data, c) {
   return { team: c.team, idx: c.idx, kind: 'original', rare: c.rare === true, stat, sp: Number.isInteger(sp) && sp >= 0 && !cat.excludedShots.has(sp) ? sp : null };
 }
 
-/** 새 도전의 시작 라인업: 오리지널 팀이 켜져 있으면 그 7명(D17. from = base, orig = 선수 id), 아니면 종전(태동 7명, D4). team = 오리지널 팀 id | null */
-export function startLineup(cat) {
+/**
+ * 시작 팀 랜덤 구성(decisions.json roster.startClones, 2026-11-22 사용자 결정). 켜져 있고 영입 풀이 있을 때만 cat.startClones 가 객체, 아니면 null(= 기존 고정 시작 팀).
+ * slots[i] = {role, grade}: 라인업 i 번 칸의 역할·풀 등급을 고정한다(0 = 주장, 0~3 내야, 4~6 외야 — 칸 순서는 original_team.json 과 같다). band = 7명 점수(풀 pts) 합의 허용 대역 [min, max]. tries = 대역에 들 때까지 다시 뽑는 최대 횟수.
+ */
+function buildStartClones(raw, pool) {
+  const S = raw.decisions.roster.startClones, ov = process.env.FLAME_START_CLONES; // 운영 스위치: 환경 변수 FLAME_START_CLONES=0 이면 끄고(데이터 수정 없이 고정 팀으로), =1 이면 데이터 enabled 와 무관하게 켠다(시험·측정용). 없으면 데이터 값
+  if (!S || ov === '0' || (ov !== '1' && S.enabled !== true)) return null;
+  if (!pool) bad('roster.startClones 가 켜져 있는데 영입 풀(recruit_pool.json)이 없음');
+  const roles = new Set(raw.run_config.roles.map((r) => r.id)), n = raw.rules.team.players;
+  if (!Array.isArray(S.slots) || S.slots.length !== n) bad(`roster.startClones.slots 는 ${n}칸`);
+  for (const [i, sl] of S.slots.entries()) {
+    if (!roles.has(sl?.role) || !POOL_GRADES.includes(sl?.grade)) bad(`roster.startClones.slots[${i}] 역할·등급`);
+    if (pool.players.filter((p) => !p.retired && p.role === sl.role && p.grade === sl.grade).length < 3) bad(`roster.startClones.slots[${i}] (${sl.role}/${sl.grade}) 후보가 3명 미만`);
+  }
+  const b = S.band;
+  if (!Number.isFinite(b?.min) || !Number.isFinite(b?.max) || b.min > b.max) bad('roster.startClones.band {min,max}');
+  if (!Number.isInteger(S.tries) || S.tries < 1) bad('roster.startClones.tries');
+  return { slots: S.slots.map((s) => ({ role: s.role, grade: s.grade })), band: { min: b.min, max: b.max }, tries: S.tries };
+}
+
+/**
+ * 시작 7명을 영입 풀에서 뽑는다. 난수 = rngSecret(도전 비밀값, 'startClones') 뿐이라 같은 비밀값 = 같은 라인업(재현), 클라이언트 입력은 없다.
+ * 제약: 칸마다 정해진 역할·등급, 몸(body) 중복 없음(같은 그림이 한 팀에 서지 않는다), 이름 뒷글자(given) 중복 없음, 7명 점수 합이 band 안.
+ * 대역에 드는 조합이 tries 번 안에 안 나오면 대역 중심에 가장 가까운 조합을 쓴다. 반환 = [{from(몸), clone(풀 id)}] x 7 | null(어떤 조합도 못 만들었을 때: 호출자가 고정 팀으로)
+ */
+export function genStartClones(cat, secret) {
+  const S = cat.startClones, rng = rngSecret(secret, 'startClones'), mid = (S.band.min + S.band.max) / 2;
+  let best = null;
+  for (let t = 0; t < S.tries; t++) {
+    const bodies = new Set(), given = new Set(), picks = [];
+    for (const sl of S.slots) {
+      const c = rng.pick(cat.pool.byGrade[sl.grade].filter((p) => p.role === sl.role && !bodies.has(`${p.body.team}:${p.body.idx}`) && !given.has(p.given)));
+      if (!c) break;
+      bodies.add(`${c.body.team}:${c.body.idx}`); given.add(c.given); picks.push(c);
+    }
+    if (picks.length !== S.slots.length) continue;
+    const sum = picks.reduce((s, p) => s + p.pts, 0), d = sum < S.band.min ? S.band.min - sum : sum > S.band.max ? sum - S.band.max : 0;
+    if (!best || d < best.d || (d === best.d && Math.abs(sum - mid) < best.m)) best = { picks, d, m: Math.abs(sum - mid) };
+    if (d === 0) break;
+  }
+  return best ? best.picks.map((p) => ({ from: { ...p.body }, clone: p.id })) : null;
+}
+
+/**
+ * 새 도전의 시작 라인업. secret(도전 비밀값)을 주고 roster.startClones 가 켜져 있으면 풀 클론 7명 랜덤 구성(team 은 오리지널 팀 id 를 그대로 쓴다: 팀 이름·엠블럼은 「불꽃국민학교」).
+ * 아니면 오리지널 팀이 켜져 있으면 그 7명(D17. from = base, orig = 선수 id), 아니면 종전(태동 7명, D4). team = 오리지널 팀 id | null. secret 을 안 주는 호출(시뮬 도구)은 언제나 고정 팀
+ */
+export function startLineup(cat, secret) {
   const D = cat.decisions.roster, O = cat.original;
+  if (cat.startClones && O?.start && typeof secret === 'string') { const pl = genStartClones(cat, secret); if (pl) return { team: O.id, players: pl, clones: true }; }
   if (O?.start) return { team: O.id, players: O.players.map((p) => ({ from: { ...p.base }, orig: p.id })) };
   return { team: null, players: D.startPlayers.map((idx) => ({ from: { team: D.startTeam, idx } })) };
 }
@@ -416,8 +466,14 @@ export const isLockedPlayer = (cat, r) => !!cat.original?.locked && originalOf(c
  * 화면 표시용 정의(flame_state.run.cast·game_start.flameCast, PROTOCOL §13.8). 서버·엔진 계산에는 쓰지 않는다.
  * team = 도전의 팀(오리지널 팀으로 시작한 도전만, 아니면 null = 종전대로 주장 출신 팀), players = 라인업 순서 7칸(오리지널 선수 = 정의, 원작 선수 = null -> 화면이 from 으로 이름·얼굴을 찾는다)
  */
-export function displayCast(cat, run) {
-  const O = cat.original, team = O && run.origTeam === O.id ? { id: O.id, name: O.name, short: O.short, intro: O.intro } : null;
+/**
+ * 팀 이름(B149): name = 플레이어가 정한 이름(profile.teamName·스냅샷 칸 name, 없으면 기본 = original_team.json name).
+ * 정한 이름이면 약칭(short, 편성 화면 머리의 엠블럼 옆 글자)은 그 이름에서 끝의 '국민학교'를 뗀 앞 4글자다. custom = 정한 이름인가
+ */
+export const teamShortOf = (name) => [...name.replace(/\s*국민학교$/u, '').trim() || name].slice(0, 4).join('').trim();
+export function displayCast(cat, run, name = null) {
+  const O = cat.original, nm = typeof name === 'string' && name ? name : null;
+  const team = O && run.origTeam === O.id ? { id: O.id, name: nm ?? O.name, short: nm ? teamShortOf(nm) : O.short, intro: O.intro, ...(nm ? { custom: true } : {}) } : null;
   return {
     team,
     players: run.roster.map((r) => {
@@ -530,15 +586,17 @@ function build(raw) {
   if (!segLenOk(raw, cfg.reward.rarityShift.segment.length)) bad('reward.rarityShift.segment 길이');
   const tpl = raw.nodes.proposed.segmentTemplate;
   if (tpl.filter((s) => s.node).length !== raw.decisions.run.matchesPerSegment || tpl.at(-1).node !== 'boss') bad('구간 템플릿: 경기 수 또는 마지막 보스');
+  const FN = raw.decisions.run.firstNode;
+  if (FN && FN.enabled === true && (!Array.isArray(FN.allowTeams) || !FN.allowTeams.length || FN.allowTeams.some((t) => !cfg.opponents.segments[0].normal.includes(t)))) bad('decisions run.firstNode.allowTeams 는 구간 1 일반 상대 풀 안의 팀');
   if (R.run.segments * raw.decisions.run.matchesPerSegment !== R.run.matches) bad('총 경기 수');
   const rar = R.rarity.order;
   const price = E.shop.proposed, mp = E.matchPoints.proposed;
-  const original = buildOriginal(raw), pool = buildPool(raw), endless = buildEndless(raw), artifact = buildArtifactModel(raw);
+  const original = buildOriginal(raw), pool = buildPool(raw), endless = buildEndless(raw), artifact = buildArtifactModel(raw), startClones = buildStartClones(raw, pool);
   if (artifact.model === 'off' && artifact.hiddenPerm.some((id) => !perm.has(id) || perm.get(id).group !== 'C')) bad('decisions artifact.hiddenPerm 은 C 그룹 영구 성장만');
   checkRecruitCfg(raw);
   return {
     ver: `${raw.items_equipment._meta.version}.${raw.artifacts._meta.version}.${raw.consumables._meta.version}.${cfg._meta.version}${original ? `.o${original.version}` : ''}${pool ? `.p${pool.version}` : ''}${endless ? `.e${endless.version}` : ''}${artifact.model === 'off' ? '.aoff' : ''}.m${CATALOG_MSG_REV}`, // .aoff = 팀 공용 아티팩트 끔(정검수 L4: 데이터 버전이 같아도 off<->team 전환 때 클라 캐시를 바꾸게. team 은 종전 문자열 그대로)
-    original, pool, endless, artifact, tagBonus: buildTagBonus(raw), raw, rules: R, economy: E, decisions: raw.decisions, cfg, items, artifacts, authored, grade, consumables, perm, permLegacy, permCap, training,
+    original, pool, endless, artifact, startClones, tagBonus: buildTagBonus(raw), raw, rules: R, economy: E, decisions: raw.decisions, cfg, items, artifacts, authored, grade, consumables, perm, permLegacy, permCap, training,
     synergies: raw.synergies.synergies, applyDuplicates: raw.synergies._meta.proposed.applyDuplicates === true,
     tags: raw.formation_tags.tags, tagOfFm, families, unlockIds, excludedShots: excluded, special: { model: spModel, grantShot },
     template: tpl, slots: R.equipmentSlots, rarities: rar, rarityRank: Object.fromEntries(rar.map((r, i) => [r, i])),

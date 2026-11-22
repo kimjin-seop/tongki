@@ -4,16 +4,24 @@
 // 저장하지 않는 것: 최종 능력치(쓸 때마다 computeTeam -> toEngine 으로 다시 계산한다. 저장값·클라이언트 수치를 믿지 않는다), 이름·skin·팀명(orig/clone id 에서 displayCast 로 만든다),
 //   현재 HP·소모품·다음 경기 효과·끼지 않은 장비·경기 포인트·지도·난수 비밀값·치사 생존 사용 횟수.
 // 읽을 때마다 sanitizeTeam 을 거친다: 없어진 아이템·아티팩트·클론·오리지널 id 는 그 칸만 버리고 팀은 살린다. 7명이 아니거나 같은 선수가 겹치면 그 슬롯만 없음(null)이다.
+// 팀 스냅샷(B149, 2026-11-21 사용자 결정): 자동 2칸(recent·best)을 폐지하고 플레이어가 직접 저장하는 이름 없는 3칸(s1~s3, flame_snap_save·flame_snap_delete)으로 일원화했다.
+//   대전에서 고를 수 있는 칸 = SNAP_SLOTS 뿐. recent·best 는 영구 저장에서 지우지 않고(되돌리기 쉽게) 검증만 해서 그대로 옮겨 둔다(읽어서 쓰지 않는다).
+//   ended = 마지막으로 끝난 도전의 팀(도전 종료 화면에서 저장할 재료, 대전에서 고를 수 없다). snapV 1 = 옛 best -> s1, recent -> s2 한 번 변환을 마쳤다(save.js)
 // 팀 공용 아티팩트 끄기(D58~D63): 새 슬롯에는 roster[i].spItem(선수별 필살기 아이템)·fmItem(팀 포메이션 아이템)을 담는다(선택 칸, TEAM_VERSION 그대로).
 //   그 칸이 없는 옛 슬롯(arts 만 있는 것)은 쓸 때 도전 저장과 같은 이관 규칙(stats.js migrateWorn)으로 바꿔 읽고 저장된 칸은 고치지 않는다(B92 방식)
 import { STAT_KEYS, displayCast, originalOf, cloneOf, trainCapOf, grantedModel, grantOf, teamArtifactsOn } from './catalog.js';
 import { computeTeam, toEngine, cleanSpecials, initialSpecials, migrateWorn } from './stats.js';
 import { permLvOfSaved } from './save.js';
 
-export const TEAM_SLOTS = ['recent', 'best'];
+export const SNAP_SLOTS = ['s1', 's2', 's3']; // 사용자 스냅샷 칸(서버 고정 id, 이름 없음). set_team{team:'flame:s1'} 등
+export const TEAM_SLOTS = SNAP_SLOTS; // 대전에서 고를 수 있는 칸(종전 이름 유지: lobby·handlers 가 이 목록으로 참조를 검사한다)
+export const LEGACY_SLOTS = ['recent', 'best']; // 폐지된 자동 칸: 검증해서 보존만 한다(새로 쓰지 않고 대전·화면에 쓰지 않는다)
+export const ENDED_SLOT = 'ended'; // 마지막으로 끝난 도전의 팀(도전 종료 화면 저장 재료)
+const KEPT_SLOTS = [...SNAP_SLOTS, ...LEGACY_SLOTS, ENDED_SLOT];
 export const TEAM_VERSION = 1; // 슬롯 한 칸의 형식 번호(영구 저장 PROFILE_VERSION 과 별개. 더 새 번호의 칸은 읽지 않고 버린다)
 const SEG_MAX = 1000000, TRAIN_MAX = 255, PLAYER_IDX_MAX = 6, TEAM_ID_MAX = 255; // 안전 상한(저장값이 터무니없을 때. 실제 선수 존재 여부는 versusOptions 가 엔진 데이터로 본다)
 
+export const TEAM_NAME_MAX = 12; // 팀 이름 최대 글자 수(B149, 코드포인트)
 const isObj = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 const nat = (v, d = 0) => (Number.isInteger(v) && v >= 0 ? v : d);
 
@@ -68,7 +76,8 @@ export function sanitizeTeam(cat, raw, legacyPerm = false) {
   if (isObj(raw.perm)) for (const u of cat.perm.values()) { const l = u.group === 'A' ? permLvOfSaved(cat, u.id, raw.perm[u.id], legacyPerm) : 0; if (l) perm[u.id] = l; }
   return {
     v: TEAM_VERSION, at: nat(raw.at), diff: nat(raw.diff), seg: Math.min(Math.max(nat(raw.seg, 1), 1), SEG_MAX), wins: nat(raw.wins),
-    ...(typeof raw.origTeam === 'string' && raw.origTeam === cat.original?.id ? { origTeam: raw.origTeam } : {}), // 팀 id 만(팀명은 저장하지 않는다)
+    ...(typeof raw.origTeam === 'string' && raw.origTeam === cat.original?.id ? { origTeam: raw.origTeam } : {}), // 팀 id
+    ...(typeof raw.name === 'string' && raw.name && [...raw.name].length <= TEAM_NAME_MAX ? { name: raw.name } : {}), // 저장 시점에 플레이어가 정한 팀 이름(B149, 선택 칸. 없으면 기본 이름을 따른다)
     fm: cat.tagOfFm.has(raw.fm) ? raw.fm : cat.cfg.formation.default, arts, perm, roster,
     ...(typeof raw.fmItem === 'string' && grantOf(cat, raw.fmItem)?.kind === 'formation' ? { fmItem: raw.fmItem } : {}), // 팀 포메이션 아이템(off, 선택 칸)
   };
@@ -78,7 +87,7 @@ export function sanitizeTeam(cat, raw, legacyPerm = false) {
 export function sanitizeTeams(cat, raw, legacyPerm = false) {
   if (!isObj(raw)) return undefined;
   const out = {};
-  for (const slot of TEAM_SLOTS) { const t = sanitizeTeam(cat, raw[slot], legacyPerm); if (t) out[slot] = t; }
+  for (const slot of KEPT_SLOTS) { const t = sanitizeTeam(cat, raw[slot], legacyPerm); if (t) out[slot] = t; }
   return Object.keys(out).length ? out : undefined;
 }
 
@@ -89,12 +98,26 @@ export function sanitizeTeams(cat, raw, legacyPerm = false) {
 export function snapshotOf(cat, run, profile, o) {
   const inst = new Map(run.items.map((it) => [it.inst, it]));
   return sanitizeTeam(cat, {
-    v: TEAM_VERSION, at: o.now, diff: run.diff, seg: o.seg, wins: o.wins, origTeam: run.origTeam, fm: run.fm, arts: run.artifacts.slice(), fmItem: run.fmItem ?? null, perm: { ...profile.perm },
+    v: TEAM_VERSION, at: o.now, diff: run.diff, seg: o.seg, wins: o.wins, origTeam: run.origTeam, name: profile.teamName ?? null, fm: run.fm, arts: run.artifacts.slice(), fmItem: run.fmItem ?? null, perm: { ...profile.perm },
     roster: run.roster.map((r) => ({
       from: { ...r.from }, orig: r.orig, clone: r.clone, lost: r.lost, recruited: r.recruited === true, train: { ...r.train }, sp: r.sp.slice(), spItem: r.spItem,
       equip: Object.fromEntries(cat.slots.map((s) => { const it = inst.get(r.equip?.[s]); return [s, it ? { id: it.id, lv: it.lv } : null]; })),
     })),
   });
+}
+
+/**
+ * 옛 자동 칸 -> 스냅샷 칸 한 번 변환(B149): best -> s1, recent -> s2. 이미 그 칸이 있으면 덮지 않는다. 옛 칸은 지우지 않는다(되돌리기).
+ * 멱등은 부르는 쪽(save.js sanitizeProfile)이 profile.snapV 로 보장한다(변환 뒤 사용자가 s1 을 지워도 다시 채우지 않는다)
+ */
+export function migrateSnaps(teams) {
+  if (!teams) return teams;
+  const out = { ...teams };
+  if (out.best && !out.s1) out.s1 = structuredClone(out.best);
+  // 같은 도전에서 나온 두 칸(같은 시각·같은 재료 = 최고 기록 도전이 곧 최근 도전)이면 s1 하나만 둔다
+  const same = out.best && out.recent && JSON.stringify(out.best) === JSON.stringify(out.recent);
+  if (out.recent && !out.s2 && !same) out.s2 = structuredClone(out.recent);
+  return out;
 }
 
 /** 한 칸의 표시 이름: 오리지널·클론 = 이름 문자열, 원작 선수 = '@팀:번호'(순위표 핵심 3명과 같은 표기 -> 화면이 이름으로 푼다, 39 B40) */
@@ -107,7 +130,10 @@ const nameOf = (cat, r) => originalOf(cat, r)?.name ?? cloneOf(cat, r)?.name ?? 
 export function teamSummary(cat, t) {
   if (!t) return null;
   const O = cat.original;
-  return { seg: t.seg, wins: t.wins, diff: t.diff, at: t.at, core: t.roster.slice(0, 3).map((r) => nameOf(cat, r)), team: O && t.origTeam === O.id ? { id: O.id, name: O.name, short: O.short } : null, captain: { ...t.roster[0].from } };
+  const cast = displayCast(cat, { origTeam: t.origTeam, roster: t.roster }, t.name), ct = cast.team;
+  return { seg: t.seg, wins: t.wins, diff: t.diff, at: t.at, core: t.roster.slice(0, 3).map((r) => nameOf(cat, r)), team: O && ct ? { id: ct.id, name: ct.name, short: ct.short, ...(ct.custom ? { custom: true } : {}) } : null, captain: { ...t.roster[0].from },
+    // B149: 7명 표시용(초상·이름·skin). 상대 좌석(room_state.slots[i].flameTeam)에도 가는 값이라 능력치·장비는 싣지 않는다. cast = displayCast 칸(원작 선수는 null -> from 으로 그린다)
+    players: t.roster.map((r, i) => ({ from: { ...r.from }, cast: cast.players[i] ?? null, name: nameOf(cat, r) })) };
 }
 
 /**
@@ -147,7 +173,34 @@ export function versusOptions(cat, data, t, cfg = versusTeamCfg(cat), seat = 0) 
   });
   return {
     flame: { seat, roster: engine, allow: team.allow, families: cat.families, fm: team.fm, caps: { ...cat.engineCaps } },
-    cast: displayCast(cat, { origTeam: t.origTeam, roster }), // 화면 표시용(game_start.flameCast). 엔진에는 넘기지 않는다
+    cast: displayCast(cat, { origTeam: t.origTeam, roster }, t.name), // 화면 표시용(game_start.flameCast). 엔진에는 넘기지 않는다
     bodyTeams: [...new Set(roster.map((r) => r.from.team))],
+    team, roster, // 카드 요약용(snapCard). 소켓으로 보내지 않는다
+  };
+}
+
+/**
+ * 스냅샷 칸 카드(B149, flame_state.profile.snaps[i]): 팀 선택 「불꽃의 계승」 탭·저장 화면용. 본인에게만 간다.
+ * 능력치는 대전과 같은 경로(versusOptions -> computeTeam -> toEngine)로 지금 데이터에서 다시 계산한다(대전 시작 HP = final.s0 = 최대 HP).
+ * 빈 칸 = null. 엔진 데이터에 없는 선수가 들어 있어 쓸 수 없는 칸 = usable:false(players 는 빈 배열)
+ */
+export function snapCard(cat, data, slot, t, cfg = versusTeamCfg(cat)) {
+  if (!t) return null;
+  const { players: _p, ...sum } = teamSummary(cat, t); // eslint-disable-line no-unused-vars
+  const head = { slot, ...sum }, cap = cat.decisions.roster.captainSlot ?? 0, nIn = cat.rules.team.infield ?? 4;
+  const o = cfg ? versusOptions(cat, data, t, cfg) : null;
+  if (!o) return { ...head, usable: false, fm: t.fm, fmItem: t.fmItem ?? null, players: [] };
+  return {
+    ...head, usable: true, fm: o.team.fm, fmItem: o.team.fmItem ?? null, arts: o.team.artifacts.slice(),
+    players: o.team.players.map((pl, i) => {
+      const r = t.roster[i];
+      return {
+        i, from: { ...r.from }, cast: o.cast.players[i] ?? null, name: nameOf(cat, r), kind: pl.kind, role: pl.role, recruited: r.recruited === true,
+        captain: i === cap, field: i < nIn ? 'in' : 'out', // 라인업 칸 0~3 내야·4~6 외야(run.js setLineup 규칙, 포메이션과 무관)
+        final: { ...pl.final }, hpMax: pl.final.s0,
+        equip: Object.fromEntries(cat.slots.map((s) => [s, r.equip[s] ? { id: r.equip[s].id, lv: r.equip[s].lv } : null])),
+        sp: o.flame.roster[i].sp.slice(), spItem: r.spItem ?? null, special: { id: pl.special?.id ?? null, grade: pl.special?.grade ?? null },
+      };
+    }),
   };
 }

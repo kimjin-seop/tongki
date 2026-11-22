@@ -18,6 +18,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 const SRC = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../server/flame/data');
 
+process.env.FLAME_START_CLONES = '0'; // 시작 팀 랜덤(roster.startClones)은 끄고 고정 시작 팀 기준으로 본다(랜덤 시작은 flame_startclones.test.js)
 const data = loadData(), cat = { ...loadCatalog(), artifact: { ...loadCatalog().artifact, model: 'team' } }; // 아티팩트 스위치 team(종전 공용 3칸) 고정. off(기본값) 동작은 flame_noartifact.test.js
 const code = (fn) => { try { fn(); return null; } catch (e) { if (e instanceof FlameError) return e.code; throw e; } };
 const fresh = (seed = 91) => { const profile = freshProfile(), run = Run.newRun(cat, data, profile, { seed }); run.pending = []; return { profile, run }; };
