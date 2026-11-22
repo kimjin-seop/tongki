@@ -26,6 +26,9 @@ import * as Intro from './intro.js';
 import * as Invite from './invite.js';
 import { audio } from './audio.js';
 import { screenBgm, bindUiSfx } from './game/sfxmap.js';
+import { registerSW } from './pwa.js';
+
+registerSW(); // PWA 서비스 워커(HTTPS·localhost 만, public/sw.js)
 
 export const app = {
   nick: null, you: null, rooms: [], room: null, welcome: null, teams: [],

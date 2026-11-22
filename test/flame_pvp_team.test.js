@@ -121,7 +121,7 @@ test('사람끼리 방(D53): 방장이 「불꽃 팀」을 켠 방에서 두 사
     b.send({ t: 'hello', nickname: 'PvpB' }); await b.type('welcome');
     app.lobby.flame.save('pvpa', 'PvpA', pa, null); app.lobby.flame.save('pvpb', 'PvpB', pb, null); // 가입 뒤에 넣는다(가입 때의 손님 저장 옮기기와 섞이지 않게)
     assert.equal(await a.err({ t: 'create_room', ranked: true, rules: { flameTeams: true } }, 1), 'LADDER_ONLY'); // 랭크 방은 래더 대기열로 대체(2026-11-20)
-    a.send({ t: 'create_room' }); const { room: r0 } = await a.type('room_joined');
+    a.send({ t: 'create_room', rules: { flameTeams: false } }); const { room: r0 } = await a.type('room_joined'); // 기본은 허용(2026-11-22) — 이 시험은 끈 채로 시작해 허용 전 거절부터 본다
     b.send({ t: 'join_room', code: r0.code }); await b.type('room_joined');
     const room = app.lobby.rooms.get(r0.code);
     const c = client(port); await c.open; c.send({ t: 'hello', nickname: 'PvpC' }); await c.type('welcome'); // 로비 대기 계정(방 목록 갱신 확인용)
@@ -188,5 +188,18 @@ test('사람끼리 방(D53): 방장이 「불꽃 팀」을 켠 방에서 두 사
     assert.deepEqual([ta.code, tb.code, off.room.slots.map((s) => s.flameTeam)], ['FLAME_TEAM_CLEARED', 'FLAME_TEAM_CLEARED', [undefined, undefined]]);
     assert.equal(await b.err({ t: 'set_team', team: 'flame:s2' }, 5), 'FLAME_TEAM_ROOM');
     a.ws.close(); b.ws.close(); c.ws.close();
+  } finally { await app.close(); }
+});
+
+test('사람끼리 방 기본 허용(2026-11-22): 규칙 생략 = 불꽃 팀 켜짐, {flameTeams:false} = 꺼짐, 컴퓨터 대전 방은 키 없음', async () => {
+  const app = createServer({ store: new MemoryResultStore(), dbPath: ':memory:', importJson: false, log: () => {} });
+  const port = await app.listen(0);
+  try {
+    const a = client(port); await a.open; a.send({ t: 'hello', nickname: 'DefA' }); await a.type('welcome');
+    a.send({ t: 'create_room' }); assert.equal((await a.type('room_joined')).room.rules.flameTeams, true);
+    a.send({ t: 'leave_room' }); await a.type('room_left').catch(() => {});
+    a.send({ t: 'create_room', rules: { flameTeams: false } }); assert.equal((await a.wait((m) => m.t === 'room_joined')).room.rules.flameTeams, undefined);
+    a.send({ t: 'leave_room' }); await a.type('room_left').catch(() => {});
+    a.send({ t: 'create_room', vsCpu: true }); assert.equal((await a.wait((m) => m.t === 'room_joined')).room.rules.flameTeams, undefined);
   } finally { await app.close(); }
 });

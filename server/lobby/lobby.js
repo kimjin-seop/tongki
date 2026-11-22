@@ -631,7 +631,7 @@ export class Lobby {
         if (ft === true && !vsCpu && this.flameHumansOn()) {
           if (rules.mode !== VERSUS_RULE_MODE) fail('FLAME_TEAM_RULES');
           rules = { ...rules, flameTeams: true };
-        }
+        } else if (ft === undefined && !vsCpu && this.flameHumansOn() && rules.mode === VERSUS_RULE_MODE) rules = { ...rules, flameTeams: true }; // 기본 허용(2026-11-22): 키를 생략한 사람끼리 체력제 방은 켠 채로 연다. {flameTeams:false} 면 꺼진다. 래더·스토리·컴퓨터 대전은 이 핸들러를 거치지 않거나 vsCpu 라 영향 없음
         this.rememberCode(code);
         const room = this.makeRoom(code, vsCpu, cpuLevel, null, rules);
         this.join(s, room);
@@ -696,7 +696,9 @@ export class Lobby {
         // 규칙 「불꽃 팀」(D53): 요청에 없으면 지금 값. 사람끼리 일반 방 + 데이터 스위치가 켜져 있을 때만 켜진다(그 밖은 키를 버린다 = 1차와 같다)
         const ftReq = m.rules.flameTeams;
         if (ftReq !== undefined && typeof ftReq !== 'boolean') fail('RULES_INVALID');
-        const wasFt = room.rules.flameTeams === true, ft = (ftReq ?? wasFt) && !room.vsCpu && !room.campaign && this.flameHumansOn();
+        const wasFt = room.rules.flameTeams === true;
+        let ft = (ftReq ?? wasFt) && !room.vsCpu && !room.campaign && this.flameHumansOn();
+        if (ft && ftReq === undefined && r.mode !== VERSUS_RULE_MODE && !room.seats.some((mm) => mm?.flameTeam)) ft = false; // 기본 허용 방에서 허용 키 없이 공식 규칙으로 바꾸면(고른 팀이 없을 때) 허용을 자동으로 끈다(2026-11-22)
         if (r.mode !== VERSUS_RULE_MODE && (ft || (room.vsCpu && room.seats.some((mm) => mm?.flameTeam)))) fail('FLAME_TEAM_RULES'); // 불꽃 팀을 고른 컴퓨터 대전 방·불꽃 팀 허용 방은 체력제만(D34·D53). 먼저 원작 팀으로 바꾸거나 허용을 끈다
         if (ft) r.flameTeams = true;
         if (r.mode !== room.rules.mode || r.time !== room.rules.time || ft !== wasFt) {

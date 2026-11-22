@@ -12,6 +12,7 @@ import { rulesText } from './rules.js';
 import { titleLogo, start as startIntro } from '../intro.js';
 import { arrowNav } from '../pix.js';
 import { soundButton } from '../audio.js';
+import { installButton } from '../pwa.js';
 import { NOTICE_MAX } from '../chat.js';
 
 // 메인 하단 저작권 2줄(위치·모양 = app.css .lobby-cr 한 곳). 줄1 = 원작 타이틀 화면(f2899) 플레인 A 저작권 두 줄 원문
@@ -97,8 +98,8 @@ export function mount(root, app) {
           acct ? null : h('button.btn.small.acct-btn', { type: 'button', 'data-k': 'signup', onclick: () => app.go('nick', { upgrade: true }) }, '가입')))),
     h('div.lobby-r.title-follow',
       app.admin ? adminRow() : null, // 관리자(서버 확인)만: 서버 공지 입력줄(100자)
-      // 머리줄: 닉네임 이름판 · 소리 · 로그아웃(시안 01: 로그아웃은 오른쪽 위 명령 칸)
-      h('div.nick-line', soundButton(h), h('span.nick-t', app.nick || ''),
+      // 머리줄: (앱 설치) · 소리 · 닉네임 이름판 · 로그아웃(시안 01: 로그아웃은 오른쪽 위 명령 칸). 설치 = 설치 가능할 때만(pwa.js), 오른쪽 정렬이라 숨겨도 소리 자리 그대로
+      h('div.nick-line', installButton(h), soundButton(h), h('span.nick-t', app.nick || ''),
         h('button.btn.small.acct-btn.logout', { type: 'button', 'data-k': 'logout', onclick: () => net.send('logout') }, '로그아웃')),
       h('section.pwin.room-panel',
         h('div.rl-top', tabsEl, mkWrap),

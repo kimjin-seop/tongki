@@ -1265,7 +1265,7 @@ flame 경기 방은 특훈·리그 방과 같은 비공개 방이다: 방 목록
 
 **(1) 데이터 스위치** — `run_config.json versusTeam.humans`(boolean, 기본 데이터 true). **false 이거나 키가 없으면 1차 동작**: `rules.flameTeams` 를 받지 않고 버린다(방 규칙에 키가 생기지 않는다), 사람끼리 방의 `set_team{'flame:…'}` 은 `FLAME_TEAM_ROOM`. `flame_catalog.versusTeam.humans` 로 화면이 토글을 숨긴다. `CATALOG_MSG_REV` 16 → 17.
 
-**(2) 방 규칙 `rules.flameTeams`** — `create_room{rules:{…, flameTeams:true}}`·`set_rules{rules:{flameTeams:true|false}}`(방장만, 대기 중. 다른 규칙 칸과 함께 보내도 된다. 생략 = 지금 값).
+**(2) 방 규칙 `rules.flameTeams`** — `create_room{rules:{…, flameTeams:true}}`·`set_rules{rules:{flameTeams:true|false}}`(방장만, 대기 중. 다른 규칙 칸과 함께 보내도 된다. 생략 = 지금 값). **기본값(2026-11-22): `create_room` 에서 `flameTeams` 를 생략한 사람끼리 체력제(`knockout`) 방은 켠 채로 열린다**(스위치 `humans` 가 켜진 때만). 끄려면 `create_room{rules:{flameTeams:false}}` 또는 만든 뒤 `set_rules`. 공식 규칙으로 만드는 방·컴퓨터 대전·스토리·래더 방, 이미 열린 방은 종전 그대로(꺼짐).
 
 - 켜진 방에만 `room.rules.flameTeams:true` 가 실린다(`room_state.room.rules`·`room_list.rooms[].rules` 둘 다 — 방 목록 표시용). 꺼져 있으면 키가 없다(종전 모양).
 - 거절: 랭크 방 만들기(`create_room{ranked:true, …}`)는 2026-11-20 부터 `LADDER_ONLY`(래더 방은 `set_rules` 자체가 `RANKED_RULES_FIXED`), 공식 규칙과 함께 `FLAME_TEAM_RULES`(허용 방에서 `mode:'official'` 로 바꾸려 해도 같다. 먼저 허용을 끈다 — `{mode:'official', flameTeams:false}` 한 번에 보내도 된다), boolean 이 아닌 값 `RULES_INVALID`. 컴퓨터 대전 방·스토리 방에서는 키를 버린다(컴퓨터 대전 방은 1차대로 언제나 고를 수 있다).

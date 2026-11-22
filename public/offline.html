@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#004824">
+  <title>피구왕 통키</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    html, body { margin: 0; height: 100%; background: #004824; color: #fcfcfc; font: 16px/1.5 system-ui, sans-serif; }
+    body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+    img { width: 96px; height: 96px; image-rendering: pixelated; }
+    button { min-height: 44px; padding: 0 20px; font: inherit; color: #fcfcfc; background: #000; border: 2px solid #b4b4d8; cursor: pointer; }
+    button:hover, button:focus-visible { color: #fcfc00; border-color: #fcfcfc; outline: none; }
+  </style>
+</head>
+<body>
+  <img src="/icon-192.png" alt="">
+  <div>오프라인</div>
+  <button type="button" id="retry" autofocus>다시 연결</button>
+  <script>
+    // 화면 이동이 실패해 SW 가 이 내용을 원래 주소(예: /?room=)에 보여 준 것이면 그 주소를 다시 연다
+    const retry = () => { if (location.pathname === '/offline.html') location.replace('/'); else location.reload(); };
+    document.getElementById('retry').onclick = retry;
+    addEventListener('online', retry);
+  </script>
+</body>
+</html>

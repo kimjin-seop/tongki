@@ -43,7 +43,7 @@ export function mount(root, app, data = {}) {
   if (app.flameEnd) mode = 'auto'; // 아직 보여 주지 않은 종료 요약이 남아 있으면 어디서 들어오든 그것부터 보인다(다음 도전 중에 뒤늦게 뜨지 않게)
   let sub = null, offNav = null, offView = null, busy = false, busyT = 0, alive = true, last = null, wantRun = false, healed = false;
   let peek = false, req = null, reqMeta = null, seen = null; // peek = 휴식실에서 지도 보기 / req = 마지막으로 보낸 요청 / seen = 직전 상태 요약(획득·구매 토스트용)
-  S.newAsk = false; S.abAsk = false; S.info = false; S.snapPick = null; S.snapDel = null; S.tnEdit = false; S.tnPending = false; // 확인 창·입력 칸은 화면을 다시 열 때 닫힌 상태로
+  S.newAsk = false; S.abAsk = false; S.info = false; S.snapPick = null; S.snapDel = null; S.tnEdit = false; S.tnPending = false; S.nameAsk = false; S.tnThen = null; // 확인 창·입력 칸은 화면을 다시 열 때 닫힌 상태로
   const offPad = padNav();
   nodeIcons(); // 지도 노드 아이콘 manifest 경로 → CSS 변수(한 번)
   const st = () => app.flame ?? null;
@@ -248,7 +248,12 @@ export function mount(root, app, data = {}) {
       // 팀 스냅샷·팀 이름(§13.20-B): 성공 응답 = flame_state(snapSaved·snapDeleted 키 / 팀 이름은 요청 뒤 첫 상태). 거절은 flame_error 토스트(main.js)
       if (m.snapSaved) { S.snapPick = null; toast('팀을 저장했습니다', 'ok'); }
       if (m.snapDeleted) { S.snapDel = null; toast('팀을 지웠습니다', 'ok'); }
-      if (S.tnPending && req === 'flame_team_name') { S.tnPending = false; S.tnEdit = false; S.tnVal = null; }
+      if (S.tnPending && req === 'flame_team_name') {
+        S.tnPending = false; S.tnEdit = false; S.tnVal = null;
+        // 첫 팀 이름 창(home.js nameAsk): 이름이 받아들여지면 이어서 새 도전(난이도·포기 확인이 필요하면 그 창)
+        const then = S.tnThen; S.tnThen = null;
+        if (then) { S.nameAsk = false; Home.markTnAsked(app); if (then === 'ask') S.newAsk = true; else if (ctx.send('flame_new', { diff: S.newDiff ?? 0 })) wantRun = true; }
+      }
       if (wantRun && m.run) { wantRun = false; if (mode !== 'end') { mode = 'run'; sub = null; } }
       if (m.note) showNote(m.note);
       showDone(m);
@@ -269,7 +274,7 @@ export function mount(root, app, data = {}) {
     onError(m) {
       // 저장 칸 삭제·저장이 「칸 없음」(FLAME_TEAM_NONE)으로 거절됐다(다른 창에서 이미 지움 등): 상태를 새로 받아 칸을 맞춘다(room.js 와 같은 방식)
       if (m?.code === 'FLAME_TEAM_NONE') { S.snapDel = null; S.snapPick = null; net.send('flame_get'); }
-      S.tnPending = false; busy = false; wantRun = false; req = null; reqMeta = null; clearTimeout(busyT); F.catalogRetry(); const s = st(); if (!s || !F.catalogReady(s.catalogVer)) app.go('lobby'); },
+      S.tnPending = false; S.tnThen = null; busy = false; wantRun = false; req = null; reqMeta = null; clearTimeout(busyT); F.catalogRetry(); const s = st(); if (!s || !F.catalogReady(s.catalogVer)) app.go('lobby'); },
     onWelcome() { net.send('flame_get'); if (mode === 'rank') net.send('flame_ranking_get', {}); else askMyRank(); },
     unmount() { alive = false; offView?.(); offNav?.(); offPad(); clearTimeout(busyT); removeEventListener('resize', placeSubToast); document.body.style.removeProperty('--fl-toast-sub'); document.body.classList.remove('fl-subt'); document.body.style.removeProperty('--fl-toast-home'); document.body.classList.remove('fl-homet'); },
   };

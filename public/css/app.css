@@ -262,8 +262,8 @@ input[type=text]:focus-visible, input[type=password]:focus-visible { outline: va
 .lobby-menu .cpu-row .lv[aria-pressed=true] { color: var(--c-yel); text-decoration: underline; text-decoration-thickness: calc(var(--u) * 2); text-underline-offset: calc(var(--u) * 3); }
 .lobby-menu .cpu-row .lv:is(:hover, :focus-visible) { color: var(--c-yel); outline: var(--o) solid var(--r-white); outline-offset: calc(var(--o) * -1); }
 .nick-line { display: flex; justify-content: flex-end; align-items: center; gap: calc(var(--u) * 6); min-height: calc(var(--u) * 20); white-space: nowrap; }
-.snd .snd-ic { display: block; height: 1.1em; width: 1.54em; margin: 0 auto; }
-.nick-line .snd { flex: none; min-width: calc(var(--u) * 20); }
+.snd .snd-ic, .pwa-ins .snd-ic { display: block; height: 1.1em; width: 1.54em; margin: 0 auto; }
+.nick-line .snd, .nick-line .pwa-ins { flex: none; min-width: calc(var(--u) * 20); }
 .nick-line .nick-t { box-sizing: border-box; box-shadow: none; border-width: var(--o); align-self: stretch; padding-block: 0; min-height: max(44px, calc(var(--u) * 16)); min-width: 0; overflow: hidden; text-overflow: ellipsis; display: block; line-height: calc(max(44px, var(--u) * 16) - var(--o) * 2); }
 .room-panel { flex: 1; min-height: calc(var(--u) * 120); display: flex; flex-direction: column; padding: calc(var(--u) * 4) calc(var(--u) * 8) calc(var(--u) * 8); }
 .room-panel h1, .panel-t { font: var(--f-head); color: var(--c-yel); padding: calc(var(--u) * 2) 0; }
@@ -872,7 +872,7 @@ body[data-title-enter] .title-follow { animation: title-follow .32s steps(4) .14
 .lobby-foot .btn { min-height: 44px; }
 .rl-tabs .btn.small { min-width: max(44px, 3.6em); }
 @media (max-width: 760px), (max-height: 560px) {
-  .nick-line .snd { min-height: 44px; min-width: 44px; } /* 세로 모바일 + 가로 모바일(844x390) */
+  .nick-line .snd, .nick-line .pwa-ins { min-height: 44px; min-width: 44px; } /* 세로 모바일 + 가로 모바일(844x390) */
 }
 @media (max-width: 760px) {
   /* 리그 팀 선택(좁은 칸): 팀 이름은 줄을 바꿔 다 보이게, 고른 순번은 엠블럼 위쪽 여백 안에 작게 */

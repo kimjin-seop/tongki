@@ -6,11 +6,11 @@ import { mono, loadLimits } from '../net/limits.js';
 
 /**
  * 사람끼리 일반 멀티 경기 방인가(필살 추적 규칙 자동 적용 판정, 한 곳). 사용자 결정 2026-11-20: 옵션이 아니라 이 경기 종류에 항상 적용, 클라이언트가 바꿀 수 없다.
- * 사람 두 좌석의 방(컴퓨터 대전 아님)이고 스토리·특훈·리그·불꽃의 계승 도전/연습 방이 아니며, 규칙 「불꽃 팀」(rules.flameTeams)을 켠 방도 아니다(이번 범위 밖 — 가정, docs/HANDOFF.md).
+ * 사람 두 좌석의 방(컴퓨터 대전 아님)이고 스토리·특훈·리그·불꽃의 계승 도전/연습 방이 아니며, 불꽃 팀을 실제로 고른 좌석이 있는 방도 아니다(이번 범위 밖 — 가정, docs/HANDOFF.md).
  * 랭크 방·래더 큐 경기도 이 조건을 지나면 적용된다. room = lobby 의 방 객체
  */
 export function isHumanVsHuman(room) {
-  return !!room && !room.vsCpu && !room.campaign && !room.training && !room.league && !room.flame && room.rules?.flameTeams !== true;
+  return !!room && !room.vsCpu && !room.campaign && !room.training && !room.league && !room.flame && !room.seats?.some((m) => m?.flameTeam); // 규칙 「불꽃 팀」이 켜져(기본 허용) 있어도 실제로 불꽃 팀을 고른 좌석이 없으면 일반 멀티 경기다(2026-11-22)
 }
 /** 방의 필살 회피 규칙(Match 옵션 evade): 'track' = 필살 추적(rules.special.track), 'rom' = 원작 */
 export const evadeOf = (room) => (isHumanVsHuman(room) ? 'track' : 'rom');

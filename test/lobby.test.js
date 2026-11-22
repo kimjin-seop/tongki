@@ -183,7 +183,7 @@ test('규칙 창: 방장의 set_rules 가 방 상태와 서버 Match(제한 시�
     b.send({ t: 'hello', nickname: '규칙손님' }); await b.type('welcome');
     a.send({ t: 'create_room' });
     const ja = await a.type('room_joined');
-    assert.deepEqual(ja.room.rules, { mode: 'knockout', time: 5 }); // 기본 = 종전 5분
+    assert.deepEqual(ja.room.rules, { mode: 'knockout', time: 5, flameTeams: true }); // 기본 = 종전 5분 + 불꽃 팀 허용(2026-11-22)
     b.send({ t: 'join_room', code: ja.room.code }); await b.type('room_joined');
     b.send({ t: 'set_rules', rules: { time: 3 } });
     assert.equal((await b.type('error')).code, 'NOT_HOST');

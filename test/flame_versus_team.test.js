@@ -195,7 +195,7 @@ test('스냅샷 저장·대전(B149): 종료 화면·도전 중 지도에서 fla
     assert.deepEqual(after.profile, before.profile);
     assert.deepEqual([saves, results.records.length, JSON.stringify([app.lobby.flame.getProfile('키운a'), app.lobby.flame.getRun('키운a')])], [0, nRec, stored]);
     a.send({ t: 'leave_room' }); await a.type('room_left');
-    a.send({ t: 'create_room' }); await a.type('room_joined');
+    a.send({ t: 'create_room', rules: { flameTeams: false } }); await a.type('room_joined');
     assert.equal(await a.err({ t: 'set_team', team: 'flame:s1' }, 6), 'FLAME_TEAM_ROOM'); // 허용하지 않은 사람끼리 방
     a.send({ t: 'leave_room' }); await a.type('room_left');
     a.send({ t: 'flame_snap_delete', slot: 's2' }); st = await a.wait((m) => m.t === 'flame_state' && m.snapDeleted === 's2');

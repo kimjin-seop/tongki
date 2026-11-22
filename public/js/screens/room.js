@@ -38,8 +38,11 @@ export function mount(root, app) {
   // 탭 본문 = 저장 칸 3장(flame_state.profile.teams.s1~s3). 상태·카탈로그를 아직 못 받았거나 기능이 꺼졌으면(FLAME_UNAVAILABLE·versusTeam 꺼짐) 빈 상태 안내. 공식 규칙이면 카드를 흐리게(누르면 사유 토스트)
   const flWanted = () => !!app.room && !app.room.ranked && (!!app.room.vsCpu || app.room.rules?.flameTeams === true);
   const flCat = () => (app.flame && F.ensureCatalog(app.flame.catalogVer) ? F.catalog() : null);
-  const flVs = () => (flWanted() ? flCat()?.versusTeam ?? null : null);
-  const flTab = () => flWanted() && (app.room.vsCpu ? myIdx() === 0 : true);
+  // 탭은 사람끼리 일반 방이면 허용이 꺼져 있어도 보인다(2026-11-22 사용자 제보: 저장 팀이 안 보여 저장이 안 된 줄 앎). 꺼져 있으면 카드 흐림 + 허용 안내 토스트(flLock)
+  const flTab = () => !!app.room && !app.room.ranked && (app.room.vsCpu ? myIdx() === 0 : flWanted() || flCat()?.versusTeam?.humans === true);
+  const flVs = () => (flTab() ? flCat()?.versusTeam ?? null : null);
+  /** 불꽃 카드를 지금 못 고르는 사유 토스트 문구(허용 꺼짐 · 공식 규칙), 고를 수 있으면 null */
+  const flLock = () => (!flWanted() ? (myIdx() === 0 ? '규칙에서 「불꽃 팀」을 허용하면 고를 수 있습니다' : '방장이 규칙에서 「불꽃 팀」을 허용하면 고를 수 있습니다') : !flRuleOk() ? ERR_CODE.FLAME_TEAM_RULES : null);
   /** 탭 본문의 칸 3개: {k, t(카드 | null)}. 기능이 꺼졌거나 상태가 없으면 전부 빈 칸 */
   const flSlots = () => { const V = flVs(), on = !!(V?.enabled && (app.room.vsCpu || V.humans === true)), T = on ? snapsOf(app.flame?.profile) : {}; return SNAP_SLOTS.map((k) => ({ k, t: on && (V.slots ?? SNAP_SLOTS).includes(k) ? T[k] ?? null : null })); };
   /** 고를 수 있는 칸 id(채워져 있고 쓸 수 있는 카드) */
@@ -212,7 +215,7 @@ export function mount(root, app) {
   function closeSelect() { selecting = false; paintRoom(); root.querySelector('[data-cmd="team"]')?.focus(); }
   function confirm(team) {
     const s = app.room?.slots?.[myIdx()];
-    if (isFl(team) && !flRuleOk()) { toast(ERR_CODE.FLAME_TEAM_RULES, 'warn'); return; }
+    if (isFl(team) && flLock()) { toast(flLock(), 'warn'); return; }
     if (s) decided.add(`${app.room.code}:${myIdx()}`);
     if (s && selOf(s) !== team) net.send('set_team', { team });
     closeSelect();
@@ -220,7 +223,7 @@ export function mount(root, app) {
   // 쪽 0·1 = 원작 팀 격자, 쪽 2 = 불꽃의 계승 카드(고를 수 있는 칸만)
   const pageTeams = (p) => (p === PAGE_FL ? flCells() : (p ? PAGE_SPECIAL : GRID_MAIN).filter((id) => teamOk(id) && !(app.room?.ranked && id > RANK_MAX_TEAM)));
   /** 지금 그린 칸 서명(상태가 바뀌어 다시 그릴지): 불꽃 쪽은 카드 내용까지 */
-  const pageSig = (p) => (p === PAGE_FL ? JSON.stringify(flSlots()) + flRuleOk() : pageTeams(p).join());
+  const pageSig = (p) => (p === PAGE_FL ? JSON.stringify(flSlots()) + flLock() : pageTeams(p).join());
   let shownSig = '';
 
   function paintSelect(focusCur = false) {
@@ -264,7 +267,7 @@ export function mount(root, app) {
   }
   /** 「불꽃의 계승」 탭 본문: 칸 카드 3장 세로(빈 칸 = 점선 카드). 3칸 모두 비면 가운데 안내 두 줄(+ 컴퓨터 대전 방만 「불꽃의 계승 하러 가기」) */
   function flPage() {
-    const xs = flSlots(), off = !flRuleOk();
+    const xs = flSlots(), off = !!flLock();
     if (!xs.some((x) => x.t)) {
       // 방을 나간 뒤(room_left) 불꽃의 계승 화면으로: main.js 가 app.leaveTo 를 본다. 한 번 누르면 비활성(겹쳐 보내지 않게)
       const go = app.room?.vsCpu ? h('button.btn.primary.sn-go', { type: 'button', 'data-k': 'fl-go', onclick: (e) => { if (app.leaveTo) return; e.currentTarget.disabled = true; app.leaveTo = 'flame'; net.send('leave_room'); } }, '불꽃의 계승 하러 가기') : null;
@@ -282,7 +285,7 @@ export function mount(root, app) {
         onclick: () => {
           const prev = pdCur ?? cur; pdCur = null;
           if (dead) { toast(ERR.FLAME_TEAM_UNUSABLE, 'warn'); return; }
-          if (off) { toast(ERR_CODE.FLAME_TEAM_RULES, 'warn'); return; }
+          if (off) { toast(flLock(), 'warn'); return; }
           if (prev === id) confirm(id); else move(id);
         } }, snapBody(t, k));
     })));
@@ -337,7 +340,7 @@ export function mount(root, app) {
     if (t == null) return h('section.pwin.tinfo', h('div.tinfo-top', lab, h('span.tn.muted', '빈 자리')));
     let st;
     // 잠김(공식 규칙 등 불꽃 팀을 못 쓰는 규칙에서 불꽃 칸에 커서): 「결정」 흐림 + 팀 요약 회색. 누르면 사유 토스트(confirm)
-    const locked = i === me && isFl(t) && !flRuleOk();
+    const locked = i === me && isFl(t) && !!flLock();
     if (i === me) {
       st = selOf(s) === cur ? h('div.tinfo-st.done', '결정 완료')
         : h('div.tinfo-st', h('span.tinfo-stt', '고르는 중'), h('button.btn.small.primary' + (locked ? '.dim' : ''), { type: 'button', 'aria-disabled': locked ? 'true' : null, onclick: () => confirm(cur) }, '결정'));

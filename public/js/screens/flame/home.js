@@ -18,28 +18,40 @@ const INFO_LINES = [
 ];
 
 // ---------------- 모드 메인 ----------------
+// 배치(2026-11-22 사용자 채택 시안 B, _mockup/flame_home): 로고 아래 3단 = [프로필(팀 이름·순위·코인·기록) | 메뉴 | 저장 팀(제목 + 슬롯 3줄)], 창 높이 통일.
+// 확인 창(모드 소개·새 도전·첫 팀 이름)은 3단 자리에 하나만 뜬다. 모바일 세로 = 프로필 → 저장 팀 → 메뉴(2열) 순으로 쌓는다(CSS)
+/** 첫 팀 이름 창을 이 브라우저에서 이미 거쳤는가(닉네임별). 서버 저장이 아니라 「최초 1회」 표시만 막는다 */
+const tnKey = (app) => 'dd.flTnAsked:' + (app?.nick ?? '');
+export const markTnAsked = (app) => { try { localStorage.setItem(tnKey(app), '1'); } catch { /* 저장소 막힘: 다음에 다시 묻는다 */ } };
+const tnAsked = (app) => { try { return localStorage.getItem(tnKey(app)) === '1'; } catch { return false; } };
+const tnDef = (P) => (typeof P.teamNameDefault === 'string' ? P.teamNameDefault : '');
+const tnNow = (P) => (typeof P.teamName === 'string' && P.teamName ? P.teamName : tnDef(P));
+/** 첫 「새로운 도전」에서 팀 이름을 물을까: 이름 기능이 있고, 이름을 정한 적 없고, 모드를 해 본 적 없고(profile.played), 이 브라우저에서 아직 묻지 않았다 */
+const needName = (app, P) => !!tnDef(P) && !(typeof P.teamName === 'string' && P.teamName) && P.played !== true && !tnAsked(app);
+
 export function home(ctx) {
   const { S } = ctx, P = ctx.prof(), run = ctx.run();
   const diffs = (F.catalog().difficulty ?? []).filter((d) => P.unlocked.difficulty.includes(d.id));
   if (!diffs.some((d) => d.id === S.newDiff)) S.newDiff = 0;
   const startNew = () => { S.newAsk = false; if (ctx.send('flame_new', { diff: S.newDiff })) ctx.expectRun(); ctx.paint(); };
-  const askNew = () => { if (run || diffs.length > 1) { S.newAsk = true; ctx.paint(); } else startNew(); };
-  const cancel = () => { S.newAsk = false; ctx.paint(); };
-  const top = h('div.fl-home-top',
-    h('div.fl-logo', { role: 'img', 'aria-label': '불꽃의 계승' }, h('span.fl-logo-f', { 'aria-hidden': 'true' }), h('b', '불꽃의 계승')),
-    h('div.fl-chips', coinChip(P.coins), chip('최고 도달 구간', F.segText(P.best.seg, run, S.segments)), chip('최고 기록', `${P.best.wins}승`), P.best.clears ? chip('우승', `${P.best.clears}회`) : null,
-      myRank(ctx.app) !== null ? chip('내 순위', `${myRank(ctx.app)}위`, '.rank') : null, teamNameUi(ctx, P)));
+  const needAsk = () => !!run || diffs.length > 1;
+  const askNew = () => {
+    if (needName(ctx.app, P)) { S.nameAsk = true; S.tnVal = tnNow(P); ctx.paint(); } else if (needAsk()) { S.newAsk = true; ctx.paint(); } else startNew();
+  };
+  const cancel = () => { S.newAsk = false; S.nameAsk = false; S.tnThen = null; ctx.paint(); };
+  const top = h('div.fl-home-top', h('div.fl-logo', { role: 'img', 'aria-label': '불꽃의 계승' }, h('span.fl-logo-f', { 'aria-hidden': 'true' }), h('b', '불꽃의 계승')));
   const closeInfo = () => { S.info = false; ctx.paint(); };
   let body;
   if (S.info) {
-    // 모드 소개(메뉴 맨 위 「모드 소개」): 메뉴 자리에 창 하나. 닫기 = 버튼·Esc(게임패드 B)·창 밖 클릭
+    // 모드 소개(메뉴 맨 위 「모드 소개」): 3단 자리에 창 하나. 닫기 = 버튼·Esc(게임패드 B)·창 밖 클릭
     const x = btn('닫기', 'info-close', closeInfo, '.center', { 'data-sfx': 'cancel' });
     x.dataset.first = '1';
     body = h('section.pwin.fl-ask.fl-info', { role: 'dialog', 'aria-label': '불꽃의 계승 모드 소개' },
       h('h2.fl-info-t', '불꽃의 계승'),
       h('ul.fl-info-l', INFO_LINES.map((t) => h('li', t))),
       h('div.fl-cmds', x));
-  } else if (S.newAsk) {
+  } else if (S.nameAsk) body = nameAsk(ctx, P, needAsk(), startNew, cancel);
+  else if (S.newAsk) {
     const ok = btn('시작', 'new-ok', startNew, '.primary.center');
     const no = btn('취소', 'new-no', cancel, '.center', { 'data-sfx': 'cancel' });
     no.dataset.first = '1';
@@ -63,34 +75,65 @@ export function home(ctx) {
     const bs = items.map(([label, k, fn, off]) => h('button.ritem.fl-menu-b', { type: 'button', 'data-k': k, disabled: !!off, onclick: fn }, label,
       k === 'info' && fresh ? h('i.fl-dot', { 'aria-hidden': 'true' }) : null));
     bs.find((b) => b.dataset.k === (run ? 'cont' : 'new')).dataset.first = '1';
-    body = h('nav.pwin.fl-menu', { 'aria-label': '불꽃의 계승' }, bs);
-  }
-  // 저장 팀 칸 3개: 칸 이름 + 구간·승수(빈 칸 = 점선). 찬 칸을 누르면 「저장 팀」 화면(카드 3장·칸별 삭제), 빈 칸은 저장 방법 토스트 한 줄
-  if (snapOn() && !S.newAsk && !S.info) {
-    const T = snapsOf(P);
-    top.append(h('section.pwin.kp-win', { 'aria-label': '저장 팀' }, h('span.kp-title', keepMark(), '저장 팀'),
-      SNAP_SLOTS.map((k) => {
-        const t = T[k];
-        if (!t) return h('button.kp-slot.empty', { type: 'button', 'data-k': 'keep-' + k, 'aria-label': `${snapLabel(k)} 빈 슬롯`, onclick: () => toast(SNAP_EMPTY_MSG, 'info') }, h('b.sn-slot', snapLabel(k)));
-        return h('button.kp-slot', { type: 'button', 'data-k': 'keep-' + k, 'aria-label': `${snapLabel(k)} ${snapRec(t)}`, onclick: () => ctx.go('snaps') },
-          h('b.sn-slot', snapLabel(k)), h('span.tabular', snapRec(t)));
-      })));
+    body = h('div.fl-hb' + (snapOn() ? '' : '.nokp'), profile(ctx, P, run), h('nav.pwin.fl-menu', { 'aria-label': '불꽃의 계승' }, bs), snapOn() ? keepWin(ctx, P) : null);
   }
   const scr = h('div.screen.fl.fl-home', top, body,
     h('footer.fl-foot', btn('뒤로 가기', 'back', ctx.leave, '.small.back'), btn('순위', 'rank', () => ctx.go('rank'), '.small')));
   if (S.info) scr.addEventListener('click', (e) => { if (!body.contains(e.target) && !e.target.closest('button')) closeInfo(); }); // 소개 창 밖 클릭 = 닫기
   ctx.root.append(scr);
-  return { esc: () => (S.tnEdit ? tnCancel(ctx) : S.info ? closeInfo() : S.newAsk ? cancel() : ctx.leave()) };
+  return { esc: () => (S.tnEdit ? tnCancel(ctx) : S.info ? closeInfo() : S.newAsk || S.nameAsk ? cancel() : ctx.leave()) };
+}
+
+/** 프로필 창: 팀 이름(눌러 고침) · 내 순위(크게, 있을 때만) · 불꽃코인 · 최고 도달 구간 · 최고 기록 · 우승(있을 때만) */
+function profile(ctx, P, run) {
+  const rank = myRank(ctx.app);
+  const kv = (k, v, c = '') => h('div.fl-pf-kv' + c, h('i', k), h('b.tabular', v));
+  return h('section.pwin.fl-pf', { 'aria-label': '내 기록' },
+    teamNameUi(ctx, P),
+    rank !== null ? h('div.fl-pf-rank', h('i', '내 순위'), h('b.tabular', `${rank}위`)) : null,
+    h('div.fl-pf-l', kv('불꽃코인', String(P.coins), '.coin'), kv('최고 도달 구간', F.segText(P.best.seg, run, ctx.S.segments)), kv('최고 기록', `${P.best.wins}승`),
+      P.best.clears ? kv('우승', `${P.best.clears}회`) : null));
+}
+
+/** 저장 팀 창: 제목 줄 + 슬롯 3줄(한 줄 한 팀: 슬롯 · 팀 이름 · 구간·승수). 찬 줄 = 「저장 팀」 화면(카드·삭제), 빈 줄(점선) = 저장 방법 토스트 */
+function keepWin(ctx, P) {
+  const T = snapsOf(P), n = SNAP_SLOTS.filter((k) => T[k]).length;
+  return h('section.pwin.kp-win', { 'aria-label': '저장 팀' }, h('div.kp-title', keepMark(), '저장 팀', h('span.kp-n.tabular', `${n}/${SNAP_SLOTS.length}`)),
+    SNAP_SLOTS.map((k) => {
+      const t = T[k];
+      if (!t) return h('button.kp-slot.empty', { type: 'button', 'data-k': 'keep-' + k, 'aria-label': `${snapLabel(k)} 빈 슬롯`, onclick: () => toast(SNAP_EMPTY_MSG, 'info') }, h('b.sn-slot', snapLabel(k)), h('span.kp-nm', '빈 슬롯'));
+      return h('button.kp-slot', { type: 'button', 'data-k': 'keep-' + k, 'aria-label': `${snapLabel(k)} ${t.team?.name ?? ''} ${snapRec(t)}`, onclick: () => ctx.go('snaps') },
+        h('b.sn-slot', snapLabel(k)), h('span.kp-nm', t.team?.name ?? ''), h('span.kp-rc.tabular', snapRec(t)), h('span.kp-go', { 'aria-hidden': 'true' }, '▶'));
+    }));
+}
+
+/** 첫 팀 이름 창(새 도전 최초 1회): 기본 이름이 채워진 입력 칸 · 글자 수 · 시작/취소(건너뛰기 없음 — 기본 이름 그대로 「시작」). 거절은 서버 토스트, 창은 남는다 */
+function nameAsk(ctx, P, ask, startNew, cancel) {
+  const { S } = ctx, def = tnDef(P), max = F.catalog()?.versusTeam?.teamName?.max ?? 12;
+  const len = (v) => `${[...String(v ?? '')].length}/${max}`;
+  const ct = h('span.fl-tnask-c.tabular', len(S.tnVal));
+  const go = () => {
+    const v = String(S.tnVal ?? '').trim();
+    if (!v || v === def) { markTnAsked(ctx.app); S.nameAsk = false; if (ask) { S.newAsk = true; ctx.paint(); } else startNew(); return; }
+    if (ctx.send('flame_team_name', { name: v })) { S.tnPending = true; S.tnThen = ask ? 'ask' : 'new'; } // 성공 응답 뒤 index.js 가 이어서 시작
+  };
+  const inp = h('input.rinput.fl-tnask-in', { type: 'text', maxlength: String(max), value: S.tnVal ?? '', placeholder: def, 'data-k': 'tn-first', 'aria-label': '팀 이름', autocomplete: 'off', spellcheck: 'false',
+    oninput: (e) => { S.tnVal = e.target.value; ct.textContent = len(e.target.value); },
+    onkeydown: (e) => { if (e.isComposing) return; if (e.key === 'Enter') { e.preventDefault(); go(); } else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); cancel(); } } });
+  inp.dataset.first = '1';
+  return h('section.pwin.fl-ask.fl-tnask', { role: 'dialog', 'aria-label': '팀 이름' }, h('h2.fl-info-t', '팀 이름'), h('div.fl-tnask-r', inp, ct),
+    h('div.fl-cmds', btn('시작', 'tn-first-ok', go, '.primary.center'), btn('취소', 'tn-first-no', cancel, '.center', { 'data-sfx': 'cancel' })));
 }
 
 // ---------------- 팀 이름(§13.20-B flame_team_name) ----------------
 const tnCancel = (ctx) => { ctx.S.tnEdit = false; ctx.S.tnVal = null; ctx.paint(); };
-/** 홈 정보 줄의 팀 이름 칩: 누르면 그 자리에서 입력 칸(최대 12자). 비우고 확인 = 기본 이름. 거절(FLAME_TEAM_NAME_LONG·INVALID)은 서버 토스트, 입력 칸은 남는다 */
+/** 프로필 창의 팀 이름: 점선 밑줄 + 연필(눌러 고침). 누르면 그 자리에서 입력 칸(최대 12자). 비우고 확인 = 기본 이름. 거절(FLAME_TEAM_NAME_LONG·INVALID)은 서버 토스트, 입력 칸은 남는다 */
 function teamNameUi(ctx, P) {
-  const { S } = ctx, def = typeof P.teamNameDefault === 'string' ? P.teamNameDefault : '';
+  const { S } = ctx, def = tnDef(P);
   if (!def) return null; // 이 기능이 없는 서버
-  const now = typeof P.teamName === 'string' && P.teamName ? P.teamName : def, max = F.catalog()?.versusTeam?.teamName?.max ?? 12;
-  if (!S.tnEdit) return h('button.fl-chip.fl-tn-b', { type: 'button', 'data-k': 'tn', 'aria-label': `팀 이름 ${now} 바꾸기`, onclick: () => { S.tnEdit = true; S.tnVal = now; ctx.paint(); } }, h('i', '팀 이름'), h('b', now));
+  const now = tnNow(P), max = F.catalog()?.versusTeam?.teamName?.max ?? 12;
+  if (!S.tnEdit) return h('button.fl-tn-b', { type: 'button', 'data-k': 'tn', 'aria-label': `팀 이름 ${now} 바꾸기`, onclick: () => { S.tnEdit = true; S.tnVal = now; ctx.paint(); } },
+    h('i', '팀 이름', h('span.fl-pen', { 'aria-hidden': 'true' })), h('b', now));
   const ok = () => { if (ctx.send('flame_team_name', { name: String(S.tnVal ?? '').trim() })) S.tnPending = true; };
   const inp = h('input.rinput.fl-tn-in', { type: 'text', maxlength: String(max), value: S.tnVal ?? now, placeholder: def, 'data-k': 'tn-in', 'aria-label': '팀 이름', autocomplete: 'off', spellcheck: 'false',
     oninput: (e) => { S.tnVal = e.target.value; },
@@ -99,7 +142,7 @@ function teamNameUi(ctx, P) {
       if (e.key === 'Enter') { e.preventDefault(); ok(); } else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); tnCancel(ctx); }
     } });
   inp.dataset.first = '1';
-  return h('span.fl-tn', inp, btn('확인', 'tn-ok', ok, '.small.primary'), btn('취소', 'tn-no', () => tnCancel(ctx), '.small', { 'data-sfx': 'cancel' }));
+  return h('div.fl-tn', inp, h('div.fl-tn-x', btn('확인', 'tn-ok', ok, '.small.primary'), btn('취소', 'tn-no', () => tnCancel(ctx), '.small', { 'data-sfx': 'cancel' })));
 }
 
 // ---------------- 저장 팀(카드 3장, 보기 + 칸별 삭제) ----------------

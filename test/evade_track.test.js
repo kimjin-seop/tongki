@@ -83,7 +83,8 @@ test('서버 판정: 사람끼리 일반 방·랭크 방만 추적, 컴퓨터·�
   const base = { rules: { mode: 'knockout', time: 5 } };
   assert.equal(evadeOf({ ...base }), 'track');
   assert.equal(evadeOf({ ...base, ranked: true }), 'track');
-  for (const k of [{ vsCpu: true }, { campaign: { k: 1 } }, { training: { kind: 'catch' } }, { league: { i: 0, j: 1 } }, { flame: { node: 1 } }, { rules: { mode: 'knockout', time: 5, flameTeams: true } }]) assert.equal(isHumanVsHuman({ ...base, ...k }), false, JSON.stringify(k));
+  assert.equal(evadeOf({ rules: { mode: 'knockout', time: 5, flameTeams: true }, seats: [{}, {}] }), 'track'); // 허용만 켠 기본 방(고른 팀 없음)은 일반 멀티 경기
+  for (const k of [{ vsCpu: true }, { campaign: { k: 1 } }, { training: { kind: 'catch' } }, { league: { i: 0, j: 1 } }, { flame: { node: 1 } }, { seats: [{ flameTeam: { slot: 's1' } }, null] }]) assert.equal(isHumanVsHuman({ ...base, ...k }), false, JSON.stringify(k));
   const mk = (seats, evade) => new RoomGame({ roomCode: 'TEST', seats, data, send: () => {}, onEnd: () => {}, store: { append() {} }, build: 't', seed: 5, evade });
   assert.equal(mk([{ nick: 'a', team: 0 }, { nick: 'b', team: 1 }], 'track').match.track, true);
   assert.equal(mk([{ nick: 'a', team: 0 }, { nick: 'c', team: 1, cpu: true, level: 2 }], 'track').match.track, false); // 컴퓨터 좌석이면 넘겨도 막힌다
