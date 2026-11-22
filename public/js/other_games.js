@@ -5,7 +5,7 @@ import { h } from './util.js';
 import { padNav } from './screens/flame/ui.js';
 
 export const OTHER_GAMES = [
-  { slug: 'nekketsu', title: '열혈격투전설', genre: '격투 액션', url: 'https://nekketsu.oddplay.kr', status: 'soon' },
+  { slug: 'nekketsu', title: '열혈격투전설', genre: '격투 액션', url: 'https://nekketsu.oddplay.kr', status: 'play' },
   { slug: 'liero', title: '리에로 포에버', genre: '포격 난투', url: 'https://liero.oddplay.kr', status: 'play' },
   { slug: 'scorched', title: '스코치드 어스 포에버', genre: '턴제 포격', url: 'https://tank.oddplay.kr', status: 'play' },
 ];

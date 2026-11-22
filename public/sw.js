@@ -4,7 +4,7 @@
 // - 코드(js·css·json·webmanifest): 네트워크 우선(서버 no-cache + ETag 재검증 그대로), 실패 시 캐시.
 // - 그림·글꼴(png·svg·ico·woff2·jpg): stale-while-revalidate. 음원(ogg·mp3·wav)은 크기가 커서 캐시하지 않는다(HTTP 캐시 1시간에 맡김).
 // - 새 판: VERSION 을 올리면 브라우저가 새 SW 를 받아 대기시키고, 열린 창이 모두 닫힌 다음 실행부터 적용(skipWaiting 안 함 = 경기 중 교체·새로고침 없음).
-const VERSION = 'tongki-pwa-v2';
+const VERSION = 'tongki-pwa-v3';
 const SHELL = VERSION + '-shell';
 const RT = VERSION + '-rt';
 const SHELL_FILES = ['/offline.html', '/icon-192.png', '/favicon.svg'];
