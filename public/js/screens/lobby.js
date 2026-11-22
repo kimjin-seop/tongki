@@ -1,4 +1,4 @@
-// 로비(시안 A): 왼쪽 로고 + 큰 메뉴 5줄(스토리 모드 / 전국 리그 / 불꽃의 계승 / 컴퓨터 대결 + 난이도 1·2·3 / 랭킹보드) + 작은 메뉴 한 줄(튜토리얼·오프닝 다시보기·가입). 로그아웃은 오른쪽 머리줄,
+// 로비(시안 A): 왼쪽 로고 + 큰 메뉴 5줄(스토리 모드 / 전국 리그 / 불꽃의 계승 / 컴퓨터 대결 + 난이도 1·2·3 / 랭킹보드) + 작은 메뉴 한 줄(튜토리얼·오프닝 다시보기·다른 게임·가입). 로그아웃은 오른쪽 머리줄,
 // 오른쪽 방 목록 창(방 만들기 + 행을 눌러 입장, 서버 푸시로 실시간) + 래더 대전(계정만, PROTOCOL §11 → screens/ladder.js). 랭킹보드는 왼쪽 큰 메뉴.
 // 종전 랭크 방(create_room{ranked:true}·방 목록 랭크 탭)은 2026-11-20 래더로 바뀌어 없앴다(서버 LADDER_ONLY).
 // 방 코드 입력 입장은 화면에서 뺐다(프로토콜 join_room{code} 는 그대로: 행을 누르면 그 방의 code 로 보낸다).
@@ -14,6 +14,7 @@ import { arrowNav } from '../pix.js';
 import { soundButton } from '../audio.js';
 import { installButton } from '../pwa.js';
 import { NOTICE_MAX } from '../chat.js';
+import { openOtherGames } from '../other_games.js';
 
 // 메인 하단 저작권 2줄(위치·모양 = app.css .lobby-cr 한 곳). 줄1 = 원작 타이틀 화면(f2899) 플레인 A 저작권 두 줄 원문
 const COPYRIGHT = ['©こしたてつひろ／小学館／テレビ東京 ©1992 SEGA', 'Remake by 흑칠랑'];
@@ -31,6 +32,7 @@ function adminRow() {
 
 export function mount(root, app) {
   const acct = !!app.account;
+  let closeOg = null; // 「다른 게임」 팝업(other_games.js) 닫기. 로비를 떠나면 같이 닫는다
   const list = h('div.room-list', { role: 'group', 'aria-label': '방 목록' });
   // 컴퓨터 대전: create_room{vsCpu, cpuLevel(1~3)}. 난이도는 다음 방문에도 유지
   let lvl = ['1', '2', '3'].includes(localStorage.getItem('dd.cpuLevel')) ? +localStorage.getItem('dd.cpuLevel') : 2;
@@ -95,6 +97,7 @@ export function mount(root, app) {
         h('div.lobby-foot',
           h('button.btn.small.tut-entry', { type: 'button', onclick: () => app.go('tutorial') }, '튜토리얼'),
           h('button.btn.small.replay-intro', { type: 'button', onclick: () => { if (!app.intro?.active) app.intro = startIntro({ app, onEnd: () => { app.intro = null; } }); } }, '오프닝 다시보기'),
+          h('button.btn.small.og-entry', { type: 'button', 'aria-haspopup': 'dialog', onclick: (e) => { closeOg?.(); closeOg = openOtherGames(root.querySelector('.lobby'), e.currentTarget); } }, '다른 게임'),
           acct ? null : h('button.btn.small.acct-btn', { type: 'button', 'data-k': 'signup', onclick: () => app.go('nick', { upgrade: true }) }, '가입')))),
     h('div.lobby-r.title-follow',
       app.admin ? adminRow() : null, // 관리자(서버 확인)만: 서버 공지 입력줄(100자)
@@ -141,7 +144,7 @@ export function mount(root, app) {
   }
   setTab(tab, true);
   const lockTick = setInterval(() => { if (tab === 'ladder' && !ldPanel.contains(document.activeElement)) paintLadder(); }, 20000);
-  return { update, onLadderStatus() { if (tab === 'ladder') paintLadder(); }, unmount: () => { offNav?.(); offLogo(); clearInterval(lockTick); } };
+  return { update, onLadderStatus() { if (tab === 'ladder') paintLadder(); }, unmount: () => { closeOg?.(); offNav?.(); offLogo(); clearInterval(lockTick); } };
 }
 
 /** 이미지 불투명 영역 bbox [x0, y0, x1, y1](원본 px, 끝 배타). 읽기 실패 시 전체 */

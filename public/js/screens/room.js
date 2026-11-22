@@ -11,7 +11,7 @@ import { available as lineupOk } from './lineup.js';
 import { rulesText } from './rules.js';
 import { emblem, roster, glyphs, abbrOf, shortName, GRID_MAIN, arrowNav } from '../pix.js';
 import * as F from './flame/store.js';
-import { keepEmblem, snapsOf, snapLabel, snapRec, snapBody, snapFaces, SNAP_SLOTS } from './flame/ui.js';
+import { keepEmblem, snapsOf, snapLabel, snapRec, snapBody, snapFaces, snapRoster, SNAP_SLOTS } from './flame/ui.js';
 import { roomPanel } from '../chat.js';
 import { tierChip, placementGames } from './ladder.js';
 import * as Invite from '../invite.js';
@@ -133,9 +133,9 @@ export function mount(root, app) {
         h('div.seat-top', lab, h('span.seat-nick', cpu ? '컴퓨터' : s.nick),
           h('span.seat-tags', s && !s.connected && !cpu ? h('span.tag.off', '연결 끊김') : null, cpu ? null : seatBadges(s, !!r.ladder), tag)),
         ft ? [
-          h('div.seat-team.fl', keepEmblem(), h('span.tn', ft.team?.name || '불꽃 팀', h('span.sn-sl', ' · ' + snapLabel(ft.slot))),
+          h('div.seat-team.fl', { 'aria-label': `${ft.team?.name || '불꽃 팀'} · ${snapLabel(ft.slot)} · ${snapRec(ft)}` }, keepEmblem(), h('span.tn', ft.team?.name || '불꽃 팀'),
             i === me ? h('button.chg', { type: 'button', 'data-cmd': 'chg', onclick: openSelect }, '변경 ▶') : null),
-          flBody(ft),
+          snapRoster(ft, i === 0), // 원작 팀 좌석과 같은 구성(슬롯·구간·승은 화면에 내지 않는다, 2026-11-22 사용자 지시)
         ] : team != null ? [
           h('div.seat-team', emblem(team), h('span.tn', teamText(team)),
             i === me ? h('button.chg', { type: 'button', 'data-cmd': 'chg', onclick: openSelect }, '변경 ▶') : null),

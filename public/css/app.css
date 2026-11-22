@@ -403,7 +403,6 @@ input[type=text]:focus-visible, input[type=password]:focus-visible { outline: va
 .tcell:focus-visible { outline: var(--o) solid var(--c-white); outline-offset: var(--o); }
 .tcell .emb { --ek: calc(var(--pk) + 1); }
 /* 불꽃 팀(PROTOCOL §13.20-B): 대기실 좌석·팀 창 = 7명 작은 초상 + 구간·승수. 팀 선택 「불꽃의 계승」 탭 카드는 아래 .sn-* */
-.seat-team.fl .tn { color: var(--r-fire); white-space: normal; overflow: visible; text-overflow: clip; word-break: keep-all; } /* 핵심 3명 이름: 말줄임 대신 줄바꿈 */
 .flt { display: grid; gap: calc(var(--u) * 4); margin: auto 0; justify-items: center; min-width: 0; }
 .flt-rec { font: var(--f-cap); color: var(--c-yel); }
 .tside { display: grid; grid-template-rows: 1fr 1fr; gap: calc(var(--u) * 8); min-height: 0; }
@@ -972,8 +971,7 @@ button.sn-card { cursor: pointer; }
 .sn-faces { display: flex; flex-wrap: wrap; justify-content: center; gap: calc(var(--u) * 2); }
 .sn-faces .face { --fk: max(1, calc(var(--pk) - 1)); box-shadow: 0 0 0 var(--u) #000; }
 .sn-sl { color: var(--r-line); font: var(--f-cap); }
-.seat .sn-faces .face { --fk: var(--pk); } /* 대기실 좌석(넓은 창): 초상 원래 배율 */
-.tinfo.fl .tinfo-top .tn, .seat-team.fl .tn { white-space: normal; overflow: visible; text-overflow: clip; word-break: keep-all; overflow-wrap: anywhere; line-height: 1.15; }
+.tinfo.fl .tinfo-top .tn { white-space: normal; overflow: visible; text-overflow: clip; word-break: keep-all; overflow-wrap: anywhere; line-height: 1.15; }
 /* 팀 선택 「불꽃의 계승」 쪽: 카드 창을 넓게, 오른쪽 팀 창은 좁게(초상 줄만). 배율 2 이상 데스크톱만 좁힌다 —
    배율 1(폭 900 이하·높이 560 이하)은 머리 글자 24px 가 좁힌 창(96px)을 넘쳐 「결정」이 창 밖으로 밀렸다(강화면 D1) → 다른 탭과 같은 비율 */
 @media (min-width: 901px) and (min-height: 561px) { .tsel.flp .tsel-body { grid-template-columns: minmax(0, 1fr) calc(var(--u) * 112); } .tsel.flp .sn-row { --snw: calc(var(--u) * 60); } } /* 112 = 기본 팀 이름 「불꽃국민학교」(머리 글자 6자)가 한 줄. 카드 최소 폭 60 = 좁아진 카드 창(1280·1920)에서도 선수 7명이 한 줄(7×60+6×2=432u) */
@@ -1201,3 +1199,25 @@ input[type=text].cm-tx::placeholder { color: var(--r-grey); }
 .lobby-cr { grid-column: 1 / -1; align-self: end; padding-top: 4px; text-align: center; font: 12px/16px "RT 11", var(--sys); color: var(--r-line);
   text-shadow: 1px 0 0 #000, -1px 0 0 #000, 0 1px 0 #000, 0 -1px 0 #000; pointer-events: none; user-select: none; overflow-wrap: anywhere; word-break: keep-all; }
 @media (max-width: 760px) { .lobby { grid-template-rows: auto 1fr auto; } .lobby-cr { order: 1; padding-top: 8px; } }
+
+/* ---- 로비 작은 메뉴 「다른 게임」 팝업(other_games.js): 불투명 창 하나(반투명 막 없음), 줄 = 메뉴 줄(공 커서) · 이름 · 장르 · 도트 ↗(외부 이동). 준비 중 = 회색 ---- */
+.og-pop { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 8px; background: none; }
+.og-win { width: min(100%, calc(var(--u) * 300)); padding: calc(var(--u) * 4) calc(var(--u) * 8) calc(var(--u) * 8); display: grid; gap: calc(var(--u) * 4); }
+.og-head { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--u) * 6); }
+.og-title { margin: 0; font: var(--f-head); color: var(--r-yel); }
+.og-x { min-width: 44px; min-height: 44px; text-align: center; }
+.og-list { display: grid; gap: 0; }
+.og-row { position: relative; display: flex; align-items: center; gap: calc(var(--u) * 4); min-height: var(--row); padding: 0 calc(var(--u) * 4); color: var(--r-white); font: var(--f-body); text-decoration: none; white-space: nowrap; }
+.og-row::before { content: ""; flex: none; width: calc(var(--u) * 16); height: calc(var(--u) * 16); visibility: hidden; image-rendering: pixelated;
+  background: var(--img-ball, url("/assets/rom/select/select_ball_anim.png")) 0 0 / calc(var(--u) * 64) calc(var(--u) * 16) no-repeat; }
+a.og-row:is(:hover, :focus-visible) { color: var(--r-yel); outline: none; }
+a.og-row:is(:hover, :focus-visible)::before { visibility: visible; animation: r-ball .4s steps(4) infinite; }
+.og-t { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-weight: normal; }
+.og-g { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; font: var(--f-cap); color: var(--r-line); }
+a.og-row:is(:hover, :focus-visible) .og-g { color: var(--r-yel); }
+.og-ext { --og-p: max(2px, calc(var(--u) * 2)); position: relative; flex: none; width: calc(var(--og-p) * 7); height: calc(var(--og-p) * 7); }
+.og-ar { position: absolute; left: 0; top: 0; width: var(--og-p); height: var(--og-p); box-shadow: calc(var(--og-p) * 2) calc(var(--og-p) * 0) 0 0 currentColor, calc(var(--og-p) * 3) calc(var(--og-p) * 0) 0 0 currentColor, calc(var(--og-p) * 4) calc(var(--og-p) * 0) 0 0 currentColor, calc(var(--og-p) * 5) calc(var(--og-p) * 0) 0 0 currentColor, calc(var(--og-p) * 6) calc(var(--og-p) * 0) 0 0 currentColor, calc(var(--og-p) * 5) calc(var(--og-p) * 1) 0 0 currentColor, calc(var(--og-p) * 6) calc(var(--og-p) * 1) 0 0 currentColor, calc(var(--og-p) * 4) calc(var(--og-p) * 2) 0 0 currentColor, calc(var(--og-p) * 6) calc(var(--og-p) * 2) 0 0 currentColor, calc(var(--og-p) * 3) calc(var(--og-p) * 3) 0 0 currentColor, calc(var(--og-p) * 6) calc(var(--og-p) * 3) 0 0 currentColor, calc(var(--og-p) * 2) calc(var(--og-p) * 4) 0 0 currentColor, calc(var(--og-p) * 6) calc(var(--og-p) * 4) 0 0 currentColor, calc(var(--og-p) * 1) calc(var(--og-p) * 5) 0 0 currentColor, calc(var(--og-p) * 0) calc(var(--og-p) * 6) 0 0 currentColor; }
+.og-row.off { color: var(--r-grey); cursor: not-allowed; }
+.og-row.off .og-g { color: var(--r-grey); }
+.og-soon { flex: none; font: var(--f-cap); color: var(--r-grey); }
+@media (prefers-reduced-motion: reduce) { a.og-row::before { animation: none !important; } }

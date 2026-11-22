@@ -132,12 +132,12 @@ export function mount(root, app, data = {}) {
     if (b?.height) document.body.style.setProperty('--fl-toast-sub', Math.max(8, Math.round(innerHeight - b.top + 6)) + 'px');
     else document.body.style.removeProperty('--fl-toast-sub');
     document.body.classList.toggle('fl-subt', !!b?.height);
-    // 모드 메인(홈): 상단 기본 위치는 로고를 가린다(css body.fl-homet #toasts). 아래 줄(뒤로 가기·순위) 두 버튼 사이에 토스트 폭이 들어가면 그 줄 높이에,
+    // 모드 메인(홈): 상단 기본 위치는 로고를 가린다(css body.fl-homet #toasts). 아래 줄(뒤로 가기 하나, 2026-11-22 순위는 메뉴로) 버튼 옆에 토스트 폭이 들어가면 그 줄 높이에,
     // 좁으면(세로 모바일) 아래 줄 바로 위에 띄운다. 메뉴는 아래 줄 위까지 내려올 수 있어 「바로 위」를 넓은 화면 기본으로 쓰지 않는다
     const f = alive && last === 'home' ? root.querySelector('.fl-home > .fl-foot') : null, fb = f?.getBoundingClientRect();
     if (fb?.height) {
       const bs = [...f.querySelectorAll('button')].map((e) => e.getBoundingClientRect()), tw = document.getElementById('toasts')?.getBoundingClientRect().width ?? 0;
-      const gap = bs.length === 2 ? bs[1].left - bs[0].right : 0, inRow = tw > 0 && bs.length === 2 && innerWidth / 2 - tw / 2 >= bs[0].right + 8 && innerWidth / 2 + tw / 2 <= bs[1].left - 8 && gap > tw;
+      const rt = bs[1]?.left ?? innerWidth, inRow = tw > 0 && bs.length > 0 && innerWidth / 2 - tw / 2 >= bs[0].right + 8 && innerWidth / 2 + tw / 2 <= rt - 8;
       document.body.style.setProperty('--fl-toast-home', Math.max(8, Math.round(inRow ? innerHeight - fb.bottom : innerHeight - fb.top + 6)) + 'px');
     } else document.body.style.removeProperty('--fl-toast-home');
     document.body.classList.toggle('fl-homet', !!fb?.height);

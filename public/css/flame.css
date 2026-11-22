@@ -129,7 +129,8 @@
 .fl-hb { flex: none; display: grid; grid-template-columns: calc(var(--u) * 180) calc(var(--u) * 146) calc(var(--u) * 266); justify-content: center; align-items: stretch; gap: calc(var(--u) * 8); max-width: 100%; }
 .fl-hb.nokp { grid-template-columns: calc(var(--u) * 180) calc(var(--u) * 146); }
 /* 배율 1 데스크톱(폭 641~900): 글자가 배율보다 커서(14px) 열을 px 로. 팀 이름 12자가 프로필·저장 팀 줄에 다 들어가는 폭 */
-@media (min-width: 641px) and (max-width: 900px) and (min-height: 561px) { .fl-hb { grid-template-columns: 204px 150px 310px; } .fl-hb.nokp { grid-template-columns: 204px 150px; } }
+/* 메뉴 열 180px = 마지막 줄 「불꽃의 계승 랭킹」(14px)이 한 줄로 드는 폭(2026-11-22) */
+@media (min-width: 641px) and (max-width: 900px) and (min-height: 561px) { .fl-hb { grid-template-columns: 204px 180px 310px; } .fl-hb.nokp { grid-template-columns: 204px 180px; } }
 .fl-hb .fl-menu { width: auto; }
 .fl-pf { display: flex; flex-direction: column; gap: calc(var(--u) * 4); padding: calc(var(--u) * 4) calc(var(--u) * 6); min-width: 0; }
 .fl-pf-rank { display: flex; align-items: baseline; justify-content: space-between; gap: calc(var(--u) * 4); padding: 0 calc(var(--u) * 2); }
@@ -733,6 +734,7 @@ body.fl-homet .toast { padding: var(--u) calc(var(--u) * 6); }
   .fl-hb .fl-menu { width: auto; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .fl-hb .fl-menu .fl-menu-b { min-height: 40px; }
   .fl-home .kp-slot { min-height: 40px; }
+  .fl-hb .fl-menu .fl-menu-b[data-k=rank] { grid-column: 1 / -1; } /* 9번째 줄 「불꽃의 계승 랭킹」 = 2열을 다 쓴다(반 칸에 안 든다) */
 }
 /* ======== 홈 3단(시안 B): 모바일 세로(폭 640 이하) = 프로필 → 저장 팀 → 메뉴(2열) 세로로 쌓기 ======== */
 @media (max-width: 640px) {

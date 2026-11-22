@@ -69,6 +69,7 @@ export function home(ctx) {
       ['장비 도감', 'cx-equip', () => { S.codexTab = 'equip'; S.codexSel = null; ctx.go('codex'); }],
       [F.artOff() ? '아이템 도감' : '아티팩트 도감', 'cx-art', () => { S.codexTab = 'art'; S.codexSel = null; ctx.go('codex'); }], // off(§13.26): 필살기·포메이션 아이템
       ['기록 및 업적', 'rec', () => ctx.go('records')],
+      ['불꽃의 계승 랭킹', 'rank', () => ctx.go('rank')], // 2026-11-22: 아래 줄 우측 「순위」 버튼을 메뉴로 옮김(같은 data-k·같은 화면)
     ];
     // 첫 방문(끝낸 도전 0회) = 「모드 소개」 옆 점 배지(깜박임 없음). 첫 포커스는 종전대로 새로운 도전/이어하기
     const fresh = !(P.totals?.runs > 0);
@@ -78,7 +79,7 @@ export function home(ctx) {
     body = h('div.fl-hb' + (snapOn() ? '' : '.nokp'), profile(ctx, P, run), h('nav.pwin.fl-menu', { 'aria-label': '불꽃의 계승' }, bs), snapOn() ? keepWin(ctx, P) : null);
   }
   const scr = h('div.screen.fl.fl-home', top, body,
-    h('footer.fl-foot', btn('뒤로 가기', 'back', ctx.leave, '.small.back'), btn('순위', 'rank', () => ctx.go('rank'), '.small')));
+    h('footer.fl-foot', btn('뒤로 가기', 'back', ctx.leave, '.small.back')));
   if (S.info) scr.addEventListener('click', (e) => { if (!body.contains(e.target) && !e.target.closest('button')) closeInfo(); }); // 소개 창 밖 클릭 = 닫기
   ctx.root.append(scr);
   return { esc: () => (S.tnEdit ? tnCancel(ctx) : S.info ? closeInfo() : S.newAsk || S.nameAsk ? cancel() : ctx.leave()) };

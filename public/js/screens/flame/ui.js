@@ -231,6 +231,8 @@ const SNAP_SLOT_SHORT = { protector: '보호대' };
 const snapName = (p, f) => (typeof p?.name === 'string' && p.name ? rankName(p.name) : pname(f));
 /** 작은 초상 한 줄(상대 좌석·대기실 좌석·칸 고르기): 7명 얼굴만 */
 export const snapFaces = (t) => h('span.sn-faces', { 'aria-hidden': 'true' }, (Array.isArray(t?.players) ? t.players : []).slice(0, 7).map((p) => pface(snapFrom(p, t.team))));
+/** 대기실 좌석: 원작 팀 좌석(pix.roster)과 같은 얼굴+이름 격자 */
+export const snapRoster = (t, flip = false) => h('div.roster', (Array.isArray(t?.players) ? t.players : []).slice(0, 7).map((p) => { const f = snapFrom(p, t.team); return h('figure.rp', pface(f, flip), h('figcaption', snapName(p, f))); }));
 /**
  * 카드 본문: 머리(칸 · 팀 이름 · 구간·승수 · extra) + 선수 7명 가로 줄(얼굴·이름·능력치 6개·장비 4칸·필살기) + 포메이션 한 줄.
  * 값은 서버 카드(flame_state.profile.teams.sN) 그대로다(능력치 = players[i].final, 계산하지 않는다). usable:false = 쓸 수 없는 칸
