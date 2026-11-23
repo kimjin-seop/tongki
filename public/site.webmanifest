@@ -1,6 +1,6 @@
 {
-  "name": "피구왕 통키",
-  "short_name": "통키",
+  "name": "피구왕 통키 웹온라인",
+  "short_name": "통키 웹온라인",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#004824",
