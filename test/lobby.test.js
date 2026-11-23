@@ -4,9 +4,10 @@ import { WebSocket } from 'ws';
 import { createServer } from '../server/index.js';
 import { MemoryResultStore } from '../server/store/results.js';
 import { mono } from '../server/net/limits.js';
+import { openWs } from './ws_util.js';
 
 function client(port) {
-  const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
+  const ws = openWs(port, { snaps: true });
   const q = [];
   const waiters = [];
   ws.on('message', (raw) => {
@@ -64,7 +65,7 @@ test('로비 흐름: 로그인 -> 방 -> 준비 -> 시작 -> 대전 -> 종료(�
     assert.deepEqual([sa.you, sb.you], [0, 1]);
     assert.equal(sa.rules.evade, 'track');
     assert.equal(sb.teams[1].id, 5);
-    a.send({ t: 'input', bits: 8 });
+    a.send({ t: 'input', n: 0, b: [8] });
     const snap = await a.type('snap');
     assert.equal(snap.p.length, 14);
     assert.equal(snap.ph, 'ready');

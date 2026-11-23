@@ -12,11 +12,12 @@ import { openDb, MIGRATIONS, schemaVersion } from '../server/store/db.js';
 import { RankingStore } from '../server/store/ranking.js';
 import { LADDER, nextTier, tierOf, queueWindow } from '../server/ranking/elo.js';
 import { LadderQueue } from '../server/ranking/queue.js';
+import { openWs } from './ws_util.js';
 
 const DAY = 86400000;
 
 function client(port) {
-  const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
+  const ws = openWs(port);
   const q = [], waiters = [];
   ws.on('message', (raw) => {
     const m = JSON.parse(raw.toString());

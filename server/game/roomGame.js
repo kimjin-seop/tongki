@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { Match } from '../engine/index.js';
 import { GRACE_MS } from '../net/protocol.js';
 import { mono, loadLimits } from '../net/limits.js';
+import { SnapEncoder } from '../../public/js/game/snapcodec.js'; // 스냅샷 바이너리 코덱(클라이언트와 같은 파일, PROTOCOL §5.3)
 
 /**
  * 사람끼리 일반 멀티 경기 방인가(필살 추적 규칙 자동 적용 판정, 한 곳). 사용자 결정 2026-11-20: 옵션이 아니라 이 경기 종류에 항상 적용, 클라이언트가 바꿀 수 없다.
@@ -40,6 +41,7 @@ export class RoomGame {
       specialChance256: [0, 1].map((i) => (o.seats[i].cpu ? o.seats[i].special256 : undefined)),
       limitFrames: o.rules?.limitFrames, ruleMode: o.rules?.mode, // 규칙 창 값(없으면 rules.json 기본)
       ...(this.training ? { training: { kind: this.training.kind } } : {}),
+      ...(o.cpuBoost ? { cpuBoost: o.cpuBoost } : {}), // 컴퓨터 단계 4 이상(server/engine/boost.js). 주지 않으면 종전 경로
       ...(o.flame ? { flame: o.flame } : {}), // 불꽃의 계승(PROTOCOL §12): 엔진 flame 옵션 그대로. 주지 않으면 종전 경로
       // 필살 추적: lobby 가 evadeOf(room) 로 정한 값. 컴퓨터 좌석·특훈·flame 경기는 여기서도 한 번 더 막는다(그 경기는 원작 프레임 그대로)
       ...(o.evade === 'track' && this.cpuSeat < 0 && !this.training && !o.flame ? { evade: 'track' } : {}),
@@ -57,6 +59,9 @@ export class RoomGame {
     // 특훈 상한(자작 안전망, 원작에 없음): 특훈은 시계가 없어 방이 끝나지 않을 수 있다. training.json frames.idleMax / totalMax
     this.trainCap = this.training ? { idle: o.data.training.frames.idleMax, total: o.data.training.frames.totalMax } : null;
     this.lastInputF = 0; // 사람 좌석의 입력(bits != 0)이 마지막으로 들어온 엔진 프레임
+    this.enc = new SnapEncoder(); // 좌석 두 명에게 같은 바이너리 스트림(키프레임 + 델타)을 보낸다
+    this.needKey = false; // 소켓 버퍼 초과로 메시지가 버려졌다: 다음 스냅샷은 키프레임
+    this.inSeq = [-1, -1]; // 좌석별 마지막으로 처리한 입력 번호(PROTOCOL §5.2)
   }
 
   startPayload(seat, resumed) {
@@ -81,7 +86,22 @@ export class RoomGame {
   /** 재접속한 좌석에 현재 상태 전송 (이벤트 없는 스냅샷) */
   resume(seat) {
     this.o.send(seat, this.startPayload(seat, true));
-    this.o.send(seat, this.match.snapshot(false));
+    this.o.send(seat, this.enc.encodeKeyOnly(this.match.snapshot(false)));
+    this.enc.forceKey(); // 다른 좌석의 델타 기준과 어긋나지 않게 다음 방송도 키프레임
+    this.inSeq[seat] = -1; // 재접속한 클라이언트는 입력 번호를 0 부터 다시 센다
+    // 상대가 끊겨 일시정지 중이면 그 상태를 다시 알린다(새 화면은 game_pause 를 받은 적이 없다: 스냅샷이 오지 않는 까닭을 모른다)
+    const o = 1 - seat;
+    if (this.paused[o]) this.o.send(seat, { t: 'game_pause', seat: o, nick: this.o.seats[o].nick, deadline: this.pauseDeadline[o] });
+  }
+
+  /** 입력 메시지 처리(PROTOCOL §5.2): n = 클라이언트 입력 번호, b = [현재, 직전, 그 전...] 최근 입력 비트. 이미 처리한 번호는 버리고, 빠진 번호가 있으면 b 의 이전 값을 오래된 것부터 먼저 적용한다. 서버가 입력을 적용하는 시점(도착 후 다음 틱)은 그대로다 */
+  applyInput(seat, n, b) {
+    const last = this.inSeq[seat];
+    if (n <= last) return;
+    const miss = last < 0 ? 0 : Math.min(n - last - 1, b.length - 1);
+    for (let k = miss; k >= 1; k--) this.setInput(seat, b[k]);
+    this.setInput(seat, b[0]);
+    this.inSeq[seat] = n;
   }
 
   setInput(seat, bits) {
@@ -138,8 +158,10 @@ export class RoomGame {
   }
 
   broadcastSnap(snap) {
-    const str = JSON.stringify(snap);
-    this.o.send(0, str); this.o.send(1, str);
+    if (this.needKey) { this.enc.forceKey(); this.needKey = false; }
+    const buf = this.enc.encode(snap);
+    const a = this.o.send(0, buf), b = this.o.send(1, buf);
+    if (a === false || b === false) this.needKey = true; // 버려진 메시지가 있으면 델타 기준이 어긋난다
   }
 
   /** 사람끼리 방(D53): 좌석별 flame 결과 [좌석 0 | null, 좌석 1 | null](엔진은 두 좌석이면 배열, 한 좌석이면 그 좌석 객체를 돌려준다) */

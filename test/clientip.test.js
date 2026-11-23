@@ -4,6 +4,7 @@ import { WebSocket } from 'ws';
 import { createServer } from '../server/index.js';
 import { MemoryResultStore } from '../server/store/results.js';
 import { resolveClientIp } from '../server/net/clientip.js';
+import { openWs } from './ws_util.js';
 
 test('IP 판정(순수): 루프백만 XFF 자동 신뢰·마지막 값 기준·외부 직접 연결은 소켓 주소·TRUST_PROXY=0 끔/1 종전', () => {
   assert.deepEqual(resolveClientIp('127.0.0.1', '203.0.113.5', undefined), { ip: '203.0.113.5', viaXff: true });
@@ -15,7 +16,7 @@ test('IP 판정(순수): 루프백만 XFF 자동 신뢰·마지막 값 기준·�
 });
 
 function conn(port, xff) {
-  const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`, { headers: { 'x-forwarded-for': xff, 'user-agent': 'Mozilla/5.0', 'accept-language': 'ko', origin: `http://127.0.0.1:${port}` } }); // 브라우저 헤더(botguard 지문 점수 회피)
+  const ws = openWs(port, { headers: { 'x-forwarded-for': xff, 'user-agent': 'Mozilla/5.0', 'accept-language': 'ko', origin: `http://127.0.0.1:${port}` } }); // 브라우저 헤더(botguard 지문 점수 회피)
   const err = new Promise((res) => {
     ws.on('message', (raw) => { const m = JSON.parse(raw.toString()); if (m.t === 'error') res(m.code); });
     ws.on('close', () => res('closed'));

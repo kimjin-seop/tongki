@@ -3,9 +3,11 @@ import http from 'node:http';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { monitorEventLoopDelay } from 'node:perf_hooks';
 import { WebSocketServer } from 'ws';
 import { loadData } from './engine/index.js';
 import { mono, loadLimits } from './net/limits.js';
+import { PROTOCOL } from './net/protocol.js';
 import { createStaticHandler } from './net/static.js';
 import { createInviteHandler } from './net/invite_og.js';
 import { BotGuard, loadBotguardConfig } from './net/botguard.js';
@@ -67,7 +69,7 @@ export function createServer(opts = {}) {
       const u = new URL(req.url, 'http://x');
       if (u.pathname === '/health') {
         res.writeHead(200, { 'content-type': 'application/json' });
-        res.end(JSON.stringify({ ok: true, build: pkg.version, ...lobby.stats(), botguard: botguard.summary() }));
+        res.end(JSON.stringify({ ok: true, build: pkg.version, ...lobby.stats(), botguard: botguard.summary(), loopLagMs: { now: lagMs(), prevMin: lagPrev } }));
         return;
       }
       // 초대 링크 미리보기: `/?room=` 만(og 메타 주입·no-store, server/net/invite_og.js). 쿼리 없는 `/` 는 종전 정적 응답 그대로
@@ -83,8 +85,9 @@ export function createServer(opts = {}) {
     const conn = {
       session: null, count: 0, winStart: mono(), ip,
       send(m) {
-        if (ws.readyState !== 1 || ws.bufferedAmount > 1 << 20) return;
-        ws.send(typeof m === 'string' ? m : JSON.stringify(m));
+        if (ws.readyState !== 1) return;
+        if (ws.bufferedAmount > 1 << 20) return false; // 버린다. false = 호출자(스냅샷 방송)가 델타 기준이 어긋났음을 안다
+        ws.send(typeof m === 'string' || m instanceof Uint8Array ? m : JSON.stringify(m)); // Uint8Array = 바이너리 스냅샷
       },
       close(code, reason) { ws.close(code, reason); }, // code 1008 + reason = 클라이언트가 자동 재연결을 길게 늦춘다(public/js/net.js)
     };
@@ -104,6 +107,8 @@ export function createServer(opts = {}) {
     const bg = n > limits.maxConnPerIp ? { ok: true } : botguard.checkUpgrade(ip, req.headers);
     if (n > limits.maxConnPerIp) { reject('TOO_MANY_CONNECTIONS'); conn.rejected = true; }
     else if (!bg.ok) { ws.close(1008); conn.rejected = true; }
+    // 프로토콜 버전: 접속 주소의 v 가 서버와 같아야 한다(구 클라이언트·캐시된 옛 화면은 안내 후 거절). IP 연결 수·봇 판정 뒤에 본다(버전이 다른 연결도 그 집계에 들어간다)
+    else if (new URL(req.url, 'http://x').searchParams.get('v') !== String(PROTOCOL)) { conn.rejected = true; lobby.err(conn, 'PROTOCOL_MISMATCH'); ws.close(1008, 'PROTOCOL_MISMATCH'); }
     else conn.armLoginTimer(limits.loginTimeoutMs);
     ws.on('message', (raw) => {
       if (conn.rejected) return;
@@ -127,6 +132,15 @@ export function createServer(opts = {}) {
   });
 
   const loop = setInterval(() => lobby.tickGames(mono()), 5);
+  // 이벤트 루프 지연 감시(/health loopLagMs): 최근 1분 창의 p50·p99·최대(ms). 60Hz 틱(16.7ms)을 넘는 값이 잦으면 스냅샷이 몰려 나간다
+  const LAG_RES = 10; // 표본 간격(ms). 기록 값은 이 간격을 포함하므로 빼서 '늦은 만큼'만 낸다
+  const lag = monitorEventLoopDelay({ resolution: LAG_RES });
+  lag.enable();
+  const lagOf = (ns) => +Math.max(0, ns / 1e6 - LAG_RES).toFixed(1);
+  const lagMs = () => ({ p50: lagOf(lag.percentile(50)), p99: lagOf(lag.percentile(99)), max: lagOf(lag.max) });
+  let lagPrev = null;
+  const lagRoll = setInterval(() => { lagPrev = lagMs(); lag.reset(); }, 60000);
+  lagRoll.unref?.();
   const ping = setInterval(() => {
     for (const ws of wss.clients) {
       if (ws.dead) { ws.terminate(); continue; }
@@ -139,7 +153,7 @@ export function createServer(opts = {}) {
     server, wss, lobby, db, botguard,
     listen: (port = Number(process.env.PORT ?? 3100)) => new Promise((r) => server.listen(port, () => r(server.address().port))),
     close: () => new Promise((r) => {
-      clearInterval(loop); clearInterval(ping);
+      clearInterval(loop); clearInterval(ping); clearInterval(lagRoll); lag.disable();
       for (const c of wss.clients) c.terminate();
       wss.close(() => server.close(() => { if (!opts.db) db.close(); r(); }));
     }),

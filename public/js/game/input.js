@@ -1,4 +1,5 @@
 // 키보드 → 입력 비트 (PROTOCOL 5.2). 상태가 바뀌면 즉시 전송, 눌린 채 유지되면 250ms 마다 재전송.
+// 메시지마다 번호 n 을 붙이고 최근 입력 b(현재, 직전, 그 전, 최대 3개)를 함께 보낸다: 서버는 처리한 번호를 버리고, 빠진 번호가 있으면 b 로 채운다.
 // 엣지·더블탭 대시·조준 그룹 판정은 서버가 한다. 여기서는 눌림 상태만 정확히 보낸다.
 import { isTyping } from '../util.js';
 
@@ -9,11 +10,13 @@ const KEYMAP = {
   KeyA: BIT.A, KeyS: BIT.B, KeyD: BIT.C, KeyF: BIT.S,
 };
 const RESEND_MS = 250;
+const HIST = 3; // 한 메시지에 싣는 최근 입력 수(서버 상한 4)
 
 export class InputSender {
-  /** @param {(bits:number)=>void} send */
+  /** @param {(msg:{n:number, b:number[]})=>void} send */
   constructor(send) {
     this.send = send; this.bits = 0; this.enabled = true; this.lastSent = 0;
+    this.n = 0; this.hist = []; // 보낸 입력 번호 / 최근 비트(최신이 앞)
     this.down = new Set();
     this.touchBits = 0; // 터치 가상 패드(touchpad.js)가 넣는 눌림 비트. 키보드와 OR
     this.onKey = (e) => {
@@ -46,7 +49,11 @@ export class InputSender {
   /** 가상 패드 눌림 상태 갱신(키보드와 합쳐 같은 경로로 전송) */
   setTouch(bits) { this.touchBits = bits; this.update(); }
 
-  flush() { this.lastSent = performance.now(); this.send(this.bits); }
+  flush() {
+    this.lastSent = performance.now();
+    this.hist.unshift(this.bits); if (this.hist.length > HIST) this.hist.length = HIST;
+    this.send({ n: this.n++, b: this.hist.slice() });
+  }
 
   setEnabled(on) { this.enabled = on; if (!on) this.down.clear(); this.update(); }
 

@@ -41,8 +41,11 @@ export class Hud {
   /** 이름 도트 이미지(좌석별 [{c, x, y}]) */
   nameSprites() {
     const names = this.names ?? [['', ''], ['', '']];
+    // 폰트가 다 준비된 뒤에는 이름 배열이 그대로면 다시 확인하지 않는다(종전: 프레임마다 JSON 문자열·폰트 확인 = 모바일 4배 느림 실측에서 프레임 비용의 약 11%)
+    if (this.nameImgs && this.nameDone && names === this.nameSrc) return this.nameImgs;
     const fontOk = globalThis.document?.fonts?.check?.(`${TEAM_H}px ${NAME_FONT}`, '가') ?? true;
     const key = JSON.stringify(names) + fontOk;
+    this.nameSrc = names; this.nameDone = fontOk && (globalThis.document?.fonts?.status ?? 'loaded') === 'loaded';
     if (key === this.nameKey) return this.nameImgs;
     this.nameKey = key;
     this.nameImgs = names.map(([nick, team], seat) => {

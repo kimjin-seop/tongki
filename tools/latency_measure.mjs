@@ -1,7 +1,8 @@
 // 측정 전용(analysis/51 지연): 임시 서버(별도 프로세스, 포트 3400, DB_PATH=:memory:)에 루프백으로 붙어
 // 「입력 전송 -> 그 입력이 반영된 snap 도착」 시간을 여러 번 잰다(p50/p95/p99). 배경 경기 수(부하)별로 반복한다. 서버 코드는 그대로.
 // 반영 판정: 조작 선수(snap.ctrl[0])가 서 있을 때(st 0) 방향키(RIGHT/LEFT 번갈아)를 눌러, 그 선수 x 가 그 방향으로 처음 바뀐 snap.
-// 사용: node tools/latency_measure.mjs --out <결과.json> [--trials 300] [--loads 0,50,100]
+// 사용: node tools/latency_measure.mjs --out <결과.json> [--trials 300] [--loads 0,50,100] [--port 3400]
+// 2026-11-23: 프로토콜 v2 대응(traffic_ws_measure.mjs 의 client 가 주소·바이너리 스냅샷·입력 형식을 맞춘다), --port 추가
 import { writeFileSync } from 'node:fs';
 import { performance } from 'node:perf_hooks';
 import { startServer, client } from './traffic_ws_measure.mjs';
@@ -13,13 +14,14 @@ const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ?
 const TRIALS = Number(arg('trials', 300));
 const LOADS = arg('loads', '0,50,100').split(',').map(Number);
 const OUT = arg('out', null);
+const PORT = Number(arg('port', 3400));
 const pct = (a, p) => { if (!a.length) return null; const s = [...a].sort((x, y) => x - y); return +s[Math.min(s.length - 1, Math.floor(p / 100 * s.length))].toFixed(2); };
 const stats = (a) => ({ n: a.length, mean: a.length ? +(a.reduce((x, y) => x + y, 0) / a.length).toFixed(2) : null, p50: pct(a, 50), p95: pct(a, 95), p99: pct(a, 99), max: a.length ? +Math.max(...a).toFixed(2) : null });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let seq = 0;
 
 async function cpuRoom(name) {
-  const c = client(name); await c.open;
+  const c = client(name, { port: PORT }); await c.open;
   c.send({ t: 'hello', nickname: `lt${(++seq).toString().padStart(4, '0')}` }); await c.type('welcome');
   c.send({ t: 'create_room', vsCpu: true, cpuLevel: 2, rules: { mode: 'knockout', time: 8 } }); await c.type('room_joined');
   c.send({ t: 'start' }); await c.type('game_start');
@@ -62,7 +64,7 @@ async function measure(load) {
   return out;
 }
 
-const srv = await startServer(3400);
+const srv = await startServer(PORT);
 const res = [];
 try {
   for (const l of LOADS) { const r = await measure(l); res.push(r); console.log(JSON.stringify(r)); }

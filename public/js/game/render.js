@@ -318,6 +318,9 @@ export class Renderer {
       moving = !!s[9];
       if (s[9] === undefined || typeof fl !== 'number') m.back = moving ? dy < -0.05 : y >= BACK_Y;
     } else if (s[10]) moving = true; // 포메이션 집합 이동(fmWalk): 걷기 애니
+    // 시각 선반영(옵션 fx.predict, 기본 꺼짐. game.js 가 localBits 를 건다): 내 조작 선수가 서 있을 때 방향키를 누르면 서버 스냅샷을 기다리지 않고 걷기 그림부터 시작한다.
+    // 위치·방향·판정은 서버 값 그대로다(다리 동작만 먼저). 조작이 잠긴 동안·포메이션·시작 연출은 제외
+    else if (this.localBits && pid === a.ctrl[this.you] && (this.localBits() & 15) && st === ST.IDLE && !a.lock && a.ph === 'play' && !a.fm) moving = true;
 
     // 점프볼 쳐내기 자세(fl&32) 시작 틱
     if (fl & FL.TIP) m.tipAt ??= tick; else m.tipAt = null;

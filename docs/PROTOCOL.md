@@ -1,14 +1,15 @@
-# 피구왕 통키 웹 - 네트워크 프로토콜 (v1)
+# 피구왕 통키 웹 - 네트워크 프로토콜 (v2)
 
 클라이언트(윤프론)가 이 문서만 보고 붙을 수 있도록 쓴 계약서. 구조는 `..\tank\docs\PROTOCOL.md` 패턴(세션 토큰·재접속·방·토스트 오류)을 따른다.
 규칙 근거: `analysis\05_match_rules.md`. 규칙 수치는 `server\data\*.json`, 확정/추정 구분은 코드·JSON의 `[추정]` 주석.
 
 ## 0. 전송
-- WebSocket `ws://<host>:<PORT>/ws` (기본 PORT 3100, 환경변수 `PORT`). 텍스트 프레임 1개 = JSON 객체 1개, 항상 `{t:'종류', ...}`.
-- 최대 4KB. 연결당 초당 240개 초과 시 `RATE_LIMITED` 오류(연결 유지). 서버는 15초마다 WS ping을 보낸다.
+- WebSocket `ws://<host>:<PORT>/ws?v=2` (기본 PORT 3100, 환경변수 `PORT`). **`v` = 프로토콜 버전(현재 2, 서버 `server/net/protocol.js` `PROTOCOL`, 클라이언트 `public/js/net.js` `PROTOCOL`)**. 서버와 다르거나 없으면(구 클라이언트·캐시된 옛 화면) 연결 직후 `{t:'error', code:'PROTOCOL_MISMATCH'}`(새로고침 안내) 뒤 close 1008. 구 버전 호환 경로는 없다(서버·클라이언트를 함께 배포한다).
+- 텍스트 프레임 1개 = JSON 객체 1개, 항상 `{t:'종류', ...}`. **예외: 스냅샷(`snap`)만 바이너리 프레임**(§5.3.1). 클라이언트는 `binaryType='arraybuffer'` 로 받아 `public/js/game/snapcodec.js` `SnapDecoder` 로 풀면 §5.3 의 `snap` 객체와 같은 모양이 된다.
+- 클라이언트 -> 서버 최대 4KB. 서버 -> 클라이언트는 소켓 송신 버퍼가 1MB 를 넘으면 그 연결로 가는 메시지를 버린다(스냅샷 방송은 버려진 것을 알아채고 다음 스냅샷을 키프레임으로 보낸다, §5.3.1). 연결당 초당 240개 초과 시 `RATE_LIMITED` 오류(연결 유지). 서버는 15초마다 WS ping을 보낸다.
 - 연결 거절(봇 차단, HANDOFF §19): 차단 중인 IP 의 새 연결은 `RATE_LIMITED` 오류 뒤 close 1008. 서버가 `ALLOWED_ORIGINS` 를 설정했으면 Origin 이 없거나 목록 밖인 연결은 오류 없이 close 1008. 차단 중인 IP·닉네임의 `hello`/`register`/`login` 도 `RATE_LIMITED`.
 - 요청에 선택 필드 `ref`(아무 값)를 달면 실패 시 `error.ref`로 돌아온다.
-- HTTP: `/` -> `public\` 정적 서빙(있을 때만), `/health` -> `{ok:true, ...}`. ROM·`analysis\` 는 서빙하지 않는다.
+- HTTP: `/` -> `public\` 정적 서빙(있을 때만), `/health` -> `{ok:true, ..., loopLagMs:{now:{p50,p99,max}, prevMin}}`(loopLagMs = 서버 이벤트 루프가 늦은 정도 ms, 지금 1분 창과 직전 1분 창). ROM·`analysis\` 는 서빙하지 않는다.
 - 시간 값은 서버 epoch ms. 클라이언트 시계는 판정에 쓰이지 않는다.
 
 ## 1. 오류와 토스트
@@ -17,6 +18,7 @@
 | code | 기본 문구 |
 |---|---|
 | BAD_MESSAGE / UNKNOWN_TYPE / RATE_LIMITED | 잘못된 요청입니다 / 알 수 없는 요청입니다 / 요청이 너무 빠릅니다 |
+| PROTOCOL_MISMATCH | 새 버전이 나왔습니다. 페이지를 새로고침(Ctrl+F5)해 주세요 (접속 주소의 `v` 가 서버 버전과 다름, 연결 직후 1회 + close 1008. 클라이언트는 자동 재연결을 멈춘다) |
 | NOT_LOGGED_IN / ALREADY_LOGGED_IN | 먼저 닉네임을 입력하세요 / 이미 접속한 상태입니다 |
 | NICK_INVALID | 닉네임은 2~10자의 한글·영문·숫자만 쓸 수 있습니다 |
 | NICK_TAKEN | 이미 사용 중인 닉네임입니다 |
@@ -72,7 +74,7 @@
 
 ### 서버 -> 클라이언트
 ```js
-{ t:'welcome', protocol:1, token, nickname, resumed:boolean,
+{ t:'welcome', protocol:2, token, nickname, resumed:boolean,
   location:'lobby'|'room'|'game', serverTime, build:'0.1.0', rulesVersion:'r0.1',
   tickRate:60, graceMs:30000,
   teams:[{id:0, name:'팀 01'}, ...25개] }
@@ -175,7 +177,7 @@ room = { code, status:'waiting'|'playing', host:'방장닉네임', serverTime,
 ## 5. 대전
 
 ### 5.1 시작
-`{t:'game_start', matchId, resumed:boolean, you:seat, seed, tickRate:60, snapEvery:2, stage, teams:[A, B], court, rules, campaign?}`
+`{t:'game_start', matchId, resumed:boolean, you:seat, seed, tickRate:60, snapEvery:1, stage, teams:[A, B], court, rules, campaign?}`
 - `stage`=`{id, key, file, json, romStage}`(배경 선택, §8). `campaign`={k}는 캠페인 경기일 때만.
 - `teams[seat]` = `{ id, name, players:[7개] }`, 선수 `{ idx(0~6), role:'infield'|'outfield_top'|'outfield_bottom'|'outfield_back', hp, def, spd, s3, pow, s5, thr, pass }` (원작 능력치 s0~s7, `analysis\05_match_rules.md` 4절).
 - `court` = `{ xMin:16, xMax:496, yMin:16, yMax:248, centerX:256, slots:[{slot, a:[x,y], b:[x,y]}...13개] }` px. 화면 y는 `y/2 - z`(의사 3D)로 그린다(원작 방식: 화면y = y/2 - z + 오프셋).
@@ -184,7 +186,8 @@ room = { code, status:'waiting'|'playing', host:'방장닉네임', serverTime,
 - 경기는 `ph:'ready'`(입장 행진·심판 등장·대기, **입력 잠금**) -> GO 에서 `play`(입력·경기 시계 시작) 순서로 시작한다. `rules.readyFrames` = GO 가 나오는 틱 번호(결정적, 팀 능력치 의존 약 350). `rules.start` = 시작 연출 데이터 전체(`server/data/rules.json`의 `start`: 입장 출발점·속도식, 심판 경로/애니 ID, 배너 수명, 점프볼 파라미터 등. 원작 확정값과 [추정] 구분은 그 파일 주석). 상세는 5.5.
 
 ### 5.2 입력 (클라이언트 -> 서버)
-`{t:'input', bits}` — **프레임별 입력 상태 비트**(0~255, 범위 밖은 조용히 무시). 서버가 판정하며 클라이언트 값으로 상태를 바꿀 수 없다.
+`{t:'input', n, b:[bits, 직전bits, 그전bits]}` — **입력 상태 비트**. `n` = 클라이언트가 0 부터 세는 입력 번호(메시지마다 +1, 상태 변화·250ms 재전송 모두), `b` = 최근 입력 비트(0~255)를 **최신이 앞**으로 최대 3개(서버 상한 4개, 형식·범위 오류는 조용히 무시). 서버가 판정하며 클라이언트 값으로 상태를 바꿀 수 없다.
+- 서버는 좌석별로 마지막 처리 번호를 기억한다. **이미 처리한 번호(`n` <= 마지막)는 버리고**(중복·늦게 도착), 번호가 건너뛰었으면(예: 연결이 잠시 닫혀 못 보낸 입력) `b` 의 이전 값을 **오래된 것부터** 먼저 적용한 뒤 `b[0]` 를 적용한다. 번호는 경기마다 0 부터이고, 재접속(`game_start{resumed:true}` 직전)하면 서버가 좌석의 번호를 초기화한다. WebSocket(TCP)에서는 손실·재정렬이 생기지 않으므로 이 중복은 비신뢰 전송(WebRTC DataChannel 등)으로 바꿀 때를 위한 대비이며, 서버가 입력을 적용하는 시점 규칙(**도착한 뒤 다음 틱**, 새로 눌린 비트 래치)은 바꾸지 않았다.
 
 | 비트 | 값 | 의미 |
 |---|---|---|
@@ -205,7 +208,7 @@ room = { code, status:'waiting'|'playing', host:'방장닉네임', serverTime,
 - 투구 후 비행 중 방향키로 궤적 보정(↑/↓ 횡 가속, 상대 쪽=위로 보정, 반대쪽=아래로 보정). 필살기 비행 중에는 방향키 보정이 없다(§5.3 필살기).
 
 ### 5.3 스냅샷 (서버 -> 클라이언트)
-`snapEvery`(=2) 틱마다(=30Hz) 방 전원에게 **전체 상태**를 보낸다(변경분 아님). 틱 사이는 클라이언트가 보간.
+`snapEvery`(=1, `server/data/rules.json`) 틱마다(**=60Hz**, 종전 문서의 30Hz 는 오래된 값) 방 전원에게 상태를 보낸다. 전송은 **바이너리 키프레임 + 델타**(§5.3.1)이며 아래 객체는 풀었을 때의 논리 모양이다. 클라이언트는 도착 간격이 흔들려도 끊기지 않도록 재생 지연(약 1~10틱, 소수)을 두고 보간한다(`public/js/game/snaps.js`, §7).
 ```js
 { t:'snap', f:틱번호, ph:'ready'|'play'|'end', clk:남은프레임(60fps 기준, 시작 시 limitFrames; 0=서든데스 중 또는 무제한 경기), sd:boolean,
   rem:[좌석0 생존 인원, 좌석1 생존 인원], ctrl:[좌석0 조작 pid, 좌석1 조작 pid], aim:[좌석0 조준그룹, 좌석1],
@@ -241,6 +244,17 @@ room = { code, status:'waiting'|'playing', host:'방장닉네임', serverTime,
   - 시간제한 모드에서도 필살기는 켜져 있다: 의도된 설계(원작은 시간제한 시 비활성, 웹은 5분 제한과 함께 활성).
   - 서버 옵션: `Match({forceSpecial: true|ID})`는 시뮬레이션/테스트용(내야 선수의 모든 투구를 필살기로 강제), 기본 꺼짐.
 - `game_pause{seat, nick, deadline}` 상대 연결 끊김으로 일시정지(스냅샷 중단). `game_resume{}` 재개.
+
+#### 5.3.1 스냅샷 바이너리 포맷 (프로토콜 v2, 2026-11-22)
+구현 = `public/js/game/snapcodec.js`(서버·클라이언트 공용: `SnapEncoder`/`SnapDecoder`). **무손실**이다(값을 줄이거나 반올림하지 않음). 평균 약 45B/메시지(종전 JSON 약 700B), 키프레임 약 300~400B.
+- 바이너리 프레임 1개 = 스냅샷 1개. 정수는 모두 **LEB128 가변 길이**(부호 있는 값은 지그재그 `n>=0 ? 2n : -2n-1`), `u16` 은 리틀엔디언.
+- 머리 1바이트: 상위 4비트 `0x5`(식별, 아니면 오류) + 플래그 비트 `1`=키프레임, `2`=fm 덩어리, `4`=tr 덩어리, `8`=ev 덩어리.
+- **평평한 정수 칸 191개**(`flatten`): 선수 14 x 11(`p[i][j]` -> `i*11+j`), 공 `b` 7, `rem` 2, `ctrl` 2, `aim` 2, `clk`, `sd`(0/1), `lock`, `ph`(0 ready, 1 play, 2 end), `sq` 2, `fmLeft` 2, `cam`(존재 1칸 + 값), `ref`(존재 + 5), `ban`(존재 + 종류 번호 0 go, 1 fight, 2 game_set, 3 time_up, 4 play_off + 나이 + 수명), `tip`(존재 + 3). 존재 칸이 0 이면 그 묶음은 `null`(값 칸은 0).
+- **키프레임**: 머리 + `f`(가변) + 191칸 전부(지그재그 가변). 방 시작·재접속·**60틱마다**·서버가 메시지를 버린 직후에 보낸다.
+- **델타**: 머리 + `u16 기준 f 의 하위 16비트` + `가변 f 증가량` + `가변 바뀐 칸 수 k` + k x (`가변 앞 칸과의 인덱스 차`, `지그재그 값 증가량`)(인덱스 오름차순, 값은 직전 스냅샷 대비 차). 클라이언트는 자기가 가진 마지막 `f` 의 하위 16비트가 기준과 다르면 **그 델타를 버리고(null)** 다음 키프레임부터 이어 받는다.
+- 덧붙이는 덩어리(각각 `가변 길이` + UTF-8 JSON): `fm`(포메이션 중 바뀔 때, `null` 로 바뀔 때도 포함. 키프레임은 fm 이 있을 때만), `tr`(특훈일 때 바뀐 때·키프레임), `ev`(이벤트 배열, 비어 있으면 생략 = `[]`). 순서 fm, tr, ev.
+- 풀린 객체는 §5.3 의 `snap` 과 **키·값·타입이 같다**(`sd` 불리언, `ref`·`ban`·`tip`·`cam` 은 없으면 `null`, `tr` 은 특훈일 때만). 테스트(`test/netcode.test.js`)가 실제 경기 스냅샷과 깊은 동등 비교로 확인한다.
+- 순서·재전송은 TCP 가 보장하므로 델타는 직전 메시지 기준이다. 서버는 소켓 버퍼 초과로 어느 좌석의 메시지를 버렸으면(`conn.send` 가 `false`) 다음 스냅샷을 키프레임으로 만든다. 재접속(`resume`)한 좌석은 그 시점 키프레임을 따로 받고, 이후 방송도 키프레임으로 한 번 맞춘다. 새 배너·단계(`ph`) 값이 생기면 코덱 표를 함께 고쳐야 한다(없으면 서버가 인코딩 오류).
 
 ### 5.5 경기 시작·종료 연출 (원작 `analysis\08_start_sequence.md` 근거, 서버 권위)
 서버가 단계·위치·타이밍을 정하고 클라이언트는 그대로 그린다(난수는 엔진 rng 하나). 시간은 모두 60Hz 틱.
@@ -343,7 +357,7 @@ room = { code, status:'waiting'|'playing', host:'방장닉네임', serverTime,
 `data\results\results.jsonl`(환경변수 `RESULTS_PATH`)에 한 줄 JSON: `{matchId, roomCode, startedAt, endedAt, players:[{seat,nickname,team}], winner:nickname|null, loser:nickname|null, endReason, ticks, remaining:[a,b], seed, buildVersion, rulesVersion}`. 캠페인 경기는 추가로 `vsCpu:true, cpuLevel, campaign:{k, stage}`. 모든 레코드에 `rules:{mode, limitFrames}`(규칙 창 값, 0 = 무제한) 추가. 랭킹 화면은 만들지 않는다.
 
 ## 7. 클라이언트 구현 메모
-- 렌더: 서버 `snap` 2개 사이를 보간(30Hz 입력, 60fps 렌더). 서버 상태가 정본이므로 로컬 예측은 1차에서 하지 않는다.
+- 렌더: 서버 `snap`(60Hz) 사이를 보간한다. **적응형 지터 버퍼**(`public/js/game/snaps.js`): 스냅샷 도착 시각에서 서버 틱 시계를 추정해(최근 5~10초의 최소 지연 기준) 그리는 순간 최신 스냅이 서버 시계보다 뒤진 정도(lag)의 평균 + k x 편차로 재생 지연(소수 틱, 하한 1틱·상한 10틱)을 자동 조절한다(성향 `PROFILES`: 기본 `react` = 반응 우선, `smooth` = 끊김 우선). 0.75틱 넘게 모자라면 6틱까지 즉시 늘려 1.5초 붙든 뒤 초당 3틱으로 내리고, 6틱으로 못 덮는 늦음이 4초 안에 4번 새로 시작되면 10틱까지 연다(`smooth` 는 3초 붙들고 초당 1틱, 3번). 0.5초 내내 모든 스냅이 1.5틱 넘게 늦으면(서버 틱 시계가 밀림) 시계 기준을 그만큼 옮긴다. 스냅이 모자라면 직전 속도로 최대 3틱(약 50ms)만 외삽하되 한도에 가까워질수록 느려져 선다(뚝 멈추지 않는다). 목표와 12틱 넘게 벌어지면(탭 복귀·긴 끊김) 따라가지 않고 바로 맞춘다. 멈춘 동안(일시정지·결과 화면)은 받아 둔 스냅까지만 그리고 선다. 이벤트(`ev`)의 효과음·글자는 그 틱이 그려질 때 낸다(받은 지 250ms 넘으면 즉시). 재접속한 좌석은 상대가 일시정지 중이면 `game_start`·스냅샷 뒤에 `game_pause` 를 다시 받는다. 연결: 경기 중(스냅샷을 2개 이상 받은 뒤) 4초 동안 아무것도 오지 않으면 새 연결로 바꿔 같은 세션으로 복귀하고(`net.kick`), 화면 복귀·`online` 때는 재연결 대기를 건너뛴다(`net.retryNow`). 0.8초 넘게 늦은 도착(일시정지·재접속)은 시계 기준을 다시 잡는다. 표현만 바꾸며 서버 판정에는 영향이 없다. 서버 상태가 정본이므로 로컬 예측은 하지 않는다.
 - 소리/이펙트는 `ev`로 트리거한다. 스냅샷 한 개의 `ev`는 이전 스냅샷 이후의 모든 이벤트를 담는다(중복 없음).
 - 재접속 후 첫 `snap`에서 `ev`는 비어 있을 수 있다.
 - 에러는 토스트. 로비/대기실/대전 화면 전환은 `welcome.location`, `room_joined`, `room_left`, `game_start`, `game_end`+`room_state`로 결정한다.
@@ -922,7 +936,7 @@ flame 경기 방은 특훈·리그 방과 같은 비공개 방이다: 방 목록
 | | `championed` | 이번 도전에서 우승(구간 3 보스 격파)을 했는가 |
 | | `championSegments` | 우승 기준 구간 수(3) |
 | | `segments`, `matchesTotal` | 엔드리스 = **`null`**(분모·남은 경기 수를 표시하지 않는다). 꺼져 있으면 종전 3·12 |
-| | `map[]` | 길이 `seg + 1` 이상. **`map[seg]` 만 실제 지도**이고 지나온 구간 `map[0..seg-1]` 은 `{layers: []}` 빈 칸이다(종전 화면이 `map[run.seg]` 로 읽을 수 있게 자리만 채운다). `map[seg+1…]` 은 v2 저장에서 이어 온 도전에만 있다 |
+| | `map[]`, `mapBase` | `map[0]` = 현재 구간 지도(저장의 `run.map` 그대로), `mapBase` = `run.seg`: **구간 번호 = `mapBase` + 배열 위치**. 지나온 구간은 보내지 않는다(전송량이 구간 수에 비례하지 않게. 종전에는 `{layers: []}` 빈 칸으로 채웠다 — `mapBase` 가 없으면 0 으로 읽는다). `map[1…]` 은 v2 저장에서 이어 온 도전에만 있다 |
 | | `done[]` | 현재 구간에서 지나온 노드만(구간이 넘어가면 비운다) |
 | | `champ` | 저장 칸 `{first}`(우승 때 첫 우승이었는가). 화면은 `championed` 를 쓴다 |
 | | `cast.players[i].sp` | **클론 칸에만**: 그 클론의 기본 필살기 ID(슬롯에서 뺀 뒤·새로고침 뒤에도 "원래 필살기"를 선택지로 낼 수 있다) |
@@ -1374,6 +1388,15 @@ flame 경기 방은 특훈·리그 방과 같은 비공개 방이다: 방 목록
 - 제약(칸 i = 라인업 번호): 역할 [ace, guard, catcher, runner, jumper, passer, balanced]·등급 [A, A, B, B, C, C, C] 고정, 7명 점수 합 -4~+6, 같은 몸·같은 이름 뒷글자 없음. 난수 = 도전 비밀값(`run.secret`)에서 HMAC 파생(클라이언트는 비밀값을 모르고 시작 팀을 고를 수 없다). 뽑힌 라인업은 도전 저장에 남아 이어하기·재접속에 같다. 도감 키는 `c:<풀 id>`(§13.16).
 - 운영 스위치: 환경 변수 `FLAME_START_CLONES=0|1` 이 데이터 값을 덮는다. 카탈로그 메시지·`CATALOG_MSG_REV`·`cat.ver` 는 바뀌지 않는다(풀·오리지널 데이터 버전 그대로).
 - 시뮬 도구(`sim_balance.mjs`·`sim_versus.mjs`)의 고정 빌드 경로(`startLineup(cat)`)는 비밀값이 없어 언제나 종전 고정 팀이다. `run` 모드(`Run.newRun` 경유)는 랜덤 시작 팀을 쓴다 — 종전 측정과 맞추려면 `FLAME_START_CLONES=0` 을 붙인다.
+
+### 13.29 컴퓨터 단계 무한 상승 + 엔진 cpuBoost (2026-11-22 박백엔, 사용자 지시) — 엔진·서버·데이터. 화면은 최소(도전 화면 머리말 칩), 실화면 검증 후속
+
+엔드리스 구간이 쌓일수록 컴퓨터 단계 N 이 1, 2, 3, 4 ... 무한히 오른다. 값은 전부 `run_config.json tier`(`[자작 제안·시작값]`, 최종 확정은 임밸런)이고 코드는 `server/flame/tier.js`(순수 함수)·`server/engine/boost.js`(엔진 훅)다.
+- 단계 N = 종전 레벨(구간 표 + 난이도 가산, 1~3) + `floor(floor((seg - 2) / unitSegs) / stepRuns)`(seg = 0부터 센 구간 번호, seg 3 이상만). 단계 1~3 은 종전 값 그대로(원작 레벨 검증·로비 1~3 불변). 단계는 구간에서 파생되므로 저장 필드가 없다. 지도 노드 `opp.tier` 는 4 이상일 때만 적는다(`opp.cpuLevel` 은 언제나 엔진 레벨 1~3). 저장 검증은 `opp.tier` 를 4 이상 `SEG_MAX*2` 이하 정수로 본다.
+- `flame_state.run.tier` = 현재 구간 보스 기준 단계(꺼져 있으면 null). 화면은 9999 초과를 `9999+` 로 줄인다. 코인 배율 = 난이도 `coinPct` + 단계 4 부터 단계마다 `coin.perTier` %p(상한 `coin.cap`).
+- 엔진 Match 옵션 `cpuBoost = {seat, catch256, special256, ballSpeedPct, hpPct}`(서버가 `run.js matchOptions` 에서 `opp.tier` 로 계산해 `room.flame.cpuBoost` -> `RoomGame` -> `Match` 로 넘긴다. 클라이언트 값은 받지 않는다). 옵션이 없으면 난수·상태가 원작과 비트 동일하다(수정 전 엔진 사본과 42경기 프레임 해시 대조). catch256 = 방어 결정을 캐치로 바꿀 확률, special256 = 공격 때 필살 시도로 바꿀 확률, ballSpeedPct = 그 좌석이 던지는 공 속력 배율(투구 와인드업·차지는 원작 그대로, 받아치기 공에는 다시 곱하지 않음, 보정 좌석이 던진 공만 이동 경로 중간 판정을 끼워 터널링 방지), hpPct = 상대 최대·시작 HP 가산(경기 안 복사본만).
+- 보정 곡선 = 포화형 `floor(max * n / (n + k))`, n = N - baseLevel. 지도: 단계가 오르면 일반 노드 상대가 강팀 풀로, 강팀 노드 상대가 보스 풀로 바뀔 확률(`strongPct`)이 오른다(난수 흐름은 단계 4 이상 구간에서만 달라진다 — 구간 1~3 지도는 종전과 같다).
+- 되돌리기: `tier.enabled=false`·키 삭제·환경 변수 `FLAME_TIER=0`. 측정 도구: `sim_balance.mjs cond --tier=N [--tier-cfg=JSON] [--boost=JSON]`, `run` 모드는 노드의 cpuBoost 를 그대로 쓴다.
 
 ## 14. 채팅·관리자 공지 — 서버 2026-11-20 박백엔. 설계 analysis/49_chat_admin_notice.md, 화면은 후속(윤프론, 시안 `Works/_asset_samples/tongki_chat_mock/`)
 

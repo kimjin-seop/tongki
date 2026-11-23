@@ -10,11 +10,12 @@ import { MemoryResultStore } from '../server/store/results.js';
 import { MemoryProgressStore } from '../server/store/progress.js';
 import { MemoryLeagueStore, JsonLeagueStore } from '../server/store/league.js';
 import { derive, makeLeague, recordWin, teamRating, quickJudge, homeStage, HOME_ROM_STAGE } from '../server/league/rules.js';
+import { openWs } from './ws_util.js';
 
 const data = loadData();
 
 function client(port) {
-  const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
+  const ws = openWs(port);
   const q = [], waiters = [];
   ws.on('message', (raw) => {
     const m = JSON.parse(raw.toString());

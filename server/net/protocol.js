@@ -1,6 +1,6 @@
 // 프로토콜 상수·검증 (계약: docs/PROTOCOL.md)
 import { RULE_MODES, RULE_TIMES } from '../engine/consts.js';
-export const PROTOCOL = 1;
+export const PROTOCOL = 2; // 2 = 바이너리 스냅샷·입력 번호(2026-11-22). 접속 주소 /ws?v=2 로 확인하고, 다르면 PROTOCOL_MISMATCH
 export const GRACE_MS = 30000;
 export const NICK_RE = /^[가-힣ㄱ-ㅎㅏ-ㅣA-Za-z0-9]{2,10}$/;
 export const CODE_RE = /^[A-Z0-9]{4,6}$/;
@@ -9,6 +9,7 @@ export const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 export const ERR = {
   BAD_MESSAGE: '잘못된 요청입니다',
   UNKNOWN_TYPE: '알 수 없는 요청입니다',
+  PROTOCOL_MISMATCH: '새 버전이 나왔습니다. 페이지를 새로고침(Ctrl+F5)해 주세요',
   RATE_LIMITED: '요청이 너무 빠릅니다',
   NOT_LOGGED_IN: '먼저 닉네임을 입력하세요',
   ALREADY_LOGGED_IN: '이미 접속한 상태입니다',

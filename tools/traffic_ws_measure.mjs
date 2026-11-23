@@ -1,6 +1,8 @@
 // 측정 전용(analysis/51): 임시 서버(별도 프로세스, 기본 포트 3400, DB_PATH=:memory:, 임시 경로)를 띄우고
 // Node WebSocket 클라이언트로 방 종류별 경기를 동시에 돌려 메시지 종류별 바이트·개수·도착 간격을 센다. 서버 코드는 건드리지 않는다.
 // 사용: node tools/traffic_ws_measure.mjs --out <디렉터리> [--port 3400] [--cap 240] [--only a,b]
+// 2026-11-23: 프로토콜 v2 에 맞춤(접속 주소 /ws?v=N, snap = 바이너리 -> SnapDecoder 로 풀어 종전 모양으로 넘긴다, input = {n, b}). snap 의 바이트 수는 실제 받은 바이너리 길이,
+//  .snaps.jsonl 의 s 는 풀어낸 스냅샷의 JSON(오프라인 재계산용, 전송 크기 아님)
 //  산출: <out>/summary.json, <out>/<시나리오>.snaps.jsonl(좌석 0 이 받은 snap 원문, 한 줄 = {r:수신ms, s:원문})
 import { spawn } from 'node:child_process';
 import { mkdtempSync, mkdirSync, writeFileSync, createWriteStream } from 'node:fs';
@@ -9,6 +11,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { performance } from 'node:perf_hooks';
 import { WebSocket } from 'ws';
+import { PROTOCOL } from '../server/net/protocol.js';
+import { SnapDecoder } from '../public/js/game/snapcodec.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
@@ -42,16 +46,20 @@ export function startServer(port = PORT) {
 // ---------- 계측 클라이언트 ----------
 const frameHdr = (n, masked) => (n < 126 ? 2 : n < 65536 ? 4 : 10) + (masked ? 4 : 0);
 export function client(name, opts = {}) {
-  const ws = new WebSocket(`ws://127.0.0.1:${opts.port ?? PORT}/ws`);
+  const ws = new WebSocket(`ws://127.0.0.1:${opts.port ?? PORT}/ws?v=${PROTOCOL}`);
+  const dec = new SnapDecoder(); let inSeq = 0, inHist = [];
   const st = { name, recv: {}, sent: {}, pings: 0, snapT: [], snapF: [], snapLen: [] };
   const add = (tab, t, n, masked) => { const e = tab[t] ?? (tab[t] = { n: 0, bytes: 0, wire: 0 }); e.n++; e.bytes += n; e.wire += n + frameHdr(n, masked); };
   const q = [], waiters = [], subs = [];
   ws.on('ping', () => { st.pings++; add(st.recv, '_ws_ping', 0, false); add(st.sent, '_ws_pong', 0, true); });
-  ws.on('message', (raw) => {
+  ws.on('message', (raw, isBin) => {
     const now = performance.now();
-    const str = raw.toString('utf8');
-    const len = Buffer.byteLength(str);
-    let m; try { m = JSON.parse(str); } catch { return; }
+    let m, str; const len = raw.length;
+    if (isBin) { // 스냅샷(바이너리). 기준이 어긋난 델타(null)는 바이트만 세고 넘긴다
+      try { m = dec.decode(new Uint8Array(raw.buffer, raw.byteOffset, raw.length)); } catch { return; }
+      if (!m) { add(st.recv, 'snap', len, false); return; }
+      str = JSON.stringify(m);
+    } else { str = raw.toString('utf8'); try { m = JSON.parse(str); } catch { return; } }
     add(st.recv, m.t, len, false);
     if (m.t === 'snap') { st.snapT.push(now); st.snapF.push(m.f); st.snapLen.push(len); opts.onSnap?.(m, str, now); }
     for (const f of subs) f(m, now);
@@ -61,7 +69,11 @@ export function client(name, opts = {}) {
   const open = new Promise((r, j) => { ws.on('open', r); ws.on('error', j); });
   return {
     ws, st, open, sub: (f) => subs.push(f),
-    send(o) { if (ws.readyState !== 1) return; const s = JSON.stringify(o); add(st.sent, o.t, Buffer.byteLength(s), true); ws.send(s); },
+    send(o) {
+      if (ws.readyState !== 1) return;
+      if (o.t === 'input' && 'bits' in o) { inHist = [o.bits, ...inHist].slice(0, 3); o = { t: 'input', n: inSeq++, b: inHist }; } // 종전 호출 모양 {bits} -> v2 {n, b}
+      const s = JSON.stringify(o); add(st.sent, o.t, Buffer.byteLength(s), true); ws.send(s);
+    },
     wait(pred, ms = 8000) {
       const i = q.findIndex(pred);
       if (i >= 0) return Promise.resolve(q.splice(i, 1)[0]);
@@ -167,9 +179,7 @@ async function runScenario(name) {
   let firstSnapT = null;
   seats[0].sub((m) => { if (m.t === 'game_start') writeFileSync(path.join(OUT, `${name}.game_start.json`), JSON.stringify(m)); });
   // 좌석 0 의 snap 원문 기록(오프라인 재계산용)
-  const origOn = seats[0].ws.listeners('message')[0];
-  seats[0].ws.on('message', (raw) => { const s = raw.toString('utf8'); if (s.startsWith('{"t":"snap"')) { const r = performance.now(); firstSnapT ??= r; file.write(JSON.stringify({ r: +(r - firstSnapT).toFixed(2), s }) + '\n'); } });
-  void origOn;
+  seats[0].sub((m, r) => { if (m.t === 'snap') { firstSnapT ??= r; file.write(JSON.stringify({ r: +(r - firstSnapT).toFixed(2), s: JSON.stringify(m) }) + '\n'); } });
   const bots = seats.map((c, i) => (c ? bot(c, i) : null));
   const endP = Promise.all(seats.filter(Boolean).map((c) => c.type('game_end', CAP_S * 1000).catch(() => null)));
   const res = await endP;

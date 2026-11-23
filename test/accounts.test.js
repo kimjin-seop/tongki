@@ -11,9 +11,10 @@ import { hashPassword, checkPassword } from '../server/store/accounts.js';
 import { importJson } from '../server/store/migrate.js';
 import { RankingStore } from '../server/store/ranking.js';
 import { eloAfter } from '../server/ranking/elo.js';
+import { openWs } from './ws_util.js';
 
 function client(port, ip) {
-  const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`, ip ? { headers: { 'x-forwarded-for': ip } } : undefined);
+  const ws = openWs(port, ip ? { headers: { 'x-forwarded-for': ip } } : undefined);
   const q = [], waiters = [];
   ws.on('message', (raw) => {
     const m = JSON.parse(raw.toString());

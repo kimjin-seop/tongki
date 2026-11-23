@@ -6,6 +6,7 @@ import { createServer } from '../server/index.js';
 import { MemoryResultStore } from '../server/store/results.js';
 import { openDb } from '../server/store/db.js';
 import { RankingStore } from '../server/store/ranking.js';
+import { openWs } from './ws_util.js';
 
 test('전체 랭킹: 승 내림차순 -> 승률(천분율 정수) -> 판수 -> 닉네임, 동점 같은 rank, 계정 없는 행 제외, me 순위', () => {
   const db = openDb(':memory:');
@@ -33,7 +34,7 @@ test('pvp_board 요청: 계정은 me 내 줄, 손님은 me=null, top 범위 밖 
   const app = createServer({ store: new MemoryResultStore(), limits: { maxAuthPerMin: 100, maxHelloPerMin: 1000 }, log: () => {} });
   const port = await app.listen(0);
   const cs = [0, 1].map(() => {
-    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`), q = [], w = [];
+    const ws = openWs(port), q = [], w = [];
     ws.on('message', (raw) => { const m = JSON.parse(raw.toString()); const i = w.findIndex((x) => x.t === m.t); if (i >= 0) w.splice(i, 1)[0].r(m); else q.push(m); });
     return { ws, q, send: (o) => ws.send(JSON.stringify(o)), type: (t) => { const i = q.findIndex((m) => m.t === t); return i >= 0 ? Promise.resolve(q.splice(i, 1)[0]) : new Promise((r) => w.push({ t, r })); }, open: new Promise((r) => ws.on('open', r)) };
   });

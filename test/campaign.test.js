@@ -9,11 +9,12 @@ import { Match, loadData } from '../server/engine/index.js';
 import { createServer } from '../server/index.js';
 import { MemoryResultStore } from '../server/store/results.js';
 import { MemoryProgressStore, JsonProgressStore } from '../server/store/progress.js';
+import { openWs } from './ws_util.js';
 
 const data = loadData();
 
 function client(port) {
-  const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
+  const ws = openWs(port);
   const q = [], waiters = [];
   ws.on('message', (raw) => {
     const m = JSON.parse(raw.toString());

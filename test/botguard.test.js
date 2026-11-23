@@ -4,6 +4,7 @@ import { WebSocket } from 'ws';
 import { createServer } from '../server/index.js';
 import { MemoryResultStore } from '../server/store/results.js';
 import { BotGuard, loadBotguardConfig, mechanicalInput, headerSignals } from '../server/net/botguard.js';
+import { openWs } from './ws_util.js';
 
 const MIN = 60000, DAY = 24 * 60 * MIN;
 const mk = (over = {}) => { let t = 1e12; const g = new BotGuard(loadBotguardConfig({}, over), { now: () => t, log: () => {} }); return { g, adv: (ms) => { t += ms; } }; };
@@ -107,7 +108,7 @@ test('botguard: 서버 — 차단 IP 새 접속 RATE_LIMITED+1008, Origin 거절
   const app = createServer({ store: new MemoryResultStore(), log: () => {}, botguardCfg: { allowIps: [], allowedOrigins: ['http://ok.test'] } });
   const port = await app.listen(0);
   const open = (headers) => new Promise((res) => {
-    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`, { headers });
+    const ws = openWs(port, { headers });
     const got = [];
     ws.on('message', (m) => got.push(JSON.parse(m.toString())));
     ws.on('open', () => ws.send(JSON.stringify({ t: 'hello', nickname: '시험손님' })));
@@ -134,7 +135,7 @@ test('botguard: 서버 — 차단 IP 라도 경기 중 세션은 재접속(hello
   const app = createServer({ store: new MemoryResultStore(), log: () => {}, botguardCfg: { allowIps: [] } });
   const port = await app.listen(0);
   const cl = () => {
-    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
+    const ws = openWs(port);
     const q = [], ws8 = []; let closed = null;
     ws.on('message', (raw) => { const m = JSON.parse(raw.toString()); const i = ws8.findIndex((w) => w.p(m)); if (i >= 0) ws8.splice(i, 1)[0].r(m); else q.push(m); });
     ws.on('close', (code) => { closed = code; });

@@ -70,7 +70,7 @@ export class Lobby {
   sendTo(session, msg) {
     const c = session?.conn;
     if (!c) return;
-    try { c.send(msg); } catch (e) { this.log('[send]', e.message); }
+    try { return c.send(msg); } catch (e) { this.log('[send]', e.message); } // false = 소켓 버퍼 초과로 버려짐(스냅샷 델타 체인 복구용)
   }
   toast(session, code, params) { this.sendTo(session, { t: 'toast', code, msg: ERR[code] ?? code, params }); }
   err(conn, code, ref, params) { try { conn.send({ t: 'error', code, msg: ERR[code] ?? code, params, ref }); } catch { /* ignore */ } }
@@ -812,11 +812,11 @@ export class Lobby {
       ...makeChatHandlers(fail), // chat·notice_send (server/chat/chat.js, PROTOCOL §14)
       input(s, m) {
         const room = this.roomOf(s);
-        if (!room?.game || !isInt(m.bits, 0, 255)) return; // 게임 종료 직후 입력은 조용히 무시
-        room.game.setInput(room.seatOf(s), m.bits);
+        if (!room?.game || !isInt(m.n, 0, 0x7fffffff) || !Array.isArray(m.b) || m.b.length < 1 || m.b.length > 4 || !m.b.every((x) => isInt(x, 0, 255))) return; // 게임 종료 직후 입력·형식 오류는 조용히 무시(PROTOCOL §5.2)
+        room.game.applyInput(room.seatOf(s), m.n, m.b);
         if (room.bgTrack) { // 기계적 입력 판정용: 사람끼리 경기에서 비트가 바뀐 간격만 모은다(재전송은 제외, 최근 600개)
           const t = mono(), b = (s.bgIn ??= { bits: 0, at: 0, iv: [] });
-          if (m.bits !== b.bits) { if (b.at) b.iv.push(t - b.at); if (b.iv.length > 600) b.iv.splice(0, b.iv.length - 600); b.bits = m.bits; b.at = t; }
+          if (m.b[0] !== b.bits) { if (b.at) b.iv.push(t - b.at); if (b.iv.length > 600) b.iv.splice(0, b.iv.length - 600); b.bits = m.b[0]; b.at = t; }
         }
       },
     };
@@ -1003,6 +1003,7 @@ export class Lobby {
       ...(room.ranked ? { onRanked: (r) => this.rankedResult(room, r) } : {}),
       ...(room.pvpPlayers ? { onPvp: (r) => this.pvpResult(room, r) } : {}),
       ...(room.flame?.practice ? { noRecord: true } : {}), // 연습 경기(PROTOCOL §13.15): 결과 레코드를 남기지 않는다
+      ...(room.flame?.cpuBoost ? { cpuBoost: room.flame.cpuBoost } : {}), // 컴퓨터 단계 4 이상(불꽃의 계승): 엔진 cpuBoost 옵션(서버 계산값)
       ...(room.flame ? { flame: room.flame.opts, flameCast: room.flame.cast ?? null } : {}), // 엔진 flame 옵션(저장된 도전 상태에서 서버가 조립한 값, PROTOCOL §12.1·§13) + 표시용 정의(game_start.flameCast, 엔진에는 넘기지 않는다)
       // 키운 팀 대전(§13.20): 같은 엔진 옵션 경로지만 도전 경기가 아니다 -> game_start 에는 flame 대신 flameVs 가 실리고(roomGame.js), 결과 레코드를 남기지 않으며, 끝나면 일반 방처럼 대기실로 돌아간다(flameEnd 를 타지 않는다)
       ...(fv ? { flame: fv.flame, flameCast: { ...fv.cast, versus: true, slot: fv.slot }, flameVersus: fv.slot, noRecord: true } : {}),

@@ -10,9 +10,10 @@ import { MemoryResultStore } from '../server/store/results.js';
 import { cleanText, compileBadwords, maskBadwords } from '../server/chat/chat.js';
 import { openDb } from '../server/store/db.js';
 import { AccountStore } from '../server/store/accounts.js';
+import { openWs } from './ws_util.js';
 
 function client(port) {
-  const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
+  const ws = openWs(port);
   const q = [], waiters = [];
   ws.on('message', (raw) => {
     const m = JSON.parse(raw.toString());

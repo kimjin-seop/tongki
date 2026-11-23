@@ -175,7 +175,12 @@ export function mount(root, app, { start }) {
     toggleGuide();
   };
   addEventListener('keydown', onGuideKey);
-  const input = new InputSender((bits) => net.send('input', { bits }));
+  const input = new InputSender((m) => net.send('input', m));
+  // 시각 선반영(실험, 기본 꺼짐): localStorage fx.predict = '1' 이면 방향키를 누른 뒤 PREDICT_MS 동안 내 조작 선수의 걷기 그림을 서버 응답 전에 시작한다(render.js pose). 화면 설정 칸에는 두지 않았다
+  const PREDICT_MS = 250;
+  let predictOn = false, pDir = 0, pAt = 0;
+  try { predictOn = localStorage.getItem('fx.predict') === '1'; } catch { /* 저장소 불가: 꺼짐 */ }
+  const localBits = () => { const d = input.bits & 15, t = performance.now(); if (d !== pDir) { pDir = d; pAt = t; } return t - pAt < PREDICT_MS ? d : 0; };
   // 채팅 받은 줄·Enter 입력창(chat.js): 서버가 room.chat 을 준 방(사람끼리)에서만 만든다. 경기 입력·캔버스는 그대로(DOM 층만)
   // 하단 줄 맨 앞 「채팅 ↵」 칸: 채팅이 있는 방에서만. 누르기 = Enter 와 같다(열기 / 열려 있으면 보내고 닫기), 터치에서도 연다
   let chatUi = null, chatBtn = null;
@@ -283,6 +288,7 @@ export function mount(root, app, { start }) {
     orig, pSheets: orig ? new Array(14).fill(null) : null,
     pRow: orig ? new Array(14).fill(null) : null, // 선수별 띠 시트(색 치환)를 쓰는 pid 의 행 번호(0). null = 시트의 선수 번호 행
   });
+  if (predictOn) renderer.localBits = localBits;
   // 로딩 완료(성공·실패 모두) 전에는 렌더러가 검은 화면만 그린다. 실패한 에셋은 렌더러 폴백
   const loads = [];
   const track = (pr) => { loads.push(pr.catch((e) => console.error(e))); };
@@ -355,12 +361,26 @@ export function mount(root, app, { start }) {
     keys.hidden = (s.lock ?? (s.ph === 'ready' ? 1 : 0)) !== 1 || !!ended;
     // 겹침 배치: 경기가 시작되고 6초 뒤 도움말 줄을 흐린 표시로(조작 안내는 「조작」 칸으로만 펼친다)
     if (!helpDim && s.ph === 'play' && !s.lock) helpDim = setTimeout(() => { help.classList.add('dim'); }, 6000);
-    for (const e of s.ev || []) onEvent(e, s);
+    snapSeen++;
+    if (s.ev?.length) evQ.push({ s, at: performance.now() });
+    flushEvents(null); // 화면이 그려지지 않는 동안(숨은 탭)에도 EV_LATE_MS 넘게 묵히지 않는다
     if (training) onTrain(s.tr);
     timer.textContent = s.sd ? '서든데스' : '';
   }
 
   let refOutSeen = false;
+
+  // 이벤트(효과음·떠오르는 글자·곡 전환·번쩍임)는 스냅 도착 때가 아니라 그 틱이 그려질 때 낸다(재생 지연만큼 그림보다 먼저 들리던 것을 맞춘다).
+  // tick = 지금 그리는 틱(null = 그리는 중이 아님). 받은 지 EV_LATE_MS 가 넘은 것은 틱과 무관하게 바로 낸다(멈춤·숨은 탭·긴 끊김 안전장치)
+  const EV_LATE_MS = 250;
+  const evQ = [];
+  function flushEvents(tick) {
+    const now = performance.now();
+    while (evQ.length && ((tick !== null && evQ[0].s.f <= tick) || now - evQ[0].at > EV_LATE_MS)) {
+      const { s } = evQ.shift();
+      for (const e of s.ev) onEvent(e, s);
+    }
+  }
 
   function onEvent(e, s) {
     const pos = (pid) => { const p = s.p[pid]; return p ? [p[0] / 16, p[1] / 16, p[2] / 16] : null; };
@@ -404,10 +424,19 @@ export function mount(root, app, { start }) {
     setTimeout(() => el.remove(), 1000);
   }
 
+  // 응답 없는 연결 감시: 경기 중(일시정지·종료 아님)인데 서버에서 아무것도 오지 않은 지 STALL_MS 가 넘으면 새 연결로 바꾼다(net.kick, 같은 세션으로 복귀).
+  // 화면이 그려지지 않던 동안(숨은 탭·백그라운드)은 세지 않는다
+  // 감시는 이 화면이 스냅샷을 2개 이상 받은 뒤에만 켠다: 상대가 끊겨 멈춘 경기에 다시 붙으면 스냅샷 1개만 오고 멈춰 있는 것이 정상이다(끊긴 연결로 오인해 4초마다 다시 붙지 않게)
+  const STALL_MS = 4000;
+  let lastFrame = 0, snapSeen = 0;
   function frame(now) {
     raf = requestAnimationFrame(frame);
+    if (now - lastFrame > 1000) net.lastRecv = Math.max(net.lastRecv, now);
+    lastFrame = now;
+    if (!ended && !buf.frozen && net.open && snapSeen >= 2 && now - net.lastRecv > STALL_MS && net.kick()) snapSeen = 0;
     if (banner.hidden === false && now > bannerUntil) banner.hidden = true;
     const sm = buf.sample(now);
+    flushEvents(sm ? sm.tick : null);
     if (sm) renderer.draw(sm, stStart);
     if (paused) {
       const left = Math.max(0, Math.ceil((paused.deadline - net.now()) / 1000));
