@@ -33,6 +33,7 @@ import * as Run from '../run.js';
 import { freshProfile, unlockedOf, FlameError } from '../save.js';
 import { candidates } from '../map.js';
 import { homeStage } from '../../league/rules.js';
+import { boostOf as tierBoost } from '../tier.js';
 
 const argv = process.argv.slice(2), mode = argv[0] ?? 'list';
 const flag = (n, d) => { const a = argv.find((x) => x.startsWith('--' + n + '=')); return a === undefined ? d : a.slice(n.length + 3); };
@@ -73,6 +74,14 @@ if (!['late', 'all', 'off'].includes(EBOT)) throw new Error('--endless-bot 는 l
 const XOPP = +flag('xopp', 0), XOPP_FROM = +flag('xopp-from', 4), XOPP_STATS = flag('xopp-stats', 'hp,def,pow,s5').split(',');
 // --xopp-base=B [실험용]: 구간 1 부터 전 구간의 상대 능력치에 B% 를 더한다(음수 = 상대를 약하게). 사람 숙련자의 조작 우위를 흉내 내는 대용이다(봇은 숙련 조작을 못 한다, 40 §13.1) — 실제 조작이 아니라 "우위가 상대 능력 B% 에 해당하는 플레이어"라는 가정이다
 const XOPP_BASE = +flag('xopp-base', 0);
+// --tier=N [컴퓨터 단계 측정, server/flame/tier.js]: cond 모드에서 상대(컴퓨터)에 단계 N 의 엔진 보정(cpuBoost)을 준다. 상대 레벨은 지정한 @L 그대로(N 이 4 이상이면 @3 을 쓴다). N 이 3 이하면 보정 없음.
+//   --tier-cfg='{"ballSpeedPct":{"max":300,"k":28}}' = run_config tier 값을 덮어쓴다(데이터 파일은 그대로), --boost='{"ballSpeedPct":300}' = 계산된 보정을 직접 덮어쓴다(예: 공 속도만 고정해 측정). 둘 다 없으면 보정 없음 = 종전 출력
+const TIER = flag('tier', null), TIER_CFG = JSON.parse(flag('tier-cfg', '{}')), BOOST_X = JSON.parse(flag('boost', 'null'));
+function boostFor() {
+  const T = { ...(cat.cfg.tier ?? {}), ...TIER_CFG };
+  const b = TIER !== null && cat.cfg.tier ? tierBoost(T, +TIER) : null;
+  return b || BOOST_X ? { seat: 1 - SEAT, ...(b ?? {}), ...(BOOST_X ?? {}) } : null;
+}
 const xoppCache = new Map();
 /** 실험용 상대 가산: 구간 segNo(1부터)의 상대 팀만 키운 data 복사본(가산이 없으면 원본 그대로) */
 function dataFor(team, segNo) {
@@ -183,11 +192,11 @@ const oppsOf = (spec) => spec.split(',').flatMap((s) => { const m = /^t(\d+)@(\d
 // ---------- 한 경기 ----------
 const DATA0 = data;
 /** @returns {{win, reason, clock, rem, hpPct, st}} st = 경기 통계 */
-function playMatch({ seed, flame, oppTeam, oppLv, botLv = BOT, limitMin = cat.cfg.match.timeMin, data: dataIn = null }) {
+function playMatch({ seed, flame, oppTeam, oppLv, botLv = BOT, limitMin = cat.cfg.match.timeMin, data: dataIn = null, boost = null }) { // boost = 서버가 지도 노드에서 계산한 cpuBoost(run 모드, o.cpuBoost)
   const seat = flame.seat ?? 0, opp = 1 - seat, teams = [0, 0], data = dataIn ?? DATA0; // data = 실험용 상대 가산(--xopp)일 때만 복사본
   teams[opp] = oppTeam;
   const cpuLevels = [0, 0]; cpuLevels[seat] = botLv; cpuLevels[opp] = oppLv;
-  const m = new Match({ seed, teams, data, humans: [false, false], cpuLevels, stage: homeStage(data.stages, oppTeam), limitFrames: limitMin * 3600, ruleMode: cat.cfg.match.ruleMode, flame });
+  const m = new Match({ seed, teams, data, humans: [false, false], cpuLevels, stage: homeStage(data.stages, oppTeam), limitFrames: limitMin * 3600, ruleMode: cat.cfg.match.ruleMode, flame, ...((boost ?? boostFor()) ? { cpuBoost: { ...(boost ?? boostFor()), seat: opp } } : {}) });
   const st = { hitsOn: 0, zeroOn: 0, dmgOn: 0, hitsBy: 0, dmgBy: 0, zeroBy: 0, spBy: 0, spOpp: 0, spHitOn: 0, catchBy: 0, catchOpp: 0, throwBy: 0, throwOpp: 0, fm: 0, survive: 0, knock: 0, knockN: 0, reMine: 0, reN: 0, reFrames: 0, firstOutF: -1 };
   let n = 0, wait = null; // wait = flame 좌석이 맞은 뒤 다음 투구가 누구 것인지 기다리는 중
   while (m.phase !== 'end' && n++ < 80000) {
@@ -510,7 +519,7 @@ function playRun(seed, perm, diff) {
     const r = Run.enterNode(cat, data, run, profile, node.id);
     if (!r.match) { visit(run, profile); continue; }
     const o = r.match, hp0 = o.flame.roster.reduce((s, x) => s + x.hp, 0) / o.flame.roster.reduce((s, x) => s + x.stat.hp, 0);
-    const res = playMatch({ seed: (seed * 7919 + log.length * 104729) * 2 % 2147483646, flame: o.flame, oppTeam: o.cpuTeam, oppLv: o.cpuLevel, data: dataFor(o.cpuTeam, run.seg + 1) });
+    const res = playMatch({ seed: (seed * 7919 + log.length * 104729) * 2 % 2147483646, flame: o.flame, oppTeam: o.cpuTeam, oppLv: o.cpuLevel, data: dataFor(o.cpuTeam, run.seg + 1), boost: o.cpuBoost ?? null });
     log.push({ seg: run.seg, type: o.type, opp: o.cpuTeam, lv: o.cpuLevel, win: res.win, hp0, hp1: res.hpPct, arts: run.artifacts.filter(Boolean).length, items: run.items.length, allow: o.flame.allow.length, outs: 7 - res.rem[1], sec: Math.round(res.clock / 60), ...(RECRUIT === 'off' ? {} : { rec: run.roster.filter((x) => x.recruited).map((x) => cloneOf(cat, x)?.grade ?? 'O') }),
       ...(E ? { pts: run.points, lvSum: run.items.reduce((s, it) => s + it.lv, 0), own: run.artifactsOwned.length, tu: res.reason !== 'annihilation' ? 1 : 0, p0pow: o.flame.roster[0].stat.pow, p0def: o.flame.roster[0].stat.def } : {}) });
     const a = Run.applyMatchResult(cat, data, run, profile, { winner: res.win ? 0 : 1, reason: ['annihilation', 'timeup', 'sudden_death'].includes(res.reason) ? res.reason : 'draw_cap', rem: res.rem, flame: { hp: res.hp, surviveUsed: res.surviveUsed } });

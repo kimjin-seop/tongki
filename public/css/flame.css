@@ -23,6 +23,8 @@
 .fl-chip.pt b { color: var(--r-cyan); }
 .fl-chip.heal b { color: var(--fl-up); }
 .fl-chip.rank b { color: var(--r-yel); }
+.fl-chip.tier { gap: calc(var(--u) * 2); padding: calc(var(--u) * 1) calc(var(--u) * 2); margin-inline: 0; } /* 컴퓨터 단계 칩: 머리말 한 줄을 지키려 폭을 줄인다 */
+.fl-run .fl-head-x { gap: calc(var(--u) * 4); }
 .fl-opp { display: inline-flex; align-items: center; gap: calc(var(--u) * 2); }
 .fl-opp .emb, .fl-cx-sub .emb, .fl-end-boss .emb { --ek: 1; }
 .fl-count { font: var(--f-body); color: var(--r-yel); }

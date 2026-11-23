@@ -5,6 +5,7 @@
 // 직역 경로가 꺼졌을 때(rom=false)와 포메이션·점프볼 중의 보유자는 파일 끝의 종전 자작 규칙(chaseMove/idlePoint/moveToward 등 [추정])을 쓴다.
 import { BIT, ST, BM, ONE, slotGroup } from './consts.js';
 import { romAngle, romDecomp } from './match.js';
+import { boostOf, bumpSpecial } from './boost.js';
 
 const toPx = (v) => v / ONE;
 const px = (v) => Math.round(v * ONE);
@@ -258,6 +259,8 @@ function defend(m, p, cb) {
   let k = r < c[9] ? 0 : r < c[10] ? 1 : r < c[11] ? 2 : r < c[12] ? 3 : 4;
   const tune = m.aiTune?.[p.seat];
   if (tune?.blunder256 > 0 && m.rng.int(256) < tune.blunder256) k = 0; // [자작, 원작 근거 없음] 난이도 1 의 방어 실수. 0 이면 난수를 쓰지 않는다
+  const bst = m.cpuBoost ? boostOf(m, p) : null;
+  if (bst && bst.catch256 > 0 && k !== 1 && m.rng.int(256) < bst.catch256) k = 1; // [자작] 컴퓨터 단계 보정(boost.js): 방어 결정을 캐치로 바꾼다. 보정이 없으면 난수를 쓰지 않는다
   if (m.official) k = [0, 1, 2, 1, 0][k]; // こうしき 방어 표 0xD624 = [서기, 캐치, 웅크림, 캐치, 서기] (체력제 0xD61A 는 점프·옆걸음) [판독만 ROM 0xD600, 표 바이트 확인]
   cb.plan = 0x34 + 4 * k; cb.pf = true;
 }
@@ -485,7 +488,7 @@ function attackRom(m, p, cb) {
         if (ball.f76) q >>= 1;
         if (q < c[15]) { setPlan(4); cb.now = true; return 0; }
       }
-      const t = m.rng.next() & 0xff, n = t < c[2] ? 0 : t < c[3] ? 1 : t < c[4] ? 2 : t < c[5] ? 3 : 4;
+      const t = m.rng.next() & 0xff, n = m.cpuBoost ? bumpSpecial(m, p, t < c[2] ? 0 : t < c[3] ? 1 : t < c[4] ? 2 : t < c[5] ? 3 : 4) : t < c[2] ? 0 : t < c[3] ? 1 : t < c[4] ? 2 : t < c[5] ? 3 : 4;
       if (n !== 3) setPlan([4, 8, 0x0c, 0, 0x14][n]);
       else setPlan((m.rng.next() & 0x1f) < c[14] ? 0x10 : 0x4c);
       return 0;
@@ -990,7 +993,8 @@ function aiInputRaw(m, p) {
         const tbl = [0, 2, 4, 3, 1]; // 선택 순번 -> 웹 행동코드(0 stay 1 sidestep 2 catch 3 jump 4 crouch)
         let act = (m.official ? [0, 2, 4, 2, 0] : tbl)[r < c[9] ? 0 : r < c[10] ? 1 : r < c[11] ? 2 : r < c[12] ? 3 : 4]; // こうしき 표 0xD624: 점프 -> 캐치, 옆걸음 -> 서기
         if (tune && m.rng.int(256) < tune.blunder256) act = 0; // 난이도: 방어 실수(레벨 1 만 사용)
-        if (tune?.catch256 && act !== 2 && m.rng.int(256) < tune.catch256) act = 2; // 선택 보정(기본 0)
+        const c256 = (tune?.catch256 ?? 0) + (m.cpuBoost ? boostOf(m, p)?.catch256 ?? 0 : 0);
+        if (c256 && act !== 2 && m.rng.int(256) < c256) act = 2; // 선택 보정(기본 0, 컴퓨터 단계 보정 포함)
         A.act = { act, box: act === 3 ? 80 : 34, dir: m.rng.int(2) ? BIT.UP : BIT.DOWN, fired: 0 };
       }
     }

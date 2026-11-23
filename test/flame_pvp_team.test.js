@@ -13,6 +13,7 @@ import { candidates } from '../server/flame/map.js';
 import { versusOptions } from '../server/flame/teams.js';
 import * as Items from '../server/flame/items.js';
 import * as Run from '../server/flame/run.js';
+import { openWs } from './ws_util.js';
 
 const data = loadData(), cat = loadCatalog();
 const STATS = ['hp', 'def', 'spd', 's3', 'pow', 's5', 'thr', 'pass'];
@@ -87,7 +88,7 @@ test('flame_end.summary(B149): teams 는 언제나 둘 다 false(자동 칸 폐�
 });
 
 function client(port) {
-  const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
+  const ws = openWs(port);
   const q = [], waiters = [];
   ws.on('message', (raw) => {
     const m = JSON.parse(raw.toString());

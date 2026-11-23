@@ -7,6 +7,7 @@
 import { rngFor } from './rng.js';
 import { segRow, cpuLevelAddOf } from './catalog.js';
 import { homeStage } from '../league/rules.js';
+import { tierCfg, tierOf, strongPctOf } from './tier.js';
 
 export const MATCH_TYPES = ['normal', 'strong', 'boss'];
 export const isMatch = (type) => MATCH_TYPES.includes(type);
@@ -40,10 +41,15 @@ export function firstNodeAllow(cat, seg, li) {
   if (!F || F.enabled !== true || process.env.FLAME_FIRST_NODE === '0' || seg !== 0) return null;
   return li === cat.template.findIndex((s) => s.node) ? F.allowTeams : null;
 }
-function oppOf(cat, data, seg, type, team, diff) {
+/** 종전 상대 레벨(1~cpuLevelMax): 구간 표 + 난이도 가산. 하한 1(리뷰 L1): 레벨 0 이하가 지도에 저장되면 save.js 의 cpuLevel >= 1 검사에 걸려 도전이 격리된다 */
+const levelOf = (cat, seg, type, diff) => {
   const O = cat.cfg.opponents, add = cpuLevelAddOf(cat, diff, type); // 숫자 = 전 종류 공통(종전), {normal,strong,boss} = 종류별(D32)
-  // 하한 1(리뷰 L1): 레벨 0 이하가 지도에 저장되면 save.js 의 cpuLevel >= 1 검사에 걸려 도전이 격리된다
-  return { team, cpuLevel: Math.max(1, Math.min(O.cpuLevelMax, O.segments[segRow(O.segments, seg)].cpuLevel[type] + add)), stage: homeStage(data.stages, team) };
+  return Math.max(1, Math.min(O.cpuLevelMax, O.segments[segRow(O.segments, seg)].cpuLevel[type] + add));
+};
+/** 컴퓨터 단계(tier.js): 구간 번호로 더해지는 단계. 단계 4 이상일 때만 opp.tier 에 적는다(cpuLevel 은 언제나 엔진 레벨 1~3). tier 설정이 꺼져 있으면 종전과 같다 */
+function oppOf(cat, data, seg, type, team, diff) {
+  const lv = levelOf(cat, seg, type, diff), T = tierCfg(cat), tier = T ? tierOf(T, lv, seg) : lv;
+  return { team, cpuLevel: lv, stage: homeStage(data.stages, team), ...(tier > cat.cfg.opponents.cpuLevelMax ? { tier } : {}) };
 }
 
 /**
@@ -60,7 +66,13 @@ export function genSegment(cat, data, seed, seg, { roster, diff, oppUnlocked }) 
       let cand = all.filter((t) => !conflicts(cat, roster, t) && !used.has(t));
       if (!cand.length) cand = all.filter((t) => !conflicts(cat, roster, t));
       if (!cand.length) cand = all; // 후보가 전부 겹치면 그대로 쓴다(지도가 비지 않게)
-      nodes = rng.sample(cand, M.matchChoices[step.node]).map((team) => { used.add(team); return { type: step.node, opp: oppOf(cat, data, seg, step.node, team, diff) }; });
+      const T = tierCfg(cat), sp = T && step.node !== 'boss' ? strongPctOf(T, tierOf(T, levelOf(cat, seg, step.node, diff), seg)) : 0; // 단계가 오르면 상대 풀이 강팀 쪽으로 이동(일반 -> 강팀 풀, 강팀 -> 보스 풀). 0 이면 난수를 쓰지 않는다(구간 1~3 지도는 종전과 같다)
+      nodes = rng.sample(cand, M.matchChoices[step.node]).map((team0) => {
+        let team = team0;
+        if (sp > 0 && rng.int(100) < sp) { const up = pool(cat, seg, step.node === 'normal' ? 'strong' : 'boss', oppUnlocked).filter((t) => !conflicts(cat, roster, t) && !used.has(t)); if (up.length) team = rng.pick(up); }
+        used.add(team);
+        return { type: step.node, opp: oppOf(cat, data, seg, step.node, team, diff) };
+      });
     } else nodes = rng.sample(step.anyOf, M.anyOfChoices).map((type) => ({ type }));
     layers.push(nodes.map((n, k) => ({ id: `${seg}-${li}-${k}`, ...n, next: [] })));
   });

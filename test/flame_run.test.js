@@ -19,6 +19,7 @@ import * as Items from '../server/flame/items.js';
 import * as Nodes from '../server/flame/nodes.js';
 import * as Run from '../server/flame/run.js';
 import { equipChoices } from '../server/flame/rewards.js';
+import { openWs } from './ws_util.js';
 
 process.env.FLAME_START_CLONES = '0'; // 시작 팀 랜덤(roster.startClones)은 끄고 고정 시작 팀 기준으로 본다(랜덤 시작은 flame_startclones.test.js)
 const data = loadData(), cat = loadCatalog();
@@ -144,7 +145,7 @@ test('flame 패배: 3번째 경기 패배 -> 도전 종료 정산(일반 2승 = 
 });
 
 function client(port) {
-  const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
+  const ws = openWs(port);
   const q = [], waiters = [];
   ws.on('message', (raw) => {
     const m = JSON.parse(raw.toString());

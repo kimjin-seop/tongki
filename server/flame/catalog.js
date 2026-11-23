@@ -5,6 +5,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { rngSecret } from './rng.js';
+import { checkTierCfg } from './tier.js';
 
 const DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), 'data');
 const FILES = ['rules', 'economy', 'decisions', 'nodes', 'perm_upgrades', 'items_equipment', 'artifacts', 'consumables', 'synergies', 'formation_tags', 'shot_families', 'run_config'];
@@ -573,6 +574,7 @@ function build(raw) {
       if (!(nat(a) || (isObj && Object.entries(a).every(([k, v]) => ['normal', 'strong', 'boss'].includes(k) && nat(v))))) bad(`difficulty[${d.id}].cpuLevelAdd 는 0 이상의 정수 또는 {normal, strong, boss} 0 이상의 정수`);
     }
   }
+  { const e = checkTierCfg(cfg.tier); if (e) bad(e); } // 컴퓨터 단계 무한 상승(tier.js). 키가 없으면 꺼짐
   if (cfg.versusTeam !== undefined) { // 키운 팀 슬롯(D33·D35). 키가 없으면 꺼짐
     const V = cfg.versusTeam, U = V?.surviveUsesPerMatch;
     if (!V || typeof V.enabled !== 'boolean') bad('versusTeam.enabled 는 true|false');

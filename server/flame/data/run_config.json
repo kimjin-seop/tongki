@@ -16,6 +16,7 @@
       "[자작 제안·시작값 2026-11-19 임밸런, analysis/40 §16] version 4(하플레이 플레이 보고 보정, 세 묶음): (1) opponents.segments[0] 강팀 [14,12] 레벨 2 -> [7,10] 레벨 1, 보스 [7,11] -> [11,14](레벨 2 그대로). 종전에는 강팀(내야 HP 합 366·355, 팀 12 외야 140)이 보스 팀 7(333)보다 단단했고 도전 안 승률도 강팀 85% < 보스 88%(600판)였다. 뒤: 강팀 91% > 보스 86%, HP 합 강팀 333·336 < 보스 356·366. 팀 12 는 구간 1 에서 빠졌다. 주의: 고난도(레벨 +1)에서는 강팀이 레벨 2 가 되어 보스보다 어렵다(강팀 90% < 보스 96%, 120판). 되돌리기: strong [14,12]·boss [7,11]·cpuLevel.strong 2. (2) recruit.clone.gradePct[0] [35,40,20,5,0] -> [25,35,32,8,0]: 후보 3명 중 B 급 이상이 1명 이상일 확률 58% -> 78%(산수). B 급(점수 0~3)은 교체할 수 있는 시작 6명 중 5명보다 높다. 되돌리기: 첫 줄을 [35,40,20,5,0] 으로. (3) statCaps.s0 null -> 112: 최종 HP 상한(특훈·장비·영구 성장 포함. HUD 얼굴 칸 한계 public/js/game/hud.js HP_FACE_MAX 와 같은 값). 넘는 몫은 버려진 값(over)으로 표시된다. 기본 HP 가 112 를 넘는 원작 희귀 영입 선수(팀 2·4·8·12·15·19·20 의 일부)도 112 로 잘린다. 되돌리기: null. 영입실 회복(recruitRoom.healPct 10)·승리 뒤 회복(30)은 바꾸지 않았다.",
       "[자작 제안·시작값 2026-11-19 임밸런, analysis/40 §18 · analysis/39 D32] version 5: difficulty[1].cpuLevelAdd 1 -> { normal: 1, strong: 0, boss: 1 }(고난도 레벨 가산을 경기 종류별로). 종전(전 종류 +1)에는 구간 1 강팀이 레벨 2 가 되어 보스보다 어려웠다(강팀 90% < 보스 96%, 120판). 뒤: 세 구간 모두 강팀 승률 >= 보스 승률(구간 1 96% · 92%), 고난도가 기본보다 어려운 폭(약 -0.9승)은 그대로. 남는 것: 구간 1 일반(레벨 2)이 강팀(레벨 1)보다 어렵다(40 §18.3). 새로 만드는 구간부터 적용된다(만들어 둔 지도는 그대로, 39 B67). 그 사이 박백엔이 더한 키(practice, recruitRoom.healPct, rest.afterBossHealPct, training.maxPerStat)는 version 을 올리지 않고 넣었다(39 B51·B59·B69). 되돌리기: cpuLevelAdd 를 1 로.",
       "[자작 제안·시작값 2026-11-19 임밸런, analysis/40 §20.6 · analysis/39 D49] version 6: 장비 S(전설) 극희귀화. reward.rarityShift 의 legendary 만 바꿨다 — segment 0/2/5 -> -2.95/-2.85/-2.7, node strong 2 -> 0, boss 5 -> 0(다른 등급 값·rules.json dropRatePct 3 은 그대로). 전설 가중치 = 구간 1 0.05 · 구간 2 0.15 · 구간 3+ 0.3(경기 종류 무관). 완주 12경기(보상 3칸씩) 동안 전설 장비가 한 칸이라도 뜰 확률 93% -> 6.3%(필살슛·포메이션 S 3.4% 와 같은 자릿수), 제시 칸 기대값 2.55 -> 0.07. 승률 영향 없음(영구 성장 전부 120판 같은 시드: 승수 7.03 -> 7.52, 짝 차이 +0.48 [-0.21, 1.18]). 소수 가중치다(rng.weighted 는 실수를 받는다). 되돌리기: segment legendary 0/2/5, node strong 2 · boss 5.",
+      "[자작 제안·시작값 2026-11-22 박백엔, 사용자 지시] tier(컴퓨터 단계 무한 상승): 엔드리스 구간 3(seg 2) 뒤로 unitSegs 구간 x stepRuns 번마다 단계 +1. 단계 N = 종전 레벨(1~3, 난이도 가산 포함) + 더해진 단계. 단계 1~3 은 위 opponents.cpuLevel 표 그대로(원작 레벨 값 불변), 4 이상은 엔진에 레벨 3 + cpuBoost(server/engine/boost.js, 원작 능력치 표는 건드리지 않고 경기 안 복사본만 바꾼다). 보정 = 포화 곡선 floor(max * n / (n + k)), n = N - baseLevel: catch256 = 방어 결정을 캐치로 바꿀 확률(/256), special256 = 공격 때 필살 시도로 바꿀 확률(/256), ballSpeedPct = 컴퓨터 투구 속력 +% (100 + 값 배율, 투구 와인드업은 원작 그대로, 플레이어 공은 불변), hpPct = 상대 최대 HP +%, strongPct = 지도에서 일반 노드 상대가 강팀 풀 팀으로(강팀 노드는 보스 풀로) 바뀔 확률(%). coin = 단계 4 부터 단계마다 perTier %p, 상한 cap %p 를 코인 배율에 더한다. 값은 헤드리스 측정 기반 시작값이고 최종 확정은 임밸런이 이어받는다(analysis 보고 참조). 되돌리기: tier.enabled 를 false 로(또는 키 삭제, 환경 변수 FLAME_TIER=0).",
       "[2026-11-19 팀장 결정, analysis/39 D49·D50, analysis/40 §21.4] version 7: 위 version 6(장비 S 극희귀화)을 채택(D49)하고 그에 연동해 unlocks.content.PC02(전설 장비 설계도) 비용 500 -> 300(D50). 다른 값은 그대로. 되돌리기: PC02 costs [500]."
     ]
   },
@@ -26,6 +27,12 @@
   "practice": { "enabled": true, "cpuLevel": 1 },
   "recruitRoom": { "healPct": 10 },
   "versusTeam": { "enabled": true, "surviveUsesPerMatch": 1, "humans": true },
+  "tier": {
+    "enabled": true, "stepRuns": 3, "unitSegs": 1, "baseLevel": 3,
+    "catch256": { "max": 90, "k": 2 }, "special256": { "max": 90, "k": 2 },
+    "ballSpeedPct": { "max": 500, "k": 28 }, "hpPct": { "max": 60, "k": 12 }, "strongPct": { "max": 80, "k": 6 },
+    "coin": { "perTier": 10, "cap": 300 }
+  },
   "difficulty": [
     { "id": 0, "name": "기본", "cpuLevelAdd": 0, "coinPct": 100, "requires": null },
     { "id": 1, "name": "고난도", "cpuLevelAdd": { "normal": 1, "strong": 0, "boss": 1 }, "coinPct": 150, "requires": "PC06" }

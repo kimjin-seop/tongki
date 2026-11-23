@@ -16,6 +16,7 @@ import { FlameRanking } from '../server/flame/ranking.js';
 import * as Items from '../server/flame/items.js';
 import * as Nodes from '../server/flame/nodes.js';
 import * as Run from '../server/flame/run.js';
+import { openWs } from './ws_util.js';
 
 const data = loadData(), cat = loadCatalog();
 const soft = (fn) => { try { fn(); return true; } catch (e) { if (e instanceof FlameError) return false; throw e; } };
@@ -64,7 +65,7 @@ test('엔드리스: 구간 3 보스를 이기면 우승이 그 자리에서 한 
   assert.deepEqual([run.seg, run.layer, run.map.length, run.champ, profile.firstClear, profile.best.clears, profile.coins], [3, 0, 1, { first: true }, true, 1, 0]); // 코인은 아직 정산 전
   assert.ok(at12.achievements.includes('ACH03') && profile.achievements.includes('ACH03'));
   const v = Run.viewOf(cat, data, run, profile).run;
-  assert.deepEqual([v.segNo, v.endless, v.championed, v.segments, v.matchesTotal, v.championSegments, v.coinsPending.first, v.map.length, v.map[3].layers.length], [4, true, true, null, null, 3, 300, 4, 7]);
+  assert.deepEqual([v.segNo, v.endless, v.championed, v.segments, v.matchesTotal, v.championSegments, v.coinsPending.first, v.map.length, v.mapBase, v.map[0].layers.length], [4, true, true, null, null, 3, 300, 1, 3, 7]);
   // 구간 4 를 다 이기고(보스 = 재선택 +1) 17번째 경기에서 진다 -> 정산
   const rerolls = run.rerolls;
   const end = play(run, profile, 5, { loseAt: 5, onMatch: (o, k) => { if (o.champion) champs.push(12 + k); } }).end;
@@ -168,7 +169,7 @@ test('순위표·카탈로그 로비 연결: flame_ranking_get -> flame_ranking{
   assert.equal(Run.viewOf(cat, data, run, profile).run.cast.players[6].sp, null); // D38 부여 구조: 클론에게는 원래 필살기가 없다(종전 legacy 에서는 풀의 sp)
   const app = createServer({ store: new MemoryResultStore(), dbPath: ':memory:', importJson: false, log: () => {} }), port = await app.listen(0);
   try {
-    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`), got = [];
+    const ws = openWs(port), got = [];
     const wait = (t) => new Promise((res, rej) => { const tm = setTimeout(() => rej(new Error('timeout ' + t)), 3000); const chk = () => { const i = got.findIndex((m) => m.t === t); if (i >= 0) { clearTimeout(tm); res(got.splice(i, 1)[0]); } else setTimeout(chk, 5); }; chk(); });
     ws.on('message', (raw) => got.push(JSON.parse(raw.toString())));
     await new Promise((r) => ws.on('open', r));
@@ -184,7 +185,7 @@ test('순위표·카탈로그 로비 연결: flame_ranking_get -> flame_ranking{
 test('엔드리스 리뷰 M1: 영구 저장이 더 새 형식(v = PROFILE_VERSION + 1)이면 FLAME_SAVE_NEWER 로 거절하고 덮어쓰지 않는다(도전 저장 버전과 따로 비교)', async () => {
   const app = createServer({ store: new MemoryResultStore(), dbPath: ':memory:', importJson: false, log: () => {} }), port = await app.listen(0);
   try {
-    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`), got = [];
+    const ws = openWs(port), got = [];
     const wait = (t) => new Promise((res, rej) => { const tm = setTimeout(() => rej(new Error('timeout ' + t)), 3000); const chk = () => { const i = got.findIndex((m) => m.t === t); if (i >= 0) { clearTimeout(tm); res(got.splice(i, 1)[0]); } else setTimeout(chk, 5); }; chk(); });
     ws.on('message', (raw) => got.push(JSON.parse(raw.toString())));
     await new Promise((r) => ws.on('open', r));

@@ -153,7 +153,7 @@ export function sanitizeRun(cat, data, raw, onBad) {
         for (const n of layer) {
           need(isObj(n) && typeof n.id === 'string' && n.id.startsWith(`${v.seg + si}-`) && R.nodeTypes.includes(n.type) && Array.isArray(n.next) && !nodeIds.has(n.id), 'map-node');
           nodeIds.add(n.id);
-          if (['normal', 'strong', 'boss'].includes(n.type)) need(isObj(n.opp) && !!data.teams[n.opp.team] && Number.isInteger(n.opp.team) && Number.isInteger(n.opp.cpuLevel) && n.opp.cpuLevel >= 1 && n.opp.cpuLevel <= 3 && Number.isInteger(n.opp.stage) && !!data.stages[n.opp.stage], 'map-opp');
+          if (['normal', 'strong', 'boss'].includes(n.type)) need(isObj(n.opp) && !!data.teams[n.opp.team] && Number.isInteger(n.opp.team) && Number.isInteger(n.opp.cpuLevel) && n.opp.cpuLevel >= 1 && n.opp.cpuLevel <= 3 && (n.opp.tier === undefined || (Number.isInteger(n.opp.tier) && n.opp.tier > 3 && n.opp.tier <= SEG_MAX * 2)) && Number.isInteger(n.opp.stage) && !!data.stages[n.opp.stage], 'map-opp');
         }
       }
     }

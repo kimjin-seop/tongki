@@ -3,6 +3,7 @@
 // 근거: analysis/05_match_rules.md. 미확정 항목은 [추정] 주석 + server/data/rules.json 분리.
 import { Rng } from './rng.js';
 import { aiInput } from './ai.js';
+import { normBoost, applyBoostHp, boostSpd, boostFly } from './boost.js';
 import { ONE, BIT, ST, BM, FM, slotGroup } from './consts.js';
 import { initSpecial, stepSpecial } from './special.js';
 import { initFlameSeats, flActiveId, flCanSpecial, flKnock, flSlide, flWalk, flGive, flPass, flThrowSpd, flSpSpd, flThrowPow, flHitDmg, flameResult } from './flame.js';
@@ -74,6 +75,8 @@ export class Match {
     this.stage = stRow ? { friction: stRow.friction, bounceShift: stRow.bounceShift } : this.R.stage;
     // 컴퓨터 필살기 시도 확률(/256), 사이드별. 기본은 rules.cpu.specialChance256(0)
     this.aiSpecial = [0, 1].map((x) => o.specialChance256?.[x] ?? this.R.cpu?.specialChance256 ?? 0);
+    // 컴퓨터 단계 보정(불꽃의 계승 단계 4 이상, boost.js [자작]). 주지 않으면 null 이고 아래 모든 분기는 건너뛴다(원작 비트 동일)
+    this.cpuBoost = normBoost(o.cpuBoost, this.humans);
     // 포메이션 어택(analysis/14): rules.formation.enabled=false 이거나 formations 데이터가 없으면 완전히 꺼짐
     // 특훈(원작 $E68E=4, analysis/29 §1·§4-2): training: {kind:'catch'|'special'}. 팀·스테이지·배치는 training.json 이 정하고 시작 연출·시계·포메이션·아웃이 없다. 주지 않으면 아래 분기는 전부 건너뛴다(일반 경기·차분 하네스 불변)
     const TR = o.training ? o.data.training : null;
@@ -128,6 +131,7 @@ export class Match {
       if (fl) this.sides[s].fmT = fl.fmTeam ?? team.id; // 포메이션 패턴의 기준 팀(fmOf)
       for (let i = 0; i < 7; i++) this.players.push(fl ? this.makeFlamePlayer(s, i, fl.roster[i]) : this.makePlayer(s, i, team.players[i]));
     }
+    applyBoostHp(this);
     const RF = this.R.start.ref;
     this.ball = {
       x: px(RF.startX), y: px(RF.startY + RF.ballDy), z: px(RF.handDz.stand), vx: 0, vy: 0, vz: 0,
@@ -1170,6 +1174,7 @@ export class Match {
     if (b.ctr > 0) { power = b.cpow; spd = b.cspd; }
     const flCtr = b.ctr > 0; // flame 훅용(받아치기 공인가). 아래에서 b.ctr 을 지우기 전에 읽는다
     if (p.fl) spd = flThrowSpd(this, p, spd, flCtr); // flame: 패스 직후 투구 속도
+    if (this.cpuBoost && !flCtr) spd = boostSpd(this, p, spd); // 컴퓨터 단계 보정: 던지는 공 속력 배율(받아치기 공은 이미 보정된 값이라 다시 곱하지 않는다)
     const ctrId = b.ctr > 0 && b.f76 && typeof b.cid === 'number' ? b.cid : null; // 받아치기 필살(공 $76): 창이 열린 채 던지는 필살 공의 ID. 아래에서 b.ctr 을 지우기 전에 읽는다
     // 공 $42(던질 때의 공 $3E, 0x71C4). 창이 닫혀 있으면 $3E = 던진 선수의 차지($18). 창이 열려 있으면 보유 공 핸들러(0xA2B6 -> 0xA3E6)가 매 프레임 $3E 를 덮는다: 잡은 공이 필살 공($76)이면 15 고정, 일반 공이면 잡은 공의 $42 그대로
     // [직역 ROM 0xA3E6/0x71C4, 확인 원작 실행 analysis/data/34_counter_special_oracle/charge_*.txt: 차지 13 필살을 받아친 공 $42=15, 차지 12 일반 공을 받아친 공 $42=12]
@@ -1213,6 +1218,7 @@ export class Match {
   /** 투구 비행 1프레임 = 원작 직역 [ROM 0xA462 -> 0xA728]: 보정 -> 이동(중력 없음) -> 벽(x 1/4·y 1/2 반사, 바운스 공으로) -> 천장(z>=384) -> 바닥(속도 절반, vz 2.0) */
   stepRomFly() {
     const R = this.R, C = R.court, b = this.ball, s = b.steer | 0;
+    if (this.cpuBoost && boostFly(this)) return; // 보정 좌석의 빠른 공: 이동 경로 중간 판정(boost.js)
     if (s & 1) b.vy -= 0x1000;
     if (s & 2) b.vy += 0x1000;
     if (s & 8) b.vz += 0x1000;
@@ -1711,6 +1717,7 @@ export class Match {
     stepSpecial(b, b.sp, () => this.rng.next(), L);
     if (tk) this.trackPost(tk, pre);
     this.ballDir();
+    if (this.cpuBoost && boostFly(this)) return;
     b.x += b.vx; b.y += b.vy; b.z += b.vz;
     let end = null;
     if (b.x < px(C.xMin)) { b.x = px(C.xMin); b.vx = Math.trunc(-b.vx / L.wallVxDiv); end = 'wall'; }

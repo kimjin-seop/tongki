@@ -184,7 +184,7 @@ export function makeFlameHandlers(fail) {
       if (!r.match) { state(this, s, c); return; }
       const o = r.match;
       const room = this.makeRoom(this.newCode(), true, o.cpuLevel, null, { ...o.rules });
-      room.flame = { runId: c.run.id, node: o.node, type: o.type, stage: o.stage, opts: o.flame, cast: o.cast };
+      room.flame = { runId: c.run.id, node: o.node, type: o.type, stage: o.stage, opts: o.flame, cast: o.cast, cpuBoost: o.cpuBoost ?? null }; // cpuBoost = 컴퓨터 단계 4 이상의 엔진 보정(run.js matchOptions, 서버 계산)
       room.cpuTeam = o.cpuTeam;
       this.join(s, room, o.flame.roster[0].from.team);
       try { this.startGame(room); }

@@ -6,6 +6,7 @@ import * as F from './store.js';
 import { icon, emptyIcon, pface, pname, pteam, isClone, ownShotOf, tname, emblem, origEmblem, sprite, hpBar, head, chip, btn, learnTip, gradeTag, rarTag, artKindTag, snapPicker, snapPickEsc, snapOn } from './ui.js';
 
 const isMatch = (t) => t === 'normal' || t === 'strong' || t === 'boss';
+const tierChip = (t) => { const c = chip('단계', t > 9999 ? '9999+' : String(t), '.tier'); c.title = '컴퓨터 최대 단계(이 구간 보스 기준, 일반 상대는 더 낮을 수 있다)'; return c; }; // 짧은 칩(머리말 한 줄 유지)
 const pointChip = (run) => chip('경기 포인트', String(run.points), '.pt');
 
 /** 선수 7명 고르는 줄(얼굴 + 이름 + HP). sel = 고른 번호, onPick(i). lock(i) = 고를 수 없는 칸(흐리게, 누르면 onLock) */
@@ -90,16 +91,17 @@ export const champCoins = (c) => (c && Number.isFinite(c.champion) ? Math.floor(
 // ---------------- 진행 지도 ----------------
 export function map(ctx) {
   const { S } = ctx, run = ctx.run();
+  const mapBase = Number.isInteger(run.mapBase) ? run.mapBase : 0, mapAt = (i) => run.map[i - mapBase]; // 서버가 현재 구간부터만 보내면(mapBase = run.seg) 바깥 번호 = 구간 번호. 옛 서버(지나온 구간을 빈 칸으로 채움)는 mapBase 없음 = 0
   // 구간 탭(PROTOCOL §13.12): 지도가 있는 구간만. 엔드리스는 지나온 구간이 빈 칸({layers: []})이고 다음 구간을 미리 볼 수 없어 보통 현재 구간 하나뿐이다 -> 탭을 그리지 않는다
-  const segs = run.map.map((m, i) => i).filter((i) => i === run.seg || run.map[i]?.layers?.length > 0);
+  const segs = run.map.map((m, i) => mapBase + i).filter((i) => i === run.seg || mapAt(i)?.layers?.length > 0);
   const seg = segs.includes(S.segView) ? S.segView : run.seg, segNo = run.segNo ?? run.seg + 1;
   const cand = new Set(run.candidates), done = new Map(run.done.map((d) => [d.id, d]));
-  const layers = run.map[seg].layers;
+  const layers = mapAt(seg).layers;
   const all = run.map.flatMap((m) => (m?.layers ?? []).flat());
   const candNodes = all.filter((n) => cand.has(n.id));
   // 다음 상대: 지금 고를 수 있는 경기 노드, 없으면 이 구간의 다음 경기 층
   let nextOpp = candNodes.filter((n) => isMatch(n.type));
-  if (!nextOpp.length) nextOpp = run.map[run.seg].layers.slice(run.layer).find((l) => l.some((n) => isMatch(n.type)))?.filter((n) => isMatch(n.type)) ?? [];
+  if (!nextOpp.length) nextOpp = mapAt(run.seg).layers.slice(run.layer).find((l) => l.some((n) => isMatch(n.type)))?.filter((n) => isMatch(n.type)) ?? [];
   const roomHeal = Number(F.catalog().recruitRoomHealPct) > 0 ? Number(F.catalog().recruitRoomHealPct) : 0;
   const pick = (n) => {
     if (!cand.has(n.id)) return;
@@ -153,6 +155,7 @@ export function map(ctx) {
     h('header.fl-head', h('h1.pix-title.fl-title', `${segNo}구간`), run.championed ? h('span.tag.host.fl-champ-m', '우승') : null,
       h('div.fl-head-x',
         h('span.fl-chip.opp', h('i', '다음 상대'), nextOpp.length ? nextOpp.map((n) => h('span.fl-opp', emblem(n.opp.team), tname(n.opp.team))) : h('b', '-')),
+        Number.isFinite(run.tier) ? tierChip(run.tier) : null, // 최대 단계(구간 보스 기준 서버 계산. 일반 상대는 더 낮을 수 있다). 4자리 초과는 9999+
         Number.isFinite(run.matchesTotal) ? chip('남은 경기', String(run.matchesTotal - run.matchesWon)) : null, pointChip(run), // 엔드리스 = matchesTotal:null(남은 경기 없음)
         F.artOff() ? null : h('button.fl-arts', { type: 'button', 'data-k': 'arts', 'aria-label': '장착 아티팩트', onclick: () => ctx.open('artifact') }, // off(§13.26): 공용 3칸 없음
           run.artifacts.map((id) => (id ? icon(F.artDef(id)) : emptyIcon())))),

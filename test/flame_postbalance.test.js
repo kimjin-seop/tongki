@@ -15,6 +15,7 @@ import { freshProfile, sanitizeRun, FlameError } from '../server/flame/save.js';
 import { candidates, genSegment } from '../server/flame/map.js';
 import * as Nodes from '../server/flame/nodes.js';
 import * as Run from '../server/flame/run.js';
+import { openWs } from './ws_util.js';
 
 const data = loadData(), cat = loadCatalog();
 const codeOf = (fn) => { try { fn(); return null; } catch (e) { if (e instanceof FlameError) return e.code; throw e; } };
@@ -97,7 +98,7 @@ test('flame 난이도 레벨 가산(D32): cpuLevelAdd 가 숫자면 모든 경�
 });
 
 function client(port) {
-  const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
+  const ws = openWs(port);
   const q = [], waiters = [];
   ws.on('message', (raw) => {
     const m = JSON.parse(raw.toString());

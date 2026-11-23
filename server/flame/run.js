@@ -8,6 +8,7 @@ import { pv, roundHalfUp, startLineup, displayCast, recruitView, originalOf, clo
 import { teamOfRun, clampHp, toEngine, upgradedStats, upgradePreview, initialSpecials, specialsOf, formationOf, teamWornOf } from './stats.js';
 import { genSegment, enterSegment, candidates, findNode, isMatch } from './map.js';
 import { secretFromSeed } from './rng.js';
+import { tierCfg, boostOf as tierBoost, coinBonusPct, segTier } from './tier.js';
 import { equipChoices, artifactChoices, consumableChoices, rewardSize } from './rewards.js';
 import { addItem, addArtifact, addConsumable, canHold, expireBuffs, wearerOf, upgradeCost, staleArtifact, pruneArtifactChoices } from './items.js';
 import { openNode, chooseRest, chooseRecruit, chooseEvent } from './nodes.js';
@@ -96,7 +97,7 @@ function oppOuts(cat, res) {
  * 종전(엔드리스 꺼짐) = result 가 champion 일 때만, 첫 우승은 profile.firstClear 로
  */
 export function coinsOf(cat, run, profile, result = null, defeatOuts = 0) {
-  const K = cat.coin, pct = cat.cfg.difficulty.find((d) => d.id === run.diff)?.coinPct ?? 100;
+  const T = tierCfg(cat), K = cat.coin, pct = (cat.cfg.difficulty.find((d) => d.id === run.diff)?.coinPct ?? 100) + (T ? coinBonusPct(T, segTier(cat, run)) : 0); // 컴퓨터 단계 4 이상이면 단계마다 코인 배율 가산(tier.js, 상한 있음)
   const c = { normal: run.wins.normal * K.normalWin, strong: run.wins.strong * K.strongWin, boss: run.wins.boss * K.bossWin, champion: 0, first: 0, defeat: 0 };
   if (run.champ) { c.champion = K.championshipBonus; if (run.champ.first) c.first = K.firstChampionshipBonus; }
   else if (result === 'champion') { c.champion = K.championshipBonus; if (!profile.firstClear) c.first = K.firstChampionshipBonus; }
@@ -305,8 +306,9 @@ export function matchOptions(cat, data, run, profile, node) {
     const pl = team.players[i], e = toEngine(pl);
     return { from: { ...r.from }, stat: e.stat, hp: Math.min(pl.final.s0, Math.max(0, r.hp) + bonus[i]), ext: e.ext, sp: sps[i], fx: e.fx };
   });
+  const T = tierCfg(cat), boost = T && node.opp.tier ? tierBoost(T, node.opp.tier) : null; // 컴퓨터 단계 4 이상: 엔진 보정(서버가 저장된 지도에서 계산, 클라이언트 값 아님)
   return {
-    node: node.id, type: node.type, cpuTeam: node.opp.team, cpuLevel: node.opp.cpuLevel, stage: node.opp.stage,
+    node: node.id, type: node.type, cpuTeam: node.opp.team, cpuLevel: node.opp.cpuLevel, stage: node.opp.stage, ...(boost ? { cpuBoost: boost } : {}),
     rules: { mode: cat.cfg.match.ruleMode, time: cat.cfg.match.timeMin },
     flame: { seat: 0, roster, allow: team.allow, families: cat.families, fm: team.fm, caps: { ...cat.engineCaps } }, // team.fm = 실제로 쓰이는 패턴(등급제 D42: 아이템이 주지 않는 패턴이면 기본 포메이션. 꺼져 있으면 run.fm 그대로)
     cast: displayCast(cat, run, profile.teamName), // 화면 표시용(game_start.flameCast). 엔진에는 넘기지 않는다. 팀 이름 = 플레이어가 정한 이름(B149)
@@ -497,10 +499,11 @@ export function viewOf(cat, data, run, profile) {
         const def = cat.items.get(it.id), up = upgradePreview(cat, it.id, it.lv);
         return { ...it, slot: def.slot, rarity: def.rarity, stats: upgradedStats(cat, it.id, it.lv), wearer: wearerOf(cat, run, it.inst), sell: cat.sellPrice(it.id), up: { ...up, cost: up.cost === null ? null : upgradeCost(cat, profile.perm, it.lv) } };
       }),
-      // 지도(v3): 저장에는 현재 구간부터만 있다. 화면이 map[run.seg] 로 읽을 수 있게 지나온 구간 자리는 빈 칸({layers: []})으로 채워 보낸다
-      map: [...Array.from({ length: run.seg }, () => ({ layers: [] })), ...run.map],
+      // 지도(v3): 저장에는 현재 구간부터만 있다. 지나온 구간 수만큼 빈 칸을 채우면 구간이 쌓일수록 전송량이 커지므로 현재 구간부터만 보내고, 화면이 구간 번호 = mapBase + 배열 위치 로 읽는다
+      map: run.map, mapBase: run.seg,
       // 구간 표시(D24): segNo = 현재 구간(1부터), endless = 무한 구간 도전인가, championed = 이번 도전에서 우승했는가, championSegments = 우승 기준 구간 수(rules.json run.segments).
       // 엔드리스에서는 끝이 없으므로 segments·matchesTotal 은 null 이다(분모·남은 경기 표시를 하지 않는다). 꺼져 있으면 종전 값
+      tier: segTier(cat, run), // 컴퓨터 단계(구간 보스 기준, tier.js). 꺼져 있으면 null. 화면은 9999 를 넘으면 9999+ 로 줄인다
       segNo: run.seg + 1, endless: !!cat.endless, championed: !!run.champ, championSegments: cat.rules.run.segments,
       segments: cat.endless ? null : cat.rules.run.segments, matchesTotal: cat.endless ? null : cat.rules.run.matches, matchesWon: winsOf(run),
       candidates: run.node || run.pending.length ? [] : candidates(run).map((n) => n.id),
